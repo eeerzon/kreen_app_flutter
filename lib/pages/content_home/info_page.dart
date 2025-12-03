@@ -5,7 +5,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
 import 'package:kreen_app_flutter/pages/content_info/edit_profil.dart';
+import 'package:kreen_app_flutter/pages/content_info/profile.dart';
 import 'package:kreen_app_flutter/pages/content_info/tentang_page.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
@@ -30,6 +32,7 @@ class _InfoPageState extends State<InfoPage> {
   String? first_name, last_name;
   String? email, phone;
   String? dob, photo;
+  String? verifEmail;
 
   bool isLoading = true;
 
@@ -59,6 +62,7 @@ class _InfoPageState extends State<InfoPage> {
         phone = storeUser['phone'];
         dob = storeUser['dob'];
         photo = storeUser['photo'];
+        verifEmail = storeUser['verifEmail'];
       });
     }
   }
@@ -168,9 +172,12 @@ class _InfoPageState extends State<InfoPage> {
         token != null
           ? InkWell(
               onTap: () {
-                setState(() {
-                  isProfileMode = true;
-                });
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => Profile(),
+                  ),
+                );
               },
               child: Container(
                 padding: EdgeInsets.all(14),
@@ -517,138 +524,247 @@ class _InfoPageState extends State<InfoPage> {
         ],
       ),
 
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 60,
-              child: ClipOval(
-                child: isSvg
-                    ? SvgPicture.network(
-                        '$baseUrl/user/$photo',
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.network(
-                        '$baseUrl/user/$photo',
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      ),
-              ),
-            ),
-
-            SizedBox(height: 20,),
-            Text(
-              "$first_name $last_name",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-
-            SizedBox(height: 20,),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Akun'
+      body: SingleChildScrollView(
+        child: Container(
+          color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 60,
+                child: ClipOval(
+                  child: isSvg
+                      ? SvgPicture.network(
+                          '$baseUrl/user/$photo',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          '$baseUrl/user/$photo',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        ),
                 ),
+              ),
 
-                SizedBox(height: 10,),
-                Container(
-                  padding: EdgeInsets.all(14),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
+              SizedBox(height: 20,),
+              Text(
+                "$first_name $last_name",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+              SizedBox(height: 20,),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Informasu Utama'
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
 
-                      SizedBox(height: 10,),
-                      Row(
-                        children: [
-                          Icon(Icons.email_outlined, color: Colors.red,),
-
-                          SizedBox(width: 12,),
-                          Text(
-                            email!
-                          )
-                        ],
-                      ),
-
-                      SizedBox(height: 10,),
-                      Divider(),
-
-                      SizedBox(height: 10,),
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_month, color: Colors.red,),
-
-                          SizedBox(width: 12,),
-                          Text(
-                            formattedDate
-                          )
-                        ],
-                      ),
-
-                      SizedBox(height: 10,),
-                      Divider(),
-
-                      SizedBox(height: 10,),
-                      Row(
-                        children: [
-                          Icon(Icons.phone, color: Colors.red,),
-
-                          SizedBox(width: 12,),
-                          Text(
-                            phone!
-                          )
-                        ],
-                      ),
-                    ],
-                  )
-                ),
-              ],
-            ),
-            
-            SizedBox(height: 20,),
-            InkWell(
-              onTap: () async {
-                await StorageService.clearUser();
-                await StorageService.clearToken();
-                setState(() {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomePage(
-                        fromLogout: true,
-                      )
+                  SizedBox(height: 10,),
+                  Container(
+                    padding: EdgeInsets.all(14),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
                     ),
-                    (Route<dynamic> route) => false,
-                  );
-                });
-              },
-              child: Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  "Keluar",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        SizedBox(height: 10,),
+                        Row(
+                          children: [
+                            Icon(Icons.email_outlined, color: Colors.red,),
+
+                            SizedBox(width: 12,),
+                            Text(
+                              email!
+                            )
+                          ],
+                        ),
+
+                        SizedBox(height: 10,),
+                        Divider(),
+
+                        SizedBox(height: 10,),
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_month, color: Colors.red,),
+
+                            SizedBox(width: 12,),
+                            Text(
+                              formattedDate
+                            )
+                          ],
+                        ),
+
+                        SizedBox(height: 10,),
+                        Divider(),
+
+                        SizedBox(height: 10,),
+                        Row(
+                          children: [
+                            Icon(Icons.phone, color: Colors.red,),
+
+                            SizedBox(width: 12,),
+                            Text(
+                              phone!
+                            )
+                          ],
+                        ),
+                      ],
+                    )
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 20,),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Keamanan & Regulasi'
+                  ),
+
+                  SizedBox(height: 10,),
+                  Container(
+                    padding: EdgeInsets.all(14),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        SizedBox(height: 10,),
+                        SizedBox(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ChangePassword(),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'Password',
+                            ),
+                          ),
+                        ),
+
+                        // if (verifEmail == null) ... [
+                        //   SizedBox(height: 10,),
+                        //   Divider(),
+
+                        //   SizedBox(height: 10,),
+                        //   SizedBox(
+                        //     child: InkWell(
+                        //       onTap: () {
+                                
+                        //       },
+                        //       child: Text(
+                        //         'Verifikasi Email',
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ],
+                        
+
+                        SizedBox(height: 10,),
+                        Divider(),
+
+                        SizedBox(height: 10,),
+                        SizedBox(
+                          child: InkWell(
+                            onTap: () {
+                              
+                            },
+                            child: Text(
+                              'Pusat Bantuan',
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 10,),
+                        Divider(),
+
+                        SizedBox(height: 10,),
+                        SizedBox(
+                          child: InkWell(
+                            onTap: () {
+                              
+                            },
+                            child: Text(
+                              'Kebijakan Privasi',
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 10,),
+                        Divider(),
+
+                        SizedBox(height: 10,),
+                        SizedBox(
+                          child: InkWell(
+                            onTap: () {
+                              
+                            },
+                            child: Text(
+                              'Tentang Kreen',
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: 20,),
+              InkWell(
+                onTap: () async {
+                  await StorageService.clearUser();
+                  await StorageService.clearToken();
+                  setState(() {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomePage(
+                          fromLogout: true,
+                        )
+                      ),
+                      (Route<dynamic> route) => false,
+                    );
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Keluar",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            )
-          ],
+
+              SizedBox(height: 40,),
+            ],
+          ),
         ),
-      ),
-      
+      ) 
     );
   }
 

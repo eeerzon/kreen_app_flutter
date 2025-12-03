@@ -176,7 +176,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     };
     
     if (strAvatar != null) {
-      final resultSimpan = await ApiService.postSetProfil('/setting/update-profile',token: token, body: body);
+      final resultSimpan = await ApiService.postSetProfil('$baseapiUrl/setting/update-profile',token: token, body: body);
 
       if (resultSimpan?['rc'] == 200) {
         await StorageService.setUser(
@@ -185,7 +185,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           phone: phoneController.text, 
           email: emailController.text, 
           photo: strAvatar!,
-          DOB: dob!
+          DOB: dob!,
         );
       }
     }

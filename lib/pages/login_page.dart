@@ -91,7 +91,8 @@ class _LoginPageState extends State<LoginPage> {
         email: user['email'], 
         gender: user['gender'], 
         photo: user['photo'],
-        DOB: user['date_of_birth']
+        DOB: user['date_of_birth'],
+        verifEmail: user['email_verified_at'],
       );
 
       if (widget.notLog) {

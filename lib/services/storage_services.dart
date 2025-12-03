@@ -34,7 +34,8 @@ class StorageService {
     required String email,
     String? gender,
     required String photo,
-    required String DOB
+    required String DOB,
+    String? verifEmail, 
   }) async {
     await _storage.write(key: 'user_id', value: id);
     await _storage.write(key: 'user_firstname', value: first_name);
@@ -44,6 +45,7 @@ class StorageService {
     await _storage.write(key: 'user_gender', value: gender);
     await _storage.write(key: 'user_photo', value: photo);
     await _storage.write(key: 'user_dob', value: DOB);
+    await _storage.write(key: 'user_verifEmail', value: verifEmail);
   }
 
   static Future<Map<String, String?>> getUser() async {
@@ -55,6 +57,7 @@ class StorageService {
     final gender = await _storage.read(key: 'user_gender');
     final photo = await _storage.read(key: 'user_photo');
     final DOB = await _storage.read(key: 'user_dob');
+    final verifEmail = await _storage.read(key: 'user_verifEmail');
 
     return {
       'id': id,
@@ -64,7 +67,8 @@ class StorageService {
       'email': email,
       'gender': gender,
       'photo': photo,
-      'dob': DOB
+      'dob': DOB,
+      'verifEmail': verifEmail,
     };
   }
 

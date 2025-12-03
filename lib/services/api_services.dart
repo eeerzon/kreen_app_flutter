@@ -63,7 +63,7 @@ class ApiService {
     String? token,
     Map<String, dynamic>? body,
   }) async {
-    final url = Uri.parse("$baseapiUrl$endpoint");
+    final url = Uri.parse("$endpoint");
 
     var headers = {
       'Authorization': 'Bearer $token',
@@ -76,12 +76,8 @@ class ApiService {
       headers: headers,
       body: body != null ? json.encode(body) : null,
     );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
-    } else {
-      return null;
-    }
+    
+    return json.decode(response.body) as Map<String, dynamic>;
   }
 
 
