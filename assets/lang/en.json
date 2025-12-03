@@ -1,0 +1,172 @@
+{
+  "onboarding": [
+    {
+      "image": "assets/images/img_onboarding1.png",
+      "title": "Support Your Favorite Finalist",
+      "desc": "Be Part of Your Favorite Finalists' Journey to Victory"
+    },
+    {
+      "image": "assets/images/img_onboarding2.png",
+      "title": "Discover Your Favorite Event",
+      "desc": "Bringing you unforgettable experiences in every special moment"
+    },
+    {
+      "image": "assets/images/img_onboarding3.png",
+      "title": "Enjoy the Convenience of Kreen",
+      "desc": "All Your Needs in One Kreen App"
+    }
+  ],
+
+  "dialog_title" : "Choose Language",
+
+  "lewati" : "Lewati",
+  "lanjut" : "Lanjut",
+  "selesai" : "Selesai",
+  "login_now": "Login",
+  "guest_login": "Login as Guest",
+  "login_as": "or",
+
+  "input_email": "Email or Phone number",
+  "input_password": "Password",
+  "lupa_password": "Forget password?",
+  "belum": "Don't have a Kreen account yet? ",
+  "daftar": "Register",
+
+  "home_content": 
+    {
+      "top_nav": "Welcome to Kreen",
+
+      "event_title": "Most Popular Event",
+      "event_recomen": "Recommended Event",
+      "event_desc": "Vote now, secure your ticket, and be part of the excitement!",
+
+      "vote_title": "Popular Vote",
+
+      "latest_vote": "Latest Vote",
+
+      "comingsoon_title": "Upcoming Events",
+      "comingsoon_desc": "Choose your finalist, prepare your ticket the big event is coming soon!",
+
+      "partner": "Create Your Event & Voting Now",
+      "partner_btn": "Become Our Partner",
+
+      "news_title": "Find the Latest Information",
+      "news_desc": "Discover the newest and most updated sources of information here!",
+
+      "bot_nav_1": "Home",
+      "bot_nav_2": "Explore",
+      "bot_nav_3": "Order",
+      "bot_nav_4": "Info"
+    },
+
+    "cari_vote": "Search vote",
+    "cari_event": "Search event",
+    "cari_charity": "Search charity",
+
+    "detail_vote":
+    {
+      "modal_tutor": 
+      {
+        "header": "Voting Tutorial",
+
+        "sub_titel_1": "You can vote in 2 ways:",
+        "poin_titel_1": [
+          {
+            "poin": "Vote through the website kreenconnect.com"
+          },
+          {
+            "poin": "Vote directly using QRIS (Available only for certain events)"
+          }
+        ],
+
+        "sub_titel_2": "How to vote through kreenconnect.com",
+        "poin_titel_2": [
+          {
+            "poin": "Choose the event you want to vote for"
+          },
+          {
+            "poin": "Click 'View Finalist' to see all finalists"
+          },
+          {
+            "poin": "Select your favorite finalist and enter the number of votes you want"
+          },
+          {
+            "poin": "Click the 'Continue Vote' button"
+          },
+          {
+            "poin": "Fill in your personal details and choose your payment method, then click 'Confirm'"
+          },
+          {
+            "poin": "Complete your payment and don’t forget to click 'Check Payment Status' afterward"
+          },
+          {
+            "poin": "Congratulations, your vote has been successfully submitted!"
+          }
+        ],
+
+        "sub_titel_3": "How to Vote using QRIS",
+        "poin_titel_3": [
+          {
+            "poin": "Open your preferred Mobile Banking app or e-wallet"
+          },
+          {
+            "poin": "Scan the QRIS of your favorite finalist"
+          },
+          {
+            "poin": "Enter the desired amount (Make sure you know the price of 1 vote)"
+          },
+          {
+            "poin": "Click the 'Continue Vote' button"
+          },
+          {
+            "poin": "Fill in your personal details and choose your payment method, then click 'Confirm'"
+          },
+          {
+            "poin": "Complete your payment and don’t forget to click 'Check Payment Status' afterward"
+          },
+          {
+            "poin": "Congratulations, your vote has been successfully submitted!"
+          }
+        ]
+      },
+
+
+      "modal_faq": {
+      "header": "FAQ for Voters",
+
+      "sub_titel_1": "What is KREEN Vote?",
+      "desc_titel_1": "KREEN Vote is a voting platform where you can directly support your favorite finalists without limitations and with real-time updates.",
+
+      "sub_titel_2": "How can I support my favorite finalist?",
+      "desc_titel_2": "You can use 2 methods:",
+      "poin_titel_2": [
+        {
+          "poin": "Go to the voting page link provided by each event, or visit the kreen.id website to find the event you want. Then, you can easily and quickly vote for your favorite finalist."
+        },
+        {
+          "poin": "You can also support your favorite finalist simply by scanning their personal QRIS code provided specifically for them."
+        }
+      ],
+
+      "sub_titel_3": "How long does the voting last?",
+      "desc_titel_3": "The voting duration depends on each event.",
+
+      "sub_titel_4": "What if I fail to vote?",
+      "desc_titel_4": "Make sure your internet connection is stable.",
+
+      "sub_titel_5": "Is there a minimum or maximum number of votes?",
+      "desc_titel_5": "No worries, you can support your favorite finalist with as many votes as you want. There is no minimum or maximum limit.",
+
+      "sub_titel_6": "How do I know my vote has been counted?",
+      "desc_titel_6": "Make sure you complete all the voting steps.",
+      "poin_titel_6_a": "a. When voting via the website, don’t forget to click 'Check Payment Status' after making your payment. If successful, you will be redirected to the voting success page. After that, you can refresh or reload the voting page.",
+      "poin_titel_6_b": "b. When scanning a finalist’s personal QRIS code, make sure you follow the process to completion. Then, refresh or reload the voting page.",
+
+      "sub_titel_7": "What if I find that my vote was not counted?",
+      "desc_titel_7": "Don’t panic. You can contact the Help Center listed on the voting page. Be sure to include the Name and Phone Number you used when voting. You must also provide proof of payment."
+    }
+
+    }
+
+
+}

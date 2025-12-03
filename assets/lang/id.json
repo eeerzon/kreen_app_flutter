@@ -1,0 +1,257 @@
+{
+  "onboarding": [
+    {
+      "image": "assets/images/img_onboarding1.png",
+      "title": "Dukung Finalis Favoritmu",
+      "desc": "Jadilah Bagian dari Perjalanan para finalis favoritmu Menuju Kemenangan"
+    },
+    {
+      "image": "assets/images/img_onboarding2.png",
+      "title": "Temukan Event Favoritmu",
+      "desc": "Menghadirkan Pengalaman Tak Terlupakan di Setiap Momen Spesialmu"
+    },
+    {
+      "image": "assets/images/img_onboarding3.png",
+      "title": "Nikmati Kemudahan Aplikasi Kreen",
+      "desc": "Semua Kebutuhan Anda dalam Satu Aplikasi Kreen"
+    }
+  ],
+
+  "dialog_title" : "Pilih bahasa",
+
+  "lewati" : "Lewati",
+  "lanjut" : "Lanjut",
+  "selesai" : "Selesai",
+  "login": "Masuk",
+  "guest_login": "Masuk Sebagai Tamu",
+  "login_as": "Atau",
+
+  "input_email": "Masukkan no telepon atau email",
+  "input_password": "Masukkan kata sandi",
+  "lupa_password": "Lupa kata sandi?",
+  "belum": "Belum punya akun Kreen? ",
+  "daftar": "Daftar",
+
+  "home_content": 
+    {
+      "top_nav": "Selamat Datang di Kreen",
+
+      "event_title": "Event Paling Hits",
+      "event_recomen": "Event Rekomendasi",
+      "event_desc": "Vote sekarang, amankan tiketmu, dan jadi bagian dari keseruannya!",
+
+      "vote_title": "Vote Populer",
+
+      "latest_vote": "Vote Terbaru",
+
+      "comingsoon_title": "Acara Mendatang",
+      "comingsoon_desc": "Pilih finalismu, siapkan tiketmu acara besar segera dimulai!",
+
+      "partner": "Buat Acara & Voting Kamu Sekarang",
+      "partner_btn": "Jadi Partner Kami",
+
+      "news_title": "Cari Informasi Terupdate",
+      "news_desc": "Temukan sumber informasi Terbaru dan Terupdate di Sini!",
+
+      "bot_nav_1": "Beranda",
+      "bot_nav_2": "Eksplor",
+      "bot_nav_3": "Pesanan",
+      "bot_nav_4": "Info"
+    },
+
+  "cari_vote": "Cari vote pilihanmu",
+  "cari_event": "Cari event pilihanmu",
+  "cari_charity": "Cari charity pilihanmu",
+
+  "detail_vote":
+  {
+    "modal_tutor": 
+    {
+      "header": "Tutorial Voting di Kreen Vote",
+
+
+      "sub_titel_1": "Kamu dapat melakukan vote dengan 2 cara:",
+      "poin_titel_1": [
+        {
+          "poin": "Vote melalui website kreenconnect.com"
+        },
+        {
+          "poin": "Vote langsung menggunakan QRIS (Berlaku pada beberapa ajang pemilihan saja)"
+        }
+      ],
+
+
+      "sub_titel_2": "Cara vote melalui website kreenconnect.com",
+      "poin_titel_2": [
+        {
+          "poin": "Pilih ajang pemilihan yang kamu ingin vote"
+        },
+        {
+          "poin": "Klik 'View Finalist' untuk melihat seluruh finalis"
+        },
+        {
+          "poin": "Pilih finalis favorit kamu dan masukkan jumlah vote yang kamu inginkan"
+        },
+        {
+          "poin": "Klik tombol 'Continue Vote'"
+        },
+        {
+          "poin": "isi data diri kamu dan pilih metode pembayaran kamu, kemudian klik 'Konfirmasi'"
+        },
+        {
+          "poin": "Selesaikan pembayaranmu dan jangan lupa jika sudah, klik “Check Payment Status”"
+        },
+        {
+          "poin": "Selamat, vote kamu berhasil terkirim!"
+        }
+      ],
+
+
+      "sub_titel_3": "Cara Vote menggunakan QRIS",
+      "poin_titel_3": [
+        {
+          "poin": "Buka aplikasi Mobile Banking atau e-wallet favorit Anda."
+        },
+        {
+          "poin": "Pindai QRIS finalis favorit Anda."
+        },
+        {
+          "poin": "Masukkan nominal sesuai dengan jumlah vote yang Anda inginkan (Pastikan Anda sudah mengetahui harga per suara)."
+        },
+        {
+          "poin": "Masukkan PIN Anda."
+        },
+        {
+          "poin": "Selamat, vote Anda telah berhasil terkirim!"
+        }
+      ]
+    },
+
+
+    "modal_faq": {
+      "header": "FAQ for Voters",
+      "sub_titel_1": "Apa itu KREEN Vote?",
+      "desc_titel_1": "KREEN Vote adalah platform yang memungkinkan Anda memberikan dukungan kepada finalis favorit Anda dengan cara yang sederhana dan mudah digunakan.",
+
+      "sub_titel_2": "Apakah saya bisa melihat hasil sementara dari voting?",
+      "desc_titel_2": "Ya, Anda bisa melihat hasil sementara voting melalui leaderboard",
+      "poin_titel_2": [
+        {
+          "poin": "Buka halaman voting KREEN."
+        },
+        {
+          "poin": "Pilih kategori voting yang tersedia."
+        },
+        {
+          "poin": "Leaderboard akan ditampilkan pada halaman tersebut."
+        }
+      ],
+
+      "sub_titel_3": "Apakah saya dapat melakukan voting untuk lebih dari satu finalis?",
+      "desc_titel_3": "Ya, Anda dapat memberikan suara untuk lebih dari satu finalis.",
+
+      "sub_titel_4": "Apakah suara yang sudah saya berikan bisa diubah atau dibatalkan?",
+      "desc_titel_4": "Tidak, suara yang sudah diberikan tidak dapat diubah atau dibatalkan.",
+
+      "sub_titel_5": "Apa perbedaan antara vote gratis dan vote berbayar?",
+      "desc_titel_5": "Pada vote gratis, setiap pengguna dapat memberikan satu suara tanpa biaya dalam satu periode voting. Setelah memberikan suara, pengguna tidak bisa memberikan suara tambahan. Sebaliknya, pada vote berbayar, pengguna dapat membeli suara tambahan sesuai dengan batasan yang ditetapkan oleh penyelenggara acara.",
+
+      "sub_titel_6": "Bagaimana cara melakukan voting untuk finalis?",
+      "desc_titel_6": "Berikut langkah-langkah untuk melakukan voting:",
+      "poin_titel_6": [
+        {
+          "poin": "Buka halaman voting KREEN."
+        },
+        {
+          "poin": "Pilih kategori voting yang tersedia."
+        },
+        {
+          "poin": "Pilih finalis yang ingin Anda dukung dari daftar yang tersedia."
+        },
+        {
+          "poin": "Tentukan jumlah suara yang ingin Anda berikan."
+        },
+        {
+          "poin": "Isi informasi pribadi yang diperlukan seperti nama dan nomor HP."
+        },
+        {
+          "poin": "Pilih metode pembayaran yang tersedia, seperti kartu kredit, transfer bank, atau e-wallet."
+        },
+        {
+          "poin": "Setujui syarat dan ketentuan dengan mencentang kotak persetujuan."
+        },
+        {
+          "poin": "Klik tombol konfirmasi untuk melanjutkan ke proses pembayaran."
+        },
+        {
+          "poin": "Lakukan pembayaran sesuai instruksi yang diberikan dalam batas waktu yang telah ditentukan."
+        },
+        {
+          "poin": "Periksa status pemesanan Anda untuk memastikan transaksi berhasil diproses."
+        },
+        {
+          "poin": "Pastikan suara Anda telah berhasil dihitung dan mendukung finalis pilihan Anda."
+        }
+      ],
+
+      "sub_titel_7": "Apakah sistem pembayaran KREEN vote mendukung berbagai metode pembayaran?",
+      "desc_titel_7": "Saat ini, kami memiliki berbagai metode pembayaran, termasuk virtual account dari BNI, Mandiri, BCA, BRI, dan Permata; e-wallet seperti Dana, ShopeePay, OVO, LinkAja; serta QRIS.",
+
+      "sub_titel_8": "Apakah sistem pembayaran KREEN mendukung berbagai mata uang?",
+      "desc_titel_8": "Saat ini, kami hanya mendukung pembayaran dalam Rupiah (IDR) dan Dolar Amerika Serikat (USD).",
+
+      "sub_titel_9": "Apakah saya bisa mendapatkan refund jika terjadi kesalahan dalam voting?",
+      "desc_titel_9": "Tidak, refund tidak tersedia untuk suara yang sudah dibeli.",
+
+      "sub_titel_10": "Berapa biaya yang dikenakan untuk setiap tiket voting berbayar?",
+      "desc_titel_10": "Harga untuk vote berbayar ditentukan oleh penyelenggara acara, yang bebas menetapkan tarif sesuai dengan kebijakan dan strategi mereka.",
+
+      "sub_titel_11": "Apa yang harus saya lakukan jika pembayaran saya gagal?",
+      "desc_titel_11": "Anda bisa menghubungi customer support melalui WhatsApp di",
+
+      "sub_titel_12": "Bagaimana cara mendapatkan bukti pembayaran?",
+      "desc_titel_12": "Untuk mendapatkan bukti pembayaran, Anda bisa menggunakan fitur screenshot pada ponsel Anda. Pastikan tangkapan layar menunjukkan detail transaksi lengkap, termasuk jumlah yang ditransfer dan nomor referensi."
+    },
+
+
+    "modal_s_k": {
+      "header": "S&K Voting",
+      "desc_header": "Seluruh ajang yang menggunakan KREEN Vote sebagai platform voting sudah menyetujui mengenai skema pemungutan suara tertinggi yang mana akan menjadi juara favorit atau mendapatkan gelar tertentu dari ajang tersebut.",
+
+
+      "sub_titel_1": "Syarat",
+      "poin_titel_1": [
+        {
+          "poin": "Setiap finalis dapat mengumpulkan VOTE sebanyak-banyaknya "
+        }
+      ],
+
+
+      "sub_titel_2": "Ketentuan",
+      "poin_titel_2": [
+        {
+          "poin": "Perolehan voting akan diperbaharui secara realtime yang mana dapat dilakukan refresh/reload ketika sudah melakukan voting"
+        },
+        {
+          "poin": "Perolehan akhir voting adalah hasil akumulasi vote selama durasi voting berlangsung"
+        },
+        {
+          "poin": "Durasi vote ditentukan oleh masing-masing ajang pemilihan"
+        },
+        {
+          "poin": "Pengumuman vote adalah ranah dari masing-masing ajang pemilihan"
+        },
+        {
+          "poin": "Vote yang telah masuk bersifat mutlak dan tidak dapat dikembalikan "
+        },
+        {
+          "poin": "Kreen Vote hanya bertindak sebagai platform voting, sehingga apabila ada hal-hal yang ingin ditanyakan di luar dari sistem voting dapat langsung bertanya pada pihak ajang pemilihan"
+        },
+        {
+          "poin": "Keputusan juri dari masing-masing ajang pemilihan yang bekerjasama bersifat MUTLAK dan Mengikat berdasarkan dengan hasil VOTE yang telah didapatkan"
+        }
+      ]
+    }
+  }
+
+}
