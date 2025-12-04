@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
@@ -347,7 +349,8 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Informasi Utama'
+                      'Informasi Utama',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
                     SizedBox(height: 10,),
@@ -415,7 +418,8 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Keamanan & Regulasi'
+                      'Keamanan & Regulasi',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
                     SizedBox(height: 10,),

@@ -290,7 +290,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   }
 
   Widget buildKontenDetail() {
-    print(isTutup);
 
     Map<String, Color> colorMap = {
       'Blue': Colors.blue,

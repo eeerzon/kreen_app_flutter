@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1146,12 +1147,21 @@ class DetailOrderModal {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
-                                            Image.network(
-                                              'https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${eventOrderDetail[index]['id_order_detail']}',
-                                              width: 70,
-                                              height: 70,
-                                              fit: BoxFit.contain,
+                                            InkWell(
+                                              onTap: () {
+                                                _showQrFullscreen(
+                                                  context,
+                                                  'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${eventOrderDetail[index]['id_order_detail']}',
+                                                );
+                                              },
+                                              child: Image.network(
+                                                'https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${eventOrderDetail[index]['id_order_detail']}',
+                                                width: 70,
+                                                height: 70,
+                                                fit: BoxFit.contain,
+                                              ),
                                             ),
+                                            
                                             const SizedBox(height: 4),
                                             Text(
                                               eventOrderDetail[index]['id_order_detail'],
@@ -1272,4 +1282,41 @@ class DetailOrderModal {
       }
     );
   }
+
+  static Future<void> _showQrFullscreen(BuildContext context, String url) async {
+    double currentBrightness = await ScreenBrightness().current;
+
+    // set brightness MAX
+    await ScreenBrightness().setScreenBrightness(1.0);
+
+    await showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.9),
+      builder: (_) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 3,
+                child: Image.network(
+                  url,
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    // restore brightness
+    await ScreenBrightness().setScreenBrightness(currentBrightness);
+  }
+
 }

@@ -63,7 +63,7 @@ class ApiService {
     String? token,
     Map<String, dynamic>? body,
   }) async {
-    final url = Uri.parse("$endpoint");
+    final url = Uri.parse(endpoint);
 
     var headers = {
       'Authorization': 'Bearer $token',

@@ -185,8 +185,6 @@ class _LoginPageState extends State<LoginPage> {
       final name = googleUser.displayName;
       final photo = googleUser.photoUrl;
 
-      print(googleAuth);
-
       // final response = await http.post(
       //   Uri.parse("$baseapiUrl/login/google"),
       //   headers: {"Content-Type": "application/json"},
@@ -199,7 +197,6 @@ class _LoginPageState extends State<LoginPage> {
       // );
 
       final response = await ApiService.get('$baseapiUrl/google/callback');
-      print(response);
 
       // final result = jsonDecode(response.body);
 

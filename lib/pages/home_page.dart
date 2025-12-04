@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,7 +7,6 @@ import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
 import 'package:kreen_app_flutter/pages/content_home/info_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/order_page.dart';
-import 'package:kreen_app_flutter/pages/content_home/scan_page.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class HomePage extends StatefulWidget {
@@ -125,13 +124,15 @@ class _HomePageState extends State<HomePage> {
 
         // --- Floating Action Button (scan) ---
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.red,
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ScannerPage()),
-            );
-          },
+          // backgroundColor: Colors.red,
+          backgroundColor: Colors.grey,
+          // onPressed: () async {
+          //   await Navigator.push(
+          //     context,
+          //     MaterialPageRoute(builder: (_) => const ScannerPage()),
+          //   );
+          // },
+          onPressed: null,
           child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
