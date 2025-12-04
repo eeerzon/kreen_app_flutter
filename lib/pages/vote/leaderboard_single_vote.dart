@@ -774,7 +774,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   ),
                               ],
                   
-                              if (detailFinalis['profesi'] != null) ... [
+                              if (detailFinalis['profesi'].toString().isNotEmpty) ... [
                                 SizedBox(height: 12,),
                                 Text(
                                   "Aktifitas",
@@ -1082,37 +1082,35 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                                   const SizedBox(width: 12),
                                                   //text
                                                   Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Text(
-                                                          "$jamMulai - $jamSelesai",
-                                                          style: TextStyle(
-                                                            color: Colors.black,
+                                                    child: RichText(
+                                                      text: TextSpan(
+                                                        children: [
+                                                          TextSpan(
+                                                            text: "$jamMulai - $jamSelesai",
+                                                            style: const TextStyle(
+                                                              color: Colors.black,
+                                                              fontSize: 14,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-
-                                                  const SizedBox(width: 2), 
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Text(
-                                                          " (${detailvote['code_timezone']})",
-                                                          style: TextStyle(
-                                                            color: color,
-                                                            fontWeight: FontWeight.bold,
-                                                            fontStyle: FontStyle.italic
+                                                          TextSpan(
+                                                            text: detailvote['code_timezone'] == 'WIB'
+                                                              ? " (GMT+7)"
+                                                              : detailvote['code_timezone'] == 'WITA'
+                                                                ? " (GMT+8)"
+                                                                : detailvote['code_timezone'] == 'WIT'
+                                                                  ? " (GMT+9)"
+                                                                  : "",
+                                                            style: TextStyle(
+                                                              color: color,
+                                                              fontWeight: FontWeight.bold,
+                                                              fontStyle: FontStyle.italic,
+                                                              fontSize: 14,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
+                                                  )
                                                 ],
                                               ),
                                             ],

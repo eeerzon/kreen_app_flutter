@@ -361,6 +361,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                           detailFinalis['poster_finalis'],
                           width: double.infinity,
                           fit: BoxFit.cover, 
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.network(
+                              "$baseUrl/noimage_finalis.png",
+                              width: double.infinity,
+                              fit: BoxFit.cover, 
+                            );
+                          },
                         )
                       : Image.network(
                           "$baseUrl/noimage_finalis.png",

@@ -685,6 +685,10 @@ class _FinalisPageState extends State<FinalisPage> {
       itemCount: listFinalis.length,
       itemBuilder: (context, index) {
         final item = listFinalis[index];
+        bool ishas = true;
+        if (item['poster_finalis'] == null) {
+          ishas = false;
+        }
         return Card(
           color: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -696,19 +700,35 @@ class _FinalisPageState extends State<FinalisPage> {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.all(Radius.circular(20)),
-                    child: 
-                      item['poster_finalis'] != null
-                        ? 
-                          Image.network(
-                            item['poster_finalis'],
-                            width: double.infinity,
-                            fit: BoxFit.cover, 
-                          )
-                        : Image.network(
+                    child: ishas ?
+                      FadeInImage.assetNetwork(
+                        placeholder: 'assets/images/img_placeholder.jpg',
+                        image: item['poster_finalis'],
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        fadeInDuration: const Duration(milliseconds: 300),
+                        imageErrorBuilder: (context, error, stackTrace) {
+                          return Image.network(
                             "$baseUrl/noimage_finalis.png",
                             width: double.infinity,
                             fit: BoxFit.cover, 
-                          ),
+                          );
+                        },
+                      )
+                      : FadeInImage.assetNetwork(
+                          placeholder: 'assets/images/img_placeholder.jpg',
+                          image: "$baseUrl/noimage_finalis.png",
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 300),
+                          imageErrorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/images/img_broken.jpg',
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
                   ),
 
                   const SizedBox(height: 10),

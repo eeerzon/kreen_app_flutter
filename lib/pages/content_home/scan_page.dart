@@ -1,8 +1,10 @@
-// ignore_for_file: use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-// import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:kreen_app_flutter/constants.dart';
+import 'package:qr_code_dart_scan/qr_code_dart_scan.dart';
 import 'package:vibration/vibration.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -12,169 +14,238 @@ class ScannerPage extends StatefulWidget {
   State<ScannerPage> createState() => _ScannerPageState();
 }
 
-class _ScannerPageState extends State<ScannerPage> {
-  // final MobileScannerController controller = MobileScannerController(
-  //   detectionSpeed: DetectionSpeed.normal,
-  //   returnImage: false,
-  // );
+class _ScannerPageState extends State<ScannerPage>
+    with SingleTickerProviderStateMixin {
 
-  String? lastDetectedCode;
-  bool isProcessingGallery = false;
+  late AnimationController animController;
+  late Animation<double> anim;
+  bool scanned = false;
 
-  Future<void> _playFeedback() async {
-    if (await Vibration.hasVibrator()) {
-      Vibration.vibrate(duration: 150);
-    }
-  }
+  Key scannerKey = UniqueKey();
+  bool showScanner = true;
 
-  void _onDetect(String code) async {
-    if (lastDetectedCode == code) return;
-    lastDetectedCode = code;
+  @override
+  void initState() {
+    super.initState();
 
-    await _playFeedback();
-    // controller.stop(); // Stop kamera dulu
+    animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
 
-    await Future.delayed(const Duration(milliseconds: 200));
-    _showResultDialog(code);
-  }
-
-  Future<void> _pickFromGallery() async {
-    if (isProcessingGallery) return;
-
-    setState(() => isProcessingGallery = true);
-
-    final picker = ImagePicker();
-    final img = await picker.pickImage(source: ImageSource.gallery);
-
-    if (img == null) {
-      setState(() => isProcessingGallery = false);
-      return;
-    }
-
-    // final success = await controller.analyzeImage(img.path);
-
-    // if (!success) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text("QR Code tidak ditemukan di gambar")),
-    //   );
-    // }
-
-    setState(() => isProcessingGallery = false);
-  }
-
-  void _showResultDialog(String text) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("QR Terdeteksi"),
-        content: Text(text),
-        actions: [
-          TextButton(
-            child: const Text("Tutup"),
-            onPressed: () {
-              Navigator.pop(context);
-              // controller.start(); // Lanjut scan lagi
-            },
-          )
-        ],
-      ),
+    anim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: animController, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    // controller.dispose();
+    animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final cutOut = size.width * 0.75;
+
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        title: const Text("Scan QR"),
-        actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.flash_on),
-          //   onPressed: () => controller.toggleTorch(),
-          // ),
-          // IconButton(
-          //   icon: const Icon(Icons.cameraswitch),
-          //   onPressed: () => controller.switchCamera(),
-          // ),
+      body: Stack(
+        children: [
+          
+          if (showScanner)
+            QRCodeDartScanView(
+              key: scannerKey,
+              scanInvertedQRCode: true,
+              typeScan: TypeScan.live,
+              onCapture: (result) {
+                if (scanned) return;
+                scanned = true;
+                _onScanResult(result.text);
+              },
+            ),
+          
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: anim,
+              builder: (_, __) {
+                final topOffset = size.height * 0.5 - cutOut / 2;
+
+                return Positioned(
+                  top: topOffset + (cutOut - 4) * anim.value,
+                  left: size.width * 0.125,
+                  child: Container(
+                    width: cutOut,
+                    height: 4,
+                    color: Colors.redAccent,
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          Positioned(
+            top: 40,
+            left: 16,
+            right: 16,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const Text(
+                  "Scan QR Code",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                )
+              ],
+            ),
+          ),
+          
+          Positioned(
+            bottom: 50,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.image),
+                  label: const Text("Scan dari Gallery"),
+                  onPressed: _pickImageFromGallery,
+                ),
+
+                const SizedBox(height: 12),
+                // QRCodeDartScanCameraToggleBuilder(
+                //   builder: (context, isOn, toggle) {
+                //     return IconButton(
+                //       onPressed: toggle,
+                //       icon: Icon(
+                //         isOn ? Icons.flash_on : Icons.flash_off,
+                //         color: Colors.white,
+                //         size: 32,
+                //       ),
+                //     );
+                //   },
+                // )
+              ],
+            ),
+          ),
         ],
       ),
-      body: Column(
-        children: [
-          // Expanded(
-          //   child: MobileScanner(
-          //     controller: controller,
-          //     overlay: ScannerOverlay(),
-          //     onDetect: (capture) {
-          //       final barcode = capture.barcodes.first;
-          //       if (barcode.rawValue != null) {
-          //         _onDetect(barcode.rawValue!);
-          //       }
-          //     },
-          //   ),
-          // ),
+    );
+  }
 
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton.icon(
-              onPressed: isProcessingGallery ? null : _pickFromGallery,
-              icon: const Icon(Icons.image),
-              label: Text(
-                isProcessingGallery
-                    ? "Menganalisis..."
-                    : "Pilih Gambar dari Galeri",
+  Future<void> _onScanResult(String text) async {
+    if (await Vibration.hasVibrator()) {
+      Vibration.vibrate(duration: 120);
+    }
+    HapticFeedback.mediumImpact();
+
+    _showResult(text);
+  }
+
+  void _showResult(String text) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: false,
+      builder: (_) => Container(
+        width: double.infinity,
+        padding: kGlobalPadding,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "QR Code Terdeteksi",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text(text, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            InkWell(
+              onTap: () {
+                Navigator.pop(context, text);
+                Navigator.pop(context);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "Lanjut",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
-          )
-        ],
+
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                Future.delayed(const Duration(milliseconds: 200), () async {
+                  setState(() {
+                    scanned = false;
+                    showScanner = false;
+                  });
+                  
+                  await Future.delayed(const Duration(milliseconds: 250));
+
+                  setState(() {
+                    scannerKey = UniqueKey();
+                    showScanner = true;
+                  });
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "Scan Lagi",
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class ScannerOverlay extends StatelessWidget {
-  const ScannerOverlay({super.key});
+  Future<void> _pickImageFromGallery() async {
+    final picker = ImagePicker();
+    final img = await picker.pickImage(source: ImageSource.gallery);
+    if (img == null) return;
 
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: ScannerOverlayPainter(),
-    );
+    try {
+      // final result = await QrCodeToolsPlugin.decodeFrom(img.path);
+      final result = null;
+
+      if (result != null && result.isNotEmpty) {
+        _onScanResult(result);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gambar tidak mengandung QR Code")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal membaca QR dari gambar")),
+      );
+    }
   }
-}
-
-class ScannerOverlayPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.6)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final rect = Rect.fromLTWH(
-      size.width * 0.15,
-      size.height * 0.2,
-      size.width * 0.7,
-      size.height * 0.5,
-    );
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, const Radius.circular(12)),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

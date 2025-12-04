@@ -899,7 +899,18 @@ Widget buildTopCard({
         ),
         child: Column(
           children: [
-            Image.network(image, height: isBig ? 120 : 90, fit: BoxFit.cover),
+            Image.network(
+              image, 
+              height: isBig ? 120 : 90, 
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.network(
+                  '$baseUrl/noimage_finalis.png',
+                  height: isBig ? 120 : 90,
+                  fit: BoxFit.cover,
+                );
+              },
+            ),
             const SizedBox(height: 6),
             Text(
               name,
@@ -982,7 +993,20 @@ Widget buildListCard({
         const SizedBox(width: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(image, height: 50, width: 50, fit: BoxFit.cover),
+          child: Image.network(
+            image, 
+            height: 50, 
+            width: 50, 
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.network(
+                '$baseUrl/noimage_finalis.png',
+                height: 50,
+                width: 50,
+                fit: BoxFit.cover,
+              );
+            },
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(

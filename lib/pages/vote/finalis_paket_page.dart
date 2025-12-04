@@ -690,10 +690,10 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                       fit: BoxFit.cover,
                       fadeInDuration: const Duration(milliseconds: 300),
                       imageErrorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
-                          'assets/images/img_broken.jpg',
+                        return Image.network(
+                          "$baseUrl/noimage_finalis.png",
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.cover, 
                         );
                       },
                     )

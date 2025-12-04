@@ -7,6 +7,7 @@ import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
 import 'package:kreen_app_flutter/pages/content_home/info_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/order_page.dart';
+import 'package:kreen_app_flutter/pages/content_home/scan_page.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class HomePage extends StatefulWidget {
@@ -106,6 +107,8 @@ class _HomePageState extends State<HomePage> {
             const SnackBar(
               content: Text('Tekan sekali lagi untuk keluar'),
               duration: Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(bottom: 50, left: 20, right: 20),
             ),
           );
 
@@ -124,15 +127,13 @@ class _HomePageState extends State<HomePage> {
 
         // --- Floating Action Button (scan) ---
         floatingActionButton: FloatingActionButton(
-          // backgroundColor: Colors.red,
-          backgroundColor: Colors.grey,
-          // onPressed: () async {
-          //   await Navigator.push(
-          //     context,
-          //     MaterialPageRoute(builder: (_) => const ScannerPage()),
-          //   );
-          // },
-          onPressed: null,
+          backgroundColor: Colors.red,
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ScannerPage()),
+            );
+          },
           child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
