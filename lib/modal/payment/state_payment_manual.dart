@@ -41,8 +41,8 @@ class StatePaymentManual extends StatefulWidget {
 class _StatePaymentManualState extends State<StatePaymentManual> {
   var get_user;
   var user_id;
-  var first_name;
-  var last_name;
+  var firstName;
+  var lastName;
   var gender;
   var phone;
   var email;
@@ -110,11 +110,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   Future<void> getData(String idVote) async {
     final getUser = await StorageService.getUser();
 
-    final firstName = getUser['first_name'] ?? '';
-    final lastName = getUser['last_name'] ?? '';
-    final gender = getUser['gender'] ?? '';
-    final phone = getUser['phone'] ?? '';
-    final email = getUser['email'] ?? '';
+    firstName = getUser['first_name'] ?? '';
+    lastName = getUser['last_name'] ?? '';
+    gender = getUser['gender'] ?? '';
+    phone = getUser['phone'] ?? '';
+    email = getUser['email'] ?? '';
 
     _nameController.text = "$firstName $lastName".trim();
     _phoneController.text = phone;
@@ -308,6 +308,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             title: 'Oops!',
             desc: 'Terjadi kesalahan. Silakan coba lagi.',
             btnOkOnPress: () {},
+            btnOkColor: Colors.red,
+            buttonsTextStyle: TextStyle(color: Colors.white),
             headerAnimationLoop: false,
             dismissOnTouchOutside: true,
             showCloseIcon: true,
@@ -362,6 +364,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             title: 'Oops!',
             desc: 'Terjadi kesalahan. Silakan coba lagi.',
             btnOkOnPress: () {},
+            btnOkColor: Colors.red,
+            buttonsTextStyle: TextStyle(color: Colors.white),
             headerAnimationLoop: false,
             dismissOnTouchOutside: true,
             showCloseIcon: true,
@@ -2182,7 +2186,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text("Biaya Layanan"),
-                              Text(formatter.format(feeLayanan))
+                              Text('$voteCurrency ${formatter.format(feeLayanan)}')
                             ],
                           ),
 

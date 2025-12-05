@@ -45,5 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk memvalidasi posisi Anda.</string>
+
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk memvalidasi posisi Anda.</string>
+
+	<key>NSLocationUsageDescription</key>
+	<string>Aplikasi membutuhkan akses lokasi untuk memvalidasi posisi Anda.</string>
+
 </dict>
 </plist>

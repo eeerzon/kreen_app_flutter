@@ -309,6 +309,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
           title: 'Oops!',
           desc: 'Terjadi kesalahan. Silakan coba lagi.',
           btnOkOnPress: () {},
+          btnOkColor: Colors.red,
+          buttonsTextStyle: TextStyle(color: Colors.white),
           headerAnimationLoop: false,
           dismissOnTouchOutside: true,
           showCloseIcon: true,
@@ -1922,7 +1924,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text("Biaya Layanan"),
-                                Text(formatter.format(feeLayanan))
+                                Text('$eventCurrency ${formatter.format(feeLayanan)}')
                               ],
                             ),
 

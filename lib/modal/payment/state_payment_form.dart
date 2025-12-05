@@ -81,9 +81,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
   String? selectedGender;
 
   late List<TextEditingController> answerControllers;
-
-  List<String> answers = [];
-  List<String> ids_indikator = [];
+  
   int? selectedIndex;
 
   final formatter = NumberFormat.decimalPattern("id_ID");
@@ -234,7 +232,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
               (index) => {
                 "id_order_form_master": widget.ids_order_form_master[j][index],
                 "id_order_form_detail": widget.ids_order_form_details[j][index],
-                "answer": answers[globalIndex][index],
+                "answer": widget.answers[globalIndex][index],
               },
             ),
           });
@@ -280,6 +278,8 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
           title: 'Oops!',
           desc: 'Terjadi kesalahan. Silakan coba lagi.',
           btnOkOnPress: () {},
+          btnOkColor: Colors.red,
+          buttonsTextStyle: TextStyle(color: Colors.white),
           headerAnimationLoop: false,
           dismissOnTouchOutside: true,
           showCloseIcon: true,
@@ -1899,7 +1899,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text("Biaya Layanan"),
-                                Text(formatter.format(feeLayanan))
+                                Text('$eventCurrency ${formatter.format(feeLayanan)}')
                               ],
                             ),
 
