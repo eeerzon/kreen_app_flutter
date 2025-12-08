@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -46,37 +48,46 @@ class _ArticleWebViewState extends State<ArticleWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return WillPopScope(
+      onWillPop: () async {
+        if (await controller.canGoBack()) {
+          controller.goBack();
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: const Text("Artikel"),
-        centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.pop(context),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          title: const Text("Artikel"),
+          centerTitle: false,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: kGlobalPadding,
-              child: Column(
-                children: [
-                  Expanded(child: WebViewWidget(controller: controller)),
-                ],
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Padding(
+                padding: kGlobalPadding,
+                child: Column(
+                  children: [
+                    Expanded(child: WebViewWidget(controller: controller)),
+                  ],
+                ),
               ),
-            ),
-            
-            if (isLoading)
-              const Center(
-                child: CircularProgressIndicator(color: Colors.red,),
-              ),
-          ],
+              
+              if (isLoading)
+                const Center(
+                  child: CircularProgressIndicator(color: Colors.red,),
+                ),
+            ],
+          ),
         ),
       ),
     );
