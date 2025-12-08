@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
@@ -27,8 +28,14 @@ class _ProfileState extends State<Profile> {
 
   String? first_name, last_name;
   String? email, phone;
+  String? gender;
   String? dob, photo;
   String? verifEmail;
+  String? company;
+  String? jobTitle;
+  String? link_linkedin;
+  String? link_ig;
+  String? link_twitter;
 
   bool isLoading = true;
 
@@ -55,10 +62,16 @@ class _ProfileState extends State<Profile> {
         first_name = storeUser['first_name'];
         last_name = storeUser['last_name'];
         email = storeUser['email'];
+        gender = storeUser['gender'];
         phone = storeUser['phone'];
         dob = storeUser['dob'];
         photo = storeUser['photo'];
         verifEmail = storeUser['verifEmail'];
+        company = storeUser['company'];
+        jobTitle = storeUser['jobTitle'];
+        link_linkedin = storeUser['link_linkedin'];
+        link_ig = storeUser['link_ig'];
+        link_twitter = storeUser['link_twitter'];
       });
     }
   }
@@ -229,7 +242,7 @@ class _ProfileState extends State<Profile> {
   Widget buildKonten() {
     String formattedDate = '-';
 
-    if (dob!.isNotEmpty) {
+    if (dob != null) {
       try {
         // parsing string ke DateTime
         final date = DateTime.parse(dob!); // pastikan format ISO (yyyy-MM-dd)
@@ -285,6 +298,12 @@ class _ProfileState extends State<Profile> {
                       'email': email,
                       'phone': phone,
                       'dob': dob,
+                      'gender': gender,
+                      'company': company,
+                      'jobTitle': jobTitle,
+                      'link_linkedin': link_linkedin,
+                      'link_ig': link_ig,
+                      'link_twitter': link_twitter,
                     },
                   ),
                 ),
@@ -322,26 +341,34 @@ class _ProfileState extends State<Profile> {
                 CircleAvatar(
                   radius: 60,
                   child: ClipOval(
-                    child: isSvg
-                        ? SvgPicture.network(
-                            '$baseUrl/user/$photo',
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            '$baseUrl/user/$photo',
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          ),
+                    child: photo != null 
+                      ?
+                        isSvg
+                          ? SvgPicture.network(
+                              '$baseUrl/user/$photo',
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.fill,
+                            )
+                          : Image.network(
+                              '$baseUrl/user/$photo',
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.fill,
+                            )
+                      : Image.network(
+                          "$baseUrl/noimage_finalis.png",
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.fill,
+                        )
                   ),
                 ),
 
                 SizedBox(height: 20,),
                 Text(
                   "$first_name $last_name",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
 
                 SizedBox(height: 20,),
@@ -366,21 +393,7 @@ class _ProfileState extends State<Profile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
 
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(Icons.email_outlined, color: Colors.red,),
-
-                              SizedBox(width: 12,),
-                              Text(
-                                email!
-                              )
-                            ],
-                          ),
-
-                          SizedBox(height: 10,),
-                          Divider(),
-
+                          //tanggal lahir
                           SizedBox(height: 10,),
                           Row(
                             children: [
@@ -393,9 +406,107 @@ class _ProfileState extends State<Profile> {
                             ],
                           ),
 
+                          //gender
+                          if (gender != null) ... [
+
+                            SizedBox(height: 10,),
+                            Divider(),
+                            
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(FontAwesomeIcons.transgender, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  gender ?? '-'
+                                )
+                              ],
+                            ),
+                          ],
+
+                          //company
+                          if (company != null) ... [
+
+                            SizedBox(height: 10,),
+                            Divider(),
+
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(FontAwesomeIcons.building, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  company ?? '-'
+                                )
+                              ],
+                            ),
+                          ],
+
+                          //jobTitle
+                          if (jobTitle != null) ... [
+
+                            SizedBox(height: 10,),
+                            Divider(),
+
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(FontAwesomeIcons.briefcase, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  jobTitle ?? '-'
+                                )
+                              ],
+                            ),
+                          ],
+                        ],
+                      )
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20,),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Informasi Akun',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    SizedBox(height: 10,),
+                    Container(
+                      padding: EdgeInsets.all(14),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300,),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+
+                          //email
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Icon(FontAwesomeIcons.googlePlay, color: Colors.red,),
+
+                              SizedBox(width: 12,),
+                              Text(
+                                email ?? '-'
+                              )
+                            ],
+                          ),
+
                           SizedBox(height: 10,),
                           Divider(),
 
+                          //nomor telepon
                           SizedBox(height: 10,),
                           Row(
                             children: [
@@ -403,7 +514,87 @@ class _ProfileState extends State<Profile> {
 
                               SizedBox(width: 12,),
                               Text(
-                                phone!
+                                phone ?? '-'
+                              )
+                            ],
+                          ),
+                        ],
+                      )
+                    ),
+                  ],
+                ),
+
+
+
+                SizedBox(height: 20,),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Media Sosial',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    SizedBox(height: 10,),
+                    Container(
+                      padding: EdgeInsets.all(14),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300,),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+
+                          //linked in
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Icon(FontAwesomeIcons.linkedinIn, color: Colors.red,),
+
+                              SizedBox(width: 12,),
+                              Text(
+                                link_linkedin != null && link_linkedin!.isNotEmpty
+                                    ? extractUsername(link_linkedin)
+                                    : '-',
+                              )
+                            ],
+                          ),
+
+                          SizedBox(height: 10,),
+                          Divider(),
+
+                          //instagram
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Icon(FontAwesomeIcons.instagram, color: Colors.red,),
+
+                              SizedBox(width: 12,),  
+                              Text(
+                                link_ig != null && link_ig!.isNotEmpty
+                                    ? extractUsername(link_ig)
+                                    : '-',
+                              )
+                            ],
+                          ),
+
+                          SizedBox(height: 10,),
+                          Divider(),
+
+                          //twitter
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Icon(FontAwesomeIcons.twitter, color: Colors.red,),
+
+                              SizedBox(width: 12,),
+                              Text(
+                                link_twitter != null && link_twitter!.isNotEmpty
+                                    ? extractUsername(link_twitter)
+                                    : '-',
                               )
                             ],
                           ),
@@ -435,6 +626,7 @@ class _ProfileState extends State<Profile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
 
+                          //password
                           SizedBox(height: 10,),
                           SizedBox(
                             width: double.infinity,
@@ -447,41 +639,61 @@ class _ProfileState extends State<Profile> {
                                   ),
                                 );
                               },
-                              child: Text(
-                                'Password',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.lock, color: Colors.red,),
+
+                                  SizedBox(width: 12,),
+                                  Text(
+                                    'Pengaturan Sandi',
+                                  )
+                                ],
                               ),
                             ),
                           ),
 
-                          // if (verifEmail == null) ... [
-                          //   SizedBox(height: 10,),
-                          //   Divider(),
+                          if (verifEmail == '0') ... [
+                            SizedBox(height: 10,),
+                            Divider(),
 
-                          //   SizedBox(height: 10,),
-                          //   SizedBox(
-                          //     child: InkWell(
-                          //       onTap: () {
+                            SizedBox(height: 10,),
+                            SizedBox(
+                              child: InkWell(
+                                onTap: () {
                                   
-                          //       },
-                          //       child: Text(
-                          //         'Verifikasi Email',
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ],
-                          
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.email, color: Colors.red,),
+
+                                    SizedBox(width: 12,),
+                                    Text(
+                                      'Verifikasi Email',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
 
                           SizedBox(height: 10,),
                           Divider(),
 
+                          //pusat bantuan
                           SizedBox(height: 10,),
                           SizedBox(
+                            width: double.infinity,
                             child: InkWell(
-                              onTap: () {
-                                
-                              },
-                              child: Text(
-                                'Pusat Bantuan',
+                              onTap: () {},
+                              child: Row(
+                                children: [
+                                  Icon(Icons.help_center, color: Colors.red,),
+
+                                  SizedBox(width: 12,),
+                                  Text(
+                                    'Pusat Bantuan',
+                                  )
+                                ],
                               ),
                             ),
                           ),
@@ -489,29 +701,21 @@ class _ProfileState extends State<Profile> {
                           SizedBox(height: 10,),
                           Divider(),
 
+                          //kebijakan privasi
                           SizedBox(height: 10,),
                           SizedBox(
+                            width: double.infinity,
                             child: InkWell(
-                              onTap: () {
-                                
-                              },
-                              child: Text(
-                                'Kebijakan Privasi',
-                              ),
-                            ),
-                          ),
+                              onTap: () {},
+                              child: Row(
+                                children: [
+                                  Icon(Icons.privacy_tip, color: Colors.red,),
 
-                          SizedBox(height: 10,),
-                          Divider(),
-
-                          SizedBox(height: 10,),
-                          SizedBox(
-                            child: InkWell(
-                              onTap: () {
-                                
-                              },
-                              child: Text(
-                                'Tentang Kreen',
+                                  SizedBox(width: 12,),
+                                  Text(
+                                    'Kebijakan Privasi',
+                                  )
+                                ],
                               ),
                             ),
                           ),
@@ -539,6 +743,7 @@ class _ProfileState extends State<Profile> {
                     });
                   },
                   child: Container(
+                    height: 48,
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.red,
@@ -570,6 +775,41 @@ class _ProfileState extends State<Profile> {
       phone = user['phone'];
       dob = user['dob'];
       photo = user['photo'];
+      gender = user['gender'];
+      company = user['company'];
+      jobTitle = user['jobTitle'];
+      link_linkedin = user['link_linkedin'];
+      link_ig = user['link_ig'];
+      link_twitter = user['link_twitter'];
     });
   }
+
+  String extractUsername(String? url) {
+    if (url == null || url.isEmpty) return '-';
+    
+    url = url.trim().replaceAll(RegExp(r'/+$'), '');
+    
+    if (!url.contains('/')) return url;
+    
+    String lastSegment = url.split('/').last;
+
+    // Handle LinkedIn yang kadang pakai "in/" atau "company/"
+    // Contoh: https://www.linkedin.com/in/admingg
+    if (url.contains('linkedin.com')) {
+      return lastSegment;
+    }
+
+    // Twitter / X
+    if (url.contains('twitter.com') || url.contains('x.com')) {
+      return lastSegment;
+    }
+
+    // Instagram
+    if (url.contains('instagram.com')) {
+      return lastSegment;
+    }
+    
+    return lastSegment;
+  }
+
 }

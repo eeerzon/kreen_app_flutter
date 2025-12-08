@@ -29,13 +29,18 @@ class StorageService {
   static Future<void> setUser({
     String? id,
     required String first_name,
-    required String last_name,
+    required String? last_name,
     required String phone,
     required String email,
     String? gender,
-    required String photo,
-    required String DOB,
+    required String? photo,
+    required String? DOB,
     String? verifEmail, 
+    String? company,
+    String? jobTitle,
+    String? link_linkedin,
+    String? link_ig,
+    String? link_twitter,
   }) async {
     await _storage.write(key: 'user_id', value: id);
     await _storage.write(key: 'user_firstname', value: first_name);
@@ -46,6 +51,11 @@ class StorageService {
     await _storage.write(key: 'user_photo', value: photo);
     await _storage.write(key: 'user_dob', value: DOB);
     await _storage.write(key: 'user_verifEmail', value: verifEmail);
+    await _storage.write(key: 'user_company', value: company);
+    await _storage.write(key: 'user_jobTitle', value: jobTitle);
+    await _storage.write(key: 'user_link_linkedin', value: link_linkedin);
+    await _storage.write(key: 'user_link_ig', value: link_ig);
+    await _storage.write(key: 'user_link_twitter', value: link_twitter);
   }
 
   static Future<Map<String, String?>> getUser() async {
@@ -58,6 +68,11 @@ class StorageService {
     final photo = await _storage.read(key: 'user_photo');
     final DOB = await _storage.read(key: 'user_dob');
     final verifEmail = await _storage.read(key: 'user_verifEmail');
+    final company = await _storage.read(key: 'user_company');
+    final jobTitle = await _storage.read(key: 'user_jobTitle');
+    final link_linkedin = await _storage.read(key: 'user_link_linkedin');
+    final link_ig = await _storage.read(key: 'user_link_ig');
+    final link_twitter = await _storage.read(key: 'user_link_twitter');
 
     return {
       'id': id,
@@ -69,6 +84,11 @@ class StorageService {
       'photo': photo,
       'dob': DOB,
       'verifEmail': verifEmail,
+      'company': company,
+      'jobTitle': jobTitle,
+      'link_linkedin': link_linkedin,
+      'link_ig': link_ig,
+      'link_twitter': link_twitter,
     };
   }
 
@@ -80,6 +100,13 @@ class StorageService {
     await _storage.delete(key: 'user_email');
     await _storage.delete(key: 'user_gender');
     await _storage.delete(key: 'user_photo');
+    await _storage.delete(key: 'user_dob');
+    await _storage.delete(key: 'user_verifEmail');
+    await _storage.delete(key: 'user_company');
+    await _storage.delete(key: 'user_jobTitle');
+    await _storage.delete(key: 'user_link_linkedin');
+    await _storage.delete(key: 'user_link_ig');
+    await _storage.delete(key: 'user_link_twitter');
   }
 
   static Future<void> clearAll() async {
