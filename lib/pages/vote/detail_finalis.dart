@@ -62,7 +62,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   Future<void> _loadFinalis() async {
     final idFinalis = widget.id_finalis;
     if (idFinalis.isEmpty) {
-      debugPrint("id_finalis kosong");
       setState(() => _isLoading = false);
       return;
     }
@@ -159,11 +158,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
   }
 

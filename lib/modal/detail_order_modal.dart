@@ -267,11 +267,7 @@ class DetailOrderModal {
         final hasValidUrl = url.isNotEmpty && Uri.tryParse(url)?.hasAbsolutePath == true && (url.startsWith('http://') || url.startsWith('https://'));
         if (hasValidUrl) {
           WidgetsBinding.instance.addPostFrameCallback((_) async {
-            try {
-              await precacheImage(NetworkImage(url), context);
-            } catch (e) {
-              debugPrint('Precache gagal untuk $url: $e');
-            }
+            await precacheImage(NetworkImage(url), context);
           });
         }
         return StatefulBuilder(

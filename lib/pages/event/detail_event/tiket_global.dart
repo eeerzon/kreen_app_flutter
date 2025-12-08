@@ -202,19 +202,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     // Hilangkan duplikat supaya efisien
     allImageUrls = allImageUrls.toSet().toList();
 
-    debugPrint("Memulai pre-cache ${allImageUrls.length} gambar...");
-
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-        debugPrint("Cached: $url");
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
-
-    debugPrint("Semua gambar berhasil di-cache.");
   }
 
   @override

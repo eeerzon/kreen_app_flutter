@@ -278,68 +278,61 @@ class _VoteSuccessState extends State<VoteSuccess> {
 
     setState(() => isLoading = true);
 
-    try {
-      if (!loadMore) {
+    if (!loadMore) {
         currentPage = 1;
         hasMore = true;
       }
 
-      var getUser = await StorageService.getUser();
-      var email = getUser['email'] ?? '';
+    var getUser = await StorageService.getUser();
+    var email = getUser['email'] ?? '';
 
-      final url =
-          "$baseapiUrl/order/vote?email_voter=$email&status=success&sort_by=terbaru&current_page=$currentPage&type_data=new";
+    final url =
+        "$baseapiUrl/order/vote?email_voter=$email&status=success&sort_by=terbaru&current_page=$currentPage&type_data=new";
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
-          "Accept": "application/json",
-        },
-      );
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "Accept": "application/json",
+      },
+    );
 
-      List newVotes = [];
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List newData = data['data'] ?? [];
+    List newVotes = [];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List newData = data['data'] ?? [];
 
-        for (var ordersuccess in newData) {
-          final idOrder = ordersuccess['id_order'];
-          if (idOrder == null || idOrder.toString().isEmpty) continue;
+      for (var ordersuccess in newData) {
+        final idOrder = ordersuccess['id_order'];
+        if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-          final resultOrder = await ApiService.get("/order/vote/$idOrder");
-          final tempOrder = resultOrder?['data'] ?? {};
-          final tempVoteSuccess = tempOrder['vote'] ?? {};
-          final tempVoteOrder = tempOrder['vote_order'] ?? {};
+        final resultOrder = await ApiService.get("/order/vote/$idOrder");
+        final tempOrder = resultOrder?['data'] ?? {};
+        final tempVoteSuccess = tempOrder['vote'] ?? {};
+        final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
-          newVotes.add({
-            'id_order': idOrder,
-            'judul_vote': tempVoteSuccess['judul_vote'] ?? '-',
-            'order_status': tempVoteOrder['order_status'],
-            'tanggal': ordersuccess['created_at'] ?? '-',
-            'banner': tempVoteSuccess['banner_vote'],
-            'id_vote': tempVoteSuccess['id_vote'],
-          });
-        }
-
-        setState(() {
-          if (loadMore) {
-            orderSuccess.addAll(newData);
-            votes.addAll(newVotes);
-          } else {
-            orderSuccess = newData;
-            votes = newVotes;
-          }
-          
-          hasMore = newData.isNotEmpty;
+        newVotes.add({
+          'id_order': idOrder,
+          'judul_vote': tempVoteSuccess['judul_vote'] ?? '-',
+          'order_status': tempVoteOrder['order_status'],
+          'tanggal': ordersuccess['created_at'] ?? '-',
+          'banner': tempVoteSuccess['banner_vote'],
+          'id_vote': tempVoteSuccess['id_vote'],
         });
-      } else {
-        debugPrint("Failed to fetch data: ${response.statusCode}");
       }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    } finally {
-      setState(() => isLoading = false);
+
+      setState(() {
+        if (loadMore) {
+          orderSuccess.addAll(newData);
+          votes.addAll(newVotes);
+        } else {
+          orderSuccess = newData;
+          votes = newVotes;
+        }
+        
+        hasMore = newData.isNotEmpty;
+        isLoading = false;
+      });
     }
   }
 
@@ -697,68 +690,61 @@ class _VotePendingState extends State<VotePending> {
 
     setState(() => isLoading = true);
 
-    try {
-      if (!loadMore) {
+    if (!loadMore) {
         currentPage = 1;
         hasMore = true;
       }
 
-      var getUser = await StorageService.getUser();
-      var email = getUser['email'] ?? '';
+    var getUser = await StorageService.getUser();
+    var email = getUser['email'] ?? '';
 
-      final url =
-          "$baseapiUrl/order/vote?email_voter=$email&status=pending&sort_by=terbaru&current_page=$currentPage&type_data=new";
+    final url =
+        "$baseapiUrl/order/vote?email_voter=$email&status=pending&sort_by=terbaru&current_page=$currentPage&type_data=new";
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
-          "Accept": "application/json",
-        },
-      );
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "Accept": "application/json",
+      },
+    );
 
-      List newVotes = [];
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List newData = data['data'] ?? [];
+    List newVotes = [];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List newData = data['data'] ?? [];
 
-        for (var orderpending in newData) {
-          final idOrder = orderpending['id_order'];
-          if (idOrder == null || idOrder.toString().isEmpty) continue;
+      for (var orderpending in newData) {
+        final idOrder = orderpending['id_order'];
+        if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-          final resultOrder = await ApiService.get("/order/vote/$idOrder");
-          final tempOrder = resultOrder?['data'] ?? {};
-          final tempVotePending = tempOrder['vote'] ?? {};
-          final tempVoteOrder = tempOrder['vote_order'] ?? {};
+        final resultOrder = await ApiService.get("/order/vote/$idOrder");
+        final tempOrder = resultOrder?['data'] ?? {};
+        final tempVotePending = tempOrder['vote'] ?? {};
+        final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
-          newVotes.add({
-            'id_order': idOrder,
-            'judul_vote': tempVotePending['judul_vote'] ?? '-',
-            'order_status': tempVoteOrder['order_status'],
-            'tanggal': orderpending['created_at'] ?? '-',
-            'banner': tempVotePending['banner_vote'],
-            'id_vote': tempVotePending['id_vote'],
-          });
-        }
-
-        setState(() {
-          if (loadMore) {
-            orderPending.addAll(newData);
-            votes.addAll(newVotes);
-          } else {
-            orderPending = newData;
-            votes = newVotes;
-          }
-          
-          hasMore = newData.isNotEmpty;
+        newVotes.add({
+          'id_order': idOrder,
+          'judul_vote': tempVotePending['judul_vote'] ?? '-',
+          'order_status': tempVoteOrder['order_status'],
+          'tanggal': orderpending['created_at'] ?? '-',
+          'banner': tempVotePending['banner_vote'],
+          'id_vote': tempVotePending['id_vote'],
         });
-      } else {
-        debugPrint("Failed to fetch data: ${response.statusCode}");
       }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    } finally {
-      setState(() => isLoading = false);
+
+      setState(() {
+        if (loadMore) {
+          orderPending.addAll(newData);
+          votes.addAll(newVotes);
+        } else {
+          orderPending = newData;
+          votes = newVotes;
+        }
+        
+        hasMore = newData.isNotEmpty;
+        isLoading = false;
+      });
     }
   }
 
@@ -1115,68 +1101,61 @@ class _VoteFailState extends State<VoteFail> {
 
     setState(() => isLoading = true);
 
-    try {
-      if (!loadMore) {
+    if (!loadMore) {
         currentPage = 1;
         hasMore = true;
       }
 
-      var getUser = await StorageService.getUser();
-      var email = getUser['email'] ?? '';
+    var getUser = await StorageService.getUser();
+    var email = getUser['email'] ?? '';
 
-      final url =
-          "$baseapiUrl/order/vote?email_voter=$email&status=fail&sort_by=terbaru&current_page=$currentPage&type_data=new";
+    final url =
+        "$baseapiUrl/order/vote?email_voter=$email&status=fail&sort_by=terbaru&current_page=$currentPage&type_data=new";
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
-          "Accept": "application/json",
-        },
-      );
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "Accept": "application/json",
+      },
+    );
 
-      List newVotes = [];
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List newData = data['data'] ?? [];
+    List newVotes = [];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List newData = data['data'] ?? [];
 
-        for (var ordergagal in newData) {
-          final idOrder = ordergagal['id_order'];
-          if (idOrder == null || idOrder.toString().isEmpty) continue;
+      for (var ordergagal in newData) {
+        final idOrder = ordergagal['id_order'];
+        if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-          final resultOrder = await ApiService.get("/order/vote/$idOrder");
-          final tempOrder = resultOrder?['data'] ?? {};
-          final tempVoteGagal = tempOrder['vote'] ?? {};
-          final tempVoteOrder = tempOrder['vote_order'] ?? {};
+        final resultOrder = await ApiService.get("/order/vote/$idOrder");
+        final tempOrder = resultOrder?['data'] ?? {};
+        final tempVoteGagal = tempOrder['vote'] ?? {};
+        final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
-          newVotes.add({
-            'id_order': idOrder,
-            'judul_vote': tempVoteGagal['judul_vote'] ?? '-',
-            'order_status': tempVoteOrder['order_status'],
-            'tanggal': ordergagal['created_at'] ?? '-',
-            'banner': tempVoteGagal['banner_vote'],
-            'id_vote': tempVoteGagal['id_vote'],
-          });
-        }
-
-        setState(() {
-          if (loadMore) {
-            orderFail.addAll(newData);
-            votes.addAll(newVotes);
-          } else {
-            orderFail = newData;
-            votes = newVotes;
-          }
-          
-          hasMore = newData.isNotEmpty;
+        newVotes.add({
+          'id_order': idOrder,
+          'judul_vote': tempVoteGagal['judul_vote'] ?? '-',
+          'order_status': tempVoteOrder['order_status'],
+          'tanggal': ordergagal['created_at'] ?? '-',
+          'banner': tempVoteGagal['banner_vote'],
+          'id_vote': tempVoteGagal['id_vote'],
         });
-      } else {
-        debugPrint("Failed to fetch data: ${response.statusCode}");
       }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    } finally {
-      setState(() => isLoading = false);
+
+      setState(() {
+        if (loadMore) {
+          orderFail.addAll(newData);
+          votes.addAll(newVotes);
+        } else {
+          orderFail = newData;
+          votes = newVotes;
+        }
+        
+        hasMore = newData.isNotEmpty;
+        isLoading = false;
+      });
     }
   }
 

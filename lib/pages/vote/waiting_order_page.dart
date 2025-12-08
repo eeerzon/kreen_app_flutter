@@ -134,11 +134,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
   }
 
@@ -262,16 +258,12 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   Widget buildKontenOrder() {
     // Cek waktu kadaluarsa
     if (expiresAt.isNotEmpty) {
-      try {
-        final expiredDate = DateTime.parse(expiresAt);
-        final now = DateTime.now();
+      final expiredDate = DateTime.parse(expiresAt);
+      final now = DateTime.now();
 
-        if (now.isAfter(expiredDate)) {
-          // waktu sudah lewat, tampilkan halaman kadaluarsa
-          return buildLinkKadaluarsa();
-        }
-      } catch (e) {
-        debugPrint('Error parsing expiresAt: $e');
+      if (now.isAfter(expiredDate)) {
+        // waktu sudah lewat, tampilkan halaman kadaluarsa
+        return buildLinkKadaluarsa();
       }
     }
     

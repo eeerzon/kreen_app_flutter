@@ -55,11 +55,7 @@ class _ExploreVoteState extends State<ExploreVote> {
 
     // pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
   }
 

@@ -230,16 +230,12 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   Widget buildKontenOrder() {
     // Cek waktu kadaluarsa
     if (expiresAt.isNotEmpty) {
-      try {
-        final expiredDate = DateTime.parse(expiresAt);
-        final now = DateTime.now();
+      final expiredDate = DateTime.parse(expiresAt);
+      final now = DateTime.now();
 
-        if (now.isAfter(expiredDate)) {
-          // waktu sudah lewat, tampilkan halaman kadaluarsa
-          return buildLinkKadaluarsa();
-        }
-      } catch (e) {
-        debugPrint('Error parsing expiresAt: $e');
+      if (now.isAfter(expiredDate)) {
+        // waktu sudah lewat, tampilkan halaman kadaluarsa
+        return buildLinkKadaluarsa();
       }
     }
     

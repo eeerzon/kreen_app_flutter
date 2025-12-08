@@ -162,11 +162,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
   }
 

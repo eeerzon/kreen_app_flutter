@@ -102,11 +102,7 @@ class _FinalisPageState extends State<FinalisPage> {
 
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
   }
   
@@ -167,15 +163,11 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   Future<void> _searchFinalis(String keyword) async {
-    try {
-      final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword');
-      if (mounted) {
-        setState(() {
-          finalis = result?['data'] ?? [];
-        });
-      }
-    } catch (e) {
-      debugPrint('Gagal search finalis: $e');
+    final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword');
+    if (mounted) {
+      setState(() {
+        finalis = result?['data'] ?? [];
+      });
     }
   }
 

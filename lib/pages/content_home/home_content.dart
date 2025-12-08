@@ -107,7 +107,6 @@ class _HomeContentState extends State<HomeContent> {
 
     var get_user = await StorageService.getUser();
     first_name = get_user['first_name'];
-    photo_user = get_user['photo'];
 
     final resultbanner = await ApiService.get("/setting-banner/active");
     final resultVote = await ApiService.get("/vote/popular");
@@ -154,6 +153,9 @@ class _HomeContentState extends State<HomeContent> {
 
     if (mounted) {
       setState(() {
+
+        photo_user = get_user['photo'];
+
         activeBanners = tempActiveBanners;
         votes = tempVotes;
         juara = tempJuara;
@@ -188,11 +190,7 @@ class _HomeContentState extends State<HomeContent> {
 
     // pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
   }
 
@@ -351,7 +349,11 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  bool get isSvg => photo_user!.toLowerCase().endsWith(".svg");
+  bool get isSvg {
+    final p = photo_user;
+    if (p == null) return false;
+    return p.toLowerCase().endsWith(".svg");
+  }
 
   Widget buildKontenHome() {
     return Scaffold(
@@ -442,19 +444,27 @@ class _HomeContentState extends State<HomeContent> {
                     
                               CircleAvatar(
                                 child: ClipOval(
-                                  child: isSvg
-                                    ? SvgPicture.network(
-                                        '$baseUrl/user/$photo_user',
+                                  child: photo_user != null 
+                                    ?
+                                      isSvg
+                                        ? SvgPicture.network(
+                                            '$baseUrl/user/$photo_user',
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.fill,
+                                          )
+                                        : Image.network(
+                                            '$baseUrl/user/$photo_user',
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.fill,
+                                          )
+                                    : Image.network(
+                                        "$baseUrl/noimage_finalis.png",
                                         width: 40,
                                         height: 40,
                                         fit: BoxFit.fill,
                                       )
-                                    : Image.network(
-                                        '$baseUrl/user/$photo_user',
-                                        width: 40,
-                                        height: 40,
-                                        fit: BoxFit.fill,
-                                      ),
                                 ),
                               ),
                             
@@ -835,10 +845,10 @@ class _HomeContentState extends State<HomeContent> {
                               final judul_vote = item['judul_vote']?.toString() ?? '-';
                               final img = item['img']?.toString() ?? '';
 
-                              final dateStr = item['tanggal_buka_payment'] ?? '-';
+                              final dateStr = item['tanggal_buka_payment'];
                               String formattedDate = '-';
 
-                              if (dateStr.isNotEmpty) {
+                              if (dateStr != null) {
                                 try {
                                   // parsing string ke DateTime
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)

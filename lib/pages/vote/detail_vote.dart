@@ -110,19 +110,10 @@ class _DetailVotePageState extends State<DetailVotePage> {
     // Hilangkan duplikat supaya efisien
     allImageUrls = allImageUrls.toSet().toList();
 
-    debugPrint("Memulai pre-cache ${allImageUrls.length} gambar...");
-
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-        debugPrint("Cached: $url");
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
-
-    debugPrint("Semua gambar berhasil di-cache.");
   }
 
 
@@ -151,8 +142,6 @@ class _DetailVotePageState extends State<DetailVotePage> {
       _sectionOffsets[1] = _getOffset(leaderboardKey);
       _sectionOffsets[2] = _getOffset(dukunganKey);
       _sectionOffsets[3] = _getOffset(reviewKey);
-
-      debugPrint("Offsets recalculated: $_sectionOffsets");
     });
   }
 

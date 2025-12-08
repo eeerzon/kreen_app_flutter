@@ -280,68 +280,61 @@ class _EventSuccessState extends State<EventSuccess> {
 
     setState(() => isLoading = true);
 
-    try {
-      if (!loadMore) {
+    if (!loadMore) {
         currentPage = 1;
         hasMore = true;
       }
 
-      var getUser = await StorageService.getUser();
-      var idUser = getUser['id'] ?? '';
+    var getUser = await StorageService.getUser();
+    var idUser = getUser['id'] ?? '';
 
-      final url =
-          "$baseapiUrl/order/event?id_user=$idUser&status=success&sort_by=terbaru&current_page=$currentPage";
+    final url =
+        "$baseapiUrl/order/event?id_user=$idUser&status=success&sort_by=terbaru&current_page=$currentPage";
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
-          "Accept": "application/json",
-        },
-      );
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "Accept": "application/json",
+      },
+    );
 
-      List newEvents = [];
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List newData = data['data'] ?? [];
+    List newEvents = [];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List newData = data['data'] ?? [];
 
-        for (var ordersuccess in newData) {
-          final idOrder = ordersuccess['id_order'];
-          if (idOrder == null || idOrder.toString().isEmpty) continue;
+      for (var ordersuccess in newData) {
+        final idOrder = ordersuccess['id_order'];
+        if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-          final resultOrder = await ApiService.get("/order/event/$idOrder");
-          final tempOrder = resultOrder?['data'] ?? {};
-          final tempEventSukses = tempOrder['event'] ?? {};
-          final tempEventOrder = tempOrder['event_order'] ?? {};
+        final resultOrder = await ApiService.get("/order/event/$idOrder");
+        final tempOrder = resultOrder?['data'] ?? {};
+        final tempEventSukses = tempOrder['event'] ?? {};
+        final tempEventOrder = tempOrder['event_order'] ?? {};
 
-          newEvents.add({
-            'id_order': tempEventOrder['id_order'],
-            'event_title': tempEventSukses['event_title'] ?? '-',
-            'order_status': tempEventOrder['order_status'],
-            'tanggal': ordersuccess['created_at'] ?? '-',
-            'banner': tempEventSukses['event_banner'],
-            'id_event': tempEventSukses['id_event'],
-          });
-        }
-
-        setState(() {
-          if (loadMore) {
-            orderSuccess.addAll(newData);
-            events.addAll(newEvents);
-          } else {
-            orderSuccess = newData;
-            events = newEvents;
-          }
-          
-          hasMore = newData.isNotEmpty;
+        newEvents.add({
+          'id_order': tempEventOrder['id_order'],
+          'event_title': tempEventSukses['event_title'] ?? '-',
+          'order_status': tempEventOrder['order_status'],
+          'tanggal': ordersuccess['created_at'] ?? '-',
+          'banner': tempEventSukses['event_banner'],
+          'id_event': tempEventSukses['id_event'],
         });
-      } else {
-        debugPrint("Failed to fetch data: ${response.statusCode}");
       }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    } finally {
-      setState(() => isLoading = false);
+
+      setState(() {
+        if (loadMore) {
+          orderSuccess.addAll(newData);
+          events.addAll(newEvents);
+        } else {
+          orderSuccess = newData;
+          events = newEvents;
+        }
+        
+        hasMore = newData.isNotEmpty;
+        isLoading = false;
+      });
     }
   }
 
@@ -698,68 +691,61 @@ class _EventPendingState extends State<EventPending> {
 
     setState(() => isLoading = true);
 
-    try {
-      if (!loadMore) {
+    if (!loadMore) {
         currentPage = 1;
         hasMore = true;
       }
 
-      var getUser = await StorageService.getUser();
-      var idUser = getUser['id'] ?? '';
+    var getUser = await StorageService.getUser();
+    var idUser = getUser['id'] ?? '';
 
-      final url =
-          "$baseapiUrl/order/event?id_user=$idUser&status=pending&sort_by=terbaru&current_page=$currentPage";
+    final url =
+        "$baseapiUrl/order/event?id_user=$idUser&status=pending&sort_by=terbaru&current_page=$currentPage";
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
-          "Accept": "application/json",
-        },
-      );
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "Accept": "application/json",
+      },
+    );
 
-      List newEvents = [];
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List newData = data['data'] ?? [];
+    List newEvents = [];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List newData = data['data'] ?? [];
 
-        for (var orderpending in newData) {
-          final idOrder = orderpending['id_order'];
-          if (idOrder == null || idOrder.toString().isEmpty) continue;
+      for (var orderpending in newData) {
+        final idOrder = orderpending['id_order'];
+        if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-          final resultOrder = await ApiService.get("/order/event/$idOrder");
-          final tempOrder = resultOrder?['data'] ?? {};
-          final tempEventPending = tempOrder['event'] ?? {};
-          final tempEventOrder = tempOrder['event_order'] ?? {};
+        final resultOrder = await ApiService.get("/order/event/$idOrder");
+        final tempOrder = resultOrder?['data'] ?? {};
+        final tempEventPending = tempOrder['event'] ?? {};
+        final tempEventOrder = tempOrder['event_order'] ?? {};
 
-          newEvents.add({
-            'id_order': tempEventOrder['id_order'],
-            'event_title': tempEventPending['event_title'] ?? '-',
-            'order_status': tempEventOrder['order_status'],
-            'tanggal': orderpending['created_at'] ?? '-',
-            'banner': tempEventPending['event_banner'],
-            'id_event': tempEventPending['id_event'],
-          });
-        }
-
-        setState(() {
-          if (loadMore) {
-            orderPending.addAll(newData);
-            events.addAll(newEvents);
-          } else {
-            orderPending = newData;
-            events = newEvents;
-          }
-          
-          hasMore = newData.isNotEmpty;
+        newEvents.add({
+          'id_order': tempEventOrder['id_order'],
+          'event_title': tempEventPending['event_title'] ?? '-',
+          'order_status': tempEventOrder['order_status'],
+          'tanggal': orderpending['created_at'] ?? '-',
+          'banner': tempEventPending['event_banner'],
+          'id_event': tempEventPending['id_event'],
         });
-      } else {
-        debugPrint("Failed to fetch data: ${response.statusCode}");
       }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    } finally {
-      setState(() => isLoading = false);
+
+      setState(() {
+        if (loadMore) {
+          orderPending.addAll(newData);
+          events.addAll(newEvents);
+        } else {
+          orderPending = newData;
+          events = newEvents;
+        }
+        
+        hasMore = newData.isNotEmpty;
+        isLoading = false;
+      });
     }
   }
 
@@ -1115,68 +1101,61 @@ class _EventFailState extends State<EventFail> {
 
     setState(() => isLoading = true);
 
-    try {
-      if (!loadMore) {
+    if (!loadMore) {
         currentPage = 1;
         hasMore = true;
       }
 
-      var getUser = await StorageService.getUser();
-      var idUser = getUser['id'] ?? '';
+    var getUser = await StorageService.getUser();
+    var idUser = getUser['id'] ?? '';
 
-      final url =
-          "$baseapiUrl/order/event?id_user=$idUser&status=fail&sort_by=terbaru&current_page=$currentPage";
+    final url =
+        "$baseapiUrl/order/event?id_user=$idUser&status=fail&sort_by=terbaru&current_page=$currentPage";
 
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
-          "Accept": "application/json",
-        },
-      );
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "Accept": "application/json",
+      },
+    );
 
-      List newEvents = [];
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List newData = data['data'] ?? [];
+    List newEvents = [];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List newData = data['data'] ?? [];
 
-        for (var ordergagal in newData) {
-          final idOrder = ordergagal['id_order'];
-          if (idOrder == null || idOrder.toString().isEmpty) continue;
+      for (var ordergagal in newData) {
+        final idOrder = ordergagal['id_order'];
+        if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-          final resultOrder = await ApiService.get("/order/event/$idOrder");
-          final tempOrder = resultOrder?['data'] ?? {};
-          final tempEventFail = tempOrder['event'] ?? {};
-          final tempEventOrder = tempOrder['event_order'] ?? {};
+        final resultOrder = await ApiService.get("/order/event/$idOrder");
+        final tempOrder = resultOrder?['data'] ?? {};
+        final tempEventFail = tempOrder['event'] ?? {};
+        final tempEventOrder = tempOrder['event_order'] ?? {};
 
-          newEvents.add({
-            'id_order': tempEventOrder['id_order'],
-            'event_title': tempEventFail['event_title'] ?? '-',
-            'order_status': tempEventOrder['order_status'],
-            'tanggal': ordergagal['created_at'] ?? '-',
-            'banner': tempEventFail['event_banner'],
-            'id_event': tempEventFail['id_event'],
-          });
-        }
-
-        setState(() {
-          if (loadMore) {
-            orderFail.addAll(newData);
-            events.addAll(newEvents);
-          } else {
-            orderFail = newData;
-            events = newEvents;
-          }
-          
-          hasMore = newData.isNotEmpty;
+        newEvents.add({
+          'id_order': tempEventOrder['id_order'],
+          'event_title': tempEventFail['event_title'] ?? '-',
+          'order_status': tempEventOrder['order_status'],
+          'tanggal': ordergagal['created_at'] ?? '-',
+          'banner': tempEventFail['event_banner'],
+          'id_event': tempEventFail['id_event'],
         });
-      } else {
-        debugPrint("Failed to fetch data: ${response.statusCode}");
       }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    } finally {
-      setState(() => isLoading = false);
+
+      setState(() {
+        if (loadMore) {
+          orderFail.addAll(newData);
+          events.addAll(newEvents);
+        } else {
+          orderFail = newData;
+          events = newEvents;
+        }
+        
+        hasMore = newData.isNotEmpty;
+        isLoading = false;
+      });
     }
   }
 

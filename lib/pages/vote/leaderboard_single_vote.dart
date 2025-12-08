@@ -81,7 +81,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   Future<void> _loadFinalis() async {
     final idFinalis = widget.id_finalis;
     if (idFinalis.isEmpty) {
-      debugPrint("id_finalis kosong");
       setState(() => _isLoading = false);
       return;
     }
@@ -176,19 +175,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     // Hilangkan duplikat supaya efisien
     allImageUrls = allImageUrls.toSet().toList();
 
-    debugPrint("Memulai pre-cache ${allImageUrls.length} gambar...");
-
     // Pre-cache semua gambar
     for (String url in allImageUrls) {
-      try {
-        await precacheImage(NetworkImage(url), context);
-        debugPrint("Cached: $url");
-      } catch (e) {
-        debugPrint("Gagal pre-cache $url: $e");
-      }
+      await precacheImage(NetworkImage(url), context);
     }
-
-    debugPrint("Semua gambar berhasil di-cache.");
   }
 
   final formatter = NumberFormat.decimalPattern("id_ID");
@@ -432,6 +422,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                           detailFinalis['poster_finalis'],
                           width: double.infinity,
                           fit: BoxFit.cover, 
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.network(
+                              "$baseUrl/noimage_finalis.png",
+                              width: double.infinity,
+                              fit: BoxFit.cover, 
+                            );
+                          },
                         )
                       : Image.network(
                           "$baseUrl/noimage_finalis.png",
