@@ -105,7 +105,7 @@ class _HomePageState extends State<HomePage> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Tekan sekali lagi untuk keluar'),
+              content: Text('Tekan sekali lagi untuk keluar', textAlign: TextAlign.center,),
               duration: Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.only(bottom: 50, left: 20, right: 20),

@@ -133,7 +133,7 @@ class _RegisPageState extends State<RegisPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_namaController.text.isNotEmpty),
                       focusedBorder: _border(true),
                     ),
@@ -157,7 +157,7 @@ class _RegisPageState extends State<RegisPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_emailController.text.isNotEmpty),
                       focusedBorder: _border(true),
                     ),
@@ -185,7 +185,7 @@ class _RegisPageState extends State<RegisPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_phoneController.text.isNotEmpty),
                       focusedBorder: _border(true),
                       errorText: _phoneController.text.isEmpty
@@ -214,7 +214,7 @@ class _RegisPageState extends State<RegisPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_passwordController.text.isNotEmpty),
                       focusedBorder: _border(true),
                       suffixIcon: IconButton(
@@ -245,7 +245,7 @@ class _RegisPageState extends State<RegisPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_confirmpasswordController.text.isNotEmpty),
                       focusedBorder: _border(true),
                       suffixIcon: IconButton(
@@ -262,7 +262,7 @@ class _RegisPageState extends State<RegisPage> {
                   const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 48,
                     child: ElevatedButton(
                       style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {

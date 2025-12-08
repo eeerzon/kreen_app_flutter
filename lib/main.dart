@@ -1,14 +1,13 @@
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'pages/splash_logo_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
-  await GoogleSignIn().signInSilently();
-  
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 

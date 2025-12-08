@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
+import 'package:kreen_app_flutter/widgets/google_login.dart';
 import 'package:kreen_app_flutter/widgets/loading_page.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import '/services/lang_service.dart';
@@ -92,7 +93,12 @@ class _LoginPageState extends State<LoginPage> {
         gender: user['gender'], 
         photo: user['photo'],
         DOB: user['date_of_birth'],
-        verifEmail: user['email_verified_at'],
+        verifEmail: user['verified_email'],
+        company: user['company'],
+        jobTitle: user['job_title'],
+        link_linkedin: user['link_linkedin'],
+        link_ig: user['link_ig'],
+        link_twitter: user['link_twitter'],
       );
 
       if (widget.notLog) {
@@ -166,52 +172,6 @@ class _LoginPageState extends State<LoginPage> {
     "id": "Indonesia",
     "en": "English"
   };
-
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '504337537530-ssjc70kbrhdc1le07omlp4pa2qpug1pp.apps.googleusercontent.com',
-    scopes: ['email'],
-  );
-
-
-  Future<void> loginWithGoogle() async {
-    try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
-
-      final googleAuth = await googleUser.authentication;
-
-      final idToken = googleAuth.idToken;
-      final email = googleUser.email;
-      final name = googleUser.displayName;
-      final photo = googleUser.photoUrl;
-
-      // final response = await http.post(
-      //   Uri.parse("$baseapiUrl/login/google"),
-      //   headers: {"Content-Type": "application/json"},
-      //   body: jsonEncode({
-      //     "email": email,
-      //     "name": name,
-      //     "google_id_token": idToken,
-      //     "photo": photo,
-      //   }),
-      // );
-
-      final response = await ApiService.get('$baseapiUrl/google/callback');
-
-      // final result = jsonDecode(response.body);
-
-      // if (response.statusCode == 200 && result["success"] == true) {
-      //   final token = result["token"];
-      //   final user = result["user"];
-      //   print("Login berhasil: $user");
-      // } else {
-      //   print("Login gagal: ${result['message']}");
-      // }
-    } catch (e) {
-      print("Error Google Login: $e");
-    }
-  }
-
 
   void _showLanguageDialog() {
     showDialog(
@@ -332,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_emailController.text.isNotEmpty),
                       focusedBorder: _border(true),
                     ),
@@ -350,7 +310,7 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Colors.white,
                       enabledBorder: _border(_emailController.text.isNotEmpty),
                       focusedBorder: _border(true),
                       suffixIcon: IconButton(
@@ -380,7 +340,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 48,
                     child: ElevatedButton(
                       style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
@@ -420,7 +380,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 48,
                     child: ElevatedButton(
                       style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
@@ -433,7 +393,15 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       onPressed: () async {
-                        loginWithGoogle();
+                        final user = await GoogleAuthService.signInWithGoogle();
+                        if (user != null) {
+                          print("Login berhasil");
+                          print("Nama: ${user.displayName}");
+                          print("Email: ${user.email}");
+                          print("Foto: ${user.photoURL}");
+                        } else {
+                          print("Login dibatalkan user");
+                        }
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
