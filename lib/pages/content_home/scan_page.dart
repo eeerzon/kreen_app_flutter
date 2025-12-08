@@ -178,6 +178,7 @@ class _ScannerPageState extends State<ScannerPage>
                 Navigator.pop(context);
               },
               child: Container(
+                padding: kGlobalPadding,
                 decoration: BoxDecoration(
                   color: Colors.red,
                   borderRadius: BorderRadius.circular(8),
@@ -209,6 +210,7 @@ class _ScannerPageState extends State<ScannerPage>
                 });
               },
               child: Container(
+                padding: kGlobalPadding,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
