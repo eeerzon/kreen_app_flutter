@@ -1,0 +1,13 @@
+{
+  "project_info": {
+    "project_id": "your-project-id",
+    "project_number": "1234567890"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "dummy"
+      }
+    }
+  ]
+}
