@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:kreen_app_flutter/modal/checking_user_modal.dart';
 import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
@@ -102,15 +103,20 @@ class _HomePageState extends State<HomePage> {
         if (lastPressed == null ||
             now.difference(lastPressed!) > const Duration(seconds: 2)) {
           lastPressed = now;
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tekan sekali lagi untuk keluar', textAlign: TextAlign.center,),
-              duration: Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(bottom: 50, left: 20, right: 20),
-            ),
+          Fluttertoast.showToast(
+            msg: 'Tekan sekali lagi untuk keluar',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
           );
+
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content: Text('Tekan sekali lagi untuk keluar', textAlign: TextAlign.center,),
+          //     duration: Duration(seconds: 1),
+          //     behavior: SnackBarBehavior.floating,
+          //     margin: EdgeInsets.only(bottom: 50, left: 20, right: 20),
+          //   ),
+          // );
 
           return false;
         }

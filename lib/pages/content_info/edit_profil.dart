@@ -79,6 +79,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (path == null) return false;
     return path.toLowerCase().endsWith('.svg');
   }
+
+  bool get isHttp {
+    final p = isuploaded ? strAvatar : widget.user['photo'];
+    if (p == null) return false;
+    return p.toLowerCase().contains("http");
+  }
+
+  bool isValidPhone(String phone) {
+    final regex = RegExp(r'^08[0-9]{8,11}$');
+    return regex.hasMatch(phone);
+  }
   
   Future<void> pickImage() async {
     final XFile? image = await picker.pickImage(
@@ -390,20 +401,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 height: 120,
                                 fit: BoxFit.cover,
                               )
-                            : Image.network(
-                                isuploaded
-                                    ? linkAvatar!
-                                    : '$baseUrl/user/${widget.user['photo']}',
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                              )
+                            : isHttp
+                              ? Image.network(
+                                  isuploaded
+                                      ? linkAvatar!
+                                      : '${widget.user['photo']}',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.network(
+                                  "$baseUrl/noimage_finalis.png",
+                                  width: 120, 
+                                  height: 120, fit: 
+                                  BoxFit.cover,
+                                )
                         : Image.network(
-                          "$baseUrl/noimage_finalis.png",
-                          width: 120, 
-                          height: 120, fit: 
-                          BoxFit.cover,
-                        )
+                            "$baseUrl/noimage_finalis.png",
+                            width: 120, 
+                            height: 120, fit: 
+                            BoxFit.cover,
+                          )
                       ),
                     ),
 
@@ -683,6 +701,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
+                    errorText: phoneController.text.isEmpty
+                        ? null
+                        : (!isValidPhone(phoneController.text)
+                            ? "Nomor HP harus 10-13 digit dan dimulai dengan 08"
+                            : null),
                   ),
                 ),
                 if (errorCode == 422 && errorMessage.containsKey('phone')) ... [

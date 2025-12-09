@@ -30,7 +30,7 @@ class StorageService {
     String? id,
     required String first_name,
     required String? last_name,
-    required String phone,
+    required String? phone,
     required String email,
     String? gender,
     required String? photo,

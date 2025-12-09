@@ -50,7 +50,17 @@ class _ProfileState extends State<Profile> {
     });
   }
 
-  bool get isSvg => photo!.toLowerCase().endsWith(".svg");
+  bool get isSvg {
+    final p = photo;
+    if (p == null) return false;
+    return p.toLowerCase().endsWith(".svg");
+  }
+
+  bool get isHttp {
+    final p = photo;
+    if (p == null) return false;
+    return p.toLowerCase().contains("http");
+  }
 
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
@@ -350,12 +360,19 @@ class _ProfileState extends State<Profile> {
                               height: 120,
                               fit: BoxFit.fill,
                             )
-                          : Image.network(
-                              '$baseUrl/user/$photo',
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.fill,
-                            )
+                          : isHttp
+                            ? Image.network(
+                                photo!,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.fill,
+                              )
+                            : Image.network(
+                                "$baseUrl/noimage_finalis.png",
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.fill,
+                              )
                       : Image.network(
                           "$baseUrl/noimage_finalis.png",
                           width: 120,
@@ -514,7 +531,9 @@ class _ProfileState extends State<Profile> {
 
                               SizedBox(width: 12,),
                               Text(
-                                phone ?? '-'
+                                phone != '' && phone!.isNotEmpty
+                                  ? phone!
+                                  : '-',
                               )
                             ],
                           ),

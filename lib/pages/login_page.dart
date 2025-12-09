@@ -1,9 +1,9 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:kreen_app_flutter/widgets/google_login.dart';
@@ -120,6 +120,67 @@ class _LoginPageState extends State<LoginPage> {
         desc: result?['message'] ?? 'Username atau password salah!',
         btnOkOnPress: () {},
       ).show();
+    }
+  }
+
+  void _loginGoogle() async {
+    final user = await GoogleAuthService.signInWithGoogle();
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (user != null) {
+
+      final result = await ApiService.post('/google/callback', body: {
+        "name": user.displayName,
+        "email": user.email,
+        "photo": user.photoURL,
+        "google_id_token": idToken,
+      });
+
+      if (result != null && result['success'] == true && result['rc'] == 200) {
+        final user = result['data']['user'];
+        final token = result['data']['token'];
+
+        // simpan ke secure storage
+        await StorageService.setToken(token);
+        await StorageService.setUser(
+          id: user['id'], 
+          first_name: user['first_name'], 
+          last_name: user['last_name'], 
+          phone: user['phone'], 
+          email: user['email'], 
+          gender: user['gender'], 
+          photo: user['photo'],
+          DOB: user['date_of_birth'],
+          verifEmail: user['verified_email'],
+          company: user['company'],
+          jobTitle: user['job_title'],
+          link_linkedin: user['link_linkedin'],
+          link_ig: user['link_ig'],
+          link_twitter: user['link_twitter'],
+        );
+
+        if (widget.notLog) {
+          // jika login dari halaman lain
+          Navigator.pop(context, true);
+        } else {
+          // jika login dari splashscreen
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        }
+      } else {
+        Fluttertoast.showToast(
+          msg: 'Login gagal atau dibatalkan',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+    } else {
+      Fluttertoast.showToast(
+        msg: 'Login gagal atau dibatalkan',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
     }
   }
 
@@ -392,16 +453,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      onPressed: () async {
-                        final user = await GoogleAuthService.signInWithGoogle();
-                        if (user != null) {
-                          print("Login berhasil");
-                          print("Nama: ${user.displayName}");
-                          print("Email: ${user.email}");
-                          print("Foto: ${user.photoURL}");
-                        } else {
-                          print("Login dibatalkan user");
-                        }
+                      onPressed: () {
+                        _loginGoogle();
                       },
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

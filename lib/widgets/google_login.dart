@@ -24,7 +24,7 @@ class GoogleAuthService {
 
       return userCredential.user;
     } catch (e) {
-      print("Google Sign-in error: $e");
+      // print("Google Sign-in error: $e");
       return null;
     }
   }

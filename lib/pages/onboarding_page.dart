@@ -205,7 +205,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   itemCount: pages.length,
                   onPageChanged: (index) => setState(() => _currentPage = index),
                   itemBuilder: (_, index) {
-                    return Padding(
+                    return Container(
+                      color: Colors.white,
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,

@@ -355,6 +355,12 @@ class _HomeContentState extends State<HomeContent> {
     return p.toLowerCase().endsWith(".svg");
   }
 
+  bool get isHttp {
+    final p = photo_user;
+    if (p == null) return false;
+    return p.toLowerCase().contains("http");
+  }
+
   Widget buildKontenHome() {
     return Scaffold(
       // konten page
@@ -453,12 +459,19 @@ class _HomeContentState extends State<HomeContent> {
                                             height: 40,
                                             fit: BoxFit.fill,
                                           )
-                                        : Image.network(
-                                            '$baseUrl/user/$photo_user',
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.fill,
-                                          )
+                                        : isHttp
+                                          ? Image.network(
+                                              photo_user!,
+                                              width: 40,
+                                              height: 40,
+                                              fit: BoxFit.fill,
+                                            )
+                                          : Image.network(
+                                              "$baseUrl/noimage_finalis.png",
+                                              width: 40,
+                                              height: 40,
+                                              fit: BoxFit.fill,
+                                            )
                                     : Image.network(
                                         "$baseUrl/noimage_finalis.png",
                                         width: 40,

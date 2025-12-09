@@ -1,4 +1,4 @@
-package com.example.kreen_app
+package com.example.kreenappflutter
 
 import io.flutter.embedding.android.FlutterActivity
 
