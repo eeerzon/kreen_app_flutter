@@ -17,11 +17,11 @@ class LangService {
     return data[key] as String;
   }
 
-  static Future<Map<String, String>> getJsonData(String langCode, String header) async {
+  static Future<Map<String, dynamic>> getJsonData(String langCode, String header) async {
     final String response =
         await rootBundle.loadString("assets/lang/$langCode.json");
     final data = json.decode(response);
-    return Map<String, String>.from(data[header]);
+    return Map<String, dynamic>.from(data[header]);
   }
 
   static Future<Map<String, dynamic>> getJsonDataArray(String langCode, String header, String subHeader) async {

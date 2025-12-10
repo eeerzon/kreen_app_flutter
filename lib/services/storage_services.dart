@@ -14,6 +14,14 @@ class StorageService {
     return value == 'true';
   }
 
+  static Future<void> setLanguage(String langCode) async {
+    await _storage.write(key: 'language_code', value: langCode);
+  }
+
+  static Future<String?> getLanguage() async {
+    return await _storage.read(key: 'language_code');
+  }
+
   static Future<void> setToken(String token) async {
     await _storage.write(key: 'token', value: token);
   }

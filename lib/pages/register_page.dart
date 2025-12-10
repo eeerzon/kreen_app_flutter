@@ -9,6 +9,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:kreen_app_flutter/widgets/google_login.dart';
 import 'package:kreen_app_flutter/widgets/loading_page.dart';
@@ -31,6 +32,10 @@ class _RegisPageState extends State<RegisPage> {
   final _confirmpasswordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _obscurePasswordConfirm = true;
+
+  final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _confirmpasswordFocus = FocusNode();
 
   bool get _isFormFilled =>
       _namaController.text.isNotEmpty &&
@@ -54,6 +59,8 @@ class _RegisPageState extends State<RegisPage> {
     );
   }
 
+  int errorCode = 0;
+  Map<String, dynamic> errorMessage = {};
   void _doRegis() async {
     showLoadingDialog(context);
 
@@ -65,8 +72,18 @@ class _RegisPageState extends State<RegisPage> {
       "password_confirmation": _confirmpasswordController.text
     };
 
+    bool isSukses = false;
+    
     final result = await ApiService.post("/register", body: body);
-    bool isSukses = result!['success'];
+    if (result!= null && result['success'] == true && result['rc'] == 200) {
+      isSukses = true;
+    } else if (result!['rc'] == 422) {
+      isSukses = false;
+      setState(() {
+        errorMessage = result['data'];
+        errorCode = 422;
+      });
+    } 
 
     if (!mounted) return;
     Navigator.pop(context);
@@ -75,8 +92,8 @@ class _RegisPageState extends State<RegisPage> {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.success,
-        title: 'Sukses',
-        desc: result['message'],
+        title: langCode == 'id' ? 'Berhasil' : 'Succes',
+        desc: result!['message'],
         transitionAnimationDuration: const Duration(milliseconds: 400),
         autoHide: const Duration(seconds: 1),
       ).show().then((_) {
@@ -86,9 +103,10 @@ class _RegisPageState extends State<RegisPage> {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
-        title: 'Gagal',
-        desc: result['message'] ?? 'Registrasi gagal',
+        title: langCode == 'id' ? 'Gagal' : 'Failed',
+        desc: result!['message'],
         btnOkOnPress: () {},
+        btnOkColor: Colors.red,
       ).show();
     }
   }
@@ -135,22 +153,104 @@ class _RegisPageState extends State<RegisPage> {
         );
       } else {
         Fluttertoast.showToast(
-          msg: 'Login gagal atau dibatalkan',
+          msg: cancelLogin!,
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
         );
       }
     } else {
       Fluttertoast.showToast(
-        msg: 'Login gagal atau dibatalkan',
+        msg: cancelLogin!,
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
     }
   }
 
+  String? langCode;
+  String? fullNameLabel, fullName;
+  String? emailLabel, email;
+  String? phoneLabel, phone, phoneError;
+  String? passwordLabel, password;
+  String? confirmPasswordLabel, confirmPassword;
+  String? daftarText, sudahPunyaAkunText;
+  String? googleLogin;
+  String? loginAs, login;
+  String? cancelLogin;
+  bool isLoading = true;
+
+  Future<void> _getBahasa() async {
+    final templangCode = await StorageService.getLanguage();
+
+    // pastikan di-set dulu
+    setState(() {
+      langCode = templangCode;
+    });
+
+    final tempgoogleLogin = await LangService.getText(langCode!, "google_login");
+
+    final tempfullNameLabel = await LangService.getText(langCode!, "nama_lengkap_label");
+    final tempfullName = await LangService.getText(langCode!, "nama_lengkap");
+    final tempemailLabel = await LangService.getText(langCode!, "email_label");
+    final tempemail = await LangService.getText(langCode!, "input_email");
+    final tempphoneLabel = await LangService.getText(langCode!, "nomor_hp_label");
+    final tempphone = await LangService.getText(langCode!, "nomor_hp");
+    final tempphoneError = await LangService.getText(langCode!, "nomor_hp_error");
+    final temppasswordLabel = await LangService.getText(langCode!, "password_label");
+    final temppassword = await LangService.getText(langCode!, "input_password");
+    final tempconfirmPasswordLabel = await LangService.getText(langCode!, "konfirmasi_password_label");
+    final tempconfirmPassword = await LangService.getText(langCode!, "konfirmasi_password");
+    final tempdaftarText = await LangService.getText(langCode!, "daftar");
+    final tempsudahPunyaAkunText = await LangService.getText(langCode!, "sudah_punya_akun");
+
+    final templogin = await LangService.getText(langCode!, "login");
+    final temploginAs = await LangService.getText(langCode!, "login_as");
+    final tempcancelLogin = await LangService.getText(langCode!, "cancel_login");
+
+    setState(() {
+      googleLogin = tempgoogleLogin;
+
+      fullNameLabel = tempfullNameLabel;
+      fullName = tempfullName;
+      emailLabel = tempemailLabel;
+      email = tempemail;
+      phoneLabel = tempphoneLabel;
+      phone = tempphone;
+      phoneError = tempphoneError;
+      passwordLabel = temppasswordLabel;
+      password = temppassword;
+      confirmPasswordLabel = tempconfirmPasswordLabel;
+      confirmPassword = tempconfirmPassword;
+      daftarText = tempdaftarText;
+      sudahPunyaAkunText = tempsudahPunyaAkunText;
+
+      login = templogin;
+      loginAs = temploginAs;
+      cancelLogin = tempcancelLogin;
+
+      isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: isLoading 
+        ? Center(child: CircularProgressIndicator(color: Colors.red,))
+        : buildKonten()
+    );
+  }
+
+  Widget buildKonten() {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -158,7 +258,7 @@ class _RegisPageState extends State<RegisPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Daftar Kreen"),
+        title: Text(daftarText ?? "..."),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -180,15 +280,13 @@ class _RegisPageState extends State<RegisPage> {
 
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      'Nama Lengkap'
-                    ),
+                    child: Text(fullNameLabel ?? "..."),
                   ),
                   TextField(
                     controller: _namaController,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'Nama Lengkap',
+                      hintText: fullName!,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -205,14 +303,14 @@ class _RegisPageState extends State<RegisPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Text(
-                      'Email'
+                      emailLabel!
                     ),
                   ),
                   TextField(
                     controller: _emailController,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: 'Email',
+                      hintText: email!,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -222,14 +320,25 @@ class _RegisPageState extends State<RegisPage> {
                       focusedBorder: _border(true),
                     ),
                   ),
-
+                  if (errorCode == 422) ... [
+                    SizedBox(height: 4),
+                    Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Text(
+                        errorMessage['email'][0],
+                        style: TextStyle(
+                          color: Colors.red,
+                        ),
+                      ),
+                    )
+                  ],
 
                   //phone
                   const SizedBox(height: 16),
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Text(
-                      'Nomor Handphone'
+                      phoneLabel!
                     ),
                   ),
                   TextField(
@@ -240,7 +349,7 @@ class _RegisPageState extends State<RegisPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                     decoration: InputDecoration(
-                      hintText: 'Masukkan Nomor Handphone',
+                      hintText: phone!,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -248,28 +357,35 @@ class _RegisPageState extends State<RegisPage> {
                       fillColor: Colors.white,
                       enabledBorder: _border(_phoneController.text.isNotEmpty),
                       focusedBorder: _border(true),
-                      errorText: _phoneController.text.isEmpty
-                        ? null
-                        : (!isValidPhone(_phoneController.text)
-                            ? "Nomor HP harus 10-13 digit dan dimulai dengan 08"
-                            : null),
                     ),
                   ),
+                  if (_phoneController.text.isNotEmpty &&
+                      !isValidPhone(_phoneController.text))
+                    Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        phoneError ?? '',
+                        style: const TextStyle(
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
 
                   //password
                   const SizedBox(height: 16),
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Text(
-                      'Password'
+                      passwordLabel!
                     ),
                   ),
                   TextField(
                     controller: _passwordController,
+                    focusNode: _passwordFocus,
                     onChanged: (_) => setState(() {}),
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      hintText: 'Password',
+                      hintText: password!,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -277,12 +393,15 @@ class _RegisPageState extends State<RegisPage> {
                       fillColor: Colors.white,
                       enabledBorder: _border(_passwordController.text.isNotEmpty),
                       focusedBorder: _border(true),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () {
+                      suffixIcon: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
                           setState(() => _obscurePassword = !_obscurePassword);
+                          _passwordFocus.canRequestFocus = false;
                         },
+                        child: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
                       ),
                     ),
                   ),
@@ -292,15 +411,16 @@ class _RegisPageState extends State<RegisPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Text(
-                      'Confirm Password'
+                      confirmPasswordLabel!
                     ),
                   ),
                   TextField(
                     controller: _confirmpasswordController,
+                    focusNode: _confirmpasswordFocus,
                     onChanged: (_) => setState(() {}),
-                    obscureText: _obscurePassword,
+                    obscureText: _obscurePasswordConfirm,
                     decoration: InputDecoration(
-                      hintText: 'Confirm Password',
+                      hintText: confirmPassword!,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -308,15 +428,34 @@ class _RegisPageState extends State<RegisPage> {
                       fillColor: Colors.white,
                       enabledBorder: _border(_confirmpasswordController.text.isNotEmpty),
                       focusedBorder: _border(true),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () {
-                          setState(() => _obscurePassword = !_obscurePassword);
+                      suffixIcon: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm);
+                          _confirmpasswordFocus.canRequestFocus = false;
                         },
+                        child: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        ),
                       ),
                     ),
                   ),
+                  if (errorCode == 422) ... [
+                    SizedBox(height: 4),
+                    Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var err in errorMessage['password'])
+                            Text(
+                              err,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                        ],
+                      ),
+                    )
+                  ],
 
                   // tombol Login
                   const SizedBox(height: 30),
@@ -339,7 +478,7 @@ class _RegisPageState extends State<RegisPage> {
                       ),
                       onPressed: _isFormFilled ? _doRegis : null,
                       child: Text(
-                        'Daftar',
+                        daftarText!,
                         style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
                     ),
@@ -352,7 +491,7 @@ class _RegisPageState extends State<RegisPage> {
                       Expanded(child: Divider(thickness: 1)),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('Atau'),
+                        child: Text(loginAs!),
                       ),
                       Expanded(child: Divider(thickness: 1)),
                     ],
@@ -381,7 +520,7 @@ class _RegisPageState extends State<RegisPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset("assets/images/img_google.png", height: 50, width: 50,),
-                          Text('Masuk dengan Google', style: TextStyle(color: Colors.black),),
+                          Text(googleLogin!, style: TextStyle(color: Colors.black),),
                         ])
                     ),
                   ),
@@ -408,7 +547,7 @@ class _RegisPageState extends State<RegisPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('sudah punya akun? '),
+                      Text(sudahPunyaAkunText!),
                       GestureDetector(
                         onTap: () {
                           if (widget.fromProfil) {
@@ -421,7 +560,7 @@ class _RegisPageState extends State<RegisPage> {
                           }
                         },
                         child: Text(
-                          'Masuk',
+                          login!,
                           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                         ),
                       ),
