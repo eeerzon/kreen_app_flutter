@@ -19,6 +19,10 @@ class _ChangePasswordState extends State<ChangePassword> {
   bool _obscurePasswordNew = true;
   bool _obscurePasswordConfirm = true;
 
+  FocusNode _currentPasswordFocus = FocusNode();
+  FocusNode _newPasswordFocus = FocusNode();
+  FocusNode _confirmPasswordFocus = FocusNode();
+
   bool get _isFormFilled =>
       _currentPasswordController.text.isNotEmpty &&
       _newPasswordController.text.isNotEmpty &&
@@ -74,6 +78,7 @@ class _ChangePasswordState extends State<ChangePassword> {
               SizedBox(height: 8),
               TextField(
                 controller: _currentPasswordController,
+                focusNode: _currentPasswordFocus,
                 onChanged: (_) => setState(() {}),
                 obscureText: _obscurePasswordCurrent,
                 decoration: InputDecoration(
@@ -87,12 +92,15 @@ class _ChangePasswordState extends State<ChangePassword> {
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey, width: 2),
                   ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscurePasswordCurrent ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
+                  suffixIcon: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
                       setState(() => _obscurePasswordCurrent = !_obscurePasswordCurrent);
+                      _currentPasswordFocus.canRequestFocus = false;
                     },
+                    child: Icon(
+                      _obscurePasswordCurrent ? Icons.visibility_off : Icons.visibility,
+                    ),
                   ),
                 ),
               ),
@@ -104,11 +112,21 @@ class _ChangePasswordState extends State<ChangePassword> {
                 ),
               ]
               else if (errorCode == 422) ... [
-                SizedBox(height: 4,),
-                Text(
-                  errorMessage['current_password'][0],
-                  style: TextStyle(color: Colors.red),
-                ),
+                const SizedBox(height: 4),
+                if (errorMessage['current_password'] != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var err in errorMessage['current_password'])
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            err,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                    ],
+                  )
               ],
 
               SizedBox(height: 20),
@@ -120,6 +138,7 @@ class _ChangePasswordState extends State<ChangePassword> {
               SizedBox(height: 8),
               TextField(
                 controller: _newPasswordController,
+                focusNode: _newPasswordFocus,
                 onChanged: (_) => setState(() {}),
                 obscureText: _obscurePasswordNew,
                 decoration: InputDecoration(
@@ -133,12 +152,15 @@ class _ChangePasswordState extends State<ChangePassword> {
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey, width: 2),
                   ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscurePasswordNew ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
+                  suffixIcon: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
                       setState(() => _obscurePasswordNew = !_obscurePasswordNew);
+                      _newPasswordFocus.canRequestFocus = false;
                     },
+                    child: Icon(
+                      _obscurePasswordNew ? Icons.visibility_off : Icons.visibility,
+                    ),
                   ),
                 ),
               ),
@@ -152,6 +174,7 @@ class _ChangePasswordState extends State<ChangePassword> {
               SizedBox(height: 8),
               TextField(
                 controller: _confirmPasswordController,
+                focusNode: _confirmPasswordFocus,
                 onChanged: (_) => setState(() {}),
                 obscureText: _obscurePasswordConfirm,
                 decoration: InputDecoration(
@@ -165,21 +188,33 @@ class _ChangePasswordState extends State<ChangePassword> {
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey, width: 2),
                   ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
+                  suffixIcon: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
                       setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm);
+                      _confirmPasswordFocus.canRequestFocus = false;
                     },
+                    child: Icon(
+                      _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
+                    ),
                   ),
                 ),
               ),
               if (errorCode == 422) ... [
-                SizedBox(height: 4,),
-                Text(
-                  errorMessage['password'][0],
-                  style: TextStyle(color: Colors.red),
-                ),
+                SizedBox(height: 4),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var err in errorMessage['password'])
+                        Text(
+                          err,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                    ],
+                  ),
+                )
               ],
 
               SizedBox(height: 30),

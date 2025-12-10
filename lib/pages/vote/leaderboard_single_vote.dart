@@ -1232,7 +1232,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               Container(
                                 color: Colors.white,
                                 padding: kGlobalPadding,
-                                child: _buildLeaderboardSection(view_api, ranking, detailvote),
+                                child: _buildLeaderboardSection(view_api, ranking, detailvote, langCode!),
                               ),
                               
                             ],
@@ -1491,20 +1491,20 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     );
   }
 
-  Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote) {
+  Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote, String langCode) {
     switch (api) {
       case 2:
-        return LeaderboardSection_2(ranking: ranking, data: vote,);
+        return LeaderboardSection_2(ranking: ranking, data: vote, langCode: langCode,);
       case 3:
-        return LeaderboardSection_3(ranking: ranking, data: vote,);
+        return LeaderboardSection_3(ranking: ranking, data: vote, langCode: langCode,);
       case 4:
-        return LeaderboardSection_4(ranking: ranking, data: vote,);
+        return LeaderboardSection_4(ranking: ranking, data: vote, langCode: langCode,);
       case 5:
-        return LeaderboardSection_5(ranking: ranking, data: vote,);
+        return LeaderboardSection_5(ranking: ranking, data: vote, langCode: langCode,);
       case 6:
-        return LeaderboardSection_6(ranking: ranking, data: vote,);
+        return LeaderboardSection_6(ranking: ranking, data: vote, langCode: langCode,);
       default:
-        return LeaderboardSection(ranking: ranking, data: vote,);
+        return LeaderboardSection(ranking: ranking, data: vote, langCode: langCode,);
     }
   }
 

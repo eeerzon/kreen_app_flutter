@@ -8,10 +8,13 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.da
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_5_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_6_widget.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:kreen_app_flutter/pages/vote/finalis_page.dart';
 import 'package:kreen_app_flutter/pages/vote/finalis_paket_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_1_widget.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
 class DetailVotePage extends StatefulWidget {
@@ -40,6 +43,9 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
   bool _isLoading = true;
 
+  Map<String, dynamic>? detailVoteLang;
+  String? detailVoteLangText;
+
   @override
   void initState() {
     super.initState();
@@ -47,8 +53,6 @@ class _DetailVotePageState extends State<DetailVotePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateOffsets();
       _scrollController.addListener(_onScroll);
-
-      _getBahasa();
 
       _loadVotes();
     });
@@ -68,6 +72,8 @@ class _DetailVotePageState extends State<DetailVotePage> {
     final tempRanking = resultLeaderboard?['data'] ?? [];
 
     await _precacheAllImages(context, tempVote, tempRanking);
+
+    await _getBahasa();
 
     if (mounted) {
       setState(() {
@@ -119,10 +125,17 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
 
   Future<void> _getBahasa() async {
-    final code = await prefs.read(key: 'bahasa');
+    final code = await StorageService.getLanguage();
 
     setState(() {
       langCode = code;
+    });
+
+    final tempDetailVoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      detailVoteLang = tempDetailVoteLang;
+      detailVoteLangText = tempDetailVoteLang['button_find_finalist'];
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -393,7 +406,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(vote['judul_vote']), // ambil dari api
+        title: Text(vote['judul_vote']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -437,11 +450,11 @@ class _DetailVotePageState extends State<DetailVotePage> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.person, color: Colors.white),
                   SizedBox(width: 8),
-                  Text(
-                    "Temukan Finalis",
+                  Text( 
+                    detailVoteLangText!,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -475,44 +488,47 @@ class _DetailVotePageState extends State<DetailVotePage> {
           // const Divider(height: 1),
 
           //konten
-          Expanded(
-            child: ListView(
-              controller: _scrollController,
-              padding: EdgeInsets.zero,
-              children: [
-                // === DESKRIPSI ===
-                SizedBox(
-                  key: descKey,
-                  width: double.infinity,
-                  child: _buildDeskripsiSection(view_api, vote, langCode!)
-                ),
+          DetailVoteLang(
+            values: detailVoteLang!,
+            child: Expanded(
+              child: ListView(
+                controller: _scrollController,
+                padding: EdgeInsets.zero,
+                children: [
+                  // === DESKRIPSI ===
+                  SizedBox(
+                    key: descKey,
+                    width: double.infinity,
+                    child: _buildDeskripsiSection(view_api, vote, langCode!)
+                  ),
 
 
-                // === LEADERBOARD ===
-                if (vote['leaderboard_limit_tampil'] != -1)
+                  // === LEADERBOARD ===
+                  if (vote['leaderboard_limit_tampil'] != -1)
+                    Container(
+                      color: Colors.white,
+                      key: leaderboardKey,
+                      padding: kGlobalPadding,
+                      child: _buildLeaderboardSection(view_api, ranking, vote, langCode!),
+                    ),
+
+                  // === INFO (hanya ada kalau view_api == 1) ===
+                  if (view_api == 1)
+                    Container(
+                      key: dukunganKey,
+                      padding: kGlobalPadding,
+                      child: _buildInfoSection(view_api, vote, langCode!),
+                    ),
+
+                  // === REVIEW ===
                   Container(
                     color: Colors.white,
-                    key: leaderboardKey,
+                    key: reviewKey,
                     padding: kGlobalPadding,
-                    child: _buildLeaderboardSection(view_api, ranking, vote),
+                    child: _buildDukunganSection(view_api, vote, support, langCode!),
                   ),
-
-                // === INFO (hanya ada kalau view_api == 1) ===
-                if (view_api == 1)
-                  Container(
-                    key: dukunganKey,
-                    padding: kGlobalPadding,
-                    child: _buildInfoSection(view_api, vote, langCode!),
-                  ),
-
-                // === REVIEW ===
-                Container(
-                  color: Colors.white,
-                  key: reviewKey,
-                  padding: kGlobalPadding,
-                  child: _buildDukunganSection(view_api, vote, support, langCode!),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -535,24 +551,24 @@ Widget _buildDeskripsiSection(int api, Map<String, dynamic> vote, String langCod
     case 6:
       return DeskripsiSection_6(data: vote, langCode: langCode,);
     default:
-      return DeskripsiSection(data: vote);
+      return DeskripsiSection(data: vote, langCode: langCode,);
   }
 }
 
-Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote) {
+Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote, String langCode) {
   switch (api) {
     case 2:
-      return LeaderboardSection_2(ranking: ranking, data: vote,);
+      return LeaderboardSection_2(ranking: ranking, data: vote, langCode: langCode,);
     case 3:
-      return LeaderboardSection_3(ranking: ranking, data: vote,);
+      return LeaderboardSection_3(ranking: ranking, data: vote, langCode: langCode,);
     case 4:
-      return LeaderboardSection_4(ranking: ranking, data: vote,);
+      return LeaderboardSection_4(ranking: ranking, data: vote, langCode: langCode,);
     case 5:
-      return LeaderboardSection_5(ranking: ranking, data: vote,);
+      return LeaderboardSection_5(ranking: ranking, data: vote, langCode: langCode,);
     case 6:
-      return LeaderboardSection_6(ranking: ranking, data: vote,);
+      return LeaderboardSection_6(ranking: ranking, data: vote, langCode: langCode,);
     default:
-      return LeaderboardSection(ranking: ranking, data: vote,);
+      return LeaderboardSection(ranking: ranking, data: vote, langCode: langCode,);
   }
 }
 

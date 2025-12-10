@@ -1,10 +1,11 @@
-// ignore_for_file: non_constant_identifier_names, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/profile.dart';
 import 'package:kreen_app_flutter/pages/content_info/tentang_page.dart';
+import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/register_page.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -21,7 +22,7 @@ class InfoPage extends StatefulWidget {
 class _InfoPageState extends State<InfoPage> {
   final prefs = FlutterSecureStorage();
   String? langCode;
-  String? login;
+  String? login, dialog_language;
   String? token;
 
   bool isLoading = true;
@@ -47,13 +48,80 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await prefs.read(key: 'bahasa');
-    
+    langCode = await StorageService.getLanguage();
     login = await LangService.getText(langCode!, 'login');
+    dialog_language = await LangService.getText(langCode!, 'pick_language');
 
     setState(() {
       
     });
+  }
+
+  final Map<String, String> languages = {
+    "id": "Indonesia",
+    "en": "English"
+  };
+
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String tempLang = langCode!;
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(dialog_language!),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: languages.entries.map((entry) {
+                    return RadioListTile<String>(
+                      value: entry.key,
+                      groupValue: tempLang,
+                      onChanged: (val) async {
+                        if (val != null) {
+                          setState(() {
+                            langCode = val; // update global
+                          });
+                          await StorageService.setLanguage(val);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HomePage()),
+                          );
+                        }
+                      },
+                      title: Row(
+                        children: [
+                          Image.asset(
+                            "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
+                            width: 28,
+                            height: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(entry.value),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
   
   @override
@@ -130,6 +198,7 @@ class _InfoPageState extends State<InfoPage> {
             children: [
               SizedBox(height: 20,),
 
+              //profile section
               token != null
                 ? InkWell(
                     onTap: () {
@@ -231,6 +300,7 @@ class _InfoPageState extends State<InfoPage> {
                     ),
                   ),
 
+              // Bahasa section
               SizedBox(height: 20,),
               Container(
                 padding: EdgeInsets.all(14),
@@ -240,28 +310,32 @@ class _InfoPageState extends State<InfoPage> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade300,),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/img_bahasa.png',
-                          height: 50,
-                          width: 50,
-                        ),
-                    
-                        SizedBox(width: 12,),
-                        Text(
-                          "Bahasa"
-                        )
-                      ],
-                    ),
-                    Icon(Icons.arrow_forward_ios)
-                  ],
+                child: InkWell(
+                  onTap: _showLanguageDialog,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/img_bahasa.png',
+                            height: 50,
+                            width: 50,
+                          ),
+                      
+                          SizedBox(width: 12,),
+                          Text(
+                            "Bahasa"
+                          )
+                        ],
+                      ),
+                      Icon(Icons.arrow_forward_ios)
+                    ],
+                  ),
                 ),
               ),
 
+              // Pusat Bantuan section
               SizedBox(height: 20,),
               Container(
                 padding: EdgeInsets.all(14),
@@ -293,6 +367,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
+              // Tentang section
               SizedBox(height: 20,),
               InkWell(
                 onTap: () {
@@ -334,6 +409,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
+              // Kebijakan Privasi section
               SizedBox(height: 20,),
               Container(
                 padding: EdgeInsets.all(14),
@@ -365,6 +441,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
+              // Rating section
               // SizedBox(height: 20,),
               // Container(
               //   padding: EdgeInsets.all(14),
@@ -401,283 +478,6 @@ class _InfoPageState extends State<InfoPage> {
           ),
         ),
       )
-    );
-  }
-
-  Widget buildDefaultView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 20,),
-
-        token != null
-          ? InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Profile(),
-                  ),
-                );
-              },
-              child: Container(
-                padding: EdgeInsets.all(14),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300,),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/img_profile.png',
-                          height: 50,
-                          width: 50,
-                        ),
-                    
-                        SizedBox(width: 12,),
-                        Text(
-                          "Profile"
-                        )
-                      ],
-                    ),
-                    Icon(Icons.arrow_forward_ios)
-                  ],
-                ),
-              )
-            )
-          : Container(
-              padding: EdgeInsets.all(0),
-              width: double.infinity,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LoginPage()
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 48,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "Masuk",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RegisPage(fromProfil: true,)
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 48,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "Daftar",
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-        SizedBox(height: 20,),
-        Container(
-          padding: EdgeInsets.all(14),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300,),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/images/img_bahasa.png',
-                    height: 50,
-                    width: 50,
-                  ),
-              
-                  SizedBox(width: 12,),
-                  Text(
-                    "Bahasa"
-                  )
-                ],
-              ),
-              Icon(Icons.arrow_forward_ios)
-            ],
-          ),
-        ),
-
-        SizedBox(height: 20,),
-        Container(
-          padding: EdgeInsets.all(14),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300,),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/images/img_bantuan.png',
-                    height: 50,
-                    width: 50,
-                  ),
-              
-                  SizedBox(width: 12,),
-                  Text(
-                    "Pusat Bantuan"
-                  )
-                ],
-              ),
-              Icon(Icons.arrow_forward_ios)
-            ],
-          ),
-        ),
-
-        SizedBox(height: 20,),
-        InkWell(
-          onTap: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TentangPage(),
-                ),
-              );
-          },
-          child: Container(
-            padding: EdgeInsets.all(14),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300,),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/img_tentang.png',
-                      height: 50,
-                      width: 50,
-                    ),
-                
-                    SizedBox(width: 12,),
-                    Text(
-                      "Tentang Kreen"
-                    )
-                  ],
-                ),
-                Icon(Icons.arrow_forward_ios)
-              ],
-            ),
-          ),
-        ),
-
-        SizedBox(height: 20,),
-        Container(
-          padding: EdgeInsets.all(14),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300,),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/images/img_kebijakan.png',
-                    height: 50,
-                    width: 50,
-                  ),
-              
-                  SizedBox(width: 12,),
-                  Text(
-                    "Kebijakan Privasi"
-                  )
-                ],
-              ),
-              Icon(Icons.arrow_forward_ios)
-            ],
-          ),
-        ),
-
-        // SizedBox(height: 20,),
-        // Container(
-        //   padding: EdgeInsets.all(14),
-        //   width: double.infinity,
-        //   decoration: BoxDecoration(
-        //     color: Colors.white,
-        //     borderRadius: BorderRadius.circular(8),
-        //     border: Border.all(color: Colors.grey.shade300,),
-        //   ),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //     children: [
-        //       Container(
-        //         child: Row(
-        //           children: [
-        //             Image.asset(
-        //               'assets/images/img_rating.png',
-        //               height: 50,
-        //               width: 50,
-        //             ),
-
-        //             SizedBox(width: 12,),
-        //             Text(
-        //               "Bari Rating"
-        //             )
-        //           ],
-        //         ),
-        //       ),
-        //       Icon(Icons.arrow_forward_ios)
-        //     ],
-        //   ),
-        // ),
-      ],
     );
   }
 }

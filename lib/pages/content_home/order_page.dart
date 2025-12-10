@@ -3,6 +3,7 @@ import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/content_order/order_event.dart';
 import 'package:kreen_app_flutter/pages/content_order/order_vote.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class OrderPage extends StatefulWidget {
@@ -15,6 +16,8 @@ class OrderPage extends StatefulWidget {
 class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMixin{
   late TabController _tabController;
   String? token;
+  String? appBarTitle;
+  String? notLoginText, notLoginDesc, login;
 
   int _selectedIndex = 0;
 
@@ -27,6 +30,15 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
     }
   }
 
+  Future<void> _getBahasa() async {
+    final langCode = await StorageService.getLanguage();
+    
+    appBarTitle = await LangService.getText(langCode!, "appBarTitle");
+    notLoginText = await LangService.getText(langCode, "notLogin");
+    notLoginDesc = await LangService.getText(langCode, "notLoginDesc");
+    login = await LangService.getText(langCode, "login");
+  }
+
   final List<Widget> _pages = [
     OrderVote(),
     OrderEvent(),
@@ -37,8 +49,9 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkToken();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _checkToken();
     });
   }
 
@@ -57,7 +70,7 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("History Transaksi"),
+        title: Text(appBarTitle!),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -119,7 +132,10 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: token == null 
-          ? getLoginUser()
+          ? Align(
+              alignment: Alignment.center,
+              child: getLoginUser(),
+            )
           : _pages[_selectedIndex],
       ),
     );
@@ -129,6 +145,7 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
     return Container(
       padding: kGlobalPadding,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(16),
@@ -144,8 +161,8 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
           ),
 
           const SizedBox(height: 24),
-          const Text(
-            "Ayo... Login terlebih Dahulu",
+          Text(
+            notLoginText!,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -155,8 +172,8 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
           ),
 
           const SizedBox(height: 12),
-          const Text(
-            "Klik tombol dibawah ini untuk menuju halaman Login",
+          Text(
+            notLoginDesc!,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black54, fontSize: 14),
           ),
@@ -178,8 +195,8 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
               elevation: 2,
             ),
-            child: const Text(
-              "Login Sekarang",
+            child: Text(
+              login!,
               style: TextStyle(fontSize: 16, color: Colors.white),
             ),
           ),

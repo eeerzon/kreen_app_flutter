@@ -9,6 +9,7 @@ import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
 import 'package:kreen_app_flutter/pages/content_home/info_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/order_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/scan_page.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class HomePage extends StatefulWidget {
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> {
   String? order;
   String? info;
   String? token;
+  String? lastPressedMessage;
 
   int _selectedIndex = 0;
   // daftar halaman
@@ -47,26 +49,34 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // _getBahasa();
     _selectedIndex = widget.initialIndex;
-
-    //sementara
-    langCode = 'id';
-    _checkToken();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _checkToken();
+    });
   }
 
-  // Future<void> _getBahasa() async {
-  //   langCode = await prefs.read(key: 'bahasa') ?? "id";
+  Future<void> _getBahasa() async {
+    final templangCode = await StorageService.getLanguage();
 
-  //   final homeContent = await LangService.getJsonData(langCode!, "home_content");
+    // pastikan di-set dulu
+    setState(() {
+      langCode = templangCode;
+    });
 
-  //   setState(() {
-  //     home = homeContent['bot_nav_1'];
-  //     explore = homeContent['bot_nav_2'];
-  //     order = homeContent['bot_nav_3'];
-  //     info = homeContent['bot_nav_4'];
-  //   });
-  // }
+    // baru load content
+    final homeContent = await LangService.getJsonData(langCode!, "home_content");
+    final templastPressedMessage = await LangService.getText(langCode!, "lastPressed");
+
+    setState(() {
+      home = homeContent['bot_nav_1'];
+      explore = homeContent['bot_nav_2'];
+      order = homeContent['bot_nav_3'];
+      info = homeContent['bot_nav_4'];
+
+      lastPressedMessage = templastPressedMessage;
+    });
+  }
 
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
@@ -104,7 +114,7 @@ class _HomePageState extends State<HomePage> {
             now.difference(lastPressed!) > const Duration(seconds: 2)) {
           lastPressed = now;
           Fluttertoast.showToast(
-            msg: 'Tekan sekali lagi untuk keluar',
+            msg: lastPressedMessage!,
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );

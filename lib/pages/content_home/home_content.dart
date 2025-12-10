@@ -45,10 +45,10 @@ class _HomeContentState extends State<HomeContent> {
   @override
   void initState() {
     super.initState();
-    _getBahasa();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadContent();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadContent();
     });
   }
 
@@ -62,14 +62,14 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await prefs.read(key: 'bahasa');
+    langCode = await StorageService.getLanguage();
 
     final homeContent = await LangService.getJsonData(langCode!, "home_content");
-    login = await LangService.getText(langCode!, 'login');
+    final tempLogin = await LangService.getText(langCode!, 'login');
 
     setState(() {
       selamatDatang = homeContent['top_nav'];
-
+      login = tempLogin;
       event_title = homeContent['event_title'];
       event_recomen = homeContent['event_recomen'];
       event_desc = homeContent['event_desc'];
@@ -114,7 +114,7 @@ class _HomeContentState extends State<HomeContent> {
     final resulthitEvent = await ApiService.get("/event/hits");
     final resultlatestVote = await ApiService.get("/vote/latest");
     final resultrecomenEvent = await ApiService.get("/event/recommended");
-    final resultArtikel = await ApiService.get("/articles");
+    final resultArtikel = await ApiService.get("/articles?limit=8");
 
     if (!mounted) return;
 
@@ -165,7 +165,7 @@ class _HomeContentState extends State<HomeContent> {
         listArtikel = tempListArtikel;
 
         preloadImageSizes();
-        isLoadingContent = false; // setelah preload gambar
+        isLoadingContent = false;
       });
     }
   }
@@ -467,7 +467,7 @@ class _HomeContentState extends State<HomeContent> {
                                               fit: BoxFit.fill,
                                             )
                                           : Image.network(
-                                              "$baseUrl/noimage_finalis.png",
+                                              '$baseUrl/user/$photo_user',
                                               width: 40,
                                               height: 40,
                                               fit: BoxFit.fill,
@@ -676,11 +676,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1095,11 +1095,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1219,7 +1219,7 @@ class _HomeContentState extends State<HomeContent> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   formattedDate,
-                                                  style: const TextStyle(color: Colors.grey),
+                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
@@ -1324,11 +1324,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1514,11 +1514,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1726,8 +1726,61 @@ class _HomeContentState extends State<HomeContent> {
                           child: Row(
                             children: listArtikel.map((item) {
                               final article_title = item['article_title']?.toString() ?? 'Tanpa Judul';
-                              final dateStr = item['created_at']?.toString() ?? '-';
                               final img = item['img']?.toString() ?? '';
+                              final dateStr = item['created_at']?.toString() ?? '-';
+                              String formattedDate = '-';
+
+                              if (dateStr.isNotEmpty) {
+                                try {
+                                  DateTime? date;
+                                  
+                                  if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(dateStr)) {
+                                    
+                                    final bulanIndo = {
+                                      'Januari': 'January',
+                                      'Februari': 'February',
+                                      'Maret': 'March',
+                                      'April': 'April',
+                                      'Mei': 'May',
+                                      'Juni': 'June',
+                                      'Juli': 'July',
+                                      'Agustus': 'August',
+                                      'September': 'September',
+                                      'Oktober': 'October',
+                                      'November': 'November',
+                                      'Desember': 'December',
+                                    };
+                                    
+                                    String englishFormat = dateStr;
+                                    bulanIndo.forEach((indo, eng) {
+                                      englishFormat = englishFormat.replaceAll(indo, eng);
+                                    });
+                                    
+                                    date = DateFormat("dd MMMM yyyy", "en_US").parse(englishFormat);
+                                  } else {
+                                    date = DateTime.parse(dateStr);
+                                  }
+                                  
+                                  if (langCode == 'id') {
+                                    formattedDate = DateFormat("dd MMMM yyyy", "id_ID").format(date);
+                                  } else {
+                                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                                    formattedDate = formatter.format(date);
+
+                                    // suffix: st, nd, rd, th
+                                    final day = date.day;
+                                    String suffix = 'th';
+                                    if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+                                    else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                                    else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+
+                                    formattedDate = formattedDate.replaceFirst('$day', '$day$suffix');
+                                  }
+
+                                } catch (e) {
+                                  formattedDate = '-';
+                                }
+                              }
 
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12), // jarak antar card
@@ -1793,7 +1846,7 @@ class _HomeContentState extends State<HomeContent> {
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  dateStr,
+                                                  formattedDate,
                                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
                                               ],

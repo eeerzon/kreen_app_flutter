@@ -9,7 +9,13 @@ class CheckingUserModal {
   static Future<void> show(BuildContext context, String langCode) async {
     List<Map<String, dynamic>> pages = [];
     final data = await LangService.loadOnboarding(langCode);
-      pages = data;
+    pages = data;
+
+    final homeContent = await LangService.getJsonData(langCode, "home_content");
+    String? selamatDatang = homeContent['top_nav'];
+
+    String? login = await LangService.getText(langCode, 'login');
+    String? loginAs = await LangService.getText(langCode, 'guest_login');
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
       context: context,
@@ -31,8 +37,8 @@ class CheckingUserModal {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Selamat Datang",
+                        Text(
+                          selamatDatang!,
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -80,7 +86,7 @@ class CheckingUserModal {
                         );
                       },
                       child: Text(
-                        'Masuk',
+                        login,
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
@@ -91,7 +97,7 @@ class CheckingUserModal {
                       Navigator.pop(context);
                     },
                     child: Text(
-                        'Masuk sebagai Tamu',
+                        loginAs,
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red), 
                       )
                     )

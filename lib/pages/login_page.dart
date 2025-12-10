@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final prefs = FlutterSecureStorage();
 
-  String dialog_title = "";
+  String dialog_language = "";
   String input_email = "";
   String input_password = "";
   String lupa_password = "";
@@ -36,7 +36,8 @@ class _LoginPageState extends State<LoginPage> {
   String login_as = "";
   String belum = "";
   String daftar = "";
-  
+  String? langCode, googleLogin, gagalLogin, cancelLogin;
+  bool isLoading = true;
 
   bool get _isFormFilled =>
       _emailController.text.isNotEmpty &&
@@ -51,18 +52,6 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
-  Future<void> _loadPrefBahasa() async {
-  final savedLang = await prefs.read(key: 'bahasa'); // String? kalau ada, null kalau belum
-
-  if (savedLang != null) {
-    setState(() {
-      _selectedLang = savedLang; // langsung aja, ga perlu `as String`
-    });
-    _loadLanguage(savedLang); // langsung dipakai
-  }
-}
-
 
   void _doLogin() async {
     showLoadingDialog(context); // tampilkan loading
@@ -116,8 +105,8 @@ class _LoginPageState extends State<LoginPage> {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
-        title: 'Gagal',
-        desc: result?['message'] ?? 'Username atau password salah!',
+        title: langCode == 'id' ? 'Gagal' : 'Failed',
+        desc: result?['message'] ?? gagalLogin!,
         btnOkOnPress: () {},
       ).show();
     }
@@ -170,14 +159,14 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else {
         Fluttertoast.showToast(
-          msg: 'Login gagal atau dibatalkan',
+          msg: cancelLogin!,
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
         );
       }
     } else {
       Fluttertoast.showToast(
-        msg: 'Login gagal atau dibatalkan',
+        msg: cancelLogin!,
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
@@ -185,50 +174,44 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   //setting bahasa
-  Future<void> _loadLanguage(String langCode) async {
 
-    final data_dialog = await LangService.getText(langCode, "dialog_title");
+  Future<void> _getBahasa() async {
+    final templangCode = await StorageService.getLanguage();
+
+    // pastikan di-set dulu
     setState(() {
-      dialog_title = data_dialog;
+      langCode = templangCode;
     });
+    
+    final tempdialog_language = await LangService.getText(langCode!, "pick_language");
+    final tempinput_email = await LangService.getText(langCode!, "input_email");
+    final tempinput_password = await LangService.getText(langCode!, "input_password");
+    final templupa_password = await LangService.getText(langCode!, "lupa_password");
+    final templogin = await LangService.getText(langCode!, "login");
+    final templogin_as = await LangService.getText(langCode!, "login_as");
+    final tempbelum = await LangService.getText(langCode!, "belum");
+    final tempdaftar = await LangService.getText(langCode!, "daftar");
+    final tempgoogleLogin = await LangService.getText(langCode!, "google_login");
+    final tempgagalLogin = await LangService.getText(langCode!, "gagal_login");
+    final tempcancelLogin = await LangService.getText(langCode!, "cancel_login");
 
-    final data_email = await LangService.getText(langCode, "input_email");
     setState(() {
-      input_email = data_email;
-    });
+      dialog_language = tempdialog_language;
+      input_email = tempinput_email;
+      input_password = tempinput_password;
+      lupa_password = templupa_password;
+      login = templogin;
+      login_as = templogin_as;
+      belum = tempbelum;
+      daftar = tempdaftar;
+      googleLogin = tempgoogleLogin;
+      gagalLogin = tempgagalLogin;
+      cancelLogin = tempcancelLogin;
 
-    final data_pass = await LangService.getText(langCode, "input_password");
-    setState(() {
-      input_password = data_pass;
-    });
-
-    final data_pass_lupa = await LangService.getText(langCode, "lupa_password");
-    setState(() {
-      lupa_password = data_pass_lupa;
-    });
-
-    final data_login = await LangService.getText(langCode, "login");
-    setState(() {
-      login = data_login;
-    });
-
-    final data_login_as = await LangService.getText(langCode, "login_as");
-    setState(() {
-      login_as = data_login_as;
-    });
-
-    final data_belum = await LangService.getText(langCode, "belum");
-    setState(() {
-      belum = data_belum;
-    });
-
-    final data_daftar = await LangService.getText(langCode, "daftar");
-    setState(() {
-      daftar = data_daftar;
+      isLoading = false;
     });
   }
 
-  String _selectedLang = "id";
   final Map<String, String> languages = {
     "id": "Indonesia",
     "en": "English"
@@ -238,7 +221,7 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (context) {
-        String tempLang = _selectedLang; // buat sementara
+        String tempLang = langCode!;
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
@@ -248,7 +231,7 @@ class _LoginPageState extends State<LoginPage> {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(dialog_title),
+                  Text(dialog_language),
                   IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
@@ -262,16 +245,16 @@ class _LoginPageState extends State<LoginPage> {
                     return RadioListTile<String>(
                       value: entry.key,
                       groupValue: tempLang,
-                      onChanged: (val) {
+                      onChanged: (val) async {
                         if (val != null) {
                           setState(() {
-                            _selectedLang = val; // update global
+                            langCode = val; // update global
                           });
-                          setStateDialog(() {
-                            tempLang = val; // update local
-                          });
-                          _loadLanguage(val);
-                          Navigator.pop(context); // langsung tutup popup
+                          await StorageService.setLanguage(val);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HomePage()),
+                          );
                         }
                       },
                       title: Row(
@@ -299,11 +282,22 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _loadPrefBahasa();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: isLoading 
+        ? Center(child: CircularProgressIndicator(color: Colors.red,),) 
+        : buildKonten(),
+    );
+  }
+
+  Widget buildKonten() {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -460,7 +454,7 @@ class _LoginPageState extends State<LoginPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset("assets/images/img_google.png", height: 50, width: 50,),
-                          Text('Lanjut dengan Google', style: TextStyle(color: Colors.black),),
+                          Text(googleLogin ?? '', style: TextStyle(color: Colors.black),),
                         ])
                     ),
                   ),
@@ -519,11 +513,11 @@ class _LoginPageState extends State<LoginPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                Image.asset("assets/flags/$_selectedLang.png",
+                Image.asset("assets/flags/${langCode ?? 'id'}.png",
                     width: 24, height: 24),
                 const SizedBox(width: 4),
                 Text(
-                  _selectedLang.toUpperCase(),
+                  (langCode ?? 'id').toUpperCase(),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'login_page.dart';
 import 'home_page.dart';
 import '/services/lang_service.dart';
@@ -26,25 +27,33 @@ class _OnboardingPageState extends State<OnboardingPage> {
   String selesai = "";
   String login = "";
   String guest = "";
+  String? langCode;
 
 
   @override
   void initState() {
     super.initState();
-    _loadLanguage("id");
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _getBahasa();
+      _loadLanguage(langCode ?? "id");
+    });
   }
 
+  Future<void> _getBahasa() async {
+    langCode = await StorageService.getLanguage() ?? "id";
+  }
 
   //setting bahasa
   Future<void> _loadLanguage(String langCode) async {
-    prefs.write(key: 'bahasa', value:  langCode);
+    StorageService.setLanguage(langCode);
     
     final data = await LangService.loadOnboarding(langCode);
     setState(() {
       pages = data;
     });
 
-    final data_dialog = await LangService.getText(langCode, "dialog_title");
+    final data_dialog = await LangService.getText(langCode, "pick_language");
     setState(() {
       dialog_title = data_dialog;
     });
@@ -83,7 +92,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     showDialog(
       context: context,
       builder: (context) {
-        String tempLang = _selectedLang; // buat sementara
+        String tempLang = _selectedLang;
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
@@ -116,7 +125,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             tempLang = val; // update local
                           });
                           _loadLanguage(val);
-                          prefs.write(key: 'bahasa',value:  val);
                           Navigator.pop(context); // langsung tutup popup
                         }
                       },

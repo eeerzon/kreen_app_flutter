@@ -9,14 +9,17 @@ import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DeskripsiSection extends StatelessWidget {
   final Map<String, dynamic> data;
-  const DeskripsiSection({super.key, required this.data});
+  final String langCode;
+  const DeskripsiSection({super.key, required this.data, required this.langCode});
 
   @override
   Widget build(BuildContext context) {
+    final lang = DetailVoteLang.of(context).values;
 
     Map<String, Color> colorMap = {
       'Blue': Colors.blue,
@@ -164,7 +167,7 @@ class DeskripsiSection extends StatelessWidget {
                         child: Row(
                           children: [
                             Text(
-                              "Tutorial Vote",
+                              lang['tutorial_vote'],
                               style: TextStyle(color: color),
                             ),
                             const SizedBox(width: 5),
@@ -192,7 +195,7 @@ class DeskripsiSection extends StatelessWidget {
                         child: Row(
                           children: [
                             Text(
-                              "S&K Voting",
+                              lang['syarat_ket_vote'],
                               style: TextStyle(color: color),
                             ),
                             const SizedBox(width: 5),
@@ -230,7 +233,7 @@ class DeskripsiSection extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Diselenggarakan Oleh",
+                                  lang['penyelenggara'],
                                   style: TextStyle(
                                     color: Colors.grey,
                                   ),
@@ -262,10 +265,13 @@ class DeskripsiSection extends StatelessWidget {
 class LeaderboardSection extends StatelessWidget {
   final List<dynamic> ranking;
   final Map<String, dynamic> data;
-  const LeaderboardSection({super.key, required this.ranking, required this.data});
+  final String langCode;
+  const LeaderboardSection({super.key, required this.ranking, required this.data, required this.langCode});
 
   @override
   Widget build(BuildContext context) {
+    final lang = DetailVoteLang.of(context).values;
+
     Map<String, Color> colorMap = {
       'Blue': Colors.blue,
       'Red': Colors.red,
@@ -386,7 +392,8 @@ class LeaderboardSection extends StatelessWidget {
                 image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                 tema: color, 
                 idFinalis: item['id_finalis'].toString(),
-                remaining: remaining
+                remaining: remaining,
+                lang: lang,
               );
 
             }).toList(),
@@ -404,7 +411,8 @@ class LeaderboardSection extends StatelessWidget {
                     votes: item['total_voters'] ?? 0,
                     progress: 0,
                     image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
-                    tema: color
+                    tema: color,
+                    lang: lang,
                   ),
                 );
               }).toList(),
@@ -417,7 +425,7 @@ class LeaderboardSection extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text(
-                "Belum ada leaderboard",
+                lang['no_leaderboard'],
                 style: TextStyle(color: Colors.grey),
               ),
             ),
@@ -435,6 +443,8 @@ class InfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = DetailVoteLang.of(context).values;
+
     Map<String, Color> colorMap = {
       'Blue': Colors.blue,
       'Red': Colors.red,
@@ -498,7 +508,7 @@ class InfoSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Detail Grandfinal",
+          lang['grandfinal_detail'],
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
 
@@ -591,7 +601,7 @@ class InfoSection extends StatelessWidget {
 
         const SizedBox(height: 15,),
         Text(
-          "Lokasi",
+          lang['lokasi'],
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
 
@@ -685,13 +695,13 @@ class InfoSection extends StatelessWidget {
 
         const SizedBox(height: 15,),
         Text(
-          "Harga",
+          lang['harga'],
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12,),
         Text(
           data['harga'] == 0
-          ? 'Gratis'
+          ? lang['harga_detail']
           : "Rp. $hargaFormatted",
           style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16),
         ),
@@ -708,6 +718,8 @@ class DukunganSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = DetailVoteLang.of(context).values;
+
     Map<String, Color> colorMap = {
       'Blue': Colors.blue,
       'Red': Colors.red,
@@ -760,8 +772,9 @@ class DukunganSection extends StatelessWidget {
                   size: 20,
                 ),
               ),
+              const SizedBox(height: 12,),
               Text(
-                "Apa Kata Mereka",
+                lang['kata_mereka'],
                 style: TextStyle(color: Colors.white),
               ),
             ],
@@ -817,7 +830,7 @@ class DukunganSection extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.all(20),
                 child: Text(
-                  "Belum ada dukungan",
+                  lang['no_support'],
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
@@ -841,6 +854,7 @@ Widget buildTopCard({
   required Color tema,
   required String idFinalis,
   required Duration remaining,
+  required Map<String, dynamic> lang,
 }) {
   String crownImage = '';
   switch (rank) {
@@ -895,7 +909,7 @@ Widget buildTopCard({
               style: TextStyle(color: tema, fontWeight: FontWeight.bold),
             ),
             Text(
-              "Votes",
+              lang['text_vote'],
               style: TextStyle(color: Colors.grey, fontSize: 11),
             ),
             const SizedBox(height: 6),
@@ -949,7 +963,8 @@ Widget buildListCard({
   required int votes,
   required double progress,
   required String image,
-  required Color tema
+  required Color tema,
+  required Map<String, dynamic> lang,
 }) {
   return Container(
     padding: kGlobalPadding,
@@ -1010,7 +1025,7 @@ Widget buildListCard({
               ),
             ),
             Text(
-              "Votes",
+              lang['text_vote'],
               style: TextStyle(color: Colors.grey, fontSize: 11),
             ),
           ],

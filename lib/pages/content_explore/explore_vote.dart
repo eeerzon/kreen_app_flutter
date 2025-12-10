@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ExploreVote extends StatefulWidget {
@@ -15,7 +17,7 @@ class ExploreVote extends StatefulWidget {
 }
 
 class _ExploreVoteState extends State<ExploreVote> {
-  String? langCode;
+  String? langCode, search;
   bool isLoadingContent = true;
   bool isFirst = true;
 
@@ -59,12 +61,19 @@ class _ExploreVoteState extends State<ExploreVote> {
     }
   }
 
+  Future<void> _getBahasa() async {
+    langCode = await StorageService.getLanguage();
+    
+    search = await LangService.getText(langCode!, "search");
+  }
+
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadContent(isFirst, null);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadContent(isFirst, null);
     });
   }
 
@@ -127,7 +136,7 @@ class _ExploreVoteState extends State<ExploreVote> {
         // search bar
         TextField(
           decoration: InputDecoration(
-            hintText: "Pencarian",
+            hintText: search,
             prefixIcon: Icon(Icons.search),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
