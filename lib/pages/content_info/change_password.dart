@@ -19,9 +19,9 @@ class _ChangePasswordState extends State<ChangePassword> {
   bool _obscurePasswordNew = true;
   bool _obscurePasswordConfirm = true;
 
-  FocusNode _currentPasswordFocus = FocusNode();
-  FocusNode _newPasswordFocus = FocusNode();
-  FocusNode _confirmPasswordFocus = FocusNode();
+  final FocusNode _currentPasswordFocus = FocusNode();
+  final FocusNode _newPasswordFocus = FocusNode();
+  final FocusNode _confirmPasswordFocus = FocusNode();
 
   bool get _isFormFilled =>
       _currentPasswordController.text.isNotEmpty &&

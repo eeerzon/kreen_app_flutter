@@ -93,7 +93,7 @@ class _RegisPageState extends State<RegisPage> {
         context: context,
         dialogType: DialogType.success,
         title: langCode == 'id' ? 'Berhasil' : 'Succes',
-        desc: result!['message'],
+        desc: result['message'],
         transitionAnimationDuration: const Duration(milliseconds: 400),
         autoHide: const Duration(seconds: 1),
       ).show().then((_) {
@@ -104,7 +104,7 @@ class _RegisPageState extends State<RegisPage> {
         context: context,
         dialogType: DialogType.error,
         title: langCode == 'id' ? 'Gagal' : 'Failed',
-        desc: result!['message'],
+        desc: result['message'],
         btnOkOnPress: () {},
         btnOkColor: Colors.red,
       ).show();
