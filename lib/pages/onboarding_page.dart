@@ -280,6 +280,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               // Navigation bar bawah (hanya tampil kalau bukan halaman terakhir)
               if (_currentPage != pages.length - 1)
                 Container(
+                  color: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

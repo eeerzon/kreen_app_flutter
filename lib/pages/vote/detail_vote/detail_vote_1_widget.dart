@@ -109,8 +109,8 @@ class DeskripsiSection extends StatelessWidget {
                     },
                     child: SvgPicture.network(
                       '$baseUrl/image/icon-vote/$themeName/share-red.svg',
-                      height: 40,
-                      width: 40,
+                      height: 30,
+                      width: 30,
                     ),
                   )
                 ],

@@ -23,7 +23,6 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  final prefs = FlutterSecureStorage();
   String? langCode;
   String? login, keluar;
   String? token;
@@ -91,7 +90,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _getBahasa() async {
-    final code = await prefs.read(key: 'bahasa');
+    final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
     });

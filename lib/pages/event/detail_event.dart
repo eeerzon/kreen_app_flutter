@@ -669,8 +669,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             },
                             child: SvgPicture.network(
                               '$baseUrl/image/share-red.svg',
-                              height: 40,
-                              width: 40,
+                              height: 30,
+                              width: 30,
                             ),
                           )
                         ],
@@ -713,26 +713,33 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    _buildSocialButton(
-                                      iconUrl: "$baseUrl/image/ig.svg",
-                                      link: detailEvent['link_ig'],
-                                      platform: "instagram",
-                                    ),
-                                    _buildSocialButton(
-                                      iconUrl: "$baseUrl/image/fb.svg",
-                                      link: detailEvent['link_fb'],
-                                      platform: "facebook",
-                                    ),
-                                    _buildSocialButton(
-                                      iconUrl: "$baseUrl/image/tiktok.svg",
-                                      link: detailEvent['link_tiktok'],
-                                      platform: "tiktok",
-                                    ),
-                                    _buildSocialButton(
-                                      iconUrl: "$baseUrl/image/web.svg",
-                                      link: detailEvent['link_web'],
-                                      platform: "website",
-                                    ),
+                                    if (detailEvent['link_ig'] != null)
+                                      _buildSocialButton(
+                                        iconUrl: "$baseUrl/image/ig.svg",
+                                        link: detailEvent['link_ig'],
+                                        platform: "instagram",
+                                      ),
+
+                                    if (detailEvent['link_fb'] != null)
+                                      _buildSocialButton(
+                                        iconUrl: "$baseUrl/image/fb.svg",
+                                        link: detailEvent['link_fb'],
+                                        platform: "facebook",
+                                      ),
+
+                                    if (detailEvent['link_tiktok'] != null)
+                                      _buildSocialButton(
+                                        iconUrl: "$baseUrl/image/tiktok.svg",
+                                        link: detailEvent['link_tiktok'],
+                                        platform: "tiktok",
+                                      ),
+
+                                    if (detailEvent['link_youtube'] != null)
+                                      _buildSocialButton(
+                                        iconUrl: "$baseUrl/image/web.svg",
+                                        link: detailEvent['link_web'],
+                                        platform: "website",
+                                      ),
                                   ],
                                 ),
                               ],
@@ -975,7 +982,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             } else {
                               // Bahasa Inggris
                               final dayName = DateFormat("EEEE", "en_US").format(date);
-                              final datePart = DateFormat("MMMM d yyyy", "en_US").format(date);
+                              final datePart = DateFormat("MMMM d, yyyy", "en_US").format(date);
 
                               // tambahkan suffix (1st, 2nd, 3rd, 4th...)
                               final day = date.day;

@@ -222,7 +222,8 @@
     "pembayaran" : "Pembayaran",
     "metode_pembayaran" : "Metode Pembayaran",
     "informasi_tiket" : "Informasi Tiket",
-    "detail_pembayaran" : "Detail Pembayaran"
+    "detail_pembayaran" : "Detail Pembayaran",
+    "another_payment" : "Coba lagi dengan metode pembayaran lain"
   },
 
   "event" : {

@@ -408,6 +408,20 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               dismissOnTouchOutside: true,
               showCloseIcon: true,
             ).show();
+          } else if (resultVoteOrder['rc'] == 500) {
+            AwesomeDialog(
+              context: context,
+              dialogType: DialogType.error,
+              animType: AnimType.topSlide,
+              title: 'Oops!',
+              desc: "${resultVoteOrder['message']}\n${paymentLang['another_payment']}",
+              btnOkOnPress: () {},
+              btnOkColor: Colors.red,
+              buttonsTextStyle: TextStyle(color: Colors.white),
+              headerAnimationLoop: false,
+              dismissOnTouchOutside: true,
+              showCloseIcon: true,
+            ).show();
           }
         } else {
           AwesomeDialog(
@@ -2146,13 +2160,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                       id_payment_method = debit[index]['id_metod'];
                                     });
                                     
-                                    Future.delayed(const Duration(milliseconds: 200), () {
-                                        _scrollController.animateTo(
-                                          _scrollController.position.maxScrollExtent,
-                                          duration: const Duration(milliseconds: 600),
-                                          curve: Curves.easeOut,
-                                        );
-                                      });
+                                    // Future.delayed(const Duration(milliseconds: 200), () {
+                                    //     _scrollController.animateTo(
+                                    //       _scrollController.position.maxScrollExtent,
+                                    //       duration: const Duration(milliseconds: 600),
+                                    //       curve: Curves.easeOut,
+                                    //     );
+                                    //   });
 
                                       final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
 
@@ -2285,7 +2299,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
                                                             _phoneDebounce?.cancel();
                                                             _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
-                                                              if (value.length >= 10 && _scrollController.hasClients) {
+                                                              if (value.length >= 12 && _scrollController.hasClients) {
                                                                 _scrollController.animateTo(
                                                                   _scrollController.position.maxScrollExtent,
                                                                   duration: const Duration(milliseconds: 600),
