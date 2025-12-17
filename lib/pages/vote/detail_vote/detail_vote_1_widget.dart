@@ -783,8 +783,8 @@ class DukunganSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Column(
-          children: (data['dukungan'] != null && data['dukungan'].isNotEmpty)
-            ? data['dukungan'].map<Widget>((item) {
+          children: (support.isNotEmpty)
+          ? support.map<Widget>((item) {
               final dateStr = item['created_at'];
               var hideNama = item['hide_name'];
               var nama = item['nama'] ?? '-';
