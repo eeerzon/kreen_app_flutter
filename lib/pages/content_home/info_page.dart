@@ -22,18 +22,19 @@ class InfoPage extends StatefulWidget {
 class _InfoPageState extends State<InfoPage> {
   final prefs = FlutterSecureStorage();
   String? langCode;
-  String? login, dialog_language;
+  String? login, daftar, dialog_language;
   String? token;
 
   bool isLoading = true;
+  Map<String, dynamic> infoLang = {};
 
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _getBahasa();
-      _checkToken();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _checkToken();
     });
   }
 
@@ -48,12 +49,21 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await StorageService.getLanguage();
-    login = await LangService.getText(langCode!, 'login');
-    dialog_language = await LangService.getText(langCode!, 'pick_language');
+    final code = await StorageService.getLanguage();
+    setState(() {
+      langCode = code;
+    });
+
+    final templogin = await LangService.getText(langCode!, 'login');
+    final tempdaftar = await LangService.getText(langCode!, 'daftar');
+    final tempdialog_language = await LangService.getText(langCode!, 'pick_language');
+    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
 
     setState(() {
-      
+      login = templogin;
+      daftar = tempdaftar;
+      dialog_language = tempdialog_language;
+      infoLang = tempinfolang;
     });
   }
 
@@ -230,7 +240,7 @@ class _InfoPageState extends State<InfoPage> {
                           
                               SizedBox(width: 12,),
                               Text(
-                                "Profile"
+                                infoLang['profil'], //"Profil"
                               )
                             ],
                           ),
@@ -263,8 +273,8 @@ class _InfoPageState extends State<InfoPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
-                              child: const Text(
-                                "Masuk",
+                              child: Text(
+                                login!, //"Masuk",
                                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -289,8 +299,8 @@ class _InfoPageState extends State<InfoPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
-                              child: const Text(
-                                "Daftar",
+                              child: Text(
+                                daftar!, //"Daftar",
                                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -325,7 +335,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            "Bahasa"
+                            infoLang['bahasa'], //"Bahasa"
                           )
                         ],
                       ),
@@ -358,7 +368,7 @@ class _InfoPageState extends State<InfoPage> {
                     
                         SizedBox(width: 12,),
                         Text(
-                          "Pusat Bantuan"
+                          infoLang['pusat_bantuan'], //"Pusat Bantuan"
                         )
                       ],
                     ),
@@ -399,7 +409,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            "Tentang Kreen"
+                            "${infoLang['tentang']} Kreen", //"Tentang"
                           )
                         ],
                       ),
@@ -432,7 +442,7 @@ class _InfoPageState extends State<InfoPage> {
                     
                         SizedBox(width: 12,),
                         Text(
-                          "Kebijakan Privasi"
+                          infoLang['kebijakan_privasi'], //"Kebijakan Privasi"
                         )
                       ],
                     ),

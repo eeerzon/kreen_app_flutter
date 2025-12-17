@@ -23,6 +23,8 @@ class _ExploreEventState extends State<ExploreEvent> {
   
   List<dynamic> events = [];
 
+  Map<String, dynamic> votelang = {};
+
   Future<void> _loadContent(bool isFirst, String? term) async {
     
     final endpointEvent = isFirst ? "/event" : "/event?term=$term";
@@ -60,9 +62,18 @@ class _ExploreEventState extends State<ExploreEvent> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await StorageService.getLanguage();
+    final code = await StorageService.getLanguage();
+    setState(() {
+      langCode = code;
+    });
     
-    search = await LangService.getText(langCode!, "search");
+    final tempsearch = await LangService.getText(langCode!, "search");
+    final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      search = tempsearch;
+      votelang = tempvotelang;
+    });
   }
 
   @override
@@ -262,7 +273,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                               const SizedBox(height: 4),
                               Text(
                                 item['price'] == 0
-                                ? 'Gratis'
+                                ? votelang['harga_detail']  //'Gratis'
                                 : "${item['currency']} $hargaFormatted",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,

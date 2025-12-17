@@ -687,7 +687,8 @@ class LeaderboardSection_2 extends StatelessWidget {
                 tema: color, 
                 idFinalis: item['id_finalis'].toString(),
                 remaining: remaining,
-                lang: lang
+                lang: lang,
+                flag_hide_no_urut: data['flag_hide_nomor_urut']
               );
 
             }).toList(),
@@ -874,6 +875,7 @@ Widget buildTopCard({
   required String idFinalis,
   required Duration remaining,
   required Map<String, dynamic> lang,
+  required String flag_hide_no_urut,
 }) {
   String crownImage = '';
   switch (rank) {
@@ -940,7 +942,8 @@ Widget buildTopCard({
                     builder: (context) => DetailFinalisPage(
                       id_finalis: idFinalis,
                       count: 0,
-                      indexWrap: null
+                      indexWrap: null,
+                      flag_hide_no_urut: flag_hide_no_urut,
                     ),
                   ),
                 );

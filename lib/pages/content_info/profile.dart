@@ -1,5 +1,6 @@
 // ignore_for_file: non_constant_identifier_names
 
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
@@ -9,6 +10,7 @@ import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
 import 'package:kreen_app_flutter/pages/content_info/edit_profil.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
+import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
@@ -23,7 +25,7 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   final prefs = FlutterSecureStorage();
   String? langCode;
-  String? login;
+  String? login, keluar;
   String? token;
 
   String? first_name, last_name;
@@ -39,14 +41,16 @@ class _ProfileState extends State<Profile> {
 
   bool isLoading = true;
 
+  Map<String, dynamic> infoLang = {};
+
   @override
   void initState() {
     super.initState();
-    _getBahasa();
-    _checkToken();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadContent();
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      await _getBahasa();
+      await _checkToken();
+      await _loadContent();
     });
   }
 
@@ -87,12 +91,19 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await prefs.read(key: 'bahasa');
+    final code = await prefs.read(key: 'bahasa');
+    setState(() {
+      langCode = code;
+    });
     
-    login = await LangService.getText(langCode!, 'login');
+    final templogin = await LangService.getText(langCode!, 'login');
+    final tempkeluar = await LangService.getText(langCode!, 'keluar');
+    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
 
     setState(() {
-      
+      login = templogin;
+      keluar = tempkeluar;
+      infoLang = tempinfolang;
     });
   }
 
@@ -118,6 +129,7 @@ class _ProfileState extends State<Profile> {
 
   Widget buildSkeleton() {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Shimmer.fromColors(
@@ -262,7 +274,7 @@ class _ProfileState extends State<Profile> {
           formattedDate = formatter.format(date);
         } else {
           // Bahasa Inggris
-          final formatter = DateFormat("MMMM d yyyy", "en_US");
+          final formatter = DateFormat("MMMM d, yyyy", "en_US");
           formattedDate = formatter.format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -284,7 +296,7 @@ class _ProfileState extends State<Profile> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text('Profil'),
+        title: Text(infoLang['profil'] ?? ""),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -314,6 +326,7 @@ class _ProfileState extends State<Profile> {
                       'link_linkedin': link_linkedin,
                       'link_ig': link_ig,
                       'link_twitter': link_twitter,
+                      'verified_email': verifEmail
                     },
                   ),
                 ),
@@ -368,7 +381,7 @@ class _ProfileState extends State<Profile> {
                                 fit: BoxFit.fill,
                               )
                             : Image.network(
-                                "$baseUrl/noimage_finalis.png",
+                                '$baseUrl/user/$photo',
                                 width: 120,
                                 height: 120,
                                 fit: BoxFit.fill,
@@ -393,7 +406,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Informasi Utama',
+                      infoLang['informasi_utama'] ?? "", //'Informasi Utama',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -414,7 +427,7 @@ class _ProfileState extends State<Profile> {
                           SizedBox(height: 10,),
                           Row(
                             children: [
-                              Icon(Icons.calendar_month, color: Colors.red,),
+                              Icon(Icons.cake_outlined, color: Colors.red,),
 
                               SizedBox(width: 12,),
                               Text(
@@ -490,7 +503,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Informasi Akun',
+                      infoLang['informasi_akun'] ?? "", //'Informasi Akun',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -550,7 +563,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Media Sosial',
+                      infoLang['media_sosial'] ?? "", //'Media Sosial',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -628,7 +641,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Keamanan & Regulasi',
+                      infoLang['keamanan'] ?? "", //'Keamanan & Regulasi',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -664,7 +677,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    'Pengaturan Sandi',
+                                    infoLang['pengaturan_password'] ?? "", //'Pengaturan Sandi',
                                   )
                                 ],
                               ),
@@ -678,8 +691,33 @@ class _ProfileState extends State<Profile> {
                             SizedBox(height: 10,),
                             SizedBox(
                               child: InkWell(
-                                onTap: () {
-                                  
+                                onTap: () async {
+                                  final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null);
+
+                                  if (resultVerifEmail?['rc'] == 200) {
+                                    AwesomeDialog(
+                                      context: context,
+                                      dialogType: DialogType.success,
+                                      title: langCode == 'id' ? 'Berhasil' : 'Success',
+                                      desc: resultVerifEmail?['message'],
+                                      transitionAnimationDuration: const Duration(milliseconds: 1000),
+                                      autoHide: const Duration(seconds: 1),
+                                    ).show();
+                                  } else {
+                                    AwesomeDialog(
+                                      context: context,
+                                      dialogType: DialogType.error,
+                                      animType: AnimType.topSlide,
+                                      title: 'Oops!',
+                                      desc: resultVerifEmail?['message'],
+                                      btnOkOnPress: () {},
+                                      btnOkColor: Colors.red,
+                                      buttonsTextStyle: TextStyle(color: Colors.white),
+                                      headerAnimationLoop: false,
+                                      dismissOnTouchOutside: true,
+                                      showCloseIcon: true,
+                                    ).show();
+                                  }
                                 },
                                 child: Row(
                                   children: [
@@ -687,7 +725,7 @@ class _ProfileState extends State<Profile> {
 
                                     SizedBox(width: 12,),
                                     Text(
-                                      'Verifikasi Email',
+                                      infoLang['verif_email'] ?? "", //']'Verifikasi Email',
                                     ),
                                   ],
                                 ),
@@ -710,7 +748,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    'Pusat Bantuan',
+                                    infoLang['pusat_bantuan'] ?? "", //'Pusat Bantuan',
                                   )
                                 ],
                               ),
@@ -732,7 +770,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    'Kebijakan Privasi',
+                                    infoLang['kebijakan_privasi'] ?? "", //'Kebijakan Privasi',
                                   )
                                 ],
                               ),
@@ -770,7 +808,7 @@ class _ProfileState extends State<Profile> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      "Keluar",
+                      keluar!, //"Keluar",
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),

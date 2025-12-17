@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -20,7 +21,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  String langCode = 'id';
+  String? langCode;
   File? pickedImage;
   final picker = ImagePicker();
   String? selectedGender;
@@ -32,11 +33,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final FocusNode emailFocusNode = FocusNode();
   final FocusNode dobFocusNode = FocusNode();
   final FocusNode phoneFocusNode = FocusNode();
-
-  final genders = [
-      {'label': 'Laki-laki', 'icon': '$baseUrl/image/male.png'},
-      {'label': 'Perempuan', 'icon': '$baseUrl/image/female.png'},
-    ];
 
   String? strAvatar, linkAvatar;
   bool isuploaded = false;
@@ -52,6 +48,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController igController;
   late TextEditingController twitterController;
 
+  bool isLoading = true;
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> infoLang = {};
+  String? emailHint, phoneLabel, phoneHint, phoneError;
+  String? verifEmail;
+
   @override
   void initState() {
     super.initState();
@@ -63,16 +65,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
     phoneController = TextEditingController(text: widget.user['phone']);
     dob = widget.user['dob'];
     gender = widget.user['gender'] ?? '';
-
-    if (gender!.isNotEmpty) {
-      selectedGender = gender?.toLowerCase() == 'male' ? 'Laki-laki' : 'Perempuan';
-    }
     companyController = TextEditingController(text: widget.user['company'] ?? '');
     jobTitleController = TextEditingController(text: widget.user['jobTitle'] ?? '');
     linkedinController = TextEditingController(text: widget.user['link_linkedin'] ?? '');
     igController = TextEditingController(text: widget.user['link_ig'] ?? '');
     twitterController = TextEditingController(text: widget.user['link_twitter'] ?? '');
+    verifEmail = widget.user['verified_email'] ?? '';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
   }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+    setState(() => langCode = code);
+
+    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
+    final tempinfoLang = await LangService.getJsonData(langCode!, "info");
+    final tempemailHint = await LangService.getText(langCode!, "input_email");
+    final tempphoneLabel = await LangService.getText(langCode!, "nomor_hp_label");
+    final tempphoneHint = await LangService.getText(langCode!, "nomor_hp");
+    final tempphoneError = await LangService.getText(langCode!, "nomor_hp_error");
+    setState(() {
+      paymentLang = temppaymentLang;
+      infoLang = tempinfoLang;
+      emailHint = tempemailHint;
+      phoneLabel = tempphoneLabel;
+      phoneHint = tempphoneHint;
+      phoneError = tempphoneError;
+      isLoading = false;
+    });
+  }
+
+  late final genders = [
+    {'label': paymentLang['gender_1'], 'icon': '$baseUrl/image/male.png'},
+    {'label': paymentLang['gender_2'], 'icon': '$baseUrl/image/female.png'},
+  ];
 
   bool get isSvg {
     final path = isuploaded ? strAvatar : widget.user['photo'];
@@ -139,8 +168,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Ukuran File Terlalu Besar"),
-          content: const Text("Silakan pilih gambar dengan ukuran maksimal 1 MB."),
+          title: Text(infoLang['alert_size_file_1']),  //"Ukuran File Terlalu Besar"
+          content: Text(infoLang['alert_size_file_2']), //"Silakan pilih gambar dengan ukuran maksimal 1 MB."
           actions: [
             TextButton(
               child: const Text("OK"),
@@ -162,7 +191,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         children: [
           ListTile(
             leading: const Icon(Icons.photo),
-            title: const Text("Pilih dari Galeri"),
+            title: Text(infoLang['pilih_galeri']),
             onTap: () {
               Navigator.pop(context);
               pickImage();
@@ -170,7 +199,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
           ListTile(
             leading: const Icon(Icons.camera_alt),
-            title: const Text("Ambil dari Kamera"),
+            title: Text(infoLang['pilih_kamera']),
             onTap: () {
               Navigator.pop(context);
               pickFromCamera();
@@ -201,11 +230,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
 
   Future<void> saveProfile() async {
-    if (selectedGender == 'Laki-laki') {
-      selectedGender = 'male';
-    } else if (selectedGender == 'Perempuan') {
-      selectedGender = 'female';
+
+    String genderValue;
+    final rawGender = selectedGender.toString().toLowerCase();
+
+    if (rawGender == 'laki-laki' || rawGender == 'male') {
+      genderValue = 'male';
+    } else if (rawGender == 'perempuan' || rawGender == 'female') {
+      genderValue = 'female';
+    } else {
+      genderValue = ''; // handle error
     }
+    
     String? token = await StorageService.getToken();
 
     final body = {
@@ -215,7 +251,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       "date_of_birth": dob,
       "phone": phoneController.text,
       "avatar": strAvatar,
-      "gender": selectedGender,
+      "gender": genderValue,
       "company": companyController.text.isNotEmpty ? companyController.text : null,
       "job_title": jobTitleController.text.isNotEmpty ? jobTitleController.text : null,
       "link_linkedin": linkedinController.text.isNotEmpty ? linkedinController.text : null,
@@ -239,6 +275,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
         link_linkedin: linkedinController.text.isNotEmpty ? linkedinController.text : null,
         link_ig: igController.text.isNotEmpty ? igController.text : null,
         link_twitter: twitterController.text.isNotEmpty ? twitterController.text : null
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(infoLang['sukses_info_profil'])), //"Profil berhasil diubah"
       );
 
       Navigator.pop(context, true);
@@ -288,7 +328,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       initialDate: initialDate,
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      helpText: 'Pilih Tanggal Lahir',
+      helpText: infoLang['pilih_dob'],
     );
 
     if (picked != null) {
@@ -338,7 +378,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           dobController.text = formattedDate;
         } else {
           // Bahasa Inggris
-          final datePart = DateFormat("MMMM d yyyy", "en_US").format(date);
+          final datePart = DateFormat("MMMM d, yyyy", "en_US").format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
           final day = date.day;
@@ -359,14 +399,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
         formattedDate = '-';
       }
     }
+
+    selectedGender = gender;
     
-    return Scaffold(
+    return isLoading ? Center(child: CircularProgressIndicator(color: Colors.red,)) : Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text('Edit Profil'),
+        title: Text('Edit ${infoLang['profil']}'),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -411,7 +453,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   fit: BoxFit.cover,
                                 )
                               : Image.network(
-                                  "$baseUrl/noimage_finalis.png",
+                                  '$baseUrl/user/${widget.user['photo']}',
                                   width: 120, 
                                   height: 120, fit: 
                                   BoxFit.cover,
@@ -455,7 +497,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Informasi Utama',
+                    infoLang['informasi_utama'] , //'Informasi Utama',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -464,7 +506,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Nama depan'
+                    infoLang['nama_depan_label']
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -473,7 +515,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: firstNameController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan nama depan',
+                    hintText: infoLang['nama_depan_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -496,7 +538,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Nama belakang'
+                    infoLang['nama_belakang_label']
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -504,7 +546,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: lastNameController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan nama belakang',
+                    hintText: infoLang['nama_belakang_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -517,7 +559,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Tanggal Lahir'
+                    infoLang['dob_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -527,7 +569,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   readOnly: true,
                   onTap: () => _selectDate(context),
                   decoration: InputDecoration(
-                    hintText: 'Pilih tanggal lahir',
+                    hintText: infoLang['pilih_dob'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -551,14 +593,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Jenis Kelamin'
+                    paymentLang['gender_label'], //'Jenis Kelamin'
                   ),
                 ),
                 SizedBox(height: 8,),
                 Row(
                   children: List.generate(genders.length, (index) {
                     final item = genders[index];
-                    final isSelectedGender = selectedGender == item['label'];
+                    final isSelectedGender = selectedGender == item['label'].toString().toLowerCase();
 
                     return Expanded(
                       child: GestureDetector(
@@ -604,7 +646,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Perusahaan'
+                    infoLang['company_label'], //'Perusahaan'
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -612,7 +654,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: companyController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan nama perusahaan',
+                    hintText: infoLang['company_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -625,7 +667,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Jabatan'
+                    infoLang['job_label'], //'Jabatan'
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -633,7 +675,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: jobTitleController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan jabatan',
+                    hintText: infoLang['job_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -646,7 +688,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Informasi Akun',
+                    infoLang['informasi_akun'], //']'Informasi Akun',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -663,7 +705,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: emailController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan Email',
+                    hintText: emailHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -671,6 +713,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     fillColor: Colors.white,
                   ),
                 ),
+                if (verifEmail == "0") ... [
+                  SizedBox(height: 4,),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Text(
+                      infoLang['verified_email'], //"Email kamu belum diverifikasi. 
+                      style: TextStyle(color: Colors.red),
+                    )
+                  )
+                ],
                 if (errorCode == 422 && errorMessage.containsKey('email')) ... [
                   SizedBox(height: 4,),
                   Align(
@@ -686,7 +738,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'No Phone'
+                    phoneLabel!
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -695,7 +747,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: phoneController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Masukkan No Phone',
+                    hintText: phoneHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -704,7 +756,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     errorText: phoneController.text.isEmpty
                         ? null
                         : (!isValidPhone(phoneController.text)
-                            ? "Nomor HP harus 10-13 digit dan dimulai dengan 08"
+                            ? phoneError //"Nomor HP harus 10-13 digit dan dimulai dengan 08",
                             : null),
                   ),
                 ),
@@ -723,7 +775,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Media Sosial',
+                    infoLang['media_sosial'], //'Media Sosial',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -731,7 +783,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Username Linkedin'
+                    infoLang['uname_linkedin_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -739,7 +791,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: linkedinController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'masukkan username Linkedin',
+                    hintText: infoLang['uname_linkedin_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -769,7 +821,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Username Instagram'
+                    infoLang['uname_instagram_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -777,7 +829,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: igController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'masukkan username Instagram',
+                    hintText: infoLang['uname_instagram_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -807,7 +859,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    'Username Twitter'
+                    infoLang['uname_twitter_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -815,7 +867,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: twitterController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'masukkan username Twitter',
+                    hintText: infoLang['uname_twitter_hint'],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -856,7 +908,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      "Simpan",
+                      infoLang['simpan'],
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),

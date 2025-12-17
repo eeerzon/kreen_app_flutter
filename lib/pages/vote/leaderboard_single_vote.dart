@@ -18,7 +18,9 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.da
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_5_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_6_widget.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
@@ -30,7 +32,8 @@ class LeaderboardSingleVote extends StatefulWidget {
   final int? indexWrap;
   final String? close_payment;
   final String? tanggal_buka_vote;
-  const LeaderboardSingleVote({super.key, required this.id_finalis, required this.count, this.indexWrap, this.close_payment, this.tanggal_buka_vote});
+  final String? flag_hide_nomor_urut;
+  const LeaderboardSingleVote({super.key, required this.id_finalis, required this.count, this.indexWrap, this.close_payment, this.tanggal_buka_vote, this.flag_hide_nomor_urut});
 
   @override
   State<LeaderboardSingleVote> createState() => _LeaderboardSingleVoteState();
@@ -60,22 +63,70 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   final List<int> voteOptions = [10, 50, 100, 250, 500, 1000];
   int? selectedVotes;
 
+  Map<String, dynamic>? detailVoteLang;
+
+  String? notLogin, notLoginDesc, loginText;
+  String? totalHargaText, hargaText, hargaDetail, bayarText;
+  String? endVote, voteOpen, voteOpenAgain;
+  String? buttonPilihPaketText;
+  String? detailfinalisText;
+  String? noDataText;
+  String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidVideo, socialMediaText;
+
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _getBahasa();
-      _loadFinalis();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadFinalis();
     });
   }
 
   Future<void> _getBahasa() async {
-    final code = await prefs.read(key: 'bahasa');
+    final code = await StorageService.getLanguage();
 
     setState(() {
       langCode = code;
     });
+
+    final tempDetailVoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+
+    setState(() {
+      detailVoteLang = tempDetailVoteLang;
+
+      totalHargaText = tempdetailFinalis['total_harga'];
+      hargaText = tempdetailFinalis['harga'];
+      hargaDetail = tempdetailFinalis['harga_detail'];
+      bayarText = tempdetailFinalis['bayar'];
+
+      endVote = tempdetailFinalis['end_vote'];
+      voteOpen = tempdetailFinalis['vote_open'];
+      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      
+      notLogin = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      loginText = templogin;
+
+      buttonPilihPaketText = tempdetailFinalis['pick_paket'];
+      detailfinalisText = tempdetailFinalis['detail_finalis'];
+
+      noDataText = tempdetailFinalis['no_data'];
+      ageText = tempdetailFinalis['age'];
+      activityText = tempdetailFinalis['aktivitas'];
+      biographyText = tempdetailFinalis['biografi'];
+      scanQrText = tempdetailFinalis['scan_vote'];
+      downloadQrText = tempdetailFinalis['unduh_qr'];
+      tataCaraText = tempdetailFinalis['tatacara_vote'];
+      videoProfilText = tempdetailFinalis['profile_video'];
+      noValidVideo = tempdetailFinalis['video_no_valid'];
+      socialMediaText = tempdetailFinalis['sosial_media'];
+    });
+
   }
 
   Future<void> _loadFinalis() async {
@@ -381,7 +432,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Detail Finalis"), 
+        title: Text(detailfinalisText!), 
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -452,7 +503,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             const SizedBox(height: 10,),
                             (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
                               ? Text(
-                                  "Tidak ada data",
+                                  noDataText!,
                                   style: const TextStyle(
                                     color: Colors.grey,
                                     fontStyle: FontStyle.italic,
@@ -462,10 +513,12 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                 style: const TextStyle(color: Colors.grey),
                               ),
                   
-                            const SizedBox(height: 10,),
-                            Text(
-                              detailFinalis['nomor_urut'].toString(),
-                            ),
+                            if (widget.flag_hide_nomor_urut == "0") ...[
+                              const SizedBox(height: 10,),
+                              Text(
+                                detailFinalis['nomor_urut'].toString(),
+                              ),
+                            ],
                   
                             const SizedBox(height: 30,),
                             Row(
@@ -487,14 +540,14 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                   
                                         SizedBox(width: 4),
                                         //text
-                                        Text("Harga"),
+                                        Text(hargaText!),
                                       ],
                                     ),
                   
                                     const SizedBox(height: 10,),
                                     Text(
                                       harga == 0
-                                      ? 'Gratis'
+                                      ? hargaDetail!
                                       : "${detailvote['currency']} ${formatter.format(harga)}",
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
@@ -543,7 +596,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Vote Akan Dibuka Kembali pada ${widget.tanggal_buka_vote}',
+                                      '$voteOpenAgain ${widget.tanggal_buka_vote}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(color: Colors.white),
                                       softWrap: true,
@@ -754,13 +807,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Usia",
+                                  ageText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                   
                                 (detailFinalis['usia'] == 0)
                                   ? Text(
-                                      "Tidak ada data",
+                                      noDataText!,
                                       style: TextStyle(
                                         color: Colors.grey,
                                         fontStyle: FontStyle.italic,
@@ -774,7 +827,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               if (detailFinalis['profesi'].toString().isNotEmpty) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Aktifitas",
+                                  activityText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
@@ -785,7 +838,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Deskripsi",
+                                  biographyText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Html(
@@ -829,7 +882,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                   
                                 const SizedBox(height: 12,),
                                 Text(
-                                  "Scan QR untuk Vote",
+                                  scanQrText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                   
@@ -851,7 +904,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Save QR",
+                                          downloadQrText!,
                                           style: TextStyle(color: Colors.white),
                                         ),
                                         const SizedBox(width: 10,),
@@ -880,7 +933,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Tata Cara Vote",
+                                          tataCaraText!,
                                           style: TextStyle(color: Colors.blue),
                                         ),
                                         const SizedBox(width: 10,),
@@ -905,11 +958,78 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             padding: kGlobalPadding,
                             child: Column(
                               children: [
-                                VideoSection(link: detailFinalis['video_profile']),
+                                VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!),
                               ],
                             ),
                           ),
                         ],
+                      ],
+
+                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty
+                          || detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty
+                          || detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty
+                          || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
+
+                            SizedBox(height: 12),
+                            // Media Social Section
+                            Container(
+                              width: double.infinity,
+                              padding: kGlobalPadding,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300,),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                  socialMediaText!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.facebook,
+                                          color:  Color(0xFF1877F2),
+                                          link: detailFinalis['facebook'],
+                                          platform: "facebook",
+                                        ),
+
+                                      if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.twitter,
+                                          color:  Color(0xFF1DA1F2),
+                                          link: detailFinalis['twitter'],
+                                          platform: "twitter",
+                                        ),
+
+                                      if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.linkedin,
+                                          color:  Color(0xFF0077B5),
+                                          link: detailFinalis['linkedin'],
+                                          platform: "linkedin",
+                                        ),
+
+                                      if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.instagram,
+                                          color:  Color(0xFFE1306C),
+                                          link: detailFinalis['instagram'],
+                                          platform: "instagram",
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                       ],
 
                       // DESKRIPSI
@@ -952,7 +1072,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  "Diselenggarakan Oleh",
+                                                  detailVoteLang!['penyelenggara'],
                                                   style: TextStyle(
                                                     color: Colors.grey,
                                                   ),
@@ -1025,7 +1145,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
                                       const SizedBox(height: 20,),
                                       Text(
-                                        "Detail Grandfinal",
+                                        detailVoteLang!['grandfinal_detail'],
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
 
@@ -1229,69 +1349,17 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
                             // === LEADERBOARD ===
                             if (detailvote['leaderboard_limit_tampil'] != -1)
-                              Container(
-                                color: Colors.white,
-                                padding: kGlobalPadding,
-                                child: _buildLeaderboardSection(view_api, ranking, detailvote, langCode!),
+                              DetailVoteLang(
+                                values: detailVoteLang!,
+                                child: Container(
+                                  color: Colors.white,
+                                  padding: kGlobalPadding,
+                                  child: _buildLeaderboardSection(view_api, ranking, detailvote, langCode!),
+                                ),
                               ),
                               
                             ],
                           ),
-                        ),
-                      ),
-                  
-                      const SizedBox(height: 12),
-                  
-                      // Media Social Section
-                      Container(
-                        width: double.infinity,
-                        padding: kGlobalPadding,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300,),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Media Social",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.facebook,
-                                  color: const Color(0xFF1877F2),
-                                  link: detailFinalis['facebook'],
-                                  platform: "facebook",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.twitter,
-                                  color: const Color(0xFF1DA1F2),
-                                  link: detailFinalis['twitter'],
-                                  platform: "twitter",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.linkedin,
-                                  color: const Color(0xFF0077B5),
-                                  link: detailFinalis['linkedin'],
-                                  platform: "linkedin",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.instagram,
-                                  color: const Color(0xFFE1306C),
-                                  link: detailFinalis['instagram'],
-                                  platform: "instagram",
-                                ),
-                              ],
-                            ),
-                          ],
                         ),
                       ),
                   
@@ -1318,10 +1386,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
                 children: [
-                  Text("Total Harga"),
+                  Text(hargaText!),
                   Text(
                     harga == 0
-                    ? 'Gratis'
+                    ? hargaDetail!
                     : "${detailvote['currency']} ${formatter.format(totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -1398,8 +1466,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               ),
 
                               const SizedBox(height: 24),
-                              const Text(
-                                "Ayo... Login terlebih Dahulu",
+                              Text(
+                                notLogin!,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -1409,8 +1477,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               ),
 
                               const SizedBox(height: 12),
-                              const Text(
-                                "Klik tombol dibawah ini untuk menuju halaman Login",
+                              Text(
+                                notLoginDesc!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.black54, fontSize: 14),
                               ),
@@ -1432,8 +1500,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                                   elevation: 2,
                                 ),
-                                child: const Text(
-                                  "Login Sekarang",
+                                child: Text(
+                                  loginText!,
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -1479,8 +1547,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                 },
                 child: Text(
                   isTutup
-                  ? "Vote telah Berakhir"
-                  : "Lanjut Pembayaran",
+                  ? endVote!
+                  : bayarText!,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),

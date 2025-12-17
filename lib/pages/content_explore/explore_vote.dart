@@ -23,6 +23,8 @@ class _ExploreVoteState extends State<ExploreVote> {
 
   List<dynamic> votes = [];
 
+  Map<String, dynamic> votelang = {};
+
   Future<void> _loadContent(bool isFirst, String? term) async {
     
     final endpointVote = isFirst ? "/vote" : "/vote?term=$term";
@@ -62,9 +64,18 @@ class _ExploreVoteState extends State<ExploreVote> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await StorageService.getLanguage();
+    final code = await StorageService.getLanguage();
+    setState(() {
+      langCode = code;
+    });
     
-    search = await LangService.getText(langCode!, "search");
+    final tempsearch = await LangService.getText(langCode!, "search");
+    final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      search = tempsearch;
+      votelang = tempvotelang;
+    });
   }
 
   @override
@@ -263,7 +274,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                               const SizedBox(height: 4),
                               Text(
                                 item['price'] == 0
-                                ? 'Gratis'
+                                ? votelang['harga_detail']  //'Gratis'
                                 : "${item['currency']} $hargaFormatted",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,

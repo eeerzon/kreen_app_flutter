@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class PaketVoteModal {
   static Future<Map<String, dynamic>?> show(BuildContext context, int index, List<Map<String, dynamic>> paketTerbaik, List<Map<String, dynamic>> paketLainnya, Color color, Color bgColor, String? idPaketBw, String currency) async {
@@ -11,6 +13,66 @@ class PaketVoteModal {
     String? idPaket;
 
     final formatter = NumberFormat.decimalPattern("id_ID");
+    bool isLoading = true;
+
+    String? langCode;
+    Map<String, dynamic> modalLang = {};
+
+    Future <void> getBahasa() async {
+      langCode = await StorageService.getLanguage();
+
+      modalLang = await LangService.getJsonData(langCode!, "modal");
+
+      isLoading = false;
+    }
+
+    Widget buildSkeleton() {
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 12,
+                        width: double.infinity,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: 120,
+                        color: Colors.grey.shade300,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
 
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       backgroundColor: Colors.white,
@@ -23,7 +85,17 @@ class PaketVoteModal {
         
         return StatefulBuilder(
           builder: (context, setState) {
-            return SafeArea(
+
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              if (isLoading) {
+                await getBahasa();
+                setState(() {
+                  isLoading = false;
+                });
+              }
+            });
+
+            return isLoading ? buildSkeleton() : SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: kGlobalPadding,
@@ -36,7 +108,7 @@ class PaketVoteModal {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Pilih Paket Vote",
+                            modalLang["pilih_paket"] ?? "", // "Pilih Paket Vote",
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
@@ -49,7 +121,7 @@ class PaketVoteModal {
                       const SizedBox(height: 4),
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: Text("Silahkan pilih paket vote anda.."),
+                        child: Text(modalLang["pilih_paket_desc"] ?? ""), //"Silahkan pilih paket vote anda.."
                       ),
                       const SizedBox(height: 16),
 
@@ -59,8 +131,8 @@ class PaketVoteModal {
                           children: [
                             // SECTION 1 — Paket Terbaik
                             if (paketTerbaik.isNotEmpty) ...[
-                              const Text(
-                                "Paket Terbaik buat kamu",
+                              Text(
+                                modalLang["paket_terbaik"] ?? "", //"Paket Terbaik buat kamu",
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                               const SizedBox(height: 8),
@@ -157,8 +229,8 @@ class PaketVoteModal {
 
                             // SECTION 2 — Paket Lainnya
                             if (paketLainnya.isNotEmpty) ...[
-                              const Text(
-                                "Paket Lainnya",
+                              Text(
+                                modalLang["paket_lainnya"] ?? "", //"Paket Lainnya",
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                               const SizedBox(height: 8),
@@ -250,7 +322,7 @@ class PaketVoteModal {
                                   ? null
                                   : () => Navigator.pop(context, {'id_paket': idPaket, 'counts': counts, 'harga': hargaGet,}),
                               child: Text(
-                                "Konfirmasi",
+                                modalLang['konfirmasi'] ?? "", // "Konfirmasi",
                                 style: TextStyle(color: Colors.white),
                               ),
                             ),
@@ -272,7 +344,7 @@ class PaketVoteModal {
                                 Navigator.pop(context);
                               },
                               child: Text(
-                                "Cancel",
+                                modalLang['batal'] ?? "", //]"Cancel",
                                 style: TextStyle(color: Colors.black),
                               ),
                             ),

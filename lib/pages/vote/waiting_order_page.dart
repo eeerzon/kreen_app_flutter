@@ -8,18 +8,22 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 
 class WaitingOrderPage extends StatefulWidget {
   final String id_order;
-  const WaitingOrderPage({super.key, required this.id_order});
+  final bool formHistory;
+  const WaitingOrderPage({super.key, required this.id_order, this.formHistory = false});
 
   @override
   State<WaitingOrderPage> createState() => _WaitingOrderPageState();
 }
 
 class _WaitingOrderPageState extends State<WaitingOrderPage> {
-  String langCode = 'id';
+  String? langCode;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now();
@@ -34,9 +38,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadOrder();
       _startCountdown();
-      _loadOrder();
     });
   }
 
@@ -53,6 +58,25 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
+    });
+  }
+
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> detailFinalisLang = {};
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final temppaymentlang = await LangService.getJsonData(langCode!, "payment");
+    final tempdetailfinalislang = await LangService.getJsonData(langCode!, "detail_finalis");
+
+    setState(() {
+      paymentLang = temppaymentlang;
+      detailFinalisLang = tempdetailfinalislang;
     });
   }
 
@@ -86,7 +110,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
-        _isLoading = false;
+      setState(() {
         detailOrder = tempOrder;
 
         voteOder = temp_vote_order;
@@ -112,6 +136,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         }
 
         deadline = DateTime.parse(expiresAt).toLocal();
+        _isLoading = false;
+      });
     }
   }
 
@@ -306,7 +332,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Pembayaran"),
+        title: Text(paymentLang['header']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -334,7 +360,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
-                          'Jangan tutup halaman ini sebelum Anda menyelesaikan pembayaran',
+                          paymentLang['dont_close'],
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           softWrap: true,
@@ -365,7 +391,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                   child: Column(
                     children: [
 
-                      const Text("Sisa Waktu Pembayaran"),
+                      Text(paymentLang['sisa_waktu']),
 
                       const SizedBox(height: 10),
                       Container(
@@ -381,15 +407,15 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _timeBox("$hours".padLeft(2, "0"), "Jam"),
+                                  _timeBox("$hours".padLeft(2, "0"), detailFinalisLang['hour']),
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$minutes".padLeft(2, "0"), "Menit"),
+                                  _timeBox("$minutes".padLeft(2, "0"), detailFinalisLang['minute']),
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$seconds".padLeft(2, "0"), "Detik"),
+                                  _timeBox("$seconds".padLeft(2, "0"), detailFinalisLang['second']),
                                 ],
                               ),
                             ],
@@ -398,7 +424,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       ),
 
                       const SizedBox(height: 16),
-                      const Text("Selesaikan pembayaranmu sebelum"),
+                      Text(paymentLang['selesaikan_pembayaran']),
                       Text(
                         formattedDate,
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -442,7 +468,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                       children: [
                                         Icon(Icons.info_outline, color: Colors.blue,),
                                         Text(
-                                          'Instruksi Pembayaran',
+                                          paymentLang['instruksi_pembayaran'],
                                           style: TextStyle(color: Colors.blue),
                                         )
                                       ],
@@ -454,7 +480,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               if (tapinstruksi) ... [
                                 const SizedBox(height: 10,),
                                 Text(
-                                  'Instruksi Pembayaran',
+                                  paymentLang['instruksi_pembayaran'],
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
 
@@ -497,7 +523,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 16,),
                               Text(
-                                'Kode Pesanan',
+                                paymentLang['kode_pesanan'],
                                 style: TextStyle(color: Colors.grey),
                               ),
 
@@ -509,7 +535,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 25,),
                               Text(
-                                'Nomor Pembayaran',
+                                paymentLang['nomor_pembayaran'],
                                 style: TextStyle(color: Colors.grey,),
                               ),
 
@@ -525,7 +551,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     // Tampilkan snackbar konfirmasi
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Nomor VA berhasil disalin'),
+                                        content: Text(paymentLang['copyVA']),
                                         backgroundColor: Colors.green,
                                         duration: const Duration(seconds: 2),
                                         behavior: SnackBarBehavior.floating,
@@ -553,7 +579,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                'Total Pembayaran ${vote['currency_vote']}',
+                                '${paymentLang['total_pembayaran']} ${vote['currency_vote']}',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
@@ -605,9 +631,14 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                       ),
 
                                       const SizedBox(height: 8,),
-                                      Text(
-                                        '${finalis[0]['nama_finalis']} (${voteOrderDetail[0]['qty']}x)',
-                                        style: TextStyle(color: Colors.grey),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: List.generate(finalis.length, (i) {
+                                          return Text(
+                                            '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote(s)',
+                                            style: const TextStyle(color: Colors.grey),
+                                          );
+                                        }),
                                       ),
                                     ],
                                   )
@@ -616,7 +647,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               
                               const SizedBox(height: 20,),
                               Text(
-                                'Ringkasan Pembayaran',
+                                paymentLang['ringkasan_pembayaran'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
@@ -625,7 +656,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Total Harga Vote'
+                                    detailFinalisLang['total_harga'],
                                   ),
 
                                   Text(
@@ -639,7 +670,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Biaya Layanan'
+                                    paymentLang['biaya_layanan'],
                                   ),
 
                                   Text(
@@ -653,7 +684,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Total Pembayaran',
+                                    paymentLang['total_pembayaran'],
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
 
@@ -684,8 +715,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             widget.id_order
                           );
                         },
-                        child: const Text(
-                          "Check Status Pesanan",
+                        child: Text(
+                          paymentLang['check_status'],
                           style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
@@ -701,96 +732,119 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   Widget buildLinkKadaluarsa() {
-    return SafeArea(
-      child: Container(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        title: Text(paymentLang['header']),
+        centerTitle: false,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+
+      body: Container(
         width: double.infinity,
-        height: MediaQuery.of(context).size.height,
-        color: Colors.grey.shade200,
-        child: Center(
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300,),
-            ),
-            child: Padding(
-              padding: kGlobalPadding,
-              child: Column(
-                mainAxisSize: MainAxisSize.min, 
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: Image.network(
-                      '$baseUrl/image/expired_order.png',
-                      width: 220,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
-                          'assets/images/img_broken.jpg',
-                          height: 180,
-                        );
-                      },
+        padding: kGlobalPadding,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300,),
+          ),
+          child: Padding(
+            padding: kGlobalPadding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min, 
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: Image.network(
+                    '$baseUrl/image/expired_order.png',
+                    width: 220,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/images/img_broken.jpg',
+                        height: 180,
+                      );
+                    },
+                  ),
+                ),
+        
+                const SizedBox(height: 20),
+                Text(
+                  paymentLang['link_kadaluarsa'],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+        
+                const SizedBox(height: 10),
+                Text(
+                  paymentLang['link_kadaluarsa_desc'],
+                  textAlign: TextAlign.center,
+                ),
+        
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Link Pembayaran Kadaluwarsa',
-                    textAlign: TextAlign.center,
+                  onPressed: () {
+                    if (widget.formHistory) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                            DetailVotePage(id_event: vote['id_vote'].toString()),
+                        ),
+                      );
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text(
+                    paymentLang['transaksi_lagi'],
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      color: Colors.white,
                     ),
                   ),
-
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Maaf... Tautan ini memiliki batas waktu akses demi keamanan dan pengelolaan akses yang lebih baik.',
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      "Ayo, lakukan transaksi kembali",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-                  RichText(
-                    text: TextSpan(
-                      text: 'Jika kendala berlanjut, hubungi ',
-                      style: TextStyle(color: Colors.black),
-                      children: const [
-                        TextSpan(
-                          text: "Kontak Kami",
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
+                ),
+        
+                const SizedBox(height: 20),
+                RichText(
+                  text: TextSpan(
+                    text: paymentLang['kendala'],
+                    style: TextStyle(color: Colors.black),
+                    children: [
+                      TextSpan(
+                        text: paymentLang['kontak'],
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    )
-                  ),
-                ],
-              ),
+                      ),
+                    ],
+                  )
+                ),
+              ],
             ),
           ),
         ),

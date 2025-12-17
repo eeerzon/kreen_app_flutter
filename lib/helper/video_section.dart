@@ -4,7 +4,9 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class VideoSection extends StatelessWidget {
   final String link;
-  const VideoSection({super.key, required this.link});
+  final String headerText;
+  final String noValidText;
+  const VideoSection({super.key, required this.link, required this.headerText, required this.noValidText});
 
   String extractVideoId(String url) {
     try {
@@ -19,8 +21,8 @@ class VideoSection extends StatelessWidget {
     final videoId = extractVideoId(link);
 
     if (videoId.isEmpty) {
-      return const Text(
-        "Video tidak valid",
+      return Text(
+        noValidText,
         style: TextStyle(color: Colors.red),
       );
     }
@@ -39,8 +41,8 @@ class VideoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            "Video Profile",
+          Text(
+            headerText,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 12),

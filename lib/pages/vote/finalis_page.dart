@@ -11,6 +11,7 @@ import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -23,7 +24,7 @@ class FinalisPage extends StatefulWidget {
 }
 
 class _FinalisPageState extends State<FinalisPage> {
-  String langCode = 'id';
+  String? langCode;
   DateTime deadline = DateTime(2025, 09, 26, 13, 30, 00, 00, 00);
 
   Duration remaining = Duration.zero;
@@ -42,6 +43,14 @@ class _FinalisPageState extends State<FinalisPage> {
 
 
   String? slctedIdVote, slctedIdFinalis, slctedNamaFinalis;
+
+  String? findFinalistText;
+  String? notLogin, notLoginDesc, searchHintText, loginText;
+  String? totalHargaText, hargaText, hargaDetail, bayarText;
+  String? endVote, voteOpen, voteOpenAgain;
+  String? countDownText, daysText, hoursText, minutesText, secondsText;
+  String? detailfinalisText, cariFinalisText;
+  String? noDataText;
 
   @override
   void initState() {
@@ -63,6 +72,7 @@ class _FinalisPageState extends State<FinalisPage> {
     final tempVote = resultVote?['data'] ?? {};
     final tempFinalis = resultFinalis?['data'] ?? [];
 
+    await _getBahasa();
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
@@ -81,6 +91,49 @@ class _FinalisPageState extends State<FinalisPage> {
         });
       });
     }
+  }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+    final tempsearchHintText = await LangService.getText(langCode!, "search");
+
+    setState(() {
+      totalHargaText = tempdetailFinalis['total_harga'];
+      hargaText = tempdetailFinalis['harga'];
+      hargaDetail = tempdetailFinalis['harga_detail'];
+      bayarText = tempdetailFinalis['bayar'];
+
+      endVote = tempdetailFinalis['end_vote'];
+      voteOpen = tempdetailFinalis['vote_open'];
+      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+
+      countDownText = tempdetailFinalis['countdown_vote'];
+      daysText = tempdetailFinalis['day'];
+      hoursText = tempdetailFinalis['hour'];
+      minutesText = tempdetailFinalis['minute'];
+      secondsText = tempdetailFinalis['second'];
+
+      findFinalistText = tempdetailFinalis['button_find_finalist'];
+      notLogin = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      loginText = templogin;
+      searchHintText = tempsearchHintText;
+      
+      detailfinalisText = tempdetailFinalis['detail_finalis'];
+      cariFinalisText = tempdetailFinalis['search_finalis'];
+
+      noDataText = tempdetailFinalis['no_data'];
+    });
+
   }
 
   Future<void> _precacheAllImages(
@@ -290,14 +343,6 @@ class _FinalisPageState extends State<FinalisPage> {
     final minutes = remaining.inMinutes % 60;
     final seconds = remaining.inSeconds % 60;
 
-    // if (_isLoading) {
-    //   return Scaffold(
-    //     body: Center(
-    //       child: CircularProgressIndicator(color: Colors.red),
-    //     ),
-    //   );
-    // }
-
     Map<String, Color> colorMap = {
       'Blue': Colors.blue,
       'Red': Colors.red,
@@ -330,7 +375,7 @@ class _FinalisPageState extends State<FinalisPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Temukan Finalis"),
+        title: Text(findFinalistText!),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -352,10 +397,10 @@ class _FinalisPageState extends State<FinalisPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
                 children: [
-                  Text("Total Harga"),
+                  Text(totalHargaText!),
                   Text(
                     vote['harga'] == 0
-                    ? 'Gratis'
+                    ? hargaDetail!
                     : "${vote['currency']} ${formatter.format(totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -432,8 +477,8 @@ class _FinalisPageState extends State<FinalisPage> {
                               ),
 
                               const SizedBox(height: 24),
-                              const Text(
-                                "Ayo... Login terlebih Dahulu",
+                              Text(
+                                notLogin!,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -443,8 +488,8 @@ class _FinalisPageState extends State<FinalisPage> {
                               ),
 
                               const SizedBox(height: 12),
-                              const Text(
-                                "Klik tombol dibawah ini untuk menuju halaman Login",
+                              Text(
+                                notLoginDesc!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.black54, fontSize: 14),
                               ),
@@ -466,8 +511,8 @@ class _FinalisPageState extends State<FinalisPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                                   elevation: 2,
                                 ),
-                                child: const Text(
-                                  "Login Sekarang",
+                                child: Text(
+                                  loginText!,
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -513,8 +558,8 @@ class _FinalisPageState extends State<FinalisPage> {
                 },
                 child: Text(
                   remaining.inSeconds == 0
-                  ? "Vote telah berakhir"
-                  : "Lanjut Pembayaran",
+                  ? endVote!
+                  : bayarText!,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
@@ -541,22 +586,22 @@ class _FinalisPageState extends State<FinalisPage> {
                   padding: kGlobalPadding,
                   child: Column(
                     children: [
-                      const Text("Hitung Mundur hingga Vote ditutup"),
+                      Text(countDownText!),
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _timeBox("$days", "Hari", color),
+                          _timeBox("$days", daysText!, color),
                           const SizedBox(width: 20),
-                          _timeBox("$hours".padLeft(2, "0"), "Jam", color),
+                          _timeBox("$hours".padLeft(2, "0"), hoursText!, color),
                           const SizedBox(width: 10),
                           _separator(color),
                           const SizedBox(width: 10),
-                          _timeBox("$minutes".padLeft(2, "0"), "Menit", color),
+                          _timeBox("$minutes".padLeft(2, "0"), minutesText!, color),
                           const SizedBox(width: 10),
                           _separator(color),
                           const SizedBox(width: 10),
-                          _timeBox("$seconds".padLeft(2, "0"), "Detik", color),
+                          _timeBox("$seconds".padLeft(2, "0"), secondsText!, color),
                         ],
                       ),
                     ],
@@ -572,6 +617,7 @@ class _FinalisPageState extends State<FinalisPage> {
             delegate: _StickySearchBarDelegate(
               color: color,
               onSearchChanged: _onSearchChanged,
+              searchHintText: searchHintText!,
             ),
           ),
 
@@ -666,9 +712,9 @@ class _FinalisPageState extends State<FinalisPage> {
     String buttonText = '';
     
     if (isBeforeOpen) {
-      buttonText = 'Vote akan dibuka pada $formattedBukaVote';
+      buttonText = '$voteOpen $formattedBukaVote';
     } else if (vote['close_payment'] == '1') {
-      buttonText = 'Vote akan dibuka Kembali pada $formattedDate';
+      buttonText = '$voteOpenAgain $formattedDate';
     }
 
     return ListView.builder(
@@ -732,7 +778,7 @@ class _FinalisPageState extends State<FinalisPage> {
                   const SizedBox(height: 10),
                   (item['nama_tambahan'] == null || item['nama_tambahan'].toString().trim().isEmpty)
                     ? Text(
-                        "Tidak ada data",
+                        noDataText!,
                         style: const TextStyle(
                           color: Colors.grey,
                           fontStyle: FontStyle.italic,
@@ -741,9 +787,11 @@ class _FinalisPageState extends State<FinalisPage> {
                     : Text(item['nama_tambahan'],
                       style: const TextStyle(color: Colors.grey),
                     ),
-
-                  const SizedBox(height: 10),
-                  Text(item['nomor_urut'].toString()),
+                
+                    if (vote['flag_hide_nomor_urut'] == "0") ... [
+                      const SizedBox(height: 10),
+                      Text(item['nomor_urut'].toString()),
+                    ],
 
                   const SizedBox(height: 15),
                   Row(
@@ -769,7 +817,7 @@ class _FinalisPageState extends State<FinalisPage> {
                           const SizedBox(height: 10),
                           Text(
                             vote['harga'] == 0
-                              ? 'Gratis'
+                              ? hargaDetail!
                               : "${vote['currency']} $hargaFormatted",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -817,6 +865,7 @@ class _FinalisPageState extends State<FinalisPage> {
                               indexWrap: selectedIndexes[index],
                               close_payment: vote['close_payment'],
                               tanggal_buka_payment: formattedDate,
+                              flag_hide_no_urut: vote['flag_hide_nomor_urut'],
                               ),
                           ),
                         );
@@ -828,7 +877,7 @@ class _FinalisPageState extends State<FinalisPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        "Detail Finalis",
+                        detailfinalisText!,
                         style: TextStyle(color: color, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -1296,10 +1345,12 @@ class _FinalisPageState extends State<FinalisPage> {
 class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
   final Color color;
   final ValueChanged<String> onSearchChanged;
+  final String? searchHintText;
 
   _StickySearchBarDelegate({
     required this.color,
     required this.onSearchChanged,
+    required this.searchHintText,
   });
 
   @override
@@ -1310,7 +1361,7 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
       child: TextField(
         autofocus: false,
         decoration: InputDecoration(
-          hintText: "Cari Finalis...",
+          hintText: searchHintText,
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

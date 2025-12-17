@@ -15,28 +15,43 @@ class OrderPage extends StatefulWidget {
 
 class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMixin{
   late TabController _tabController;
-  String? token;
+  String? token, langCode;
   String? appBarTitle;
   String? notLoginText, notLoginDesc, login;
 
   int _selectedIndex = 0;
+
+  bool isLoading = true;
 
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
     if (mounted) {
       setState(() {
         token = storedToken;
+
+        isLoading = false;
       });
     }
   }
 
   Future<void> _getBahasa() async {
-    final langCode = await StorageService.getLanguage();
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
     
-    appBarTitle = await LangService.getText(langCode!, "appBarTitle");
-    notLoginText = await LangService.getText(langCode, "notLogin");
-    notLoginDesc = await LangService.getText(langCode, "notLoginDesc");
-    login = await LangService.getText(langCode, "login");
+    final tempappBarTitle = await LangService.getText(langCode!, "appBarTitle");
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+
+    setState(() {
+      appBarTitle = tempappBarTitle;
+      notLoginText = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      login = templogin;
+    });
   }
 
   final List<Widget> _pages = [
@@ -63,6 +78,62 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      body: isLoading
+        ? _buildSkeletonLoader()
+        : _buildKonten(),
+    );
+  }
+
+  Widget _buildSkeletonLoader() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 12,
+                      width: double.infinity,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 12,
+                      width: 120,
+                      color: Colors.grey.shade300,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildKonten() {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

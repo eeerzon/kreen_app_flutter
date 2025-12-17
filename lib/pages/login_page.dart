@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:kreen_app_flutter/pages/lupa_password.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:kreen_app_flutter/widgets/google_login.dart';
@@ -383,9 +384,16 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LupaPasswordPage(),
+                          ),
+                        );
+                      },
                       child: Text(
-                        lupa_password,
+                        "$lupa_password ?",
                         style: TextStyle(color: Colors.red),
                       ),
                     ),

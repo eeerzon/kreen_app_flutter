@@ -71,43 +71,50 @@ class _RegisPageState extends State<RegisPage> {
       "password": _passwordController.text,
       "password_confirmation": _confirmpasswordController.text
     };
-
-    bool isSukses = false;
     
     final result = await ApiService.post("/register", body: body);
-    if (result!= null && result['success'] == true && result['rc'] == 200) {
-      isSukses = true;
-    } else if (result!['rc'] == 422) {
-      isSukses = false;
-      setState(() {
-        errorMessage = result['data'];
-        errorCode = 422;
-      });
-    } 
-
-    if (!mounted) return;
-    Navigator.pop(context);
-
-    if (isSukses) {
+    if (result!['rc'] == 200) {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.success,
-        title: langCode == 'id' ? 'Berhasil' : 'Succes',
+        title: langCode == 'id' ? 'Berhasil' : 'Success',
         desc: result['message'],
         transitionAnimationDuration: const Duration(milliseconds: 400),
         autoHide: const Duration(seconds: 1),
       ).show().then((_) {
+        hideLoadingDialog(context);
         Navigator.pop(context);
       });
-    } else {
+    } else if (result['rc'] == 422) {
+
+      final data = result['data'];
+      String desc = '';
+      if (data is Map) {
+        final errorMessages = data.values
+          .whereType<List>()
+          .expand((e) => e)
+          .whereType<String>()
+          .toList();
+
+        desc = errorMessages.join('\n');
+      } else {
+        desc = data?.toString() ?? '';
+      }
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
-        title: langCode == 'id' ? 'Gagal' : 'Failed',
-        desc: result['message'],
+        animType: AnimType.topSlide,
+        title: 'Oops!',
+        desc: desc,
         btnOkOnPress: () {},
         btnOkColor: Colors.red,
-      ).show();
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show().then((_) {
+        hideLoadingDialog(context);
+      });
     }
   }
 

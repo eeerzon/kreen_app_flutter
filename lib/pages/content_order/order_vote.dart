@@ -9,6 +9,7 @@ import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/waiting_order_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,17 +21,39 @@ class OrderVote extends StatefulWidget {
 }
 
 class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMixin{
-
+  String? langCode;
   late TabController _tabController;
   bool isLoading = true;
+
+  Map<String, dynamic> eventlang = {};
+  String? orderMenunggu, orderGagal;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadContent();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadContent();
+    });
+  }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempeventLang = await LangService.getJsonData(langCode!, "event");
+    final temporderMenunggu = await LangService.getText(langCode!, "order_menunggu");
+    final temporderGagal = await LangService.getText(langCode!, "order_gagal");
+    
+    setState(() {
+      eventlang = tempeventLang;
+      orderMenunggu = temporderMenunggu;
+      orderGagal = temporderGagal;
     });
   }
 
@@ -148,10 +171,10 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
             indicatorColor: Colors.red,
             labelColor: Colors.red,
             unselectedLabelColor: Colors.grey,
-            tabs: const [
-              Tab(icon: Icon(Icons.check_circle_outline), text: "Selesai"),
-              Tab(icon: Icon(Icons.access_time), text: "Menunggu"),
-              Tab(icon: Icon(Icons.close_rounded), text: "Gagal"),
+            tabs: [
+              Tab(icon: Icon(Icons.check_circle_outline), text: eventlang['selesai']), //selesai
+              Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
+              Tab(icon: Icon(Icons.close_rounded), text: orderGagal), //gagal
             ],
           ),
         ),
@@ -246,11 +269,11 @@ class _VoteSuccessState extends State<VoteSuccess> {
   List<dynamic> orderSuccess = [];
   List<dynamic> votes = [];
 
-  bool isLoading = false;
+  bool isLoading = true;
   bool hasMore = true;
   int currentPage = 1;
 
-  String langCode = 'id';
+  String? langCode;
 
   final formatterNUmber = NumberFormat.decimalPattern("id_ID");
   String statusOrder = '';
@@ -258,6 +281,10 @@ class _VoteSuccessState extends State<VoteSuccess> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
     
     orderSuccess = List.from(widget.orderSuccess);
     votes = List.from(widget.votes);
@@ -271,6 +298,26 @@ class _VoteSuccessState extends State<VoteSuccess> {
       }
     });
 
+  }
+
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> voteLang = {};
+
+  Future <void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+    setState(() {
+      langCode = code;
+    });
+
+    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
+    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      paymentLang = temppaymentLang;
+      voteLang = tempvoteLang;
+
+      isLoading = false;
+    });
   }
 
   Future<void> _fetchOrders({bool loadMore = false}) async {
@@ -379,7 +426,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                     formattedDate = formatter.format(date);
                   } else {
                     // Bahasa Inggris
-                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                    final formatter = DateFormat("MMMM, d yyyy", "en_US");
                     formattedDate = formatter.format(date);
 
                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -399,19 +446,19 @@ class _VoteSuccessState extends State<VoteSuccess> {
               var price = formatterNUmber.format(item['price'] + item['fees']);
               
               if (itemVotes['order_status'] == '0'){
-                statusOrder = 'gagal';
+                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemVotes['order_status'] == '1'){
-                statusOrder = 'selesai';
+                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemVotes['order_status'] == '2'){
-                statusOrder = 'batal';
+                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
               } else if (itemVotes['order_status'] == '3'){
-                statusOrder = 'menunggu';
+                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemVotes['order_status'] == '4'){
-                statusOrder = 'refund';
+                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
               } else if (itemVotes['order_status'] == '20'){
-                statusOrder = 'expired';
+                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
               } else if (itemVotes['order_status'] == '404'){
-                statusOrder = 'hidden';
+                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
               }
 
               return Padding(
@@ -534,12 +581,12 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty vote"
+                                    "$qty ${voteLang['text_vote']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? 'Gratis'
+                                    ? voteLang['harga_detail'] ?? "" //'Gratis'
                                     : "${item['currency']} $price",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -574,7 +621,8 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                      "Vote Lagi",
+                                      //"Vote Lagi",
+                                      voteLang['vote_lagi'] ?? "",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -619,11 +667,12 @@ class _VoteSuccessState extends State<VoteSuccess> {
                   child: Center(child: CircularProgressIndicator(color: Colors.red,)),
                 );
               } else if (!hasMore) {
-                return const Padding(
+                return Padding(
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      "Tidak ada data lagi",
+                      //"Tidak ada data lagi",
+                      voteLang['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -659,11 +708,11 @@ class _VotePendingState extends State<VotePending> {
   List<dynamic> orderPending = [];
   List<dynamic> votes = [];
 
-  bool isLoading = false;
+  bool isLoading = true;
   bool hasMore = true;
   int currentPage = 1;
 
-  String langCode = 'id';
+  String? langCode;
 
   final formatterNUmber = NumberFormat.decimalPattern("id_ID");
   String statusOrder = '';
@@ -671,6 +720,10 @@ class _VotePendingState extends State<VotePending> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
     
     orderPending = List.from(widget.orderPending);
     votes = List.from(widget.votes);
@@ -682,6 +735,26 @@ class _VotePendingState extends State<VotePending> {
           hasMore) {
         _loadMoreOrders();
       }
+    });
+  }
+
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> voteLang = {};
+
+  Future <void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+    setState(() {
+      langCode = code;
+    });
+
+    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
+    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      paymentLang = temppaymentLang;
+      voteLang = tempvoteLang;
+
+      isLoading = false;
     });
   }
 
@@ -791,7 +864,7 @@ class _VotePendingState extends State<VotePending> {
                     formattedDate = formatter.format(date);
                   } else {
                     // Bahasa Inggris
-                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                    final formatter = DateFormat("MMMM, d yyyy", "en_US");
                     formattedDate = formatter.format(date);
 
                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -811,19 +884,19 @@ class _VotePendingState extends State<VotePending> {
               var price = formatterNUmber.format(item['price'] + item['fees']);
               
               if (itemVotes['order_status'] == '0'){
-                statusOrder = 'gagal';
+                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemVotes['order_status'] == '1'){
-                statusOrder = 'selesai';
+                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemVotes['order_status'] == '2'){
-                statusOrder = 'batal';
+                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
               } else if (itemVotes['order_status'] == '3'){
-                statusOrder = 'menunggu';
+                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemVotes['order_status'] == '4'){
-                statusOrder = 'refund';
+                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
               } else if (itemVotes['order_status'] == '20'){
-                statusOrder = 'expired';
+                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
               } else if (itemVotes['order_status'] == '404'){
-                statusOrder = 'hidden';
+                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
               }
 
               return Padding(
@@ -946,12 +1019,12 @@ class _VotePendingState extends State<VotePending> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty vote"
+                                    "$qty ${voteLang['text_vote']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? 'Gratis'
+                                    ? voteLang['harga_detail'] //'Gratis'
                                     : "${item['currency']} $price",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -972,7 +1045,7 @@ class _VotePendingState extends State<VotePending> {
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'])),
+                                    MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true,)),
                                   );
                                 },
                                 child: Container(
@@ -983,7 +1056,8 @@ class _VotePendingState extends State<VotePending> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                      "Kembali ke Pembayaran",
+                                      //"Kembali ke Pembayaran",
+                                      voteLang['back_payment'] ?? "",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -1028,11 +1102,12 @@ class _VotePendingState extends State<VotePending> {
                   child: Center(child: CircularProgressIndicator(color: Colors.red,)),
                 );
               } else if (!hasMore) {
-                return const Padding(
+                return Padding(
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      "Tidak ada data lagi",
+                      //"Tidak ada data lagi",
+                      voteLang['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -1070,11 +1145,11 @@ class _VoteFailState extends State<VoteFail> {
   List<dynamic> orderFail = [];
   List<dynamic> votes = [];
 
-  bool isLoading = false;
+  bool isLoading = true;
   bool hasMore = true;
   int currentPage = 1;
 
-  String langCode = 'id';
+  String? langCode;
 
   final formatterNUmber = NumberFormat.decimalPattern("id_ID");
   String statusOrder = '';
@@ -1082,6 +1157,10 @@ class _VoteFailState extends State<VoteFail> {
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
     
     orderFail = List.from(widget.orderFail);
     votes = List.from(widget.votes);
@@ -1093,6 +1172,26 @@ class _VoteFailState extends State<VoteFail> {
           hasMore) {
         _loadMoreOrders();
       }
+    });
+  }
+
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> voteLang = {};
+
+  Future <void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+    setState(() {
+      langCode = code;
+    });
+
+    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
+    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      paymentLang = temppaymentLang;
+      voteLang = tempvoteLang;
+
+      isLoading = false;
     });
   }
 
@@ -1202,7 +1301,7 @@ class _VoteFailState extends State<VoteFail> {
                     formattedDate = formatter.format(date);
                   } else {
                     // Bahasa Inggris
-                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                    final formatter = DateFormat("MMMM, d yyyy", "en_US");
                     formattedDate = formatter.format(date);
 
                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1222,19 +1321,19 @@ class _VoteFailState extends State<VoteFail> {
               var price = formatterNUmber.format(item['price'] + item['fees']);
               
               if (itemVotes['order_status'] == '0'){
-                statusOrder = 'gagal';
+                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemVotes['order_status'] == '1'){
-                statusOrder = 'selesai';
+                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemVotes['order_status'] == '2'){
-                statusOrder = 'batal';
+                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
               } else if (itemVotes['order_status'] == '3'){
-                statusOrder = 'menunggu';
+                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemVotes['order_status'] == '4'){
-                statusOrder = 'refund';
+                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
               } else if (itemVotes['order_status'] == '20'){
-                statusOrder = 'expired';
+                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
               } else if (itemVotes['order_status'] == '404'){
-                statusOrder = 'hidden';
+                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
               }
 
               return Padding(
@@ -1357,12 +1456,12 @@ class _VoteFailState extends State<VoteFail> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty vote"
+                                    "$qty ${voteLang['text_vote']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? 'Gratis'
+                                    ? voteLang['harga_detail'] //'Gratis'
                                     : "${item['currency']} $price",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1396,8 +1495,9 @@ class _VoteFailState extends State<VoteFail> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   alignment: Alignment.center,
-                                  child: const Text(
-                                    "Ulangi Pembelian",
+                                  child: Text(
+                                    //"Ulangi Pembelian",
+                                    voteLang['retry_payment'] ?? "",
                                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -1438,11 +1538,12 @@ class _VoteFailState extends State<VoteFail> {
                   child: Center(child: CircularProgressIndicator(color: Colors.red,)),
                 );
               } else if (!hasMore) {
-                return const Padding(
+                return Padding(
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      "Tidak ada data lagi",
+                      //"Tidak ada data lagi",
+                      voteLang['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -1472,6 +1573,30 @@ class NoOrder extends StatefulWidget {
 }
 
 class _NoOrderState extends State<NoOrder> {
+  String? langCode;
+  Map<String, dynamic> voteLang = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
+  }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    setState(() {
+      voteLang = tempvoteLang;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -1503,8 +1628,9 @@ class _NoOrderState extends State<NoOrder> {
                   ),
 
                   const SizedBox(height: 20),
-                  const Text(
-                    'Belum ada Transaksi',
+                  Text(
+                    // 'Belum ada Transaksi',
+                    voteLang['belum_ada_transaksi'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,

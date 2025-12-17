@@ -12,6 +12,7 @@ import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
@@ -23,7 +24,8 @@ class DetailFinalisPage extends StatefulWidget {
   final int? indexWrap;
   final String? close_payment;
   final String? tanggal_buka_payment;
-  const DetailFinalisPage({super.key, required this.id_finalis, required this.count, this.indexWrap, this.close_payment, this.tanggal_buka_payment});
+  final String flag_hide_no_urut;
+  const DetailFinalisPage({super.key, required this.id_finalis, required this.count, this.indexWrap, this.close_payment, this.tanggal_buka_payment, required this.flag_hide_no_urut});
 
   @override
   State<DetailFinalisPage> createState() => _DetailFinalisPageState();
@@ -49,6 +51,14 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
   final List<int> voteOptions = [10, 50, 100, 250, 500, 1000];
   int? selectedVotes;
+
+  String? langCode;
+  String? notLogin, notLoginDesc, loginText;
+  String? totalHargaText, hargaText, hargaDetail, bayarText;
+  String? endVote, voteOpen, voteOpenAgain;
+  String? detailfinalisText;
+  String? noDataText;
+  String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidText, socialMediaText;
 
   @override
   void initState() {
@@ -77,6 +87,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       tempDetailVote = resultDetailVote?['data'] ?? {};
     }
 
+    await _getBahasa();
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
@@ -122,11 +133,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         String formattedBukaVote = DateFormat("dd MMM yyyy HH:mm").format(bukaVote);
         
         if (isBeforeOpen) {
-          buttonText = 'Vote akan dibuka pada $formattedBukaVote';
+          buttonText = '$voteOpen $formattedBukaVote';
         } else if (detailvote['close_payment'] == '1') {
-          buttonText = 'Vote akan dibuka Kembali pada ${widget.tanggal_buka_payment}';
-        } else {
-          buttonText = 'Pilih Paket Vote';
+          buttonText = '$voteOpenAgain ${widget.tanggal_buka_payment}';
         }
 
         if (remaining.inSeconds == 0 || isBeforeOpen) {
@@ -135,6 +144,49 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       });
     }
   }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+
+    setState(() {
+      totalHargaText = tempdetailFinalis['total_harga'];
+      hargaText = tempdetailFinalis['harga'];
+      hargaDetail = tempdetailFinalis['harga_detail'];
+      bayarText = tempdetailFinalis['bayar'];
+
+      endVote = tempdetailFinalis['end_vote'];
+      voteOpen = tempdetailFinalis['vote_open'];
+      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      
+      notLogin = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      loginText = templogin;
+      
+      detailfinalisText = tempdetailFinalis['detail_finalis'];
+
+      noDataText = tempdetailFinalis['no_data'];
+      ageText = tempdetailFinalis['age'];
+      activityText = tempdetailFinalis['aktivitas'];
+      biographyText = tempdetailFinalis['biografi'];
+      scanQrText = tempdetailFinalis['scan_vote'];
+      downloadQrText = tempdetailFinalis['unduh_qr'];
+      tataCaraText = tempdetailFinalis['tatacara_vote'];
+      videoProfilText = tempdetailFinalis['profile_video'];
+      noValidText = tempdetailFinalis['video_no_valid'];
+      socialMediaText = tempdetailFinalis['sosial_media'];
+    });
+
+  }
+
 
   Future<void> _precacheAllImages(
     BuildContext context,
@@ -313,7 +365,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Detail Finalis"), 
+        title: Text(detailfinalisText!), 
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -382,7 +434,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                             const SizedBox(height: 10,),
                             (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
                               ? Text(
-                                  "Tidak ada data",
+                                  noDataText!,
                                   style: const TextStyle(
                                     color: Colors.grey,
                                     fontStyle: FontStyle.italic,
@@ -391,11 +443,13 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               : Text(detailFinalis['nama_tambahan'],
                                 style: const TextStyle(color: Colors.grey),
                               ),
-                  
-                            const SizedBox(height: 10,),
-                            Text(
-                              detailFinalis['nomor_urut'].toString(),
-                            ),
+
+                            if (widget.flag_hide_no_urut == "0") ... [
+                              const SizedBox(height: 10,),
+                              Text(
+                                detailFinalis['nomor_urut'].toString(),
+                              ),
+                            ],
                   
                             const SizedBox(height: 30,),
                             Row(
@@ -417,14 +471,14 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                   
                                         SizedBox(width: 4),
                                         //text
-                                        Text("Harga"),
+                                        Text(hargaText!),
                                       ],
                                     ),
                   
                                     const SizedBox(height: 10,),
                                     Text(
                                       harga == 0
-                                      ? 'Gratis'
+                                      ? hargaDetail!
                                       : "${detailvote['currency']} ${formatter.format(harga)}",
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
@@ -473,7 +527,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Vote Akan Dibuka Kembali pada ${widget.tanggal_buka_payment}',
+                                      '$voteOpenAgain ${widget.tanggal_buka_payment}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(color: Colors.white),
                                       softWrap: true,
@@ -704,13 +758,13 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Usia",
+                                  ageText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                   
                                 (detailFinalis['usia'] == 0)
                                   ? Text(
-                                      "Tidak ada data",
+                                      noDataText!,
                                       style: TextStyle(
                                         color: Colors.grey,
                                         fontStyle: FontStyle.italic,
@@ -724,7 +778,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               if (detailFinalis['profesi'].toString().isNotEmpty) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Aktifitas",
+                                  activityText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
@@ -735,7 +789,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Deskripsi",
+                                  biographyText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Html(
@@ -779,7 +833,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                   
                                 const SizedBox(height: 12,),
                                 Text(
-                                  "Scan QR untuk Vote",
+                                  scanQrText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                   
@@ -801,7 +855,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Save QR",
+                                          downloadQrText!,
                                           style: TextStyle(color: Colors.white),
                                         ),
                                         const SizedBox(width: 10,),
@@ -830,7 +884,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Tata Cara Vote",
+                                          tataCaraText!,
                                           style: TextStyle(color: Colors.blue),
                                         ),
                                         const SizedBox(width: 10,),
@@ -855,67 +909,79 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                             padding: kGlobalPadding,
                             child: Column(
                               children: [
-                                VideoSection(link: detailFinalis['video_profile']),
+                                VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidText!,),
                               ],
                             ),
                           ),
                         ],
                       ],
                   
-                      const SizedBox(height: 12),
-                  
-                      // Media Social Section
-                      Container(
-                        width: double.infinity,
-                        padding: kGlobalPadding,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300,),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Media Social",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty
+                          || detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty
+                          || detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty
+                          || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
+
+                            SizedBox(height: 12),
+                            // Media Social Section
+                            Container(
+                              width: double.infinity,
+                              padding: kGlobalPadding,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300,),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                  socialMediaText!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.facebook,
+                                          color:  Color(0xFF1877F2),
+                                          link: detailFinalis['facebook'],
+                                          platform: "facebook",
+                                        ),
+
+                                      if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.twitter,
+                                          color:  Color(0xFF1DA1F2),
+                                          link: detailFinalis['twitter'],
+                                          platform: "twitter",
+                                        ),
+
+                                      if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.linkedin,
+                                          color:  Color(0xFF0077B5),
+                                          link: detailFinalis['linkedin'],
+                                          platform: "linkedin",
+                                        ),
+
+                                      if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.instagram,
+                                          color:  Color(0xFFE1306C),
+                                          link: detailFinalis['instagram'],
+                                          platform: "instagram",
+                                        ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.facebook,
-                                  color: const Color(0xFF1877F2),
-                                  link: detailFinalis['facebook'],
-                                  platform: "facebook",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.twitter,
-                                  color: const Color(0xFF1DA1F2),
-                                  link: detailFinalis['twitter'],
-                                  platform: "twitter",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.linkedin,
-                                  color: const Color(0xFF0077B5),
-                                  link: detailFinalis['linkedin'],
-                                  platform: "linkedin",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.instagram,
-                                  color: const Color(0xFFE1306C),
-                                  link: detailFinalis['instagram'],
-                                  platform: "instagram",
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                   
                       const SizedBox(height: 12),
                   

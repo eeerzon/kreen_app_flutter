@@ -6,6 +6,8 @@ import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/order_event_paid.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class CheckPaymentModal {
   static Future<void> show(BuildContext context, String idOrder) async {
@@ -17,6 +19,14 @@ class CheckPaymentModal {
     Map<String, dynamic> vote = {};
     String? statusOrder;
 
+    String? langCode;
+    Map<String, dynamic> paymentlang = {};
+    Future<void> getBahasa() async {
+      langCode = await StorageService.getLanguage();
+
+      paymentlang = await LangService.getJsonData(langCode!, "payment");
+    }
+
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/vote/$idOrder");
       final tempOrder = resultOrder?['data'] ?? {};
@@ -27,23 +37,24 @@ class CheckPaymentModal {
       vote = tempOrder['vote'] ?? {};
 
       if (voteOrder['order_status'] == '0'){
-        statusOrder = 'gagal';
+        statusOrder = paymentlang['status_order_0'];
       } else if (voteOrder['order_status'] == '1'){
-        statusOrder = 'selesai';
+        statusOrder = paymentlang['status_order_1'];
       } else if (voteOrder['order_status'] == '2'){
-        statusOrder = 'batal';
+        statusOrder = paymentlang['status_order_2'];
       } else if (voteOrder['order_status'] == '3'){
-        statusOrder = 'menunggu';
+        statusOrder = paymentlang['status_order_3'];
       } else if (voteOrder['order_status'] == '4'){
-        statusOrder = 'refund';
+        statusOrder = paymentlang['status_order_4'];
       } else if (voteOrder['order_status'] == '20'){
-        statusOrder = 'expired';
+        statusOrder = paymentlang['status_order_20'];
       } else if (voteOrder['order_status'] == '404'){
-        statusOrder = 'hidden';
+        statusOrder = paymentlang['status_order_404'];
       }
     }
 
-    await loadOrder(); // load pertama sebelum tampil
+    await getBahasa();
+    await loadOrder();
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
@@ -66,8 +77,8 @@ class CheckPaymentModal {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Informasi Pesanan",
+                        Text(
+                          paymentlang['info_pesanan'],
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -126,7 +137,7 @@ class CheckPaymentModal {
                               );
 
                               return Text(
-                                "- ${finalis['nama_finalis']} (${detail['qty']}x)",
+                                "- ${finalis['nama_finalis']} (${detail['qty']} vote(s))",
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               );
                             }).toList(),
@@ -138,11 +149,11 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          const Text('Total Pembayaran'),
+                          Text(paymentlang['total_bayar']),
                           const Text(' :  '),
                           Text(
                             voteOrder.isNotEmpty
-                                ? "${voteOrder['currency_vote'] ?? 'Rp'} ${formatter.format(voteOrder['total_amount'] ?? 0)}"
+                                ? "${voteOrder['currency_vote']} ${formatter.format(voteOrder['total_amount'] ?? 0)}"
                                 : '-',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -153,7 +164,7 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          const Text('Status Pembayaran'),
+                          Text(paymentlang['status_pembayaran']),
                           const Text(' :  '),
                           Text(
                             statusOrder ?? '-',
@@ -183,8 +194,8 @@ class CheckPaymentModal {
                     // Tombol refresh status
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh, color: Colors.white),
-                      label: const Text(
-                        "Check Status Pesanan",
+                      label: Text(
+                        paymentlang['check_status'],
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white),
                       ),
@@ -239,6 +250,14 @@ class CheckPaymentModal {
     Map<String, dynamic> event = {};
     String? statusOrder;
 
+    String? langCode;
+    Map<String, dynamic> paymentlang = {};
+    Future<void> getBahasa() async {
+      langCode = await StorageService.getLanguage();
+
+      paymentlang = await LangService.getJsonData(langCode!, "payment");
+    }
+
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/event/$idOrder");
       final tempOrder = resultOrder?['data'] ?? {};
@@ -249,23 +268,24 @@ class CheckPaymentModal {
       event = tempOrder['event'] ?? {};
 
       if (eventOrder['order_status'] == '0'){
-        statusOrder = 'gagal';
+        statusOrder = paymentlang['status_order_0'];
       } else if (eventOrder['order_status'] == '1'){
-        statusOrder = 'selesai';
+        statusOrder = paymentlang['status_order_1'];
       } else if (eventOrder['order_status'] == '2'){
-        statusOrder = 'batal';
+        statusOrder = paymentlang['status_order_2'];
       } else if (eventOrder['order_status'] == '3'){
-        statusOrder = 'menunggu';
+        statusOrder = paymentlang['status_order_3'];
       } else if (eventOrder['order_status'] == '4'){
-        statusOrder = 'refund';
+        statusOrder = paymentlang['status_order_4'];
       } else if (eventOrder['order_status'] == '20'){
-        statusOrder = 'expired';
+        statusOrder = paymentlang['status_order_20'];
       } else if (eventOrder['order_status'] == '404'){
-        statusOrder = 'hidden';
+        statusOrder = paymentlang['status_order_404'];
       }
     }
 
-    await loadOrder(); // load pertama sebelum tampil
+    await getBahasa();
+    await loadOrder();
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
@@ -307,8 +327,8 @@ class CheckPaymentModal {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Informasi Pesanan",
+                        Text(
+                          paymentlang['info_pesanan'],
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -361,7 +381,7 @@ class CheckPaymentModal {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: groupedTickets.values.map((tiket) {
                               return Text(
-                                "- ${tiket['ticket_name']} ${tiket['qty']}x",
+                                "- ${tiket['ticket_name']} ${tiket['qty']} x",
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               );
                             }).toList(),
@@ -373,11 +393,11 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          const Text('Total Pembayaran'),
+                          Text(paymentlang['total_bayar']),
                           const Text(' :  '),
                           Text(
                             eventOrder.isNotEmpty
-                                ? "${eventOrder['currency_event'] ?? 'Rp'} ${formatter.format(eventOrder['amount'] + eventOrder['fees'])}"
+                                ? "${eventOrder['currency_event']} ${formatter.format(eventOrder['amount'] + eventOrder['fees'])}"
                                 : '-',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -388,7 +408,7 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          const Text('Status Pembayaran'),
+                          Text(paymentlang['status_pembayaran']),
                           const Text(' :  '),
                           Text(
                             statusOrder ?? '-',
@@ -418,8 +438,8 @@ class CheckPaymentModal {
                     // Tombol refresh status
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh, color: Colors.white),
-                      label: const Text(
-                        "Check Status Pesanan",
+                      label: Text(
+                        paymentlang['check_status'],
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white),
                       ),

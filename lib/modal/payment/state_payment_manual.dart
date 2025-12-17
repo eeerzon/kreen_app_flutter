@@ -1,5 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
 
+import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
 import 'package:kreen_app_flutter/pages/vote/waiting_order_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class StatePaymentManual extends StatefulWidget {
@@ -54,7 +57,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   Map<String, dynamic> payment = {};
   List<dynamic> indikator = [];
   String? voteCurrency, eventCurrency;
-  var totalPayment, feeLayanan;
+  var totalPayment, feeLayanan, totalVotes;
 
   String? id_payment_method, mobile_number, id_card_number, card_number, expiry_month, expiry_year, cvv;
 
@@ -82,12 +85,36 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   final TextEditingController expDateController = TextEditingController();
   bool _isEditing = false;
+
+  bool isLoading = true;
+
+  String? langCode;
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> detailVoteLang = {};
+  Map<String, dynamic> eventLang = {};
+  String? namaLengkapLabel, namaLengkapHint;
+  String? phoneLabel, phoneHint;
+  String? cobaLagi;
+
+  Timer? _phoneDebounce;
+
+  bool isValidEmail(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
+
+  bool isValidPhone(String phone) {
+    final regex = RegExp(r'^08[0-9]{8,11}$');
+    return regex.hasMatch(phone);
+  }
   
   @override
   void initState() {
     super.initState();
     
-    loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await loadData();
+    });
 
     _nameController = TextEditingController();
     _phoneController = TextEditingController();
@@ -95,6 +122,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   }
 
   Future<void> loadData() async {
+    await _getBahasa();
     await getData(widget.id_vote);
 
     answers = List.filled(indikator.length, '');
@@ -104,7 +132,36 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       (index) => TextEditingController(),
     );
 
-    setState(() {});
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  Future<void> _getBahasa() async {
+    final lang = await StorageService.getLanguage();
+    setState(() => langCode = lang);
+
+    final tempPayment = await LangService.getJsonData(langCode!, "payment");
+    final tempnamalabel = await LangService.getText(langCode!, "nama_lengkap_label");
+    final tempnamahint = await LangService.getText(langCode!, "nama_lengkap");
+    final tempnohplabel = await LangService.getText(langCode!, "nomor_hp_label");
+    final tempnohphint = await LangService.getText(langCode!, "nomor_hp");
+    final tempcobalagi = await LangService.getText(langCode!, "coba_lagi");
+
+    final tempdetailvote = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempeventLang = await LangService.getJsonData(langCode!, "event");
+
+    setState(() {
+      paymentLang = tempPayment;
+      namaLengkapLabel = tempnamalabel;
+      namaLengkapHint = tempnamahint;
+      phoneLabel = tempnohplabel;
+      phoneHint = tempnohphint;
+      cobaLagi = tempcobalagi;
+
+      detailVoteLang = tempdetailvote;
+      eventLang = tempeventLang;
+    });
   }
 
   Future<void> getData(String idVote) async {
@@ -121,7 +178,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     _emailController.text = email;
 
     if (gender.isNotEmpty) {
-      selectedGender = gender.toLowerCase() == 'male' ? 'Laki-laki' : 'Perempuan';
+      selectedGender = gender.toLowerCase() == 'male' ? paymentLang['gender_1'] : paymentLang['gender_2'];
     }
 
     final detailResp = await ApiService.get("/vote/$idVote");
@@ -170,9 +227,12 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       fee = total_payment - total_price;
     }
 
+    int total = widget.counts_finalis.reduce((a, b) => a + b);
+
     return {
         'total_payment': total_payment,
-        'fee_layanan': fee
+        'fee_layanan': fee,
+        'total_votes': total
     };
   }
   
@@ -219,6 +279,22 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     });
 
     void handleConfirm() async {
+      setState(() {
+        _showError = true;
+      });
+
+      final isValid = _validateAllForm();
+
+      for (var i = 0; i < indikator.length; i++) {
+        if (indikator[i]['type_form'] != 'file') {
+          answers[i] = answerControllers[i].text.trim();
+        }
+      }
+
+      if (!isValid) {
+        return;
+      }
+      
       final position = await getCurrentLocationWithValidation(context);
 
       if (position == null) {
@@ -251,13 +327,25 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
       // lanjutkan aksi konfirmasi
       if (widget.totalHarga != 0) {
+
+        String genderValue;
+        final rawGender = selectedGender.toString().toLowerCase();
+
+        if (rawGender == 'laki-laki' || rawGender == 'male') {
+          genderValue = 'male';
+        } else if (rawGender == 'perempuan' || rawGender == 'female') {
+          genderValue = 'female';
+        } else {
+          genderValue = ''; // handle error
+        }
+
         final body = {
           "id_vote": widget.id_vote, //  free: 65aa23e7eea47 // paid: 65aa22cda9ec2
           "id_user": widget.idUser,
           "id_paket": '',
           "nama_voter": _nameController.text.trim(),
           "email_voter": email,
-          // "gender": selectedGender,
+          "gender": genderValue,
           "latitude": latitude,
           "longitude": longitude,
           "finalis": List.generate(
@@ -287,26 +375,55 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body);
 
         if (resultVoteOrder != null) {
-          final tempOrder = resultVoteOrder['data'];
+          if (resultVoteOrder['rc'] == 200) {
+            final tempOrder = resultVoteOrder['data'];
 
-          var id_order = tempOrder['id_order'];
-          Navigator.pop(context);//tutup modal
+            var id_order = tempOrder['id_order'];
+            Navigator.pop(context);//tutup modal
 
-          if (widget.fromDetail) {
-            Navigator.pop(context);//tutup page detail finalis
+            if (widget.fromDetail) {
+              Navigator.pop(context);//tutup page detail finalis
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: id_order, formHistory: false,)),
+            );
+          } else if (resultVoteOrder['rc'] == 422) {
+            final data = resultVoteOrder['data'];
+            String desc = '';
+            if (data is Map) {
+              final errorMessages = data.values
+                .whereType<List>()
+                .expand((e) => e)
+                .whereType<String>()
+                .toList();
+
+            desc = errorMessages.join('\n');
+            } else {
+              desc = data?.toString() ?? '';
+            }
+            AwesomeDialog(
+              context: context,
+              dialogType: DialogType.error,
+              animType: AnimType.topSlide,
+              title: 'Oops!',
+              desc: desc,
+              btnOkOnPress: () {},
+              btnOkColor: Colors.red,
+              buttonsTextStyle: TextStyle(color: Colors.white),
+              headerAnimationLoop: false,
+              dismissOnTouchOutside: true,
+              showCloseIcon: true,
+            ).show();
           }
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: id_order)),
-          );
         } else {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: 'Terjadi kesalahan. Silakan coba lagi.',
+            desc: cobaLagi,
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -316,13 +433,25 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           ).show();
         }
       } else {
+
+        String genderValue;
+        final rawGender = selectedGender.toString().toLowerCase();
+
+        if (rawGender == 'laki-laki' || rawGender == 'male') {
+          genderValue = 'male';
+        } else if (rawGender == 'perempuan' || rawGender == 'female') {
+          genderValue = 'female';
+        } else {
+          genderValue = ''; // handle error
+        }
+
         final body = {
           "id_vote": widget.id_vote, //  free: 65aa23e7eea47 // paid: 65aa22cda9ec2
           "id_user": widget.idUser,
           "id_paket": '',
           "nama_voter": _nameController.text.trim(),
           "email_voter": email,
-          // "gender": selectedGender,
+          "gender": genderValue,
           "latitude": latitude,
           "longitude": longitude,
           "finalis": List.generate(
@@ -343,26 +472,55 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body);
 
         if (resultVoteOrder != null) {
-          final tempOrder = resultVoteOrder['data'];
+          if (resultVoteOrder['rc'] == 200) {
+            final tempOrder = resultVoteOrder['data'];
 
-          var id_order = tempOrder['id_order'];
-          Navigator.pop(context);//tutup modal
+            var id_order = tempOrder['id_order'];
+            Navigator.pop(context);//tutup modal
 
-          if (widget.fromDetail) {
-            Navigator.pop(context);//tutup page detail finalis
+            if (widget.fromDetail) {
+              Navigator.pop(context);//tutup page detail finalis
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AddSupportPage(id_order: id_order, id_vote: widget.id_vote, nama: _nameController.text,)),
+            );
+          } else if (resultVoteOrder['rc'] == 422) {
+            final data = resultVoteOrder['data'];
+            String desc = '';
+            if (data is Map) {
+              final errorMessages = data.values
+                .whereType<List>()
+                .expand((e) => e)
+                .whereType<String>()
+                .toList();
+
+            desc = errorMessages.join('\n');
+            } else {
+              desc = data?.toString() ?? '';
+            }
+            AwesomeDialog(
+              context: context,
+              dialogType: DialogType.error,
+              animType: AnimType.topSlide,
+              title: 'Oops!',
+              desc: desc,
+              btnOkOnPress: () {},
+              btnOkColor: Colors.red,
+              buttonsTextStyle: TextStyle(color: Colors.white),
+              headerAnimationLoop: false,
+              dismissOnTouchOutside: true,
+              showCloseIcon: true,
+            ).show();
           }
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => AddSupportPage(id_order: id_order, id_vote: widget.id_vote, nama: _nameController.text,)),
-          );
         } else {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: 'Terjadi kesalahan. Silakan coba lagi.',
+            desc: cobaLagi,
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -375,8 +533,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     }
 
     final genders = [
-      {'label': 'Laki-laki', 'icon': '$baseUrl/image/male.png'},
-      {'label': 'Perempuan', 'icon': '$baseUrl/image/female.png'},
+      {'label': paymentLang['gender_1'], 'icon': '$baseUrl/image/male.png'},
+      {'label': paymentLang['gender_2'], 'icon': '$baseUrl/image/female.png'},
     ];
     
     final creditCard = payment['Credit Card'] ?? [];
@@ -389,7 +547,10 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     final debit = payment['Direct Debit'] ?? [];
 
     return Scaffold(
-      body: Padding(
+      backgroundColor: Colors.white,
+      body: isLoading 
+      ? const Center(child: CircularProgressIndicator(color: Colors.red,)) 
+      : Padding(
         padding: EdgeInsets.only(top: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -403,8 +564,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Pembayaran",
+                  Text(
+                    paymentLang['header'],
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
@@ -429,18 +590,18 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       const SizedBox(height: 4),
                       //konten
                       Text(
-                        "Yuk Isi Data Diri Dulu....",
+                        paymentLang['sub_titel_1'],
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "Lengkapi data diri untuk melanjutkan"
+                        paymentLang['sub_titel_2'],
                       ),
 
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           Text(
-                            "Nama"
+                            namaLengkapLabel!
                           ),
                           Text(
                             "*", style: TextStyle(color: Colors.red)
@@ -456,7 +617,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         },
                         autofocus: false,
                         decoration: InputDecoration(
-                          hintText: "Masukkan nama lengkap",
+                          hintText: namaLengkapHint!,
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                           ),
@@ -468,10 +629,10 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         ),
                       ),
                       if (_showError && _nameController.text.trim().isEmpty)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            "Nama wajib diisi",
+                            paymentLang['nama_lengkap_error'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -480,7 +641,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       Row(
                         children: [
                           Text(
-                            "Jenis Kelamin"
+                            paymentLang['gender_label']
                           ),
                           Text(
                             "*", style: TextStyle(color: Colors.red)
@@ -533,10 +694,10 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         }),
                       ),
                       if (_showError && selectedGender == null)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            "Jenis kelamin wajib dipilih",
+                            paymentLang['gender_error'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -585,7 +746,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   ? TextInputType.number
                                   : TextInputType.text,
                               decoration: InputDecoration(
-                                hintText: "Masukkan $label kamu",
+                                hintText: "${paymentLang['hint_label_indikator_1']} $label ${paymentLang['hint_label_indikator_2']}",
                                 hintStyle: const TextStyle(color: Colors.grey),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -600,19 +761,36 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 children: [
                                   Icon(Icons.info_outline, color: Colors.blue,),
                                   Text(
-                                    "Pastikan kamu menggunakan nomor aktif",
+                                    paymentLang['warning_indikator_phone'],
                                     style: TextStyle(color: Colors.blue),
                                   )
                                 ],
                               ),
                               if (_showError && _phoneController.text.trim().isEmpty)
-                                const Padding(
+                                Padding(
                                   padding: EdgeInsets.only(top: 4),
                                   child: Text(
-                                    "Nomor HP wajib diisi",
+                                    paymentLang['error_indikator_phone'],
                                     style: TextStyle(color: Colors.red),
                                   ),
                                 ),
+                            ] else if (isEmailField) ... [
+                              if (_showError && _emailController.text.trim().isEmpty)
+                                Padding(
+                                  padding: EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    eventLang['error_email_3'],
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                              )                    
+                            ] else ... [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  eventLang['tiket_template_answer_error'],
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              )
                             ]
                           ],
                         );
@@ -642,11 +820,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                         const SizedBox(height: 12),
                         Text(
-                          "Pilih Metode Pembayaran",
+                          paymentLang['pilih_payment'],
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          "Yuk pilih metode pembayaranmu..."
+                          paymentLang['sub_pilih_payment'],
                         ),
 
                         const SizedBox(height: 12,),
@@ -694,6 +872,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       setState(() {
                                         totalPayment = resultFee['total_payment'];
                                         feeLayanan = resultFee['fee_layanan'];
+                                        totalVotes = resultFee['total_votes'];
                                       });
                                     }
                                   },
@@ -781,7 +960,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -791,8 +970,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -811,7 +990,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        'Kartu Kredit',
+                                                        paymentLang['kartu_credit'],
                                                       ),
                                                       Container(
                                                         color: Colors.white,
@@ -959,6 +1138,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -1046,7 +1226,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1056,8 +1236,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "$paymentLang['limit_max'] $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1132,6 +1312,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -1219,7 +1400,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1229,8 +1410,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1305,6 +1486,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -1392,7 +1574,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1402,8 +1584,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1478,6 +1660,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -1565,7 +1748,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1575,8 +1758,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1651,6 +1834,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -1738,7 +1922,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1748,8 +1932,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1824,6 +2008,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -1911,7 +2096,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1921,8 +2106,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -1982,14 +2167,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       selectedIndex = idx;
                                       id_payment_method = debit[index]['id_metod'];
                                     });
-                                    
-                                    Future.delayed(const Duration(milliseconds: 200), () {
-                                        _scrollController.animateTo(
-                                          _scrollController.position.maxScrollExtent,
-                                          duration: const Duration(milliseconds: 600),
-                                          curve: Curves.easeOut,
-                                        );
-                                      });
 
                                       final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
 
@@ -1997,6 +2174,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {
                                           totalPayment = resultFee['total_payment'];
                                           feeLayanan = resultFee['fee_layanan'];
+                                          totalVotes = resultFee['total_votes'];
                                         });
                                       }
                                   },
@@ -2084,7 +2262,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text(
-                                                                "Limit minimal transaksi $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -2094,8 +2272,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             Padding(
                                                               padding: const EdgeInsets.only(top: 4.0),
                                                               child: Text( limit_max == 0
-                                                                ? "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "Limit maksimail transaksi $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
                                                                 softWrap: true,
                                                                 style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                               ),
@@ -2120,10 +2298,21 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                           autofocus: false,
                                                           onChanged: (value) {
                                                             mobile_number = value;
+
+                                                            _phoneDebounce?.cancel();
+                                                            _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                                              if (value.length >= 10 && _scrollController.hasClients) {
+                                                                _scrollController.animateTo(
+                                                                  _scrollController.position.maxScrollExtent,
+                                                                  duration: const Duration(milliseconds: 600),
+                                                                  curve: Curves.easeOut,
+                                                                );
+                                                              }
+                                                            });
                                                           },
                                                           keyboardType: TextInputType.number,
                                                           decoration: InputDecoration(
-                                                            hintText: "masukkan nomor handphone kamu",
+                                                            hintText: phoneHint!,
                                                             hintStyle: const TextStyle(
                                                               color: Colors.grey,
                                                             ),
@@ -2157,8 +2346,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                         if (selectedIndex != null) ...[
                           const SizedBox(height: 25),
-                          const Text(
-                            "Detail Harga",
+                          Text(
+                            paymentLang['detail_harga'],
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
 
@@ -2169,7 +2358,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("${widget.names_finalis[i]} (${widget.counts_finalis[i]}x)"),
+                                    Text("${widget.names_finalis[i]} (${widget.counts_finalis[i]} vote(s))"),
                                     Text(
                                       "$voteCurrency ${formatter.format(widget.counts_finalis[i] * widget.price)}",
                                     ),
@@ -2185,7 +2374,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text("Biaya Layanan"),
+                              Text(paymentLang['biaya_layanan']),
                               Text('$voteCurrency ${formatter.format(feeLayanan)}')
                             ],
                           ),
@@ -2200,7 +2389,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Total Bayar", style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(paymentLang['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
                               Text("$voteCurrency ${formatter.format(totalPayment)}", style: TextStyle(fontWeight: FontWeight.bold),)
                             ],
                           ),
@@ -2222,11 +2411,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 Expanded(
                                   child: RichText(
                                     text: TextSpan(
-                                      text: "Apakah kamu memiliki masalah dengan transaksi ini? ",
+                                      text: paymentLang['masalah'],
                                       style: TextStyle(color: Colors.black),
-                                      children: const [
+                                      children: [
                                         TextSpan(
-                                          text: "Dapatkan Bantuan",
+                                          text: paymentLang['bantuan'],
                                           style: TextStyle(
                                             color: Colors.blue,
                                             fontWeight: FontWeight.bold,
@@ -2256,7 +2445,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    "Vote yang telah diberikan bersifat final dan tidak dapat dikembalikan.",
+                                    paymentLang['vote_final'],
                                     style: TextStyle(
                                       color: Colors.red.shade800,
                                       fontWeight: FontWeight.w500,
@@ -2282,20 +2471,20 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   text: TextSpan(
                                     style: TextStyle(color: Colors.black),
                                     children: [
-                                      TextSpan(text: "Saya menyetujui bahwa "),
+                                      TextSpan(text: paymentLang['kebijakan_privasi_1']),
                                       TextSpan(
                                           text: "KREEN ",),
                                       TextSpan(
                                           text:
-                                              "dapat membagikan informasi saya kepada pihak penyelenggara acara, telah membaca "),
+                                              paymentLang['kebijakan_privasi_2']),
                                       TextSpan(
-                                          text: "Ketentuan Layanan",
+                                          text: paymentLang['kebijakan_privasi_3'],
                                           style: TextStyle(color: Colors.red)),
-                                      TextSpan(text: ", dan menyetujui "),
+                                      TextSpan(text: paymentLang['kebijakan_privasi_4']),
                                       TextSpan(
-                                          text: "Kebijakan Privasi",
+                                          text: paymentLang['kebijakan_privasi_5'],
                                           style: TextStyle(color: Colors.red)),
-                                      TextSpan(text: " yang berlaku."),
+                                      TextSpan(text: paymentLang['kebijakan_privasi_6']),
                                     ],
                                   ),
                                 ),
@@ -2320,7 +2509,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     style: TextStyle(color: Colors.black),
                                     children: [
                                       TextSpan(
-                                        text: "Saya menyetujui Syarat & Ketentuan Voting yang berlaku, termasuk kebijakan bahwa transaksi yang sudah dilakukan tidak dapat dibatalkan atau dikembalikan (non-refundable).",
+                                        text: paymentLang['setuju_syarat'],
                                       )
                                     ]
                                   )
@@ -2328,17 +2517,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               ),
                             ],
                           ),
-
-                          const SizedBox(height: 4),
-                          if (_showError)
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 8),
-                              child: Text(
-                                "Bagian ini harus dipilih",
-                                style: TextStyle(
-                                    color: Colors.red, fontWeight: FontWeight.bold),
-                              ),
-                            ),
                             
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2359,19 +2537,32 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   text: TextSpan(
                                     style: TextStyle(color: Colors.black),
                                     children: [
-                                      TextSpan(text: "Saya menyatakan bahwa jumlah vote yang saya masukkan, yaitu 20 vote dengan total pembayaran sebesar "),
+                                      TextSpan(text: paymentLang['kebijakan_privasi_7']),
+                                      TextSpan(text: "$totalVotes ${detailVoteLang['text_vote']}", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      TextSpan(text: paymentLang['kebijakan_privasi_8']),
                                       TextSpan(
                                           text: "$voteCurrency ${formatter.format(totalPayment)}",
                                           style: TextStyle(fontWeight: FontWeight.bold)),
                                       TextSpan(
                                           text:
-                                              ", sudah benar, telah saya periksa, dan saya secara sadar menyetujui untuk melanjutkan transaksi sesuai jumlah tersebut."),
+                                              paymentLang['kebijakan_privasi_9']),
                                     ],
                                   ),
                                 ),
                               ),
                             ],
                           ),
+
+                          const SizedBox(height: 4),
+                          if (_showError)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                paymentLang['checkbox_error'],
+                                style: TextStyle(
+                                    color: Colors.red),
+                              ),
+                            ),
 
                           const SizedBox(height: 20),
                           SizedBox(
@@ -2385,8 +2576,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 ),
                               ),
                               onPressed: handleConfirm,
-                              child: const Text(
-                                "Konfirmasi",
+                              child: Text(
+                                paymentLang['konfirmasi'],
                                 style: TextStyle(fontSize: 16, color: Colors.white),
                               ),
                             ),
@@ -2403,9 +2594,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 ),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text("Batal"),
+                              child: Text(paymentLang['batal']),
                             ),
                           ),
+
+                          const SizedBox(height: 12),
                         ]
                       ]
 
@@ -2425,20 +2618,20 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 text: TextSpan(
                                   style: TextStyle(color: Colors.black),
                                   children: [
-                                    TextSpan(text: "Saya menyetujui bahwa "),
+                                    TextSpan(text: paymentLang['kebijakan_privasi_1']),
                                     TextSpan(
                                         text: "KREEN ",),
                                     TextSpan(
                                         text:
-                                            "dapat membagikan informasi saya kepada pihak penyelenggara acara, telah membaca "),
+                                            paymentLang['kebijakan_privasi_2']),
                                     TextSpan(
-                                        text: "Ketentuan Layanan",
+                                        text: paymentLang['kebijakan_privasi_3'],
                                         style: TextStyle(color: Colors.red)),
-                                    TextSpan(text: ", dan menyetujui "),
+                                    TextSpan(text: paymentLang['kebijakan_privasi_4']),
                                     TextSpan(
-                                        text: "Kebijakan Privasi",
+                                        text: paymentLang['kebijakan_privasi_5'],
                                         style: TextStyle(color: Colors.red)),
-                                    TextSpan(text: " yang berlaku."),
+                                    TextSpan(text: paymentLang['kebijakan_privasi_6']),
                                   ],
                                 ),
                               ),
@@ -2463,7 +2656,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   style: TextStyle(color: Colors.black),
                                   children: [
                                     TextSpan(
-                                      text: "Saya menyetujui Syarat & Ketentuan Voting yang berlaku, termasuk kebijakan bahwa transaksi yang sudah dilakukan tidak dapat dibatalkan atau dikembalikan (non-refundable).",
+                                      text: paymentLang['setuju_syarat'],
                                     )
                                   ]
                                 )
@@ -2484,8 +2677,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               ),
                             ),
                             onPressed: handleConfirm,
-                            child: const Text(
-                              "Konfirmasi",
+                            child: Text(
+                              paymentLang['konfirmasi'],
                               style: TextStyle(fontSize: 16, color: Colors.white),
                             ),
                           ),
@@ -2502,7 +2695,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               ),
                             ),
                             onPressed: () => Navigator.pop(context),
-                            child: const Text("Batal"),
+                            child: Text(paymentLang['batal']),
                           ),
                         ),
                       ]
@@ -2535,5 +2728,45 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     }
 
     super.dispose();
+  }
+
+  bool _validateAllForm() {
+    bool isValid = true;
+
+    // email
+    if (_emailController.text.trim().isEmpty ||
+        !isValidEmail(_emailController.text)) {
+      isValid = false;
+    }
+
+    // nama
+    if (_nameController.text.trim().isEmpty) {
+      isValid = false;
+    }
+
+    // gender
+    if (selectedGender == null) {
+      isValid = false;
+    }
+
+    // phone
+    if (_phoneController.text.trim().isEmpty ||
+        !isValidPhone(_phoneController.text)) {
+      isValid = false;
+    }
+
+    // form tiket
+    for (int j = 0; j < indikator.length; j++) {
+      if (indikator[j]['required'] == 1 &&
+          answers[j].toString().trim().isEmpty) {
+        isValid = false;
+      }
+    }
+
+    if (widget.totalHarga != 0 && !_isChecked3) {
+      isValid = false;
+    }
+
+    return isValid;
   }
 }

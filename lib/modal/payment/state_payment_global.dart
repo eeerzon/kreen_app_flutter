@@ -1,5 +1,6 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
@@ -11,6 +12,7 @@ import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/pages/event/waiting_order_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class StatePaymentGlobal extends StatefulWidget {
@@ -91,7 +93,17 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController expDateController = TextEditingController();
   bool _isEditing = false;
-  bool loading = true;
+
+  bool isLoading = true;
+
+  String? langCode;
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> detailVoteLang = {};
+  String? namaLengkapLabel, namaLengkapHint;
+  String? phoneLabel, phoneHint;
+  String? cobaLagi;
+
+  Timer? _phoneDebounce;
 
   Future<void> getData(String id_event) async {
 
@@ -180,7 +192,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       detailEvent = resultEvent?['data'] ?? {};
       eventCurrency = detailEvent['event']['currency'];
       payment = resultPayment?['data'] ?? {};
-      loading = false;
+      isLoading = false;
     });
   }
 
@@ -188,8 +200,34 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   void initState() {
     super.initState();
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      getPaymentEvent(widget.id_event);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await getPaymentEvent(widget.id_event);
+    });
+  }
+
+  Future<void> _getBahasa() async {
+    final lang = await StorageService.getLanguage();
+    setState(() => langCode = lang);
+
+    final tempPayment = await LangService.getJsonData(langCode!, "payment");
+    final tempnamalabel = await LangService.getText(langCode!, "nama_lengkap_label");
+    final tempnamahint = await LangService.getText(langCode!, "nama_lengkap");
+    final tempnohplabel = await LangService.getText(langCode!, "nomor_hp_label");
+    final tempnohphint = await LangService.getText(langCode!, "nomor_hp");
+    final tempcobalagi = await LangService.getText(langCode!, "coba_lagi");
+
+    final tempdetailvote = await LangService.getJsonData(langCode!, "detail_vote");
+
+    setState(() {
+      paymentLang = tempPayment;
+      namaLengkapLabel = tempnamalabel;
+      namaLengkapHint = tempnamahint;
+      phoneLabel = tempnohplabel;
+      phoneHint = tempnohphint;
+      cobaLagi = tempcobalagi;
+
+      detailVoteLang = tempdetailvote;
     });
   }
 
@@ -255,11 +293,24 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         final count = int.tryParse(widget.counts_tiket[i].toString()) ?? 1;
 
         for (int j = 0; j < count; j++) {
+          String genderValue;
+
+          final rawGender = widget.genders[j]?.toString().toLowerCase();
+
+          if (rawGender == 'laki-laki' || rawGender == 'male') {
+            genderValue = 'male';
+          } else if (rawGender == 'perempuan' || rawGender == 'female') {
+            genderValue = 'female';
+          } else {
+            genderValue = ''; // handle error
+          }
+
           tickets.add({
             "id_ticket": idTicket,
             "first_name": widget.first_names[j].text,
             "email": widget.emails[j].text,
             "phone": widget.phones[j].text,
+            "gender": genderValue
           });
         }
       }
@@ -292,22 +343,51 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       var resultEventOrder = await ApiService.post("/order/event/checkout", body: body);
 
       if (resultEventOrder != null) {
-        final tempOrder = resultEventOrder['data'];
+        if (resultEventOrder['rc'] == 200) {
+          final tempOrder = resultEventOrder['data'];
 
-        var id_order = tempOrder['data']['id_order'];
-        Navigator.pop(context);//tutup modal
+          var id_order = tempOrder['data']['id_order'];
+          Navigator.pop(context);//tutup modal
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: id_order)),
-        );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: id_order)),
+          );
+        } else if (resultEventOrder['rc'] == 422) {
+          final data = resultEventOrder['data'];
+          String desc = '';
+          if (data is Map) {
+            final errorMessages = data.values
+              .whereType<List>()
+              .expand((e) => e)
+              .whereType<String>()
+              .toList();
+
+          desc = errorMessages.join('\n');
+          } else {
+            desc = data?.toString() ?? '';
+          }
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.error,
+            animType: AnimType.topSlide,
+            title: 'Oops!',
+            desc: desc, //error message dari api
+            btnOkOnPress: () {},
+            btnOkColor: Colors.red,
+            buttonsTextStyle: TextStyle(color: Colors.white),
+            headerAnimationLoop: false,
+            dismissOnTouchOutside: true,
+            showCloseIcon: true,
+          ).show();
+        }
       } else {
         AwesomeDialog(
           context: context,
           dialogType: DialogType.error,
           animType: AnimType.topSlide,
           title: 'Oops!',
-          desc: 'Terjadi kesalahan. Silakan coba lagi.',
+          desc: cobaLagi, //"Terjadi kesalahan. Silakan coba lagi.",
           btnOkOnPress: () {},
           btnOkColor: Colors.red,
           buttonsTextStyle: TextStyle(color: Colors.white),
@@ -318,7 +398,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       }
     }
     
-    if (loading) {
+    if (isLoading) {
       return Scaffold(
         body: Center(child: CircularProgressIndicator(color: Colors.red,)),
       );
@@ -349,8 +429,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Pembayaran",
+                  Text(
+                    paymentLang['header'], //"Pembayaran",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
@@ -386,11 +466,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
                       const SizedBox(height: 12),
                       Text(
-                        "Pilih Metode Pembayaran",
+                        paymentLang['pilih_payment'], //"Pilih Metode Pembayaran",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "Yuk pilih metode pembayaranmu..."
+                        paymentLang['sub_pilih_payment'], //"Yuk pilih metode pembayaranmu...",
                       ),
 
                       const SizedBox(height: 12,),
@@ -524,7 +604,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -534,8 +615,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -788,7 +870,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -798,8 +881,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -960,7 +1044,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -970,8 +1055,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1132,7 +1218,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1142,8 +1229,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1304,7 +1392,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1314,8 +1403,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1476,7 +1566,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1486,8 +1577,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1648,7 +1740,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1658,8 +1751,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1820,7 +1914,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
-                                                              "Limit minimal transaksi $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                              //"Limit minimal transaksi",
+                                                              "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValue_min + 1000))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1830,8 +1925,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                           Padding(
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
-                                                              ? "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                              : "Limit maksimail transaksi $eventCurrency ${formatter.format((roundedValue_max))}",
+                                                              //"Limit maksimal transaksi",
+                                                              ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                              : "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValue_max))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1856,10 +1952,21 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                         autofocus: false,
                                                         onChanged: (value) {
                                                           mobile_number = value;
+
+                                                          _phoneDebounce?.cancel();
+                                                          _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                                            if (value.length >= 10 && _scrollController.hasClients) {
+                                                              _scrollController.animateTo(
+                                                                _scrollController.position.maxScrollExtent,
+                                                                duration: const Duration(milliseconds: 600),
+                                                                curve: Curves.easeOut,
+                                                              );
+                                                            }
+                                                          });
                                                         },
                                                         keyboardType: TextInputType.number,
                                                         decoration: InputDecoration(
-                                                          hintText: "masukkan nomor handphone kamu",
+                                                          hintText: phoneHint!, //"Nomor Telepon"
                                                           hintStyle: const TextStyle(
                                                             color: Colors.grey,
                                                           ),
@@ -1893,8 +2000,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
                       if (selectedIndex != null) ...[
                         const SizedBox(height: 25),
-                        const Text(
-                          "Detail Harga",
+                        Text(
+                          paymentLang['detail_harga'], //"Detail Harga"
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
 
@@ -1923,7 +2030,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text("Biaya Layanan"),
+                                Text(paymentLang['biaya_layanan']), //"Biaya Layanan"
                                 Text('$eventCurrency ${formatter.format(feeLayanan)}')
                               ],
                             ),
@@ -1938,7 +2045,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Total Bayar", style: TextStyle(fontWeight: FontWeight.bold),),
+                                //"Total Bayar"
+                                Text(paymentLang['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
                                 Text("$eventCurrency ${formatter.format(totalPayment)}", style: TextStyle(fontWeight: FontWeight.bold),)
                               ],
                             ),
@@ -1955,8 +2063,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   ),
                                 ),
                                 onPressed: handleConfirm,
-                                child: const Text(
-                                  "Konfirmasi",
+                                child: Text(
+                                  paymentLang['konfirmasi'], //"Konfirmasi"
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -1973,7 +2081,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   ),
                                 ),
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text("Batal"),
+                                child: Text(paymentLang['batal']), //"Batal"
                               ),
                             ),
                           ],

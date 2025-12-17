@@ -13,6 +13,7 @@ import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
@@ -27,8 +28,8 @@ class DetailFinalisPaketPage extends StatefulWidget {
   final Duration? remaining;
   final String? close_payment;
   final String? tanggal_buka_payment;
-
-  const DetailFinalisPaketPage({super.key, required this.id_finalis, required this.vote, required this.index, required this.total_detail, required this.id_paket_bw, this.remaining, this.close_payment, this.tanggal_buka_payment});
+  final String flag_hide_no_urut;
+  const DetailFinalisPaketPage({super.key, required this.id_finalis, required this.vote, required this.index, required this.total_detail, required this.id_paket_bw, this.remaining, this.close_payment, this.tanggal_buka_payment, required this.flag_hide_no_urut});
 
   @override
   State<DetailFinalisPaketPage> createState() => _DetailFinalisPaketPageState();
@@ -49,6 +50,15 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   Map<String, dynamic> detailFinalis = {};
   TextEditingController? controllers;
   Map<String, dynamic> detailvote = {};
+
+  String? langCode;
+  String? notLogin, notLoginDesc, loginText;
+  String? totalHargaText, hargaText, hargaDetail, bayarText;
+  String? endVote, voteOpen, voteOpenAgain;
+  String? buttonPilihPaketText;
+  String? detailfinalisText;
+  String? noDataText;
+  String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidVideo, socialMediaText;
 
   @override
   void initState() {
@@ -72,6 +82,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
     final tempPaket = tempDetailVote['vote_paket'];
 
+    await _getBahasa();
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
@@ -126,11 +137,11 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         String formattedBukaVote = DateFormat("dd MMM yyyy HH:mm").format(bukaVote);
         
         if (isBeforeOpen) {
-          buttonText = 'Vote akan dibuka pada $formattedBukaVote';
+          buttonText = '$voteOpen $formattedBukaVote';
         } else if (detailvote['close_payment'] == '1') {
-          buttonText = 'Vote akan dibuka Kembali pada ${widget.tanggal_buka_payment}';
+          buttonText = '$voteOpenAgain ${widget.tanggal_buka_payment}';
         } else {
-          buttonText = 'Pilih Paket Vote';
+          buttonText = buttonPilihPaketText!;
         }
 
         if (remaining.inSeconds == 0 || isBeforeOpen) {
@@ -138,6 +149,49 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         }
       });
     }
+  }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+
+    setState(() {
+      totalHargaText = tempdetailFinalis['total_harga'];
+      hargaText = tempdetailFinalis['harga'];
+      hargaDetail = tempdetailFinalis['harga_detail'];
+      bayarText = tempdetailFinalis['bayar'];
+
+      endVote = tempdetailFinalis['end_vote'];
+      voteOpen = tempdetailFinalis['vote_open'];
+      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      
+      notLogin = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      loginText = templogin;
+
+      buttonPilihPaketText = tempdetailFinalis['pick_paket'];
+      detailfinalisText = tempdetailFinalis['detail_finalis'];
+
+      noDataText = tempdetailFinalis['no_data'];
+      ageText = tempdetailFinalis['age'];
+      activityText = tempdetailFinalis['aktivitas'];
+      biographyText = tempdetailFinalis['biografi'];
+      scanQrText = tempdetailFinalis['scan_vote'];
+      downloadQrText = tempdetailFinalis['unduh_qr'];
+      tataCaraText = tempdetailFinalis['tatacara_vote'];
+      videoProfilText = tempdetailFinalis['profile_video'];
+      noValidVideo = tempdetailFinalis['video_no_valid'];
+      socialMediaText = tempdetailFinalis['sosial_media'];
+    });
+
   }
 
   Future<void> _precacheAllImages(
@@ -316,7 +370,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Detail Finalis"), 
+        title: Text(detailfinalisText!), 
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -386,7 +440,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                             SizedBox(height: 10,),
                             (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
                               ? Text(
-                                  "Tidak ada data",
+                                  noDataText!,
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontStyle: FontStyle.italic,
@@ -396,10 +450,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                 style: TextStyle(color: Colors.grey),
                               ),
                   
-                            SizedBox(height: 10,),
-                            Text(
-                              detailFinalis['nomor_urut'].toString(),
-                            ),
+                            if (widget.flag_hide_no_urut == "0") ...[
+                              SizedBox(height: 10,),
+                              Text(
+                                detailFinalis['nomor_urut'].toString(),
+                              ),
+                            ],
+                            
                   
                             SizedBox(height: 30,),
                             Row(
@@ -421,14 +478,14 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   
                                         SizedBox(width: 4),
                                         //text
-                                        Text("Harga"),
+                                        Text(hargaText!),
                                       ],
                                     ),
                   
                                     const SizedBox(height: 10,),
                                     Text(
                                       harga == 0
-                                      ? 'Gratis'
+                                      ? hargaDetail!
                                       : "${detailvote['currency']} ${formatter.format(harga)}",
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
@@ -535,13 +592,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               if (detailFinalis['usia'] != 0) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Usia",
+                                  ageText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                   
                                 (detailFinalis['usia'] == 0)
                                   ? Text(
-                                      "Tidak ada data",
+                                      noDataText!,
                                       style: TextStyle(
                                         color: Colors.grey,
                                         fontStyle: FontStyle.italic,
@@ -555,7 +612,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               if (detailFinalis['profesi'] != null) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Aktifitas",
+                                  activityText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
@@ -566,7 +623,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               if (detailFinalis['deskripsi'] != null) ... [
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Deskripsi",
+                                  biographyText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Html(
@@ -610,7 +667,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   
                                 SizedBox(height: 12,),
                                 Text(
-                                  "Scan QR untuk Vote",
+                                  scanQrText!,
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                   
@@ -632,7 +689,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Save QR",
+                                          downloadQrText!,
                                           style: TextStyle(color: Colors.white),
                                         ),
                                         SizedBox(width: 10,),
@@ -661,7 +718,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Tata Cara Vote",
+                                          tataCaraText!,
                                           style: TextStyle(color: Colors.blue),
                                         ),
                                          SizedBox(width: 10,),
@@ -688,65 +745,78 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                           padding: kGlobalPadding,
                           child: Column(
                             children: [
-                              VideoSection(link: detailFinalis['video_profile'])
+                              VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!,),
                             ],
                           ),
                         ),
                       ],
                   
-                      SizedBox(height: 12),
-                      // Media Social Section
-                      Container(
-                        width: double.infinity,
-                        padding: kGlobalPadding,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300,),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                             Text(
-                              "Media Social",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty
+                          || detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty
+                          || detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty
+                          || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
+
+                            SizedBox(height: 12),
+                            // Media Social Section
+                            Container(
+                              width: double.infinity,
+                              padding: kGlobalPadding,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300,),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                  socialMediaText!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.facebook,
+                                          color:  Color(0xFF1877F2),
+                                          link: detailFinalis['facebook'],
+                                          platform: "facebook",
+                                        ),
+
+                                      if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.twitter,
+                                          color:  Color(0xFF1DA1F2),
+                                          link: detailFinalis['twitter'],
+                                          platform: "twitter",
+                                        ),
+
+                                      if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.linkedin,
+                                          color:  Color(0xFF0077B5),
+                                          link: detailFinalis['linkedin'],
+                                          platform: "linkedin",
+                                        ),
+
+                                      if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
+                                        _buildSocialButton(
+                                          icon: FontAwesomeIcons.instagram,
+                                          color:  Color(0xFFE1306C),
+                                          link: detailFinalis['instagram'],
+                                          platform: "instagram",
+                                        ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                             SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.facebook,
-                                  color:  Color(0xFF1877F2),
-                                  link: detailFinalis['facebook'],
-                                  platform: "facebook",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.twitter,
-                                  color:  Color(0xFF1DA1F2),
-                                  link: detailFinalis['twitter'],
-                                  platform: "twitter",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.linkedin,
-                                  color:  Color(0xFF0077B5),
-                                  link: detailFinalis['linkedin'],
-                                  platform: "linkedin",
-                                ),
-                                _buildSocialButton(
-                                  icon: FontAwesomeIcons.instagram,
-                                  color:  Color(0xFFE1306C),
-                                  link: detailFinalis['instagram'],
-                                  platform: "instagram",
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                   
                       SizedBox(height: 12),
                   
@@ -771,10 +841,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
                 children: [
-                  Text("Total Harga"),
+                  Text(totalHargaText!),
                   Text(
                     harga == 0
-                    ? 'Gratis'
+                    ? hargaDetail!
                     : "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -851,8 +921,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               ),
 
                               const SizedBox(height: 24),
-                              const Text(
-                                "Ayo... Login terlebih Dahulu",
+                              Text(
+                                notLogin!,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -862,8 +932,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               ),
 
                               const SizedBox(height: 12),
-                              const Text(
-                                "Klik tombol dibawah ini untuk menuju halaman Login",
+                              Text(
+                                notLoginDesc!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.black54, fontSize: 14),
                               ),
@@ -885,8 +955,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                                   elevation: 2,
                                 ),
-                                child: const Text(
-                                  "Login Sekarang",
+                                child: Text(
+                                  loginText!,
                                   style: TextStyle(fontSize: 16, color: Colors.white),
                                 ),
                               ),
@@ -934,8 +1004,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                 },
                 child: Text(
                   isTutup
-                  ? "Vote telah Berakhir"
-                  : "Lanjut Pembayaran",
+                  ? endVote!
+                  : bayarText!,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),

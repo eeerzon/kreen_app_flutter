@@ -5,6 +5,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
 class OrderEventPaid extends StatefulWidget {
@@ -18,7 +20,7 @@ class OrderEventPaid extends StatefulWidget {
 
 class _OrderEventPaidState extends State<OrderEventPaid> {
   final formatter = NumberFormat.decimalPattern("id_ID");
-  String langCode = 'id';
+  String? langCode;
   bool _isLoading = true;
 
   Map<String, dynamic> detailOrder = {};
@@ -30,6 +32,10 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   Map<String, dynamic> event = {};
   String? statusOrder, dateshow, maxend, formattedDate, penyelenggara, venue_name;
   var qty, price;
+
+  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> eventLang = {};
 
   Future<void> _loadOrder() async {
 
@@ -115,8 +121,27 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadOrder();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadOrder();
+    });
+  }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
+    final tempeventlang = await LangService.getJsonData(langCode!, "event");
+
+    setState(() {
+      voteLang = tempvoteLang;
+      paymentLang = temppaymentLang;
+      eventLang = tempeventlang;
     });
   }
 
@@ -266,12 +291,15 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Selamat... Pesananmu Berhasil',
+                        //'Selamat... Pesananmu Berhasil',
+                        eventLang['order_sukses'],
+                        textAlign: TextAlign.center,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Cek email kamu. Jika kamu tidak ketemu, jangan lupa cek SPAM atau PROMOSI.',
+                        //'Cek email kamu. Jika kamu tidak ketemu, jangan lupa cek SPAM atau PROMOSI.',
+                        eventLang['order_sukses_desc'],
                         softWrap: true,
                         textAlign: TextAlign.center,
                       ),
@@ -294,8 +322,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                             alignment: Alignment.center,
                             child: Text(
                               eventOder['amount'] == 0
-                              ? "Gratis"
-                              : "Berbayar",
+                              ? voteLang['harga_detail'] //"Gratis"
+                              : eventLang['berbayar'], // "Berbayar",
                               style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -346,7 +374,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Diselenggarakan Oleh: ',
+                                      //'Diselenggarakan Oleh: ',
+                                      "${voteLang['penyelenggara']}: ",
                                       style: TextStyle(color: Colors.grey),
                                     ),
                                     Text(
@@ -403,7 +432,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            'Lokasi : ${venue_name ?? '-'}',
+                                            '${voteLang['lokasi']}: ${venue_name ?? '-'}',
                                             style: TextStyle(
                                               color: Colors.black,
                                             ),
@@ -423,7 +452,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          "Total Pembayaran",
+                          //"Total Pembayaran",
+                          paymentLang['total_pembayaran'],
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -433,7 +463,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           eventOder['amount'] == 0
-                          ? 'Gratis'
+                          ? voteLang['harga_detail'] //"Gratis"
                           : "${eventOder['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}",
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                         ),
@@ -459,17 +489,17 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                   TextSpan(
                                     style: TextStyle(color: Colors.black),
                                     children: [
-                                      TextSpan(text: "QR Code digunakan untuk akses masuk. "),
+                                      TextSpan(text: eventLang['warning_order_1']), //"QR Code digunakan untuk akses masuk. ",
                                       TextSpan(
-                                        text: "Screenshot QR Code ",
+                                        text: eventLang['warning_order_2'], //"Screenshot QR Code ",
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
-                                      TextSpan(text: " atau pastikan "),
+                                      TextSpan(text: eventLang['warning_order_3']), //" atau pastikan "
                                       TextSpan(
                                         text: "E-Ticket",
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
-                                      TextSpan(text: " Anda sudah masuk di email."),
+                                      TextSpan(text: eventLang['warning_order_4']), //" Anda sudah masuk di email."
                                     ],
                                   ),
                                   textAlign: TextAlign.justify,
@@ -514,7 +544,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                'Tiket ${index + 1} ${item['ticket_name']}',
+                                                '${paymentLang['tiket']} ${index + 1} ${item['ticket_name']}',
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
                                               const SizedBox(height: 8),
@@ -529,7 +559,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                               Text(eventOrderDetail[index]['ticket_buyer_phone']),
                                               const SizedBox(height: 8),
                                               Text(
-                                                'Berlaku hingga \n$formattedDate $dateshow \n$maxend',
+                                                //"Berlaku hingga"
+                                                '${eventLang['expired_at']} \n$formattedDate $dateshow \n$maxend',
                                                 softWrap: true,
                                               ),
                                             ],
@@ -580,8 +611,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Text(
-                          "Selesai",
+                        child: Text(
+                          eventLang['selesai'], //"Selesai",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,

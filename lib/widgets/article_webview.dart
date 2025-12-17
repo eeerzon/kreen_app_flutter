@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class ArticleWebView extends StatefulWidget {
@@ -19,9 +21,15 @@ class _ArticleWebViewState extends State<ArticleWebView> {
 
   late final WebViewController controller;
 
+  String? langCode, artikel;
+
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
 
     controller = WebViewController.fromPlatformCreationParams(
       const PlatformWebViewControllerCreationParams(),
@@ -46,6 +54,17 @@ class _ArticleWebViewState extends State<ArticleWebView> {
       ..loadRequest(Uri.parse(url));
   }
 
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+    setState(() => langCode = code);
+
+    final tempArtikel = await LangService.getText(langCode!, "artikel");
+    setState(() {
+      artikel = tempArtikel;
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -63,7 +82,7 @@ class _ArticleWebViewState extends State<ArticleWebView> {
           surfaceTintColor: Colors.transparent,
           shadowColor: Colors.transparent,
           scrolledUnderElevation: 0,
-          title: const Text("Artikel"),
+          title: Text(artikel ?? ""),
           centerTitle: false,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios),

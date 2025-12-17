@@ -13,6 +13,8 @@ import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_global.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/order_event_paid.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:path/path.dart' as path;
 
@@ -56,7 +58,15 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   late List<String?> selectedGenders;
   late List<TextEditingController> phoneControllers;
   var gender;
-  final bool _showError = false;
+  bool _showError = false;
+
+  String? notLoginText, notLoginDesc, login;
+  String? namaLabel, namaHint;
+  String? nohpLabel, nohpHint, nohpError;
+  String? cobaLagi;
+  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> eventLang = {};
 
   bool isValidEmail(String email) {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
@@ -104,11 +114,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   late List<TextEditingController> questionControllers;
   late List<TextEditingController> answerControllers;
 
-  final genders = [
-    {'label': 'Laki-laki', 'icon': '$baseUrl/image/male.png'},
-    {'label': 'Perempuan', 'icon': '$baseUrl/image/female.png'},
-  ];
-
   late final int totalQty;
   final expandedNames = <String>[];
   List<dynamic> formTiket = [];
@@ -139,14 +144,56 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     phoneControllers = List.generate(totalQty, (_) => TextEditingController());
     _isCheckedList = List.generate(totalQty, (_) => false);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadTiket();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadTiket();
 
       if (widget.price_global == 0) {
         _isFree = true;
       } else {
         _isFree = false;
       }
+    });
+  }
+
+  late final genders = [
+    {'label': paymentLang['gender_1'], 'icon': '$baseUrl/image/male.png'},
+    {'label': paymentLang['gender_2'], 'icon': '$baseUrl/image/female.png'},
+  ];
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+    final tempnamalabel = await LangService.getText(langCode!, "nama_lengkap_label");
+    final tempnamahint = await LangService.getText(langCode!, "nama_lengkap");
+    final tempnohplabel = await LangService.getText(langCode!, "nomor_hp_label");
+    final tempnohphint = await LangService.getText(langCode!, "nomor_hp");
+    final tempnohperror = await LangService.getText(langCode!, "nomor_hp_error");
+    final tempcobalagi = await LangService.getText(langCode!, "coba_lagi");
+    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
+    final tempeventLang = await LangService.getJsonData(langCode!, "event");
+
+    setState(() {
+      notLoginText = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      login = templogin;
+      namaLabel = tempnamalabel;
+      namaHint = tempnamahint;
+      nohpLabel = tempnohplabel;
+      nohpHint = tempnohphint;
+      nohpError = tempnohperror;
+      cobaLagi = tempcobalagi;
+      voteLang = tempvoteLang;
+      paymentLang = temppaymentLang;
+      eventLang = tempeventLang;
     });
   }
 
@@ -167,7 +214,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     if (mounted) {
       setState(() {
         formTiket = tempTiket;
-        _isLoading = false;
 
         event = tempEvent;
         detailEvent = event['event'];
@@ -179,6 +225,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
         ids_order_form_detail = List.generate(formTiket.length, (_) => '');
         ids_order_form_master = List.generate(formTiket.length, (_) => '');
         answers = List.generate(formTiket.length, (_) => '');
+
+        _isLoading = false;
       });
     }
   }
@@ -340,7 +388,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text('Tiket'),
+        title: Text(paymentLang['tiket']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -369,11 +417,18 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Image.network(
-                        detailEvent['img_organizer']?.toString().isNotEmpty == true
-                          ? detailEvent['img_organizer']
-                          : 'https://via.placeholder.com/600x300?text=No+Image',
+                        detailEvent['img_organizer'],
                         height: 50,
                         width: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/images/img_broken.jpg',
+                            height: 50,
+                            width: 50,
+                            fit: BoxFit.cover,
+                          );
+                        },
                       ),
 
                       SizedBox(width: 20,),
@@ -398,7 +453,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       String hargaFormatted = '-';
                       hargaFormatted = "$detailEvent['currency'] ${formatter.format(eventTiket[index]['price'] ?? 0)}";
                       if (eventTiket[index]['price'] == 0) {
-                        hargaFormatted = 'Gratis';
+                        hargaFormatted = voteLang['harga_detail'];
                       }
 
                       return Padding(
@@ -432,7 +487,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                       Text(
                         totalHarga == 0
-                          ? 'Gratis'
+                          ? voteLang['harga_detail']
                           : '${detailEvent['currency']} ${formatter.format(totalHarga)}'
                       )
                     ],
@@ -464,12 +519,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Isi Data Diri",
+                                  eventLang['data_diri'],
                                   style: TextStyle(fontWeight: FontWeight.bold,),
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  "Lengkapi datamu untuk melanjutkan",
+                                  paymentLang['sub_titel_2'],
                                   softWrap: true,
                                 ),
                               ],
@@ -493,7 +548,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 ),
                                 SizedBox(width: 6),
                                 Text(
-                                  "Tiket ${index + 1}",
+                                  "${paymentLang['tiket']} ${index + 1}",
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ],
@@ -532,7 +587,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             ),
                             SizedBox(width: 8),
                             Expanded(
-                              child: Text("Samakan input dengan Tiket 1"),
+                              child: Text("${eventLang['samakan_input']} ${paymentLang['tiket']} 1"),
                             ),
                           ],
                         ),
@@ -582,14 +637,14 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         },
                         autofocus: false,
                         decoration: InputDecoration(
-                          hintText: "Masukkan Email",
+                          hintText: eventLang['email_hint'],
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                           ),
                           errorText: _showError && !isValidEmail(emailControllers[index].text)
-                            ? "Format email tidak valid"
+                            ? eventLang['error_email_1']
                             : _duplicateEmailIndex == index
-                                ? "Email sudah digunakan di tiket lain"
+                                ? eventLang['error_email_2']
                                 : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -603,11 +658,15 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ),
                         ),
                       ),
+                      SizedBox(height: 4,),
+                      Text(
+                          eventLang['info_email'],
+                        ),
                       if (_showError && emailControllers[index].text.trim().isEmpty)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            "Email wajib diisi",
+                            eventLang['error_email_3'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -616,7 +675,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       Row(
                         children: [
                           Text(
-                            "Nama"
+                            namaLabel!,
                           ),
                           Text(
                             "*", style: TextStyle(color: Colors.red)
@@ -646,12 +705,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         },
                         autofocus: false,
                         decoration: InputDecoration(
-                          hintText: "Masukkan Nama Lengkap",
+                          hintText: namaHint,
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                           ),
                           errorText: _duplicateNameIndex == index
-                            ? "Nama sudah digunakan di tiket lain"
+                            ? eventLang['error_nama_1']
                             : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -666,10 +725,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         ),
                       ),
                       if (_showError && nameControllers[index].text.trim().isEmpty)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            "Nama wajib diisi",
+                            eventLang['error_nama_2'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -678,7 +737,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       Row(
                         children: [
                           Text(
-                            "Jenis Kelamin"
+                            paymentLang['gender_label'],
                           ),
                           Text(
                             "*", style: TextStyle(color: Colors.red)
@@ -742,10 +801,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         }),
                       ),
                       if (_showError && selectedGenders[index] == null)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            "Jenis kelamin wajib dipilih",
+                            paymentLang['gender_error'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -754,7 +813,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       Row(
                         children: [
                           Text(
-                            "Nomor Hp"
+                            nohpLabel!,
                           ),
                           Text(
                             "*", style: TextStyle(color: Colors.red)
@@ -791,14 +850,15 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         decoration: InputDecoration(
-                          hintText: "Masukkan Nomor Handphone",
+                          hintText: nohpHint!,
                           hintStyle: const TextStyle(color: Colors.grey),
                           errorText: phoneControllers[index].text.isNotEmpty &&
                                   !isValidPhone(phoneControllers[index].text)
-                              ? "Nomor HP harus 10-13 digit dan dimulai dengan 08"
+                              ? nohpError
                               : _duplicatePhoneIndex == index
-                                  ? "Nomor HP sudah digunakan di tiket lain"
+                                  ? eventLang['error_nohp_1']
                                   : null,
+                          errorMaxLines: 3,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -812,10 +872,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         ),
                       ),
                       if (_showError && phoneControllers[index].text.trim().isEmpty)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            "Nama wajib diisi",
+                            eventLang['error_nohp_2'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -844,7 +904,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    "Lengkapi datamu untuk melanjutkan",
+                    paymentLang['sub_titel_2']
                   ),
 
                   SizedBox(height: 20,),
@@ -873,10 +933,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               controller: answerControllers[idx],
                               onChanged: (value) {
                                 answerControllers[idx].text = value;
+
+                                answers[idx] = value;
                               },
                               autofocus: false,
                               decoration: InputDecoration(
-                                hintText: "Masukkan Jawabanmu",
+                                hintText: eventLang['tiket_template_answer_hint'],
                                 hintStyle: const TextStyle(
                                   color: Colors.grey,
                                 ),
@@ -893,10 +955,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               ),
                             ),
                             if (formTiket[idx]['required'] == 1 && _showError && answerControllers[idx].text.trim().isEmpty)
-                              const Padding(
+                              Padding(
                                 padding: EdgeInsets.only(top: 4),
                                 child: Text(
-                                  "Jawaban wajib diisi",
+                                  eventLang['tiket_template_answer_error'],
                                   style: TextStyle(color: Colors.red),
                                 ),
                               ),
@@ -943,7 +1005,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           child: Text(
                                             answerControllers[idx].text.isNotEmpty
                                                 ? path.basename(answerControllers[idx].text)
-                                                : "Pilih File",
+                                                : eventLang['pilih_file'],
                                             style: TextStyle(
                                               color: answerControllers[idx].text.isNotEmpty
                                                   ? Colors.black
@@ -960,10 +1022,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 if (formTiket[idx]['required'] == 1 &&
                                     _showError &&
                                     answerControllers[idx].text.trim().isEmpty)
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.only(top: 4),
                                     child: Text(
-                                      "Jawaban wajib diisi",
+                                      eventLang['tiket_template_answer_error'],
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -995,10 +1057,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 if (formTiket[idx]['required'] == 1 &&
                                     _showError &&
                                     answerControllers[idx].text.trim().isEmpty)
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.only(top: 4),
                                     child: Text(
-                                      "Jawaban wajib diisi",
+                                      eventLang['tiket_template_answer_error'],
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -1032,16 +1094,16 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                     ),
                                     contentPadding:
                                         const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                                    hintText: "Pilih salah satu",
+                                    hintText: eventLang['pilih_radio'],
                                   ),
                                 ),
                                 if (formTiket[idx]['required'] == 1 &&
                                     _showError &&
                                     answerControllers[idx].text.trim().isEmpty)
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.only(top: 4),
                                     child: Text(
-                                      "Jawaban wajib diisi",
+                                      eventLang['tiket_template_answer_error'],
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -1059,19 +1121,20 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       TextSpan(
                         style: TextStyle(color: Colors.black),
                         children: [
-                          TextSpan(text: "Saya menyetujui bahwa "),
-                          TextSpan(text: "KREEN "),
-                          TextSpan(text: "dapat membagikan informasi saya kepada pihak penyelenggara acara, telah membaca "),
+                          TextSpan(text: paymentLang['kebijakan_privasi_1']),
                           TextSpan(
-                            text: "Ketentuan Layanan",
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          TextSpan(text: ", dan menyetujui "),
+                              text: "KREEN ",),
                           TextSpan(
-                            text: "Kebijakan Privasi",
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          TextSpan(text: " yang berlaku."),
+                              text:
+                                  paymentLang['kebijakan_privasi_2']),
+                          TextSpan(
+                              text: paymentLang['kebijakan_privasi_3'],
+                              style: TextStyle(color: Colors.red)),
+                          TextSpan(text: paymentLang['kebijakan_privasi_4']),
+                          TextSpan(
+                              text: paymentLang['kebijakan_privasi_5'],
+                              style: TextStyle(color: Colors.red)),
+                          TextSpan(text: paymentLang['kebijakan_privasi_6']),
                         ],
                       ),
                       textAlign: TextAlign.justify,
@@ -1085,10 +1148,20 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       //   return answerControllers[index].text.trim();
                       // });
 
+                      setState(() {
+                        _showError = true;
+                      });
+
+                      final isValid = _validateAllForm();
+
                       for (var i = 0; i < formTiket.length; i++) {
                         if (formTiket[i]['type_form'] != 'file') {
                           answers[i] = answerControllers[i].text.trim();
                         }
+                      }
+
+                      if (!isValid) {
+                        return;
                       }
                       
                       if (_isFree) {
@@ -1112,11 +1185,23 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           final count = int.tryParse(widget.qty[i].toString()) ?? 1;
 
                           for (int j = 0; j < count; j++) {
+                            
+                            String genderValue;
+                            final rawGender = selectedGenders[controllerIndex]?.toString().toLowerCase();
+
+                            if (rawGender == 'laki-laki' || rawGender == 'male') {
+                              genderValue = 'male';
+                            } else if (rawGender == 'perempuan' || rawGender == 'female') {
+                              genderValue = 'female';
+                            } else {
+                              genderValue = ''; // atau throw / handle error
+                            }
                             tickets.add({
                               "id_ticket": idTicket,
                               "first_name": nameControllers[controllerIndex].text,
                               "email": emailControllers[controllerIndex].text,
                               "phone": phoneControllers[controllerIndex].text,
+                              "gender" : genderValue
                             });
                             controllerIndex++;
                           }
@@ -1142,25 +1227,55 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         var resultEventOrder = await ApiService.post("/order/event/checkout", body: body);
 
                         if (resultEventOrder != null) {
-                          var tempOrder = resultEventOrder['data'];
+                          if (resultEventOrder['rc'] == 200) {
+                            var tempOrder = resultEventOrder['data'];
 
-                          var id_order = tempOrder['id_order'];
-                          Navigator.pop(context);
+                            var id_order = tempOrder['id_order'];
+                            Navigator.pop(context);
 
-                          Navigator.pop(context);
+                            Navigator.pop(context);
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
-                          );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
+                            );
+                          } else if (resultEventOrder['rc'] == 422) {
+                            final data = resultEventOrder['data'];
+                            String desc = '';
+                            if (data is Map) {
+                              final errorMessages = data.values
+                                .whereType<List>()
+                                .expand((e) => e)
+                                .whereType<String>()
+                                .toList();
+
+                            desc = errorMessages.join('\n');
+                            } else {
+                              desc = data?.toString() ?? '';
+                            }
+                            AwesomeDialog(
+                              context: context,
+                              dialogType: DialogType.error,
+                              animType: AnimType.topSlide,
+                              title: 'Oops!',
+                              desc: desc,
+                              btnOkOnPress: () {},
+                              btnOkColor: Colors.red,
+                              buttonsTextStyle: TextStyle(color: Colors.white),
+                              headerAnimationLoop: false,
+                              dismissOnTouchOutside: true,
+                              showCloseIcon: true,
+                            ).show();
+                          }
                         } else {
                           AwesomeDialog(
                             context: context,
                             dialogType: DialogType.error,
                             animType: AnimType.topSlide,
                             title: 'Oops!',
-                            desc: 'Terjadi kesalahan. Silakan coba lagi.',
+                            desc: cobaLagi,
                             btnOkOnPress: () {},
+                            btnOkColor: Colors.red,
                             headerAnimationLoop: false,
                             dismissOnTouchOutside: true,
                             showCloseIcon: true,
@@ -1212,8 +1327,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           SizedBox(width: 8),
                           Text(
                             _isFree
-                            ? "Dapatkan Tiket"
-                            : "Beli Tiket",
+                            ? eventLang['pilih_tiket']
+                            : eventLang['pilih_pembayaran'],
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -1230,5 +1345,43 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
         ),
       ),
     );
+  }
+
+  bool _validateAllForm() {
+    bool isValid = true;
+
+    for (int i = 0; i < totalQty; i++) {
+      // email
+      if (emailControllers[i].text.trim().isEmpty ||
+          !isValidEmail(emailControllers[i].text)) {
+        isValid = false;
+      }
+
+      // nama
+      if (nameControllers[i].text.trim().isEmpty) {
+        isValid = false;
+      }
+
+      // gender
+      if (selectedGenders[i] == null) {
+        isValid = false;
+      }
+
+      // phone
+      if (phoneControllers[i].text.trim().isEmpty ||
+          !isValidPhone(phoneControllers[i].text)) {
+        isValid = false;
+      }
+
+      // form tiket
+      for (int j = 0; j < formTiket.length; j++) {
+        if (formTiket[j]['required'] == 1 &&
+            answers[j].toString().trim().isEmpty) {
+          isValid = false;
+        }
+      }
+    }
+
+    return isValid;
   }
 }

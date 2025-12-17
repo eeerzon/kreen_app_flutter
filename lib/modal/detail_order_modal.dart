@@ -5,6 +5,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,6 +21,20 @@ class DetailOrderModal {
     Map<String, dynamic> vote = {};
     String? statusOrder;
     bool isLoading = true;
+
+    String? langCode;
+
+    Map<String, dynamic> paymentLang = {};
+    Map<String, dynamic> voteLang = {};
+
+    Future <void> getBahasa() async {
+      langCode = await StorageService.getLanguage();
+
+      paymentLang = await LangService.getJsonData(langCode!, "payment");
+      voteLang = await LangService.getJsonData(langCode!, "detail_vote");
+
+      isLoading = false;
+    }
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/vote/$idOrder");
@@ -37,19 +53,19 @@ class DetailOrderModal {
       vote = tempVote;
       
       if (voteOder['order_status'] == '0'){
-        statusOrder = 'gagal';
+        statusOrder = paymentLang['status_order_0'] ?? ""; // 'gagal';
       } else if (voteOder['order_status'] == '1'){
-        statusOrder = 'selesai';
+        statusOrder = paymentLang['status_order_1'] ?? ""; // 'selesai';
       } else if (voteOder['order_status'] == '2'){
-        statusOrder = 'batal';
+        statusOrder = paymentLang['status_order_2'] ?? ""; // 'batal';
       } else if (voteOder['order_status'] == '3'){
-        statusOrder = 'menunggu';
+        statusOrder = paymentLang['status_order_3'] ?? ""; // 'menunggu';
       } else if (voteOder['order_status'] == '4'){
-        statusOrder = 'refund';
+        statusOrder = paymentLang['status_order_4'] ?? ""; // 'refund';
       } else if (voteOder['order_status'] == '20'){
-        statusOrder = 'expired';
+        statusOrder = paymentLang['status_order_20'] ?? ""; // 'expired';
       } else if (voteOder['order_status'] == '404'){
-        statusOrder = 'hidden';
+        statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
       }
     }
 
@@ -277,6 +293,7 @@ class DetailOrderModal {
 
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               if (isLoading) {
+                await getBahasa();
                 await loadOrder();
                 if (hasValidUrl) {
                   await precacheImage(NetworkImage(url), context);
@@ -317,32 +334,32 @@ class DetailOrderModal {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: (statusOrder == 'gagal')
+                            color: (voteOder['order_status'] == '0')
                                 ? Colors.red.shade50
-                                : (statusOrder == 'selesai')
+                                : (voteOder['order_status'] == '1')
                                     ? Colors.green.shade50
-                                    : (statusOrder == 'batal')
+                                    : (voteOder['order_status'] == '2')
                                         ? Colors.red.shade50
-                                        : (statusOrder == 'menunggu')
+                                        : (voteOder['order_status'] == '3')
                                             ? Colors.orange.shade50
-                                            : (statusOrder == 'refund')
+                                            : (voteOder['order_status'] == '4')
                                                 ? Colors.red.shade50
-                                                : (statusOrder == 'expired')
+                                                : (voteOder['order_status'] == '20')
                                                     ? Colors.red.shade50
                                                     : Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: (statusOrder == 'gagal')
+                              color: (voteOder['order_status'] == '0')
                                   ? Colors.red
-                                  : (statusOrder == 'selesai')
+                                  : (voteOder['order_status'] == '1')
                                       ? Colors.green
-                                      : (statusOrder == 'batal')
+                                      : (voteOder['order_status'] == '2')
                                           ? Colors.red
-                                          : (statusOrder == 'menunggu')
+                                          : (voteOder['order_status'] == '3')
                                               ? Colors.orange
-                                              : (statusOrder == 'refund')
+                                              : (voteOder['order_status'] == '4')
                                                   ? Colors.red
-                                                  : (statusOrder == 'expired')
+                                                  : (voteOder['order_status'] == '20')
                                                       ? Colors.red
                                                       : Colors.grey,
                               width: 1,
@@ -351,17 +368,17 @@ class DetailOrderModal {
                           child: Text(
                             statusOrder!,
                             style: TextStyle(
-                              color: (statusOrder == 'gagal')
+                              color: (voteOder['order_status'] == '0')
                                   ? Colors.red
-                                  : (statusOrder == 'selesai')
+                                  : (voteOder['order_status'] == '1')
                                       ? Colors.green
-                                      : (statusOrder == 'batal')
+                                      : (voteOder['order_status'] == '2')
                                           ? Colors.red
-                                          : (statusOrder == 'menunggu')
+                                          : (voteOder['order_status'] == '3')
                                               ? Colors.orange
-                                              : (statusOrder == 'refund')
+                                              : (voteOder['order_status'] == '4')
                                                   ? Colors.red
-                                                  : (statusOrder == 'expired')
+                                                  : (voteOder['order_status'] == '20')
                                                       ? Colors.red
                                                       : Colors.black,
                               fontWeight: FontWeight.w600,
@@ -436,7 +453,7 @@ class DetailOrderModal {
                                       const SizedBox(height: 4),
                                       Text(
                                         voteOder['total_amount'] == 0
-                                        ? 'Gratis'
+                                        ? voteLang['harga_detail'] ?? "" //'Gratis'
                                         : "${voteOder['currency_vote']} ${formatter.format(voteOder['total_amount'])}",
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
@@ -452,7 +469,7 @@ class DetailOrderModal {
 
                     const SizedBox(height: 16),
                     Text(
-                      'Finalis',
+                      voteLang['finalis'] ?? "",
                     ),
 
                     SizedBox(height: 8,),
@@ -507,7 +524,7 @@ class DetailOrderModal {
                                       
                                       const SizedBox(height: 4),
                                       Text(
-                                        "${formatter.format(voteOrderDetail[index]['qty'])} vote",
+                                        "${formatter.format(voteOrderDetail[index]['qty'])} ${voteLang['text_vote']}",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.red,
@@ -526,7 +543,7 @@ class DetailOrderModal {
                     if (voteOder['total_amount'] != 0) ... {
                       const SizedBox(height: 16),
                       Text(
-                        'Pembayaran',
+                        paymentLang['pembayaran'] ?? "", //'Pembayaran',
                       ),
 
                       SizedBox(height: 8,),
@@ -559,7 +576,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              const Text('Harga', style: TextStyle(color: Colors.grey),),
+                              Text(voteLang['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 "${voteOder['currency_vote']} ${formatter.format(voteOder['total_amount'])}",
@@ -571,7 +588,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              const Text('Metode Pembayaran', style: TextStyle(color: Colors.grey),),
+                              Text(paymentLang['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 voteOder['payment_method_name'],
@@ -595,7 +612,6 @@ class DetailOrderModal {
 
   static Future<void> showEvent(BuildContext context, String idOrder, bool isSukses) async {
     final formatter = NumberFormat.decimalPattern("id_ID");
-    String langCode = 'id';
     
     Map<String, dynamic> eventOder = {};
     List<dynamic> eventOrderDetail = [];
@@ -603,6 +619,22 @@ class DetailOrderModal {
     Map<String, dynamic> event = {};
     String? statusOrder, dateshow, maxend, formattedDate;
     bool isLoading = true;
+
+    String? langCode;
+
+    Map<String, dynamic> paymentLang = {};
+    Map<String, dynamic> voteLang = {};
+    Map<String, dynamic> eventLang = {};
+
+    Future <void> getBahasa() async {
+      langCode = await StorageService.getLanguage();
+
+      paymentLang = await LangService.getJsonData(langCode!, "payment");
+      voteLang = await LangService.getJsonData(langCode!, "detail_vote");
+      eventLang = await LangService.getJsonData(langCode!, "event");
+
+      isLoading = false;
+    }
 
     String formatTime(String time) {
       final t = DateFormat("HH:mm:ss").parse(time);
@@ -657,19 +689,19 @@ class DetailOrderModal {
       }
       
       if (eventOder['order_status'] == '0'){
-        statusOrder = 'gagal';
+        statusOrder = paymentLang['status_order_0'] ?? ""; // 'gagal';
       } else if (eventOder['order_status'] == '1'){
-        statusOrder = 'selesai';
+        statusOrder = paymentLang['status_order_1'] ?? ""; // 'selesai';
       } else if (eventOder['order_status'] == '2'){
-        statusOrder = 'batal';
+        statusOrder = paymentLang['status_order_2'] ?? ""; // 'batal';
       } else if (eventOder['order_status'] == '3'){
-        statusOrder = 'menunggu';
+        statusOrder = paymentLang['status_order_3'] ?? ""; // 'menunggu';
       } else if (eventOder['order_status'] == '4'){
-        statusOrder = 'refund';
+        statusOrder = paymentLang['status_order_4'] ?? ""; // 'refund';
       } else if (eventOder['order_status'] == '20'){
-        statusOrder = 'expired';
+        statusOrder = paymentLang['status_order_20'] ?? ""; // 'expired';
       } else if (eventOder['order_status'] == '404'){
-        statusOrder = 'hidden';
+        statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
       }
     }
 
@@ -910,6 +942,7 @@ class DetailOrderModal {
           builder: (context, setState) {
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               if (isLoading) {
+                await getBahasa();
                 await loadOrder();
                 setState(() {
                   isLoading = false;
@@ -946,32 +979,32 @@ class DetailOrderModal {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: (statusOrder == 'gagal')
+                            color: (eventOder['order_status'] == '0')
                                 ? Colors.red.shade50
-                                : (statusOrder == 'selesai')
+                                : (eventOder['order_status'] == '1')
                                     ? Colors.green.shade50
-                                    : (statusOrder == 'batal')
+                                    : (eventOder['order_status'] == '2')
                                         ? Colors.red.shade50
-                                        : (statusOrder == 'menunggu')
+                                        : (eventOder['order_status'] == '3')
                                             ? Colors.orange.shade50
-                                            : (statusOrder == 'refund')
+                                            : (eventOder['order_status'] == '4')
                                                 ? Colors.red.shade50
-                                                : (statusOrder == 'expired')
+                                                : (eventOder['order_status'] == '20')
                                                     ? Colors.red.shade50
                                                     : Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: (statusOrder == 'gagal')
+                              color: (eventOder['order_status'] == '0')
                                   ? Colors.red
-                                  : (statusOrder == 'selesai')
+                                  : (eventOder['order_status'] == '1')
                                       ? Colors.green
-                                      : (statusOrder == 'batal')
+                                      : (eventOder['order_status'] == '2')
                                           ? Colors.red
-                                          : (statusOrder == 'menunggu')
+                                          : (eventOder['order_status'] == '3')
                                               ? Colors.orange
-                                              : (statusOrder == 'refund')
+                                              : (eventOder['order_status'] == '4')
                                                   ? Colors.red
-                                                  : (statusOrder == 'expired')
+                                                  : (eventOder['order_status'] == '20')
                                                       ? Colors.red
                                                       : Colors.grey,
                               width: 1,
@@ -980,17 +1013,17 @@ class DetailOrderModal {
                           child: Text(
                             statusOrder!,
                             style: TextStyle(
-                              color: (statusOrder == 'gagal')
+                              color: (eventOder['order_status'] == '0')
                                   ? Colors.red
-                                  : (statusOrder == 'selesai')
+                                  : (eventOder['order_status'] == '1')
                                       ? Colors.green
-                                      : (statusOrder == 'batal')
+                                      : (eventOder['order_status'] == '2')
                                           ? Colors.red
-                                          : (statusOrder == 'menunggu')
+                                          : (eventOder['order_status'] == '3')
                                               ? Colors.orange
-                                              : (statusOrder == 'refund')
+                                              : (eventOder['order_status'] == '4')
                                                   ? Colors.red
-                                                  : (statusOrder == 'expired')
+                                                  : (eventOder['order_status'] == '20')
                                                       ? Colors.red
                                                       : Colors.black,
                               fontWeight: FontWeight.w600,
@@ -1056,7 +1089,7 @@ class DetailOrderModal {
                                       const SizedBox(height: 4),
                                       Text(
                                         eventOder['amount'] == 0
-                                        ? 'Gratis'
+                                        ? voteLang['harga_detail'] ?? "" //'Gratis'
                                         : "${eventOder['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}",
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
@@ -1072,7 +1105,7 @@ class DetailOrderModal {
 
                     const SizedBox(height: 16),
                     Text(
-                      'Informasi Tiket',
+                      paymentLang['informasi_tiket'] ?? "", // 'Informasi Tiket',
                     ),
 
                     SizedBox(height: 8,),
@@ -1111,7 +1144,7 @@ class DetailOrderModal {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  'Tiket ${index + 1} ${item['ticket_name']}',
+                                                  '${paymentLang['tiket']} ${index + 1} ${item['ticket_name']}',
                                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                                 ),
                                                 const SizedBox(height: 8),
@@ -1126,7 +1159,8 @@ class DetailOrderModal {
                                                 Text(eventOrderDetail[index]['ticket_buyer_phone']),
                                                 const SizedBox(height: 8),
                                                 Text(
-                                                  'Berlaku hingga \n$formattedDate $dateshow \n$maxend',
+                                                  // berlaku hingga
+                                                  '${eventLang['expired_at']} \n$formattedDate $dateshow \n$maxend',
                                                   softWrap: true,
                                                 ),
                                               ],
@@ -1195,7 +1229,7 @@ class DetailOrderModal {
                                                 launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                                               },
                                               child: Text(
-                                                "Lihat File",
+                                                eventLang['lihat_file'] ?? "", //"Lihat File",
                                                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                                               ),
                                             )
@@ -1213,7 +1247,7 @@ class DetailOrderModal {
                     if (eventOder['order_status'] == '3') ... [
                       const SizedBox(height: 16),
                       Text(
-                        'Detail Pembayaran',
+                        paymentLang['detail_pembayaran'] ?? "", //'Detail Pembayaran',
                       ),
 
                       SizedBox(height: 8,),
@@ -1246,7 +1280,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              const Text('Harga', style: TextStyle(color: Colors.grey),),
+                              Text(voteLang['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 "${eventOder['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}",
@@ -1258,7 +1292,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              const Text('Metode Pembayaran', style: TextStyle(color: Colors.grey),),
+                              Text(paymentLang['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 eventOder['payment_method_name'],

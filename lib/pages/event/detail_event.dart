@@ -4,7 +4,6 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +12,7 @@ import 'package:kreen_app_flutter/pages/event/detail_event/tiket_event.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/tiket_global.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
@@ -28,8 +28,7 @@ class DetailEventPage extends StatefulWidget {
 }
 
 class _DetailEventPageState extends State<DetailEventPage> {
-  final prefs = FlutterSecureStorage();
-  String? langCode = 'id';
+  String? langCode;
 
   bool _isLoading = true;
 
@@ -40,12 +39,17 @@ class _DetailEventPageState extends State<DetailEventPage> {
   List<int> prices_tiket = [];
   List<int?> selected_tiket = [];
 
+  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> eventLang = {};
+  String? notLoginText, notLoginDesc, login;
+
   @override
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadEvent();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadEvent();
     });
   }
 
@@ -71,6 +75,28 @@ class _DetailEventPageState extends State<DetailEventPage> {
       });
     }
   }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempeventlang = await LangService.getJsonData(langCode!, "event");
+    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
+    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
+    final templogin = await LangService.getText(langCode!, "login");
+
+    setState(() {
+      voteLang = tempvotelang;
+      eventLang = tempeventlang;
+      notLoginText = tempnotLoginText;
+      notLoginDesc = tempnotLoginDesc;
+      login = templogin;
+    });
+  } 
 
   Future<void> _precacheAllImages(
     BuildContext context,
@@ -288,18 +314,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.black),
-            onPressed: () {
-              // contoh konten share, bisa dari API juga
-              Share.share(
-                "",
-                subject: event['keywords'],
-              );
-            },
-          ),
-        ],
       ),
 
       bottomNavigationBar: BottomAppBar(
@@ -357,8 +371,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 ),
 
                                 const SizedBox(height: 24),
-                                const Text(
-                                  "Ayo... Login terlebih Dahulu",
+                                Text(
+                                  notLoginText!,
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -368,8 +382,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 ),
 
                                 const SizedBox(height: 12),
-                                const Text(
-                                  "Klik tombol dibawah ini untuk menuju halaman Login",
+                                Text(
+                                  notLoginDesc!,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: Colors.black54, fontSize: 14),
                                 ),
@@ -391,8 +405,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                                     elevation: 2,
                                   ),
-                                  child: const Text(
-                                    "Login Sekarang",
+                                  child: Text(
+                                    login!,
                                     style: TextStyle(fontSize: 16, color: Colors.white),
                                   ),
                                 ),
@@ -497,7 +511,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    "Beli Tiket",
+                    eventLang['beli_tiket'],
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -555,74 +569,110 @@ class _DetailEventPageState extends State<DetailEventPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        detailEvent['category_name'],
-                        style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
-                      ),
-
-                      // title event
-                      const SizedBox(height: 8),
-                      Text(
-                        event['keywords'],
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              event['status'],
-                              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  detailEvent['category_name'],
+                                  style: const TextStyle(
+                                    color: Colors.amber,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+                                Text(
+                                  event['keywords'],
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                // Wrap maksimum 2 baris
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxHeight: 70, // cukup untuk 2 row chip
+                                  ),
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          event['status'],
+                                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          detailEvent['flag_private'] == 1
+                                          ? "Private Event"
+                                          : 'Public Event',
+                                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.purple.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          detailEvent['type_event'],
+                                          style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          event['harga_max'] == 0
+                                          ? voteLang['harga_detail']
+                                          : eventLang['berbayar'],
+                                          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
+
+                          InkWell(
+                            onTap: () {
+                              Share.share(
+                                "$baseUrl/ticket-event/${detailEvent['slug']}",
+                                subject: detailEvent['title'],
+                              );
+                            },
+                            child: SvgPicture.network(
+                              '$baseUrl/image/share-red.svg',
+                              height: 40,
+                              width: 40,
                             ),
-                            child: Text(
-                              detailEvent['flag_private'] == 1
-                              ? "Private Event"
-                              : 'Public Event',
-                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              detailEvent['type_event'],
-                              style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              event['harga_max'] == 0
-                              ? 'Gratis'
-                              : 'Berbayar',
-                              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                          )
                         ],
                       ),
 
@@ -645,7 +695,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Diselenggarakan Oleh",
+                                  voteLang['penyelenggara'],
                                   style: TextStyle(
                                     color: Colors.grey,
                                   ),
@@ -693,7 +743,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                       SizedBox(height: 20,),
                       Text(
-                        'Tentang Event Ini',
+                        eventLang['tentang_event_label'],
                         style: TextStyle( fontWeight: FontWeight.bold),
                       ),
 
@@ -717,7 +767,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                       const SizedBox(height: 20),
                       Text(
-                        "Tanggal dan Waktu",
+                        eventLang['tgl_waktu_label'],
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
@@ -804,7 +854,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                       const SizedBox(height: 20),
                       Text(
-                        "Lokasi",
+                        voteLang['lokasi'],
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
@@ -945,7 +995,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         String hargaFormatted = '-';
                         hargaFormatted = "${detailEvent['currency']} ${formatter.format(item['price'] ?? 0)}";
                         if (item['price'] == 0) {
-                          hargaFormatted = 'Gratis';
+                          hargaFormatted = voteLang['harga_detail'];
                         }
 
                         return Padding(
@@ -1009,7 +1059,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                                             SizedBox(width: 10,),
                                             Text(
-                                              'Berakhir $formattedDate',
+                                              '${eventLang['berakhir']} $formattedDate',
                                               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                                             ),
                                           ],
@@ -1095,7 +1145,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         Text(
-                                          'Stok Tiket: ${item['sisa_stok']}',
+                                          '${eventLang['stok_tiket']}: ${item['sisa_stok']}',
                                           style: TextStyle(color: Colors.grey),
                                         )
                                       ],

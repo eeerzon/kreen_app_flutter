@@ -39,6 +39,7 @@ class _HomeContentState extends State<HomeContent> {
   String? comingsoon_title, comingsoon_desc;
   String? partner, partner_btn;
   String? news_title, news_desc;
+  String? leaderboard_title;
 
   bool isLoadingContent = true;
 
@@ -62,7 +63,11 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Future<void> _getBahasa() async {
-    langCode = await StorageService.getLanguage();
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
 
     final homeContent = await LangService.getJsonData(langCode!, "home_content");
     final tempLogin = await LangService.getText(langCode!, 'login');
@@ -76,6 +81,8 @@ class _HomeContentState extends State<HomeContent> {
 
       vote_title = homeContent['vote_title'];
       latest_vote = homeContent['latest_vote'];
+
+      leaderboard_title = homeContent['leaderboard_title'];
 
       comingsoon_title = homeContent['comingsoon_title'];
       comingsoon_desc = homeContent['comingsoon_desc'];
@@ -836,7 +843,7 @@ class _HomeContentState extends State<HomeContent> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Dukung Terus Juara 1 Kamu",
+                                    leaderboard_title!,
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.white,
@@ -906,6 +913,7 @@ class _HomeContentState extends State<HomeContent> {
                                             indexWrap: null,
                                             close_payment: item['close_payment'],
                                             tanggal_buka_vote: formattedDate,
+                                            flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
                                           ),
                                         ),
                                       );
@@ -921,6 +929,7 @@ class _HomeContentState extends State<HomeContent> {
                                             id_paket_bw: null,
                                             close_payment: item['close_payment'],
                                             tanggal_buka_vote: formattedDate,
+                                            flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
                                           ),
                                         ),
                                       );
@@ -1295,12 +1304,6 @@ class _HomeContentState extends State<HomeContent> {
                                     ),
                                   ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    comingsoon_desc!,
-                                    style: TextStyle(color: Colors.black),
-                                    softWrap: true,          // biar teks bisa kebungkus
-                                    overflow: TextOverflow.visible, 
-                                  ),
                                 ],
                               ),
                             ),
