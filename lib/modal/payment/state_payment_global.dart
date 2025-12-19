@@ -324,7 +324,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
           widget.ids_order_form_master.length, (index) => {
             "id_order_form_master": widget.ids_order_form_master[index],
             "id_order_form_detail": widget.ids_order_form_details[index],
-            "answer": answers[index]
+            "answer": widget.answers[index]
           },
         ),
       };
