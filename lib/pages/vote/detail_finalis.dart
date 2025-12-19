@@ -64,8 +64,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadFinalis();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadFinalis();
     });
   }
 
@@ -76,24 +77,22 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       return;
     }
     
-    final resultFinalis = await ApiService.get("/finalis/$idFinalis");
+    final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode);
     final tempFinalis = resultFinalis?['data'] ?? {};
 
     idVote = tempFinalis['id_vote']?.toString();
     Map<String, dynamic> tempDetailVote = {};
 
     if (idVote != null && idVote.isNotEmpty) {
-      final resultDetailVote = await ApiService.get("/vote/$idVote");
+      final resultDetailVote = await ApiService.get("/vote/$idVote", xLanguage: langCode);
       tempDetailVote = resultDetailVote?['data'] ?? {};
     }
-
-    await _getBahasa();
+    
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
-        _isLoading = false;
 
         controllers = TextEditingController(
           text: widget.count.toString(),
@@ -141,6 +140,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         if (remaining.inSeconds == 0 || isBeforeOpen) {
           isTutup = true;
         }
+
+        _isLoading = false;
       });
     }
   }
@@ -386,7 +387,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
               height: 30,
               width: 30,
             ),
-          )
+          ),
+          SizedBox(width: 10,),
         ],
       ),
 

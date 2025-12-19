@@ -1114,8 +1114,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                 ),
               );
             }),
-
-            SizedBox(height: 12,),
+            
             Container(
               padding: kGlobalPadding,
               decoration: BoxDecoration(

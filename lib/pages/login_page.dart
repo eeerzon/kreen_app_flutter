@@ -314,6 +314,26 @@ class _LoginPageState extends State<LoginPage> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 20),
+            child: GestureDetector(
+              onTap: _showLanguageDialog,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset("assets/flags/${langCode ?? 'id'}.png",
+                      width: 24, height: 24),
+                  const SizedBox(width: 4),
+                  Text(
+                    (langCode ?? 'id').toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
       ),
 
       body: Stack(
@@ -508,27 +528,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   SizedBox(height: 20,),
                 ],
-              ),
-            ),
-          ),
-
-          //bahasa
-          Positioned(
-            top: 16,
-            right: 20,
-            child: GestureDetector(
-              onTap: _showLanguageDialog,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                Image.asset("assets/flags/${langCode ?? 'id'}.png",
-                    width: 24, height: 24),
-                const SizedBox(width: 4),
-                Text(
-                  (langCode ?? 'id').toUpperCase(),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
               ),
             ),
           ),

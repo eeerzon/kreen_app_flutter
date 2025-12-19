@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
+import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/profile.dart';
 import 'package:kreen_app_flutter/pages/content_info/tentang_page.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
@@ -355,25 +357,35 @@ class _InfoPageState extends State<InfoPage> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade300,),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/img_bantuan.png',
-                          height: 50,
-                          width: 50,
-                        ),
-                    
-                        SizedBox(width: 12,),
-                        Text(
-                          infoLang['pusat_bantuan'], //"Pusat Bantuan"
-                        )
-                      ],
-                    ),
-                    Icon(Icons.arrow_forward_ios)
-                  ],
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HelpCenterPage(),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/img_bantuan.png',
+                            height: 50,
+                            width: 50,
+                          ),
+                      
+                          SizedBox(width: 12,),
+                          Text(
+                            infoLang['pusat_bantuan'], //"Pusat Bantuan"
+                          )
+                        ],
+                      ),
+                      Icon(Icons.arrow_forward_ios)
+                    ],
+                  )
                 ),
               ),
 
@@ -421,33 +433,43 @@ class _InfoPageState extends State<InfoPage> {
 
               // Kebijakan Privasi section
               SizedBox(height: 20,),
-              Container(
-                padding: EdgeInsets.all(14),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300,),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/img_kebijakan.png',
-                          height: 50,
-                          width: 50,
-                        ),
-                    
-                        SizedBox(width: 12,),
-                        Text(
-                          infoLang['kebijakan_privasi'], //"Kebijakan Privasi"
-                        )
-                      ],
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PrivacyPolicyPage(),
                     ),
-                    Icon(Icons.arrow_forward_ios)
-                  ],
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.all(14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300,),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/img_kebijakan.png',
+                            height: 50,
+                            width: 50,
+                          ),
+                      
+                          SizedBox(width: 12,),
+                          Text(
+                            infoLang['kebijakan_privasi'], //"Kebijakan Privasi"
+                          )
+                        ],
+                      ),
+                      Icon(Icons.arrow_forward_ios)
+                    ],
+                  ),
                 ),
               ),
 

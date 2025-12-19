@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
-import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
+import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -206,9 +206,8 @@ class _ExploreEventState extends State<ExploreEvent> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailVotePage(
-                          id_event: item['id_event'].toString(),
-                        ),
+                        builder: (context) =>
+                            DetailEventPage(id_event: item['id_event'].toString(), price: item['price'],),
                       ),
                     );
                   },
@@ -273,7 +272,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                               const SizedBox(height: 4),
                               Text(
                                 item['price'] == 0
-                                ? votelang['harga_detail']  //'Gratis'
+                                ? votelang["harga_detail"]  //'Gratis'
                                 : "${item['currency']} $hargaFormatted",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,

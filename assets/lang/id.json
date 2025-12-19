@@ -96,7 +96,8 @@
     "no_more" : "Tidak ada data lagi",
     "belum_ada_transaksi" : "Belum ada Transaksi",
     "beli_lagi" : "Beli Lagi",
-    "finalis" : "Finalis"
+    "finalis" : "Finalis",
+    "mulai_dari" : "Mulai dari"
   },
 
   "lastPressed" : "Tekan kembali untuk keluar aplikasi",
@@ -322,6 +323,8 @@
     "uname_instagram_label" : "Instagram",
     "uname_instagram_hint" : "Masukkan username instagram",
     "sukses_info_profil" : "Profil berhasil diubah",
-    "verified_email" : "Email kamu belum diverifikasi. Silakan verifikasi email kamu."
+    "verified_email" : "Email kamu belum diverifikasi. Silakan verifikasi email kamu.",
+    "kategori_informasi" : "Kategori Informasi",
+    "pertanyaan_populer" : "Pertanyaan Populer"
   }
 }

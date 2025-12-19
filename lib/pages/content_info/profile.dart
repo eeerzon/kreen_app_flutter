@@ -1,14 +1,14 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
 import 'package:kreen_app_flutter/pages/content_info/edit_profil.dart';
+import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -740,7 +740,14 @@ class _ProfileState extends State<Profile> {
                           SizedBox(
                             width: double.infinity,
                             child: InkWell(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const HelpCenterPage(),
+                                  ),
+                                );
+                              },
                               child: Row(
                                 children: [
                                   Icon(Icons.help_center, color: Colors.red,),

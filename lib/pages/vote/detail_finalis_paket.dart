@@ -64,8 +64,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadFinalis();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadFinalis();
     });
   }
 
@@ -74,21 +75,19 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   Future<void> _loadFinalis() async {
     
-    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}");
+    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode);
     final tempFinalis = resultFinalis?['data'] ?? {};
 
-    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}");
+    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode);
     final tempDetailVote = resultDetailVote?['data'] ?? {};
 
     final tempPaket = tempDetailVote['vote_paket'];
 
-    await _getBahasa();
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
-        _isLoading = false;
 
         counts = widget.vote;
         detailIndex = widget.index;
@@ -147,6 +146,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         if (remaining.inSeconds == 0 || isBeforeOpen) {
           isTutup = true;
         }
+
+        _isLoading = false;
       });
     }
   }
@@ -391,7 +392,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
               height: 30,
               width: 30,
             ),
-          )
+          ),
+          SizedBox(width: 10,),
         ],
       ),
 

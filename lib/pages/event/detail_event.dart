@@ -660,6 +660,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             ),
                           ),
 
+                          const SizedBox(width: 8),
                           InkWell(
                             onTap: () {
                               Share.share(
@@ -669,8 +670,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             },
                             child: SvgPicture.network(
                               '$baseUrl/image/share-red.svg',
-                              height: 30,
-                              width: 30,
+                              height: 20,
+                              width: 20,
                             ),
                           )
                         ],
@@ -686,6 +687,13 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             width: 80,
                             height: 80,
                             fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => 
+                            Image.asset(
+                              'assets/images/img_broken.jpg',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.contain,
+                            ),
                           ),
 
                           const SizedBox(width: 12),

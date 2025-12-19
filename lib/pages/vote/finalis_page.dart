@@ -56,9 +56,10 @@ class _FinalisPageState extends State<FinalisPage> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadVotes();
       _startCountdown();
-      _loadVotes();
     });
   }
 
@@ -66,20 +67,18 @@ class _FinalisPageState extends State<FinalisPage> {
   List<dynamic> finalis = [];
   Future<void> _loadVotes() async {
 
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}");
-    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis");
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode);
+    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode);
 
     final tempVote = resultVote?['data'] ?? {};
     final tempFinalis = resultFinalis?['data'] ?? [];
-
-    await _getBahasa();
+    
     await _precacheAllImages(context, tempFinalis);
 
     if (mounted) {
       setState(() {
         vote = tempVote;
         finalis = tempFinalis;
-        _isLoading = false;
 
         deadline = DateTime.parse(vote['real_tanggal_tutup_vote']);
         counts = List<int>.filled(finalis.length, 0);
@@ -89,6 +88,8 @@ class _FinalisPageState extends State<FinalisPage> {
         controllers = List.generate(vote.length, (i) {
           return TextEditingController(text: "0");
         });
+
+        _isLoading = false;
       });
     }
   }
@@ -216,7 +217,7 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   Future<void> _searchFinalis(String keyword) async {
-    final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword');
+    final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode);
     if (mounted) {
       setState(() {
         finalis = result?['data'] ?? [];

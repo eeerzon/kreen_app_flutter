@@ -54,7 +54,10 @@ class _DetailVotePageState extends State<DetailVotePage> {
       _calculateOffsets();
       _scrollController.addListener(_onScroll);
 
-      _loadVotes();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _getBahasa();
+        await _loadVotes();
+      });
     });
   }
 
@@ -64,16 +67,14 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
   Future<void> _loadVotes() async {
 
-    final resultVote = await ApiService.get("/vote/${widget.id_event}");
-    final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard");
-    final resultSupport = await ApiService.get("/vote/${widget.id_event}/support");
+    final resultVote = await ApiService.get("/vote/${widget.id_event}", xLanguage: langCode);
+    final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode);
+    final resultSupport = await ApiService.get("/vote/${widget.id_event}/support", xLanguage: langCode);
 
     final Map<String, dynamic> tempVote = resultVote?['data'] ?? {};
     final tempRanking = resultLeaderboard?['data'] ?? [];
 
     await _precacheAllImages(context, tempVote, tempRanking);
-
-    await _getBahasa();
 
     if (mounted) {
       setState(() {

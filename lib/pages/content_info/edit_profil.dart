@@ -70,7 +70,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     linkedinController = TextEditingController(text: widget.user['link_linkedin'] ?? '');
     igController = TextEditingController(text: widget.user['link_ig'] ?? '');
     twitterController = TextEditingController(text: widget.user['link_twitter'] ?? '');
-    verifEmail = widget.user['verified_email'] ?? '';
+    verifEmail = widget.user['verified_email'];
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
@@ -269,7 +269,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         email: emailController.text, 
         photo: strAvatar,
         DOB: dob,
-        gender: selectedGender,
+        gender: genderValue,
         company: companyController.text.isNotEmpty ? companyController.text : null,
         jobTitle: jobTitleController.text.isNotEmpty ? jobTitleController.text : null,
         link_linkedin: linkedinController.text.isNotEmpty ? linkedinController.text : null,
@@ -344,7 +344,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (langCode == 'id') {
       return DateFormat("dd MMMM yyyy", "id_ID").format(date);
     } else {
-      final datePart = DateFormat("MMMM d yyyy", "en_US").format(date);
+      final datePart = DateFormat("MMMM d, yyyy", "en_US").format(date);
 
       // tambahkan suffix
       final day = date.day;
@@ -600,7 +600,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Row(
                   children: List.generate(genders.length, (index) {
                     final item = genders[index];
-                    final isSelectedGender = selectedGender == item['label'].toString().toLowerCase();
+                    final isSelectedGender = selectedGender.toString().toLowerCase() == item['label'].toString().toLowerCase();
 
                     return Expanded(
                       child: GestureDetector(

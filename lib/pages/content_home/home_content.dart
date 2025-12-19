@@ -31,6 +31,7 @@ class _HomeContentState extends State<HomeContent> {
   String? langCode;
   String? login;
   String? token;
+  Map<String, dynamic> voteLang = {};
 
   String? selamatDatang, first_name, photo_user;
 
@@ -71,6 +72,7 @@ class _HomeContentState extends State<HomeContent> {
 
     final homeContent = await LangService.getJsonData(langCode!, "home_content");
     final tempLogin = await LangService.getText(langCode!, 'login');
+    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
 
     setState(() {
       selamatDatang = homeContent['top_nav'];
@@ -92,6 +94,8 @@ class _HomeContentState extends State<HomeContent> {
 
       news_title = homeContent['news_title'];
       news_desc = homeContent['news_desc'];
+
+      voteLang = tempvoteLang;
     });
   }
 
@@ -417,7 +421,7 @@ class _HomeContentState extends State<HomeContent> {
                                               builder: (_) => const LoginPage(),
                                             ),
                                           );
-                                          _checkToken();
+                                          await _checkToken();
                                         },
                                         child: Text(
                                           login!,
@@ -786,7 +790,7 @@ class _HomeContentState extends State<HomeContent> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? 'Gratis'
+                                                  ? voteLang['harga_detail'] //'Gratis'
                                                   : "${item['currency']} $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
@@ -878,7 +882,7 @@ class _HomeContentState extends State<HomeContent> {
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("MMM d yyyy HH:mm", "en_US");
+                                    final formatter = DateFormat("MMM d, yyyy HH:mm", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1233,13 +1237,13 @@ class _HomeContentState extends State<HomeContent> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? "Harga"
-                                                  : "Mulai dari",
+                                                  ? '' //"Harga"
+                                                  : voteLang['mulai_dari'] //"Mulai dari",
                                                 ),
                                                 const SizedBox(height: 4,),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? 'Gratis'
+                                                  ? voteLang['harga_detail'] //'Gratis'
                                                   : "${item['currency']} $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
@@ -1428,7 +1432,7 @@ class _HomeContentState extends State<HomeContent> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? 'Gratis'
+                                                  ? voteLang['harga_detail'] //'Gratis'
                                                   : "${item['currency']} $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
@@ -1646,13 +1650,13 @@ class _HomeContentState extends State<HomeContent> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? "Harga"
-                                                  : "Mulai dari",
+                                                  ? '' //"Harga"
+                                                  : voteLang['mulai_dari'] //"Mulai dari",
                                                 ),
                                                 const SizedBox(height: 4,),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? 'Gratis'
+                                                  ? voteLang['harga_detail'] //'Gratis'
                                                   : "${item['currency']} $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
@@ -1767,7 +1771,7 @@ class _HomeContentState extends State<HomeContent> {
                                   if (langCode == 'id') {
                                     formattedDate = DateFormat("dd MMMM yyyy", "id_ID").format(date);
                                   } else {
-                                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("MMMM d, yyyy", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // suffix: st, nd, rd, th

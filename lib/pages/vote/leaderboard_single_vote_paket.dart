@@ -132,14 +132,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   List<Map<String, dynamic>> paketLainnya = [];
 
   Future<void> _loadFinalis() async {
-    
-    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}");
-    final tempFinalis = resultFinalis?['data'] ?? {};
+    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode);
+    Map<String, dynamic> tempFinalis = resultFinalis?['data'] ?? {};
 
-    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}");
+    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode);
     final tempDetailVote = resultDetailVote?['data'] ?? {};
 
-    final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard");
+    final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard", xLanguage: langCode);
     final  tempRanking = resultLeaderboard?['data'] ?? [];
 
     final tempPaket = tempDetailVote['vote_paket'];
@@ -149,7 +148,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
-        _isLoading = false;
 
         counts = widget.vote;
         detailIndex = widget.index;
@@ -186,7 +184,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
               .toList();
         }
 
-        DateTime deadline = DateTime.parse(detailvote['tanggal_tutup_vote']);
+        DateTime deadline = DateTime.parse(tempDetailVote['tanggal_tutup_vote']);
         Duration remaining = Duration.zero;
         final now = DateTime.now();
         final difference = deadline.difference(now);
@@ -196,6 +194,8 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         if (remaining.inSeconds == 0) {
           isTutup = true;
         }
+
+        _isLoading = false;
       });
     }
   }
@@ -455,7 +455,8 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
               height: 30,
               width: 30,
             ),
-          )
+          ),
+          SizedBox(width: 10,),
         ],
       ),
 

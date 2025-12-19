@@ -208,23 +208,12 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       fee = (total_with_fee - total_price).ceilToDouble();
       total_payment = total_with_fee.ceilToDouble();
     } else {
-      var total_price_pg = total_price * rate;
+      var fee_layanan = (rate * base_fee);
+      var fee_layanan_with_fee_percent = (fee_layanan + fee_percent_decimal);
+      var fee_layanan_with_ppn = (fee_layanan_with_fee_percent + (fee_layanan_with_fee_percent * ppn_decimal));
 
-      var fee_percent_with_ppn = fee_percent_decimal * (1 + ppn_decimal);
-      var base_fee_with_ppn = base_fee * (1 + ppn_decimal);
-
-      var grossed_total_pg = total_price_pg / (1 - fee_percent_with_ppn);
-      var total_with_fee_pg = grossed_total_pg + base_fee_with_ppn;
-
-      // Tambahan 1% untuk luar negeri
-      var extra_fee_pg = total_price_pg * 0.01;
-      total_with_fee_pg += extra_fee_pg;
-
-      // Konversi kembali ke mata uang asli
-      var total_with_fee_foreign = total_with_fee_pg / rate;
-
-      total_payment = (total_with_fee_foreign * 100000).ceil() / 100000;
-      fee = total_payment - total_price;
+      total_payment = (total_price + fee_layanan_with_ppn).ceilToDouble();
+      fee = (fee_layanan_with_ppn).ceilToDouble();
     }
 
     int total = widget.counts_finalis.reduce((a, b) => a + b);
@@ -2182,7 +2171,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       id_payment_method = debit[index]['id_metod'];
                                     });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                       if (resultFee != null) {
                                         setState(() {
@@ -2568,7 +2557,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           ),
 
                           const SizedBox(height: 4),
-                          if (_showError)
+                          if (_showError && !_isChecked3)
                             Padding(
                               padding: EdgeInsets.only(bottom: 8),
                               child: Text(

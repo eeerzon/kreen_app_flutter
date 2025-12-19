@@ -136,7 +136,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       return;
     }
     
-    final resultFinalis = await ApiService.get("/finalis/$idFinalis");
+    final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode);
     final tempFinalis = resultFinalis?['data'] ?? {};
 
     idVote = tempFinalis['id_vote']?.toString();
@@ -144,10 +144,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     List<dynamic> tempRanking = [];
 
     if (idVote != null && idVote.isNotEmpty) {
-      final resultDetailVote = await ApiService.get("/vote/$idVote");
+      final resultDetailVote = await ApiService.get("/vote/$idVote", xLanguage: langCode);
       tempDetailVote = resultDetailVote?['data'] ?? {};
 
-      final resultLeaderboard = await ApiService.get("/vote/$idVote/leaderboard");
+      final resultLeaderboard = await ApiService.get("/vote/$idVote/leaderboard", xLanguage: langCode);
       tempRanking = resultLeaderboard?['data'] ?? [];
     }
 
@@ -453,7 +453,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
               height: 30,
               width: 30,
             ),
-          )
+          ),
+          SizedBox(width: 10,),
         ],
       ),
 

@@ -17,6 +17,7 @@ class LupaPasswordPage extends StatefulWidget {
 class _LupaPasswordPageState extends State<LupaPasswordPage> {
   String? langCode;
   String? lupaPassword, lupaPasswordDesc, emailHint, sendEmail, requestSend;
+  Map<String, dynamic> eventLang = {};
 
   bool isLoading = true;
   final _emailController = TextEditingController();
@@ -42,6 +43,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
     final tempemailHint = await LangService.getText(langCode!, "input_email");
     final tempsendEmail = await LangService.getText(langCode!, "kirim_email");
     final temprequestSend = await LangService.getText(langCode!, "request_kirim");
+    final tempeventLang = await LangService.getJsonData(langCode!, "event");
 
     setState(() {
       lupaPassword = tempLupaPassword;
@@ -50,11 +52,18 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
       sendEmail = tempsendEmail;
       requestSend = temprequestSend;
 
+      eventLang = tempeventLang;
+
       isLoading = false;
     });
   }
 
   bool get _isFormFilled => _emailController.text.isNotEmpty;
+
+  bool isValidEmail(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +116,9 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
                         ),
                         filled: true,
                         fillColor: Colors.white,
+                        errorText: !isValidEmail(_emailController.text)
+                            ? eventLang['error_email_1']
+                            : null,
                       ),
                     ),
 

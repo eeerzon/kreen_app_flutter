@@ -507,43 +507,45 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 style: TextStyle(color: Colors.grey,),
                               ),
 
-                              const SizedBox(height: 10,),
-                              InkWell(
-                                onTap: () async {
-                                  final vaNumber = paymentDetail['va_number']?.toString() ?? '';
+                              if (paymentDetail['va_number'] != null) ... [
+                                const SizedBox(height: 10,),
+                                InkWell(
+                                  onTap: () async {
+                                    final vaNumber = paymentDetail['va_number']?.toString() ?? '';
 
-                                  if (vaNumber.isNotEmpty) {
-                                    // Salin ke clipboard
-                                    await Clipboard.setData(ClipboardData(text: vaNumber));
+                                    if (vaNumber.isNotEmpty) {
+                                      // Salin ke clipboard
+                                      await Clipboard.setData(ClipboardData(text: vaNumber));
 
-                                    // Tampilkan snackbar konfirmasi
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(paymentLang['copyVA']), //content: Text('Nomor VA berhasil disalin'),
-                                        backgroundColor: Colors.green,
-                                        duration: const Duration(seconds: 2),
-                                        behavior: SnackBarBehavior.floating,
-                                        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                      // Tampilkan snackbar konfirmasi
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(paymentLang['copyVA']), //content: Text('Nomor VA berhasil disalin'),
+                                          backgroundColor: Colors.green,
+                                          duration: const Duration(seconds: 2),
+                                          behavior: SnackBarBehavior.floating,
+                                          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
                                         ),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        paymentDetail['va_number'],
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                       ),
-                                    );
-                                  }
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      paymentDetail['va_number'],
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
 
-                                    const SizedBox(width: 4,),
-                                    Icon(Icons.copy_outlined, color: Colors.grey,)
-                                  ],
+                                      const SizedBox(width: 4,),
+                                      Icon(Icons.copy_outlined, color: Colors.grey,)
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
 
                               const SizedBox(height: 10,),
                               Text(

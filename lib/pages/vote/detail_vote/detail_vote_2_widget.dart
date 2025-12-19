@@ -821,7 +821,7 @@ class DukunganSection_2 extends StatelessWidget {
                   formattedDate = "${formatter.format(date)} WIB";
                 } else {
                   // Bahasa Inggris
-                  final formatter = DateFormat("MMMM d yyyy HH:mm", "en_US");
+                  final formatter = DateFormat("MMMM d, yyyy h:mm a", "en_US");
                   formattedDate = formatter.format(date);
 
                   // Tambahkan suffix hari
