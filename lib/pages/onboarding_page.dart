@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -34,9 +34,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _getBahasa();
-      _loadLanguage(langCode ?? "id");
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _loadLanguage(langCode ?? "id");
     });
   }
 
@@ -124,7 +124,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           setStateDialog(() {
                             tempLang = val; // update local
                           });
-                          _loadLanguage(val);
+                          await _loadLanguage(val);
                           Navigator.pop(context); // langsung tutup popup
                         }
                       },

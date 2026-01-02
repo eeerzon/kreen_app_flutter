@@ -64,6 +64,8 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return regex.hasMatch(email);
   }
+  
+  bool _emailTouched = false;
 
   @override
   Widget build(BuildContext context) {
@@ -108,17 +110,25 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
                     ),
                     TextField(
                       controller: _emailController,
-                      onChanged: (_) => setState(() {}),
+                      autofocus: false,
+                      onChanged: (value) {
+                        if (!_emailTouched) {
+                          setState(() => _emailTouched = true);
+                        } else {
+                          setState(() {});
+                        }
+                      },
                       decoration: InputDecoration(
                         hintText: emailHint!,
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
                         fillColor: Colors.white,
-                        errorText: !isValidEmail(_emailController.text)
-                            ? eventLang['error_email_1']
-                            : null,
+                        errorText: _emailTouched && !isValidEmail(_emailController.text)
+                          ? eventLang['error_email_1']
+                          : null,
                       ),
                     ),
 

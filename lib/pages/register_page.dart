@@ -294,6 +294,7 @@ class _RegisPageState extends State<RegisPage> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: fullName!,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -318,6 +319,7 @@ class _RegisPageState extends State<RegisPage> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: email!,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -357,6 +359,7 @@ class _RegisPageState extends State<RegisPage> {
                     ],
                     decoration: InputDecoration(
                       hintText: phone!,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -393,6 +396,7 @@ class _RegisPageState extends State<RegisPage> {
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       hintText: password!,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -428,6 +432,7 @@ class _RegisPageState extends State<RegisPage> {
                     obscureText: _obscurePasswordConfirm,
                     decoration: InputDecoration(
                       hintText: confirmPassword!,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

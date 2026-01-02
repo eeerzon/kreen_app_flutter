@@ -96,6 +96,7 @@ class _EventPageState extends State<EventPage> {
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: cari_event,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),

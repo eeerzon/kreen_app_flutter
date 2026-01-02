@@ -22,8 +22,6 @@ class PaketVoteModal {
       langCode = await StorageService.getLanguage();
 
       modalLang = await LangService.getJsonData(langCode!, "modal");
-
-      isLoading = false;
     }
 
     Widget buildSkeleton() {

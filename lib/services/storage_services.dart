@@ -22,6 +22,14 @@ class StorageService {
     return await _storage.read(key: 'language_code');
   }
 
+  static Future<void> setCurrency(String currencyCode) async {
+    await _storage.write(key: 'currency_code', value: currencyCode);
+  }
+
+  static Future<String?> getCurrency() async {
+    return await _storage.read(key: 'currency_code');
+  }
+
   static Future<void> setToken(String token) async {
     await _storage.write(key: 'token', value: token);
   }
@@ -119,5 +127,17 @@ class StorageService {
 
   static Future<void> clearAll() async {
     await _storage.deleteAll();
+  }
+
+  static Future<void> setLoginMethod(String method) async {
+    await _storage.write(key: 'login_method', value: method);
+  }
+
+  static Future<String?> getLoginMethod() async {
+    return await _storage.read(key: 'login_method');
+  }
+
+  static Future<void> clearLoginMethod() async {
+    await _storage.delete(key: 'login_method');
   }
 }

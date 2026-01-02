@@ -45,11 +45,12 @@ class LeaderboardSingleVotePaket extends StatefulWidget {
 
 class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket> {
   num? harga;
+  num? hargaAsli;
   bool isTutup = false;
   bool canDownload = false;
 
   final prefs = FlutterSecureStorage();
-  String? langCode;
+  String? langCode, currencyCode;
   String? flag_paket;
 
   bool _isLoading = true;
@@ -78,6 +79,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadFinalis();
     });
   }
@@ -125,7 +127,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       noValidVideo = tempdetailFinalis['video_no_valid'];
       socialMediaText = tempdetailFinalis['sosial_media'];
     });
+  }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
   }
 
   List<Map<String, dynamic>> paketTerbaik = [];
@@ -135,7 +143,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode);
     Map<String, dynamic> tempFinalis = resultFinalis?['data'] ?? {};
 
-    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode);
+    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
     final tempDetailVote = resultDetailVote?['data'] ?? {};
 
     final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard", xLanguage: langCode);
@@ -159,6 +167,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         detailvote = tempDetailVote;
         ranking = tempRanking;
         harga = tempDetailVote['harga'];
+        hargaAsli = tempDetailVote['harga_asli'];
 
         if (tempPaket is List) {
           paketTerbaik = tempPaket
@@ -550,7 +559,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                     Text(
                                       harga == 0
                                       ? hargaDetail!
-                                      : "${detailvote['currency']} ${formatter.format(harga)}",
+                                      : currencyCode == null
+                                        ? "${detailvote['currency']} ${formatter.format(harga)}"
+                                        : "$currencyCode ${formatter.format(harga)}",
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
                                   ],
@@ -606,7 +617,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                     color,
                                     bgColor,
                                     id_paket!,
-                                    detailvote['currency']
+                                    currencyCode ?? detailvote['currency']
                                   );
                   
                                   if (selectedQty != null) {
@@ -1244,7 +1255,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                   Text(
                     harga == 0
                     ? hargaDetail!
-                    : "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
+                    : currencyCode == null
+                      ? "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}"
+                      : "$currencyCode ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,

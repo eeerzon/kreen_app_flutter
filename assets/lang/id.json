@@ -18,6 +18,7 @@
   ],
 
   "pick_language" : "Pilih bahasa",
+  "pick_currency" : "Pilih mata uang",
 
   "lewati" : "Lewati",
   "lanjut" : "Lanjut",
@@ -261,7 +262,9 @@
     "warning_order_3" : " atau pastikan ",
     "warning_order_4" : " Anda sudah masuk di email.",
     "expired_at" : "Berlaku hingga ",
-    "selesai" : "Selesai"
+    "selesai" : "Selesai",
+    "segera" : "Segera",
+    "habis" : "Habis"
   },
 
   "order_menunggu" : "Menunggu",
@@ -325,6 +328,10 @@
     "sukses_info_profil" : "Profil berhasil diubah",
     "verified_email" : "Email kamu belum diverifikasi. Silakan verifikasi email kamu.",
     "kategori_informasi" : "Kategori Informasi",
-    "pertanyaan_populer" : "Pertanyaan Populer"
+    "pertanyaan_populer" : "Pertanyaan Populer",
+    "currency" : "Mata Uang",
+    "desc_email_1" : "Email verifikasi telah dikirim",
+    "desc_email_2" : "Kami telah mengirim email verifikasi ke ",
+    "desc_email_3" : "Silakan buka email tersebut dan klik link verifikasi untuk mengaktifkan akun Anda."
   }
 }

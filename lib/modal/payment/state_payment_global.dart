@@ -20,7 +20,7 @@ class StatePaymentGlobal extends StatefulWidget {
   final List<String> ids_tiket;
   final List<String> names_tiket;
   final List<int> counts_tiket;
-  final List<int> prices_tiket;
+  final List<num> prices_tiket;
   final num totalHarga;
   final List<TextEditingController> first_names;
   final List<String?> genders;
@@ -652,9 +652,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                         keyboardType: TextInputType.number,
                                                         decoration: InputDecoration(
                                                           hintText: "xxxx xxxx xxxx xxxx",
-                                                          hintStyle: const TextStyle(
-                                                            color: Colors.grey,
-                                                          ),
+                                                          hintStyle: TextStyle(color: Colors.grey.shade400),
                                                           border: OutlineInputBorder(
                                                             borderRadius: const BorderRadius.only(
                                                               topLeft: Radius.circular(8),
@@ -677,9 +675,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                               autofocus: false,
                                                               decoration: InputDecoration(
                                                                 hintText: "MM/YY",
-                                                                hintStyle: const TextStyle(
-                                                                  color: Colors.grey,
-                                                                ),
+                                                                hintStyle: TextStyle(color: Colors.grey.shade400),
                                                                 border: OutlineInputBorder(
                                                                   borderRadius: const BorderRadius.only(
                                                                     bottomLeft: Radius.circular(8),
@@ -703,9 +699,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                               },
                                                               decoration: InputDecoration(
                                                                 hintText: "CVV",
-                                                                hintStyle: const TextStyle(
-                                                                  color: Colors.grey,
-                                                                ),
+                                                                hintStyle: TextStyle(color: Colors.grey.shade400),
                                                                 border: OutlineInputBorder(
                                                                   borderRadius: const BorderRadius.only(
                                                                     bottomRight: Radius.circular(8),
@@ -1970,9 +1964,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                         keyboardType: TextInputType.number,
                                                         decoration: InputDecoration(
                                                           hintText: phoneHint!, //"Nomor Telepon"
-                                                          hintStyle: const TextStyle(
-                                                            color: Colors.grey,
-                                                          ),
+                                                          hintStyle: TextStyle(color: Colors.grey.shade400),
                                                           border: OutlineInputBorder(
                                                             borderRadius: const BorderRadius.only(
                                                               topLeft: Radius.circular(8),

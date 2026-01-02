@@ -499,6 +499,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText: detailVoteLang['support_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

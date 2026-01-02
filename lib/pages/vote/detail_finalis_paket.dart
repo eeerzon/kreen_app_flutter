@@ -37,6 +37,7 @@ class DetailFinalisPaketPage extends StatefulWidget {
 
 class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   num? harga;
+  num? hargaAsli;
   bool isTutup = false;
   bool canDownload = false;
 
@@ -51,7 +52,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   TextEditingController? controllers;
   Map<String, dynamic> detailvote = {};
 
-  String? langCode;
+  String? langCode, currencyCode;
   String? notLogin, notLoginDesc, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
   String? endVote, voteOpen, voteOpenAgain;
@@ -66,6 +67,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadFinalis();
     });
   }
@@ -75,10 +77,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   Future<void> _loadFinalis() async {
     
-    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode);
+    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode,);
     final tempFinalis = resultFinalis?['data'] ?? {};
 
-    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode);
+    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
     final tempDetailVote = resultDetailVote?['data'] ?? {};
 
     final tempPaket = tempDetailVote['vote_paket'];
@@ -98,6 +100,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
         detailvote = tempDetailVote;
         harga = tempDetailVote['harga'];
+        hargaAsli = tempDetailVote['harga_asli'];
 
         if (tempPaket is List) {
           paketTerbaik = tempPaket
@@ -192,7 +195,14 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       noValidVideo = tempdetailFinalis['video_no_valid'];
       socialMediaText = tempdetailFinalis['sosial_media'];
     });
+  }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+
+    setState(() {
+      currencyCode = code;
+    });
   }
 
   Future<void> _precacheAllImages(
@@ -488,7 +498,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                     Text(
                                       harga == 0
                                       ? hargaDetail!
-                                      : "${detailvote['currency']} ${formatter.format(harga)}",
+                                      : currencyCode == null
+                                        ? "${detailvote['currency']} ${formatter.format(harga)}"
+                                        : "$currencyCode ${formatter.format(harga)}",
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
                                   ],
@@ -544,7 +556,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                     color,
                                     bgColor,
                                     id_paket!,
-                                    detailvote['currency']
+                                    currencyCode ?? detailvote['currency']
                                   );
                   
                                   if (selectedQty != null) {
@@ -847,7 +859,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   Text(
                     harga == 0
                     ? hargaDetail!
-                    : "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
+                    : currencyCode == null
+                      ? "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}"
+                      : "$currencyCode ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,

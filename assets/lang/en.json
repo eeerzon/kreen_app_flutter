@@ -18,6 +18,7 @@
   ],
 
   "pick_language" : "Choose Language",
+  "pick_currency" : "Choose Currency",
 
   "lewati" : "Lewati",
   "lanjut" : "Lanjut",
@@ -30,7 +31,7 @@
   "kirim_email": "Send Email",
   "request_kirim" : "Request sent successfully",
   "input_password": "Password",
-  "lupa_password": "Forget password",
+  "lupa_password": "Forgot password",
   "lupa_password_desc": "Enter your email to reset your password",
   "belum": "Don't have a Kreen account yet? ",
   "daftar": "Register",
@@ -261,7 +262,9 @@
     "warning_order_3": " and make sure ",
     "warning_order_4": " you are logged in to your email.",
     "expired_at": "Valid until ",
-    "selesai": "Done"
+    "selesai": "Done",
+    "segera": "Soon",
+    "habis": "Sold out"
   },
 
   "order_menunggu" : "waiting",
@@ -325,6 +328,10 @@
     "sukses_info_profil" : "Profile successfully changed",
     "verified_email" : "Your email has not been verified. Please verify your email.",
     "kategori_informasi" : "Information Category",
-    "pertanyaan_populer" : "Popular Questions"
+    "pertanyaan_populer" : "Popular Questions",
+    "currency" : "Currency",
+    "desc_email_1" : "Email verification has been sent",
+    "desc_email_2" : "We have sent an email verification to ",
+    "desc_email_3" : "Please open the email and click the verification link to activate your account."
   }
 }

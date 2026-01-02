@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kreen_app_flutter/pages/lupa_password.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -74,6 +75,7 @@ class _LoginPageState extends State<LoginPage> {
 
       // simpan ke secure storage
       await StorageService.setToken(token);
+      await StorageService.setLoginMethod('password');
       await StorageService.setUser(
         id: user['id'], 
         first_name: user['first_name'], 
@@ -114,6 +116,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _loginGoogle() async {
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    await googleSignIn.signOut();
+    
     final user = await GoogleAuthService.signInWithGoogle();
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (user != null) {
@@ -131,6 +136,7 @@ class _LoginPageState extends State<LoginPage> {
 
         // simpan ke secure storage
         await StorageService.setToken(token);
+        await StorageService.setLoginMethod('google');
         await StorageService.setUser(
           id: user['id'], 
           first_name: user['first_name'], 
@@ -364,6 +370,7 @@ class _LoginPageState extends State<LoginPage> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: input_email,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -382,6 +389,7 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       hintText: input_password,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

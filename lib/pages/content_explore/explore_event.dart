@@ -147,6 +147,7 @@ class _ExploreEventState extends State<ExploreEvent> {
         TextField(
           decoration: InputDecoration(
             hintText: search,
+            hintStyle: TextStyle(color: Colors.grey.shade400),
             prefixIcon: Icon(Icons.search),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

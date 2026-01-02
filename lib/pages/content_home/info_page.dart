@@ -23,8 +23,8 @@ class InfoPage extends StatefulWidget {
 
 class _InfoPageState extends State<InfoPage> {
   final prefs = FlutterSecureStorage();
-  String? langCode;
-  String? login, daftar, dialog_language;
+  String? langCode, currencyCode;
+  String? login, daftar, dialog_language, dialog_currency;
   String? token;
 
   bool isLoading = true;
@@ -36,6 +36,7 @@ class _InfoPageState extends State<InfoPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _checkToken();
     });
   }
@@ -59,19 +60,39 @@ class _InfoPageState extends State<InfoPage> {
     final templogin = await LangService.getText(langCode!, 'login');
     final tempdaftar = await LangService.getText(langCode!, 'daftar');
     final tempdialog_language = await LangService.getText(langCode!, 'pick_language');
+    final tempdialog_currency = await LangService.getText(langCode!, 'pick_currency');
     final tempinfolang = await LangService.getJsonData(langCode!, 'info');
 
     setState(() {
       login = templogin;
       daftar = tempdaftar;
       dialog_language = tempdialog_language;
+      dialog_currency = tempdialog_currency;
       infoLang = tempinfolang;
+    });
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
     });
   }
 
   final Map<String, String> languages = {
     "id": "Indonesia",
     "en": "English"
+  };
+
+  final Map<String, String> currencies = {
+    "EUR" : "Euro\nEUR",
+    "IDR" : "Indonesia Rupiah\nIDR",
+    "MYR" : "Malaysia Ringgit\nMYR",
+    "PHP" : "Philippine Peso\nPHP",
+    "SGD" : "Singapore Dollar\nSGD",
+    "THB" : "Thai Baht\nTHB",
+    "USD" : "United States Dollar\nUSD",
+    "VND" : "Vietnamese Dong\nVND"
   };
 
   void _showLanguageDialog() {
@@ -82,6 +103,8 @@ class _InfoPageState extends State<InfoPage> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
+              contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -133,6 +156,72 @@ class _InfoPageState extends State<InfoPage> {
           },
         );
       },
+    );
+  }
+
+  void _showCurrencyDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String tempCurr = currencyCode ?? '';
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(dialog_currency!),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: currencies.entries.map((entry) {
+                    return RadioListTile<String>(
+                      value: entry.key,
+                      groupValue: tempCurr,
+                      onChanged: (val) async {
+                        if (val != null) {
+                          setState(() {
+                            currencyCode = val; // update global
+                          });
+                          await StorageService.setCurrency(val);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HomePage()),
+                          );
+                        }
+                      },
+                      title: Row(
+                        children: [
+                          Image.asset(
+                            "assets/currencies/${entry.key.toString().toLowerCase()}.png", // simpan currency di folder assets/currencies
+                            width: 28,
+                            height: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(entry.value),
+                          )
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          },
+        );
+      }
     );
   }
   
@@ -338,6 +427,41 @@ class _InfoPageState extends State<InfoPage> {
                           SizedBox(width: 12,),
                           Text(
                             infoLang['bahasa'], //"Bahasa"
+                          )
+                        ],
+                      ),
+                      Icon(Icons.arrow_forward_ios)
+                    ],
+                  ),
+                ),
+              ),
+
+              //currency
+              SizedBox(height: 20,),
+              Container(
+                padding: EdgeInsets.all(14),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300,),
+                ),
+                child: InkWell(
+                  onTap: _showCurrencyDialog,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/img_currency.png',
+                            height: 50,
+                            width: 50,
+                          ),
+                      
+                          SizedBox(width: 12,),
+                          Text(
+                            infoLang['currency'], //"Mata Uang"
                           )
                         ],
                       ),

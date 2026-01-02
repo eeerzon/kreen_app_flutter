@@ -542,7 +542,9 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     final debit = payment['Direct Debit'] ?? [];
 
     return Scaffold(
-      body: Padding(
+      body: isLoading 
+      ? const Center(child: CircularProgressIndicator(color: Colors.red,)) 
+      : Padding(
         padding: EdgeInsets.only(top: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -610,9 +612,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: namaLengkapHint!,
-                          hintStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -742,7 +742,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                   : TextInputType.text,
                               decoration: InputDecoration(
                                 hintText: "${paymentLang['hint_label_indikator_1']} $label ${paymentLang['hint_label_indikator_2']}",
-                                hintStyle: const TextStyle(color: Colors.grey),
+                                hintStyle: TextStyle(color: Colors.grey.shade400),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -996,9 +996,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                                           keyboardType: TextInputType.number,
                                                           decoration: InputDecoration(
                                                             hintText: "xxxx xxxx xxxx xxxx",
-                                                            hintStyle: const TextStyle(
-                                                              color: Colors.grey,
-                                                            ),
+                                                            hintStyle: TextStyle(color: Colors.grey.shade400),
                                                             border: OutlineInputBorder(
                                                               borderRadius: const BorderRadius.only(
                                                                 topLeft: Radius.circular(8),
@@ -1021,9 +1019,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                                                 autofocus: false,
                                                                 decoration: InputDecoration(
                                                                   hintText: "MM/YY",
-                                                                  hintStyle: const TextStyle(
-                                                                    color: Colors.grey,
-                                                                  ),
+                                                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                                                   border: OutlineInputBorder(
                                                                     borderRadius: const BorderRadius.only(
                                                                       bottomLeft: Radius.circular(8),
@@ -1047,9 +1043,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                                                 },
                                                                 decoration: InputDecoration(
                                                                   hintText: "CVV",
-                                                                  hintStyle: const TextStyle(
-                                                                    color: Colors.grey,
-                                                                  ),
+                                                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                                                   border: OutlineInputBorder(
                                                                     borderRadius: const BorderRadius.only(
                                                                       bottomRight: Radius.circular(8),
@@ -2300,9 +2294,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                                           keyboardType: TextInputType.number,
                                                           decoration: InputDecoration(
                                                             hintText: phoneHint!,
-                                                            hintStyle: const TextStyle(
-                                                              color: Colors.grey,
-                                                            ),
+                                                            hintStyle: TextStyle(color: Colors.grey.shade400),
                                                             border: OutlineInputBorder(
                                                               borderRadius: const BorderRadius.only(
                                                                 topLeft: Radius.circular(8),

@@ -109,6 +109,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                 obscureText: _obscurePasswordCurrent,
                 decoration: InputDecoration(
                   hintText: infoLang['old_password_hint'], //'Masukkan kata sandi lama',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -169,6 +170,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                 obscureText: _obscurePasswordNew,
                 decoration: InputDecoration(
                   hintText: infoLang['new_password_hint'], //'Masukkan kata sandi baru',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -205,6 +207,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                 obscureText: _obscurePasswordConfirm,
                 decoration: InputDecoration(
                   hintText: infoLang['konfirmasi_password_hint'], //']'Konfirmasi kata sandi lama',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

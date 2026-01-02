@@ -1,9 +1,11 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
@@ -371,6 +373,14 @@ class _ProfileState extends State<Profile> {
                               width: 120,
                               height: 120,
                               fit: BoxFit.fill,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.network(
+                                  "$baseUrl/noimage_finalis.png",
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.fill,
+                                );
+                              },
                             )
                           : isHttp
                             ? Image.network(
@@ -378,12 +388,28 @@ class _ProfileState extends State<Profile> {
                                 width: 120,
                                 height: 120,
                                 fit: BoxFit.fill,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.network(
+                                    "$baseUrl/noimage_finalis.png",
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.fill,
+                                  );
+                                },
                               )
                             : Image.network(
                                 '$baseUrl/user/$photo',
                                 width: 120,
                                 height: 120,
                                 fit: BoxFit.fill,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.network(
+                                    "$baseUrl/noimage_finalis.png",
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.fill,
+                                  );
+                                },
                               )
                       : Image.network(
                           "$baseUrl/noimage_finalis.png",
@@ -698,9 +724,16 @@ class _ProfileState extends State<Profile> {
                                       context: context,
                                       dialogType: DialogType.success,
                                       title: langCode == 'id' ? 'Berhasil' : 'Success',
-                                      desc: resultVerifEmail?['message'],
+                                      desc:
+                                        "${infoLang['desc_email_1']}\n"
+                                        "${infoLang['desc_email_2']} $email\n"
+                                        "${infoLang['desc_email_3']}",
                                       transitionAnimationDuration: const Duration(milliseconds: 1000),
-                                      autoHide: const Duration(seconds: 1),
+                                      btnOkText: "OK",
+                                      btnOkColor: Colors.red,
+                                      btnOkOnPress: () {
+                                        Navigator.of(context).pop();
+                                      },
                                     ).show();
                                   } else {
                                     AwesomeDialog(
@@ -791,8 +824,20 @@ class _ProfileState extends State<Profile> {
                 SizedBox(height: 20,),
                 InkWell(
                   onTap: () async {
+                    final loginMethod = await StorageService.getLoginMethod();
+
+                    if (loginMethod == 'google') {
+                      final googleSignIn = GoogleSignIn();
+
+                      await googleSignIn.disconnect();
+                      await googleSignIn.signOut();
+                      await FirebaseAuth.instance.signOut();
+                    }
+
                     await StorageService.clearUser();
                     await StorageService.clearToken();
+                    await StorageService.clearLoginMethod();
+                    
                     setState(() {
                       Navigator.pushAndRemoveUntil(
                         context,

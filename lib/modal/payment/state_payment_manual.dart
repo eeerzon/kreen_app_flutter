@@ -21,9 +21,12 @@ class StatePaymentManual extends StatefulWidget {
   final List<String> names_finalis; 
   final List<int> counts_finalis;
   final num totalHarga;
+  final num totalHargaAsli;
   final num price;
   final bool fromDetail;
   final String? idUser;
+  final num rateCurrency;
+  final num rateCurrencyUser;
 
   const StatePaymentManual({
     super.key,
@@ -32,9 +35,12 @@ class StatePaymentManual extends StatefulWidget {
     required this.names_finalis,
     required this.counts_finalis,
     required this.totalHarga,
+    required this.totalHargaAsli,
     required this.price,
     required this.fromDetail,
-    this.idUser
+    this.idUser,
+    required this.rateCurrency,
+    required this.rateCurrencyUser
   });
 
   @override
@@ -88,7 +94,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   bool isLoading = true;
 
-  String? langCode;
+  String? langCode, currencyCode;
   Map<String, dynamic> paymentLang = {};
   Map<String, dynamic> detailVoteLang = {};
   Map<String, dynamic> eventLang = {};
@@ -123,6 +129,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   Future<void> loadData() async {
     await _getBahasa();
+    await _getCurrency();
     await getData(widget.id_vote);
 
     answers = List.filled(indikator.length, '');
@@ -164,6 +171,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     });
   }
 
+  Future<void> _getCurrency() async {
+    final currency = await StorageService.getCurrency();
+    setState(() => currencyCode = currency);
+  }
+
   Future<void> getData(String idVote) async {
     final getUser = await StorageService.getUser();
 
@@ -181,7 +193,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       selectedGender = gender.toLowerCase() == 'male' ? paymentLang['gender_1'] : paymentLang['gender_2'];
     }
 
-    final detailResp = await ApiService.get("/vote/$idVote");
+    final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
     final paymentResp = await ApiService.get("/vote/$idVote/payment-methods");
 
     detailVote = detailResp?['data'] ?? {};
@@ -192,28 +204,40 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     indikator = detailVote['indikator_vote'] ?? [];
   }
 
-  Future<Map<String, dynamic>?> getFee(String feeCurrency, var total_price, var feePersen, var ppn, var base_fee, var rate) async {
-    var total_payment;
-    var fee;
+  Future<Map<String, dynamic>?> getFee(String feeCurrency, num total_price, num feePersen, num ppn, num base_fee, num rate) async {
+    num total_payment;
+    num fee;
 
-    var fee_percent_decimal = feePersen / 100;
-    var ppn_decimal = ppn / 100;
+    num fee_percent_decimal = feePersen / 100;
+    num ppn_decimal = ppn / 100;
 
     if (feeCurrency == 'IDR') {
-      var fee_percent_with_ppn = fee_percent_decimal * (1 + ppn_decimal);
-      var base_fee_with_ppn = base_fee * (1 + ppn_decimal);
+      num fee_percent_with_ppn = fee_percent_decimal * (1 + ppn_decimal);
+      num base_fee_with_ppn = base_fee * (1 + ppn_decimal);
 
-      var grossed_total = total_price / (1 - fee_percent_with_ppn);
-      var total_with_fee = grossed_total + base_fee_with_ppn;
+      num grossed_total = total_price / (1 - fee_percent_with_ppn);
+      num total_with_fee = grossed_total + base_fee_with_ppn;
       fee = (total_with_fee - total_price).ceilToDouble();
       total_payment = total_with_fee.ceilToDouble();
     } else {
-      var fee_layanan = (rate * base_fee);
-      var fee_layanan_with_fee_percent = (fee_layanan + fee_percent_decimal);
-      var fee_layanan_with_ppn = (fee_layanan_with_fee_percent + (fee_layanan_with_fee_percent * ppn_decimal));
+      num totalPricePg = total_price * rate;
 
-      total_payment = (total_price + fee_layanan_with_ppn).ceilToDouble();
-      fee = (fee_layanan_with_ppn).ceilToDouble();
+      num feePercentWithPpn = fee_percent_decimal * (1 + ppn_decimal);
+      num baseFeeWithPpn = (base_fee * rate) * (1 + ppn_decimal);
+
+      num grossedTotalPg = totalPricePg / (1 - feePercentWithPpn);
+      num totalWithFeePg = grossedTotalPg + baseFeeWithPpn;
+
+      // tambahan 1% untuk luar negeri
+      final extraFeePg = totalPricePg * 0.01;
+      totalWithFeePg += extraFeePg;
+
+      // konversi balik ke mata uang asli
+      final totalWithFeeForeign = totalWithFeePg / rate;
+
+      // ceil ke 2 desimal (match JS behaviour)
+      total_payment = (totalWithFeeForeign * 100).ceil() / 100;
+      fee = total_payment - total_price;
     }
 
     int total = widget.counts_finalis.reduce((a, b) => a + b);
@@ -298,7 +322,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       bool isGenderEmpty = selectedGender == null;
       bool isCheckboxUnchecked = !_isChecked3;
 
-      if (widget.totalHarga != 0) {
+      if (widget.totalHargaAsli != 0) {
         if (isNameEmpty || isGenderEmpty || isCheckboxUnchecked) {
           setState(() {
             _showError = true;
@@ -621,9 +645,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: namaLengkapHint!,
-                          hintStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -750,7 +772,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   : TextInputType.text,
                               decoration: InputDecoration(
                                 hintText: "${paymentLang['hint_label_indikator_1']} $label ${paymentLang['hint_label_indikator_2']}",
-                                hintStyle: const TextStyle(color: Colors.grey),
+                                hintStyle: TextStyle(color: Colors.grey.shade400),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -806,7 +828,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       ),
 
                       //pembayaran
-                      if (widget.totalHarga != 0) ...[
+                      if (widget.totalHargaAsli != 0) ...[
                         const SizedBox(height: 20,),
                         Container(
                           height: 40,
@@ -858,7 +880,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -869,7 +891,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       id_payment_method = creditCard[idx]['id_metod'];
                                     });
 
-                                    final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                    final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                     if (resultFee !=null) {
                                       setState(() {
@@ -904,7 +926,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -958,28 +980,33 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHargaAsli < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       currencyCode == null
+                                                          //         ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}"
+                                                          //         : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHargaAsli> limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? currencyCode == null
+                                                          //         ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //         : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : currencyCode == null
+                                                          //         ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}"
+                                                          //         : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -1006,9 +1033,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                           keyboardType: TextInputType.number,
                                                           decoration: InputDecoration(
                                                             hintText: "xxxx xxxx xxxx xxxx",
-                                                            hintStyle: const TextStyle(
-                                                              color: Colors.grey,
-                                                            ),
+                                                            hintStyle: TextStyle(color: Colors.grey.shade400),
                                                             border: OutlineInputBorder(
                                                               borderRadius: const BorderRadius.only(
                                                                 topLeft: Radius.circular(8),
@@ -1031,9 +1056,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                 autofocus: false,
                                                                 decoration: InputDecoration(
                                                                   hintText: "MM/YY",
-                                                                  hintStyle: const TextStyle(
-                                                                    color: Colors.grey,
-                                                                  ),
+                                                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                                                   border: OutlineInputBorder(
                                                                     borderRadius: const BorderRadius.only(
                                                                       bottomLeft: Radius.circular(8),
@@ -1057,9 +1080,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                 },
                                                                 decoration: InputDecoration(
                                                                   hintText: "CVV",
-                                                                  hintStyle: const TextStyle(
-                                                                    color: Colors.grey,
-                                                                  ),
+                                                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                                                   border: OutlineInputBorder(
                                                                     borderRadius: const BorderRadius.only(
                                                                       bottomRight: Radius.circular(8),
@@ -1116,7 +1137,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -1135,15 +1156,19 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         );
                                       });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
-                                      if (resultFee != null) {
-                                        setState(() {
-                                          totalPayment = resultFee['total_payment'];
-                                          feeLayanan = resultFee['fee_layanan'];
-                                          totalVotes = resultFee['total_votes'];
-                                        });
-                                      }
+                                      num temp_total_payment = resultFee!['total_payment'] * (widget.rateCurrencyUser / widget.rateCurrency);
+                                      temp_total_payment = (temp_total_payment * 100).ceil() / 100;
+
+                                      num temp_fee_layanan = resultFee!['fee_layanan'] * (widget.rateCurrencyUser / widget.rateCurrency);
+                                      temp_fee_layanan = (temp_fee_layanan * 100).ceil() / 100;
+                                      
+                                      setState(() {
+                                        totalPayment = temp_total_payment;
+                                        feeLayanan = temp_fee_layanan;
+                                        totalVotes = resultFee['total_votes'];
+                                      });
                                   },
                                   child: Card(
                                     color: Colors.white,
@@ -1170,7 +1195,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -1224,28 +1249,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "$paymentLang['limit_max'] $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "$paymentLang['limit_max'] $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -1290,7 +1314,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -1309,7 +1333,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         );
                                       });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                       if (resultFee != null) {
                                         setState(() {
@@ -1344,7 +1368,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -1398,28 +1422,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -1464,7 +1487,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -1483,7 +1506,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         );
                                       });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                       if (resultFee != null) {
                                         setState(() {
@@ -1518,7 +1541,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -1572,28 +1595,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -1638,7 +1660,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -1657,7 +1679,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         );
                                       });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                       if (resultFee != null) {
                                         setState(() {
@@ -1692,7 +1714,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -1746,28 +1768,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -1812,7 +1833,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -1831,7 +1852,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         );
                                       });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                       if (resultFee != null) {
                                         setState(() {
@@ -1866,7 +1887,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -1920,28 +1941,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -1986,7 +2006,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -2005,7 +2025,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         );
                                       });
 
-                                      final resultFee = await getFee(voteCurrency!, widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['rate']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
                                       if (resultFee != null) {
                                         setState(() {
@@ -2040,7 +2060,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -2094,28 +2114,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -2160,7 +2179,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                 final isSelected = selectedIndex == idx;
 
-                                final isDisabled = widget.totalHarga < limit_min || widget.totalHarga > limit_max;
+                                final isDisabled = widget.totalHargaAsli < limit_min || widget.totalHargaAsli > limit_max;
 
                                 return GestureDetector(
                                   onTap: isDisabled
@@ -2171,15 +2190,19 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       id_payment_method = debit[index]['id_metod'];
                                     });
 
-                                      final resultFee = await getFee(item['currency_pg'], widget.totalHarga, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
+                                      final resultFee = await getFee(item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new']);
 
-                                      if (resultFee != null) {
-                                        setState(() {
-                                          totalPayment = resultFee['total_payment'];
-                                          feeLayanan = resultFee['fee_layanan'];
-                                          totalVotes = resultFee['total_votes'];
-                                        });
-                                      }
+                                      num temp_total_payment = resultFee!['total_payment'] * (widget.rateCurrencyUser / widget.rateCurrency);
+                                      temp_total_payment = (temp_total_payment * 100).ceil() / 100;
+
+                                      num temp_fee_layanan = resultFee['fee_layanan'] * (widget.rateCurrencyUser / widget.rateCurrency);
+                                      temp_fee_layanan = (temp_fee_layanan * 100).ceil() / 100;
+                                      
+                                      setState(() {
+                                        totalPayment = temp_total_payment;
+                                        feeLayanan = temp_fee_layanan;
+                                        totalVotes = resultFee['total_votes'];
+                                      });
                                   },
                                   child: Card(
                                     color: Colors.white,
@@ -2206,7 +2229,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                   children: [
                                                     Image.network(
-                                                      "$baseUrl/image/payment-method/${item['img']}",
+                                                      "$baseUrl/image/payment-method/${item['img_web']}",
                                                       height: 70,
                                                       width: 70,
                                                       errorBuilder: (context, error, stackTrace) {
@@ -2260,28 +2283,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                             ],
                                                           ),
 
-                                                          const SizedBox(height: 6),
-                                                          if (widget.totalHarga < limit_min)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text(
-                                                                "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
+                                                          // const SizedBox(height: 6),
+                                                          // if (widget.totalHarga < limit_min)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text(
+                                                          //       "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValue_min + 1000))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                           
-                                                          if (widget.totalHarga > limit_max)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only(top: 4.0),
-                                                              child: Text( limit_max == 0
-                                                                ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
-                                                                : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
-                                                                softWrap: true,
-                                                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                              ),
-                                                            ),
-
+                                                          // if (widget.totalHarga > limit_max)
+                                                          //   Padding(
+                                                          //     padding: const EdgeInsets.only(top: 4.0),
+                                                          //     child: Text( limit_max == 0
+                                                          //       ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max + 1000))}"
+                                                          //       : "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValue_max))}",
+                                                          //       softWrap: true,
+                                                          //       style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                          //     ),
+                                                          //   ),
                                                         ],
                                                       ),
                                                     )
@@ -2316,9 +2338,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                           keyboardType: TextInputType.number,
                                                           decoration: InputDecoration(
                                                             hintText: phoneHint!,
-                                                            hintStyle: const TextStyle(
-                                                              color: Colors.grey,
-                                                            ),
+                                                            hintStyle: TextStyle(color: Colors.grey.shade400),
                                                             border: OutlineInputBorder(
                                                               borderRadius: const BorderRadius.only(
                                                                 topLeft: Radius.circular(8),
@@ -2355,22 +2375,36 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           ),
 
                           const SizedBox(height: 16,),
-                          Column(
-                            children: [
-                              for (int i = 0; i < widget.names_finalis.length; i++) ...[
-                                Row(
+                          ListView.builder(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: widget.names_finalis.length,
+                            itemBuilder: (context, index) {
+                              final int count = widget.counts_finalis[index];
+                              num hargaVote = count * widget.price;
+                              hargaVote = hargaVote * (widget.rateCurrencyUser / widget.rateCurrency);
+                              hargaVote = (100 * hargaVote).ceil() / 100;
+
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: index == widget.names_finalis.length - 1 ? 0 : 16,
+                                ),
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("${widget.names_finalis[i]} (${widget.counts_finalis[i]} vote(s))"),
                                     Text(
-                                      "$voteCurrency ${formatter.format(widget.counts_finalis[i] * widget.price)}",
+                                      "${widget.names_finalis[index]} ($count vote(s)",
+                                    ),
+                                    Text(
+                                      currencyCode == null
+                                          ? "$voteCurrency ${formatter.format(hargaVote)}"
+                                          : "$currencyCode ${formatter.format(hargaVote)}",
                                     ),
                                   ],
                                 ),
-                                if (i != widget.names_finalis.length - 1)
-                                  SizedBox(height: 16),
-                              ],
-                            ],
+                              );
+                            },
                           ),
 
                           const SizedBox(height: 16,),
@@ -2378,7 +2412,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(paymentLang['biaya_layanan']),
-                              Text('$voteCurrency ${formatter.format(feeLayanan)}')
+                              Text(
+                                currencyCode == null
+                                ? '$voteCurrency ${formatter.format(feeLayanan)}'
+                                : '$currencyCode ${formatter.format(feeLayanan)}',
+                              )
                             ],
                           ),
 
@@ -2393,7 +2431,12 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(paymentLang['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
-                              Text("$voteCurrency ${formatter.format(totalPayment)}", style: TextStyle(fontWeight: FontWeight.bold),)
+                              Text(
+                                currencyCode == null
+                                ? "$voteCurrency ${formatter.format(totalPayment)}"
+                                : "$currencyCode ${formatter.format(totalPayment)}", 
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              )
                             ],
                           ),
 
@@ -2544,7 +2587,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       TextSpan(text: "$totalVotes ${detailVoteLang['text_vote']}", style: TextStyle(fontWeight: FontWeight.bold)),
                                       TextSpan(text: paymentLang['kebijakan_privasi_8']),
                                       TextSpan(
-                                          text: "$voteCurrency ${formatter.format(totalPayment)}",
+                                          text: currencyCode == null
+                                            ? "$voteCurrency ${formatter.format(totalPayment)}"
+                                            : "$currencyCode ${formatter.format(totalPayment)}",
                                           style: TextStyle(fontWeight: FontWeight.bold)),
                                       TextSpan(
                                           text:
@@ -2766,7 +2811,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       }
     }
 
-    if (widget.totalHarga != 0 && !_isChecked3) {
+    if (widget.totalHargaAsli != 0 && !_isChecked3) {
       isValid = false;
     }
 

@@ -27,7 +27,7 @@ class DetailVotePage extends StatefulWidget {
 
 class _DetailVotePageState extends State<DetailVotePage> {
   final prefs = FlutterSecureStorage();
-  String? langCode;
+  String? langCode, currencyCode;
   String? flag_paket;
   
   final ScrollController _scrollController = ScrollController();
@@ -56,6 +56,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await _getBahasa();
+        await _getCurrency();
         await _loadVotes();
       });
     });
@@ -67,7 +68,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
   Future<void> _loadVotes() async {
 
-    final resultVote = await ApiService.get("/vote/${widget.id_event}", xLanguage: langCode);
+    final resultVote = await ApiService.get("/vote/${widget.id_event}", xLanguage: langCode, xCurrency: currencyCode);
     final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode);
     final resultSupport = await ApiService.get("/vote/${widget.id_event}/support", xLanguage: langCode);
 
@@ -141,6 +142,13 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateOffsets(); // recalculated setelah rebuild karena bahasa berubah
+    });
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
     });
   }
 
@@ -500,7 +508,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                   SizedBox(
                     key: descKey,
                     width: double.infinity,
-                    child: _buildDeskripsiSection(view_api, vote, langCode!)
+                    child: _buildDeskripsiSection(view_api, vote, langCode!, currencyCode)
                   ),
 
 
@@ -539,18 +547,18 @@ class _DetailVotePageState extends State<DetailVotePage> {
 }
 
 /// Helper builder untuk pilih Section berdasarkan view_api
-Widget _buildDeskripsiSection(int api, Map<String, dynamic> vote, String langCode) {
+Widget _buildDeskripsiSection(int api, Map<String, dynamic> vote, String langCode, String? currencyCode) {
   switch (api) {
     case 2:
-      return DeskripsiSection_2(data: vote, langCode: langCode,);
+      return DeskripsiSection_2(data: vote, langCode: langCode, currencyCode: currencyCode,);
     case 3:
-      return DeskripsiSection_3(data: vote, langCode: langCode,);
+      return DeskripsiSection_3(data: vote, langCode: langCode, currencyCode: currencyCode,);
     case 4:
-      return DeskripsiSection_4(data: vote, langCode: langCode,);
+      return DeskripsiSection_4(data: vote, langCode: langCode, currencyCode: currencyCode,);
     case 5:
-      return DeskripsiSection_5(data: vote, langCode: langCode,);
+      return DeskripsiSection_5(data: vote, langCode: langCode, currencyCode: currencyCode,);
     case 6:
-      return DeskripsiSection_6(data: vote, langCode: langCode,);
+      return DeskripsiSection_6(data: vote, langCode: langCode, currencyCode: currencyCode,);
     default:
       return DeskripsiSection(data: vote, langCode: langCode,);
   }

@@ -24,7 +24,7 @@ class FinalisPaketPage extends StatefulWidget {
 }
 
 class _FinalisPaketPageState extends State<FinalisPaketPage> {
-  String? langCode;
+  String? langCode, currencyCode;
   var get_user;
   DateTime deadline = DateTime(2025, 09, 26, 13, 30, 00, 00, 00);
 
@@ -53,6 +53,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadVotes();
       _startCountdown();
     });
@@ -66,7 +67,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
   Future<void> _loadVotes() async {
 
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode);
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
     final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode);
 
     final tempVote = resultVote?['data'] ?? {};
@@ -154,7 +155,13 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       detailfinalisText = tempdetailFinalis['detail_finalis'];
       cariFinalisText = tempdetailFinalis['search_finalis'];
     });
+  }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
   }
 
   Future<void> _precacheAllImages(
@@ -420,7 +427,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                   Text(
                     vote['harga'] == 0
                     ? hargaDetail!
-                    : "${vote['currency']} ${formatter.format(totalHarga)}",
+                    : currencyCode == null
+                      ? "${vote['currency']} ${formatter.format(totalHarga)}"
+                      : "$currencyCode ${formatter.format(totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,
@@ -800,7 +809,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                         Text(
                           vote['harga'] == 0
                             ? hargaDetail!
-                            : "${vote['currency']} $hargaFormatted",
+                            : currencyCode == null
+                              ? "${vote['currency']} $hargaFormatted"
+                              : "$currencyCode $hargaFormatted",
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -893,7 +904,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                             color,
                             bgColor,
                             id_paket,
-                            vote['currency']
+                            currencyCode ?? vote['currency']
                           );
 
                           if (selectedQty != null) {
@@ -996,6 +1007,7 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
         autofocus: false,
         decoration: InputDecoration(
           hintText: searchHintText,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

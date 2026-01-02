@@ -24,7 +24,7 @@ class FinalisPage extends StatefulWidget {
 }
 
 class _FinalisPageState extends State<FinalisPage> {
-  String? langCode;
+  String? langCode, currencyCode;
   DateTime deadline = DateTime(2025, 09, 26, 13, 30, 00, 00, 00);
 
   Duration remaining = Duration.zero;
@@ -58,6 +58,7 @@ class _FinalisPageState extends State<FinalisPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadVotes();
       _startCountdown();
     });
@@ -67,8 +68,8 @@ class _FinalisPageState extends State<FinalisPage> {
   List<dynamic> finalis = [];
   Future<void> _loadVotes() async {
 
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode);
-    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode);
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
+    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode, xCurrency: currencyCode);
 
     final tempVote = resultVote?['data'] ?? {};
     final tempFinalis = resultFinalis?['data'] ?? [];
@@ -134,7 +135,13 @@ class _FinalisPageState extends State<FinalisPage> {
 
       noDataText = tempdetailFinalis['no_data'];
     });
+  }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
   }
 
   Future<void> _precacheAllImages(
@@ -161,12 +168,16 @@ class _FinalisPageState extends State<FinalisPage> {
   }
   
   final formatter = NumberFormat.decimalPattern("id_ID");
-  int get totalHarga {
-    int total = 0;
+  num totalHargaAsli = 0;
+  num get totalHarga {
+    num total = 0;
     for (int i = 0; i < counts.length; i++) {
-      final hargaItem = int.tryParse(vote['harga'].toString()) ?? 0;
+      final hargaItem = num.tryParse(vote['harga_asli'].toString()) ?? 0;
       total += counts[i] * hargaItem;
     }
+    totalHargaAsli = total;
+    total = total * (vote['rate_currency_user'] / vote['rate_currency_vote']);
+    total = (total * 100).ceil() / 100;
     return total;
   }
 
@@ -402,7 +413,9 @@ class _FinalisPageState extends State<FinalisPage> {
                   Text(
                     vote['harga'] == 0
                     ? hargaDetail!
-                    : "${vote['currency']} ${formatter.format(totalHarga)}",
+                    : currencyCode == null
+                      ? "${vote['currency']} ${formatter.format(totalHarga)}"
+                      : "$currencyCode ${formatter.format(totalHarga)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,
@@ -532,9 +545,12 @@ class _FinalisPageState extends State<FinalisPage> {
                               names_finalis: names_finalis,
                               counts_finalis: counts_finalis,
                               totalHarga: totalHarga,
-                              price: vote['harga'],
+                              totalHargaAsli: totalHargaAsli,
+                              price: vote['harga_asli'],
                               fromDetail: false,
                               idUser: idUser,
+                              rateCurrency: vote['rate_currency_vote'],
+                              rateCurrencyUser: vote['rate_currency_user'],
                             ),
                           ),
                         );
@@ -549,9 +565,12 @@ class _FinalisPageState extends State<FinalisPage> {
                             names_finalis: names_finalis,
                             counts_finalis: counts_finalis,
                             totalHarga: totalHarga,
-                            price: vote['harga'],
+                            totalHargaAsli: totalHargaAsli,
+                            price: vote['harga_asli'],
                             fromDetail: false,
                             idUser: idUser,
+                            rateCurrency: vote['rate_currency_vote'],
+                            rateCurrencyUser: vote['rate_currency_user'],
                           ),
                         ),
                       );
@@ -819,7 +838,9 @@ class _FinalisPageState extends State<FinalisPage> {
                           Text(
                             vote['harga'] == 0
                               ? hargaDetail!
-                              : "${vote['currency']} $hargaFormatted",
+                              : currencyCode == null
+                                ? "${vote['currency']} $hargaFormatted"
+                                : "$currencyCode $hargaFormatted",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -1363,6 +1384,7 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
         autofocus: false,
         decoration: InputDecoration(
           hintText: searchHintText,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

@@ -29,6 +29,7 @@ class HomeContent extends StatefulWidget {
 class _HomeContentState extends State<HomeContent> {
   final prefs = FlutterSecureStorage();
   String? langCode;
+  String? currencyCode;
   String? login;
   String? token;
   Map<String, dynamic> voteLang = {};
@@ -50,6 +51,7 @@ class _HomeContentState extends State<HomeContent> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadContent();
     });
   }
@@ -99,6 +101,13 @@ class _HomeContentState extends State<HomeContent> {
     });
   }
 
+  Future<void> _getCurrency() async {
+    var code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
+  }
+
   List<dynamic> activeBanners = [];
   List<double?> aspectRatios = [];
 
@@ -120,11 +129,11 @@ class _HomeContentState extends State<HomeContent> {
     first_name = get_user['first_name'];
 
     final resultbanner = await ApiService.get("/setting-banner/active");
-    final resultVote = await ApiService.get("/vote/popular");
+    final resultVote = await ApiService.get("/vote/popular", xCurrency: currencyCode);
     final resultJuara = await ApiService.get("/vote/juara");
-    final resulthitEvent = await ApiService.get("/event/hits");
-    final resultlatestVote = await ApiService.get("/vote/latest");
-    final resultrecomenEvent = await ApiService.get("/event/recommended");
+    final resulthitEvent = await ApiService.get("/event/hits", xCurrency: currencyCode);
+    final resultlatestVote = await ApiService.get("/vote/latest", xCurrency: currencyCode);
+    final resultrecomenEvent = await ApiService.get("/event/recommended", xCurrency: currencyCode);
     final resultArtikel = await ApiService.get("/articles?limit=8");
 
     if (!mounted) return;
@@ -791,7 +800,9 @@ class _HomeContentState extends State<HomeContent> {
                                                 Text(
                                                   item['price'] == 0
                                                   ? voteLang['harga_detail'] //'Gratis'
-                                                  : "${item['currency']} $hargaFormatted",
+                                                  : currencyCode == null 
+                                                    ? "${item['currency']} $hargaFormatted"
+                                                    : "$currencyCode $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.red,
@@ -1098,7 +1109,7 @@ class _HomeContentState extends State<HomeContent> {
                               final title = item['title']?.toString() ?? 'Tanpa Judul';
                               final dateStr = item['date_event']?.toString() ?? '-';
                               final img = item['img']?.toString() ?? '';
-                              final price = item['price'] ?? 0;
+                              num price = item['price'] ?? 0;
                               
                               String formattedDate = '-';
 
@@ -1244,7 +1255,9 @@ class _HomeContentState extends State<HomeContent> {
                                                 Text(
                                                   item['price'] == 0
                                                   ? voteLang['harga_detail'] //'Gratis'
-                                                  : "${item['currency']} $hargaFormatted",
+                                                  : currencyCode == null 
+                                                    ? "${item['currency']} $hargaFormatted"
+                                                    : "$currencyCode $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.red,
@@ -1433,7 +1446,9 @@ class _HomeContentState extends State<HomeContent> {
                                                 Text(
                                                   item['price'] == 0
                                                   ? voteLang['harga_detail'] //'Gratis'
-                                                  : "${item['currency']} $hargaFormatted",
+                                                  : currencyCode == null 
+                                                    ? "${item['currency']} $hargaFormatted"
+                                                    : "$currencyCode $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.red,
@@ -1657,7 +1672,9 @@ class _HomeContentState extends State<HomeContent> {
                                                 Text(
                                                   item['price'] == 0
                                                   ? voteLang['harga_detail'] //'Gratis'
-                                                  : "${item['currency']} $hargaFormatted",
+                                                  : currencyCode == null 
+                                                    ? "${item['currency']} $hargaFormatted"
+                                                    : "$currencyCode $hargaFormatted",
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     color: Colors.red,

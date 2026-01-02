@@ -96,6 +96,7 @@ class _VotePageState extends State<VotePage> {
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: cari_vote,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
