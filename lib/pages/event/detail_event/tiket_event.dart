@@ -20,10 +20,10 @@ import 'package:path/path.dart' as path;
 
 class TiketEventPage extends StatefulWidget {
   final String id_event;
-  final int price_global;
+  final num price_global;
   final List<String>? ids_tiket;
   final List<String>? namas_tiket;
-  final List<int>? prices_tiket;
+  final List<num>? prices_tiket;
   final List<int> qty;
   final String? flag_samakan_input_tiket_pertama;
   final String? jenis_participant;
@@ -647,9 +647,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: eventLang['email_hint'],
-                          hintStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: _showError && !isValidEmail(emailControllers[index].text)
                             ? eventLang['error_email_1']
                             : _duplicateEmailIndex == index
@@ -715,9 +713,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: namaHint,
-                          hintStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: _duplicateNameIndex == index
                             ? eventLang['error_nama_1']
                             : null,
@@ -860,7 +856,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         ],
                         decoration: InputDecoration(
                           hintText: nohpHint!,
-                          hintStyle: const TextStyle(color: Colors.grey),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: phoneControllers[index].text.isNotEmpty &&
                                   !isValidPhone(phoneControllers[index].text)
                               ? nohpError
@@ -931,9 +927,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                   autofocus: false,
                                   decoration: InputDecoration(
                                     hintText: eventLang['tiket_template_answer_hint'],
-                                    hintStyle: const TextStyle(
-                                      color: Colors.grey,
-                                    ),
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -1091,6 +1085,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                         contentPadding:
                                             const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                         hintText: eventLang['pilih_radio'],
+                                        hintStyle: TextStyle(color: Colors.grey.shade400),
                                       ),
                                     ),
                                     if (formTiket[idx]['required'] == 1 &&

@@ -159,6 +159,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
       setState(() {
         pickedImage = File(image.path);
+
+        uploadImage(pickedImage!);
       });
     }
   }
@@ -433,37 +435,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     CircleAvatar(
                       radius: 60,
                       child: ClipOval(
-                        child: widget.user['photo'] != null
-                        ? isSvg
-                            ? SvgPicture.network(
-                                isuploaded
-                                    ? linkAvatar!
-                                    : '$baseUrl/user/${widget.user['photo']}',
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                              )
-                            : isHttp
-                              ? Image.network(
-                                  isuploaded
-                                      ? linkAvatar!
-                                      : '${widget.user['photo']}',
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.network(
-                                  '$baseUrl/user/${widget.user['photo']}',
-                                  width: 120, 
-                                  height: 120, fit: 
-                                  BoxFit.cover,
-                                )
-                        : Image.network(
-                            "$baseUrl/noimage_finalis.png",
-                            width: 120, 
-                            height: 120, fit: 
-                            BoxFit.cover,
-                          )
+                        child: pickedImage != null
+                          ? Image.file(
+                              pickedImage!,
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                            )
+                          : _buildNetworkAvatar(),
                       ),
                     ),
 
@@ -516,6 +495,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['nama_depan_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -547,6 +527,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['nama_belakang_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -570,6 +551,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onTap: () => _selectDate(context),
                   decoration: InputDecoration(
                     hintText: infoLang['pilih_dob'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -655,6 +637,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['company_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -676,6 +659,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['job_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -706,6 +690,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: emailHint,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -748,6 +733,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: phoneHint,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -792,6 +778,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['uname_linkedin_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -830,6 +817,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['uname_instagram_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -868,6 +856,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['uname_twitter_hint'],
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -920,6 +909,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         )
       )
+    );
+  }
+
+  Widget _buildNetworkAvatar() {
+    final photo = widget.user['photo'];
+
+    if (photo == null) {
+      return Image.network(
+        "$baseUrl/noimage_finalis.png",
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+      );
+    }
+
+    final imageUrl = isuploaded && linkAvatar != null
+        ? linkAvatar!
+        : isHttp
+            ? photo
+            : '$baseUrl/user/$photo';
+
+    if (isSvg) {
+      return SvgPicture.network(
+        imageUrl,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+      );
+    }
+
+    return Image.network(
+      imageUrl,
+      width: 120,
+      height: 120,
+      fit: BoxFit.cover,
     );
   }
 }

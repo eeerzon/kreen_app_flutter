@@ -1,5 +1,7 @@
 // ignore_for_file: camel_case_types, deprecated_member_use, non_constant_identifier_names
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
@@ -13,10 +15,56 @@ import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:share_plus/share_plus.dart';
 
-class DeskripsiSection_4 extends StatelessWidget {
+class DeskripsiSection_4 extends StatefulWidget {
   final Map<String, dynamic> data;
   final String langCode;
-  const DeskripsiSection_4({super.key, required this.data, required this.langCode});
+  final String? currencyCode;
+  const DeskripsiSection_4({super.key, required this.data, required this.langCode, this.currencyCode});
+
+  @override
+    State<DeskripsiSection_4> createState() => _DeskripsiSection_4State();
+  }
+
+  class _DeskripsiSection_4State extends State<DeskripsiSection_4> {
+
+  final ScrollController sponsorController = ScrollController();
+  Timer? _timer;
+  
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    if (widget.data['logo'] != null) {
+      const speed = 0.5;
+
+      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+        if (!sponsorController.hasClients) return;
+
+        final position = sponsorController.position;
+        final offset = sponsorController.offset;
+
+        // PANJANG SATU SET DATA ASLI
+        final singleSetWidth = position.maxScrollExtent / 2;
+
+        // PUTAR OFFSET TANPA LOMPAT
+        if (offset >= singleSetWidth) {
+          sponsorController.jumpTo(offset - singleSetWidth);
+        } else {
+          sponsorController.jumpTo(offset + speed);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    sponsorController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +83,8 @@ class DeskripsiSection_4 extends StatelessWidget {
     };
 
     String themeName = 'Red';
-    if (data['theme_name'] != null) {
-      themeName = data['theme_name'];
+    if (widget.data['theme_name'] != null) {
+      themeName = widget.data['theme_name'];
     }
     Color color = colorMap[themeName] ?? Colors.red;
 
@@ -47,7 +95,7 @@ class DeskripsiSection_4 extends StatelessWidget {
       bgColor = color.withOpacity(0.1);
     }
 
-    final dateStr = data['tanggal_grandfinal_mulai']?.toString() ?? '-';
+    final dateStr = widget.data['tanggal_grandfinal_mulai']?.toString() ?? '-';
     
     String formattedDate = '-';
     
@@ -55,7 +103,7 @@ class DeskripsiSection_4 extends StatelessWidget {
       try {
         // parsing string ke DateTime
         final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-        if (langCode == 'id') {
+        if (widget.langCode == 'id') {
           // Bahasa Indonesia
           final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
           formattedDate = formatter.format(date);
@@ -78,10 +126,10 @@ class DeskripsiSection_4 extends StatelessWidget {
     }
 
     final formatter = NumberFormat.decimalPattern("id_ID");
-    final hargaFormatted = formatter.format(data['harga'] ?? 0);
+    final hargaFormatted = formatter.format(widget.data['harga'] ?? 0);
 
-    DateTime mulai = DateTime.parse("${data['tanggal_grandfinal_mulai']} ${data['waktu_mulai']}");
-    DateTime selesai = DateTime.parse("${data['tanggal_grandfinal_mulai']} ${data['waktu_selesai']}");
+    DateTime mulai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai']} ${widget.data['waktu_mulai']}");
+    DateTime selesai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai']} ${widget.data['waktu_selesai']}");
 
     String jamMulai = "${mulai.hour.toString().padLeft(2, '0')}:${mulai.minute.toString().padLeft(2, '0')}";
     String jamSelesai = "${selesai.hour.toString().padLeft(2, '0')}:${selesai.minute.toString().padLeft(2, '0')}";
@@ -91,7 +139,7 @@ class DeskripsiSection_4 extends StatelessWidget {
       children: [
         FadeInImage.assetNetwork(
           placeholder: 'assets/images/img_placeholder.jpg',
-          image: data['banner'],
+          image: widget.data['banner'],
           width: double.infinity,
           fit: BoxFit.cover,
           fadeInDuration: const Duration(milliseconds: 300),
@@ -119,7 +167,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        data['judul_vote'] ?? '-',
+                        widget.data['judul_vote'] ?? '-',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -132,7 +180,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          data['nama_kategori'] ?? '-',
+                          widget.data['nama_kategori'] ?? '-',
                           style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -142,8 +190,8 @@ class DeskripsiSection_4 extends StatelessWidget {
                   InkWell(
                     onTap: () {
                       Share.share(
-                        "$baseUrl/voting/${data['vote_slug']}",
-                        subject: data['judul_vote'],
+                        "$baseUrl/voting/${widget.data['vote_slug']}",
+                        subject: widget.data['judul_vote'],
                       );
                     },
                     child: SvgPicture.network(
@@ -163,7 +211,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                   children: [
                     InkWell(
                       onTap: () async {
-                        await FaqModal.show(context, data['faq']);
+                        await FaqModal.show(context, widget.data['faq']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -191,7 +239,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                     const SizedBox(width: 5),
                     InkWell(
                       onTap: () async {
-                        await TutorModal.show(context, data['tutorial_vote']);
+                        await TutorModal.show(context, widget.data['tutorial_vote']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -219,7 +267,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                     const SizedBox(width: 5),
                     InkWell(
                       onTap: () async {
-                        await SKModal.show(context, data['snk']);
+                        await SKModal.show(context, widget.data['snk']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -260,7 +308,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Image.network(
-                            data['icon_penyelenggara'],
+                            widget.data['icon_penyelenggara'],
                             width: 80,   // atur sesuai kebutuhan
                             height: 80,
                             fit: BoxFit.contain,
@@ -280,7 +328,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  data['nama_penyelenggara'],
+                                  widget.data['nama_penyelenggara'],
                                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                   softWrap: true,          // biar teks bisa kebungkus
                                   overflow: TextOverflow.visible, 
@@ -308,24 +356,24 @@ class DeskripsiSection_4 extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  if (data['merchant_description'] != null) ... [
-                                    Html(
-                                      data: data['merchant_description'],
-                                      style: {
-                                        "p": Style(
-                                          margin: Margins.zero,
-                                          padding: HtmlPaddings.zero,
-                                        ),
-                                        "body": Style(
-                                          margin: Margins.zero,
-                                          padding: HtmlPaddings.zero,
-                                        ),
-                                      },
-                                    ),
-                                    SizedBox(height: 12,)
-                                  ],
+                                  // if (widget.data['merchant_description'] != null) ... [
+                                  //   Html(
+                                  //     data: widget.data['merchant_description'],
+                                  //     style: {
+                                  //       "p": Style(
+                                  //         margin: Margins.zero,
+                                  //         padding: HtmlPaddings.zero,
+                                  //       ),
+                                  //       "body": Style(
+                                  //         margin: Margins.zero,
+                                  //         padding: HtmlPaddings.zero,
+                                  //       ),
+                                  //     },
+                                  //   ),
+                                  //   SizedBox(height: 12,)
+                                  // ],
                                   Html(
-                                    data: data['deskripsi'],
+                                    data: widget.data['deskripsi'],
                                       style: {
                                         "p": Style(
                                           margin: Margins.zero,
@@ -411,11 +459,11 @@ class DeskripsiSection_4 extends StatelessWidget {
                                             ),
                                           ),
                                           TextSpan(
-                                            text: data['code_timezone'] == 'WIB'
+                                            text: widget.data['code_timezone'] == 'WIB'
                                               ? " (GMT+7)"
-                                              : data['code_timezone'] == 'WITA'
+                                              : widget.data['code_timezone'] == 'WITA'
                                                 ? " (GMT+8)"
-                                                : data['code_timezone'] == 'WIT'
+                                                : widget.data['code_timezone'] == 'WIT'
                                                   ? " (GMT+9)"
                                                   : "",
                                             style: TextStyle(
@@ -467,7 +515,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          data['lokasi_alamat'] ?? '-',
+                                          widget.data['lokasi_alamat'] ?? '-',
                                           style: TextStyle(
                                             color: Colors.black,
                                           ),
@@ -514,7 +562,7 @@ class DeskripsiSection_4 extends StatelessWidget {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          data['lokasi_nama_tempat'],
+                                          widget.data['lokasi_nama_tempat'],
                                           style: TextStyle(
                                             color: Colors.black,
                                           ),
@@ -537,9 +585,11 @@ class DeskripsiSection_4 extends StatelessWidget {
                       ),
                       const SizedBox(height: 12,),
                       Text(
-                        data['harga'] == 0
+                        widget.data['harga'] == 0
                         ? lang['harga_detail']
-                        : "${data['currency']} $hargaFormatted",
+                        : widget.currencyCode == null 
+                          ? "${widget.data['currency']} $hargaFormatted"
+                          : "${widget.currencyCode} $hargaFormatted",
                         style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 20),
                       ),
                     ],

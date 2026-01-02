@@ -20,10 +20,10 @@ import 'package:path/path.dart' as path;
 
 class TiketGlobalPage extends StatefulWidget {
   final String id_event;
-  final int price_global;
+  final num price_global;
   final List<String>? ids_tiket;
   final List<String>? namas_tiket;
-  final List<int>? prices_tiket;
+  final List<num>? prices_tiket;
   final List<int> qty;
   final String? flag_samakan_input_tiket_pertama;
   final String? jenis_participant;
@@ -47,7 +47,7 @@ class TiketGlobalPage extends StatefulWidget {
 }
 
 class _TiketGlobalPageState extends State<TiketGlobalPage> {
-  String? langCode;
+  String? langCode, currencyCode;
 
   bool _isLoading = true;
   bool _isFree = false;
@@ -56,6 +56,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   late List<TextEditingController> emailControllers;
   late List<TextEditingController> nameControllers;
   late List<String?> selectedGenders;
+  String? selected;
   late List<TextEditingController> phoneControllers;
   var gender;
   bool _showError = false;
@@ -144,6 +145,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadTiket();
 
       if (widget.price_global == 0) {
@@ -195,16 +197,23 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     });
   }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
+  }
+
   Future<void> _loadTiket() async {
     final body = {
       "id_event": widget.id_event,
     };
 
-    final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body);
+    final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body,);
     final List<dynamic> tempTiket = resultTiket?['data'] ?? [];
 
 
-    final resultEvent = await ApiService.post('/event/detail', body: body);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode);
     final Map<String, dynamic> tempEvent = resultEvent?['data'] ?? {};
 
     await _precacheAllImages(context, tempEvent);
@@ -380,7 +389,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
     ids_order_form_detail.clear();
     ids_order_form_master.clear();
-    var totalHarga = 0;
+    num totalHarga = 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -445,13 +454,15 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                   SizedBox(height: 10,),
                   Column(
                     children: List.generate(widget.namas_tiket!.length, (index) {
-                      final int price = eventTiket[index]['price'] ?? 0;
+                      final num price = eventTiket[index]['price'] ?? 0;
                       final int qty = widget.qty[index];
 
                       totalHarga += price * qty;
                         
                       String hargaFormatted = '-';
-                      hargaFormatted = "${detailEvent['currency']} ${formatter.format(eventTiket[index]['price'] ?? 0)}";
+                      hargaFormatted = currencyCode == null
+                        ? "${detailEvent['currency']} ${formatter.format(eventTiket[index]['price'] ?? 0)}"
+                        : "$currencyCode ${formatter.format(eventTiket[index]['price'] ?? 0)}";
                       if (eventTiket[index]['price'] == 0) {
                         hargaFormatted = voteLang['harga_detail'];
                       }
@@ -488,7 +499,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       Text(
                         totalHarga == 0
                           ? voteLang['harga_detail']
-                          : '${detailEvent['currency']} ${formatter.format(totalHarga)}'
+                          : currencyCode == null
+                            ? '${detailEvent['currency']} ${formatter.format(totalHarga)}'
+                            : '$currencyCode ${formatter.format(totalHarga)}',
                       )
                     ],
                   ),
@@ -638,9 +651,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: eventLang['email_hint'],
-                          hintStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: _showError && !isValidEmail(emailControllers[index].text)
                             ? eventLang['error_email_1']
                             : _duplicateEmailIndex == index
@@ -706,9 +717,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         autofocus: false,
                         decoration: InputDecoration(
                           hintText: namaHint,
-                          hintStyle: const TextStyle(
-                            color: Colors.grey,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: _duplicateNameIndex == index
                             ? eventLang['error_nama_1']
                             : null,
@@ -851,7 +860,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         ],
                         decoration: InputDecoration(
                           hintText: nohpHint!,
-                          hintStyle: const TextStyle(color: Colors.grey),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: phoneControllers[index].text.isNotEmpty &&
                                   !isValidPhone(phoneControllers[index].text)
                               ? nohpError
@@ -940,9 +949,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 autofocus: false,
                                 decoration: InputDecoration(
                                   hintText: eventLang['tiket_template_answer_hint'],
-                                  hintStyle: const TextStyle(
-                                    color: Colors.grey,
-                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1034,39 +1041,102 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               )
                             ]
 
-                            else if (formTiket[idx]['type_form'] == 'radio')
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ...formTiket[idx]['answer']
-                                      .toString()
-                                      .split(',')
-                                      .map((option) => RadioListTile<String>(
-                                            title: Text(option.trim()),
-                                            value: option.trim(),
-                                            groupValue: answerControllers[idx].text,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                answerControllers[idx].text = value ?? '';
-                                              });
-                                            },
-                                            contentPadding: EdgeInsets.zero,
-                                            dense: true,
-                                            activeColor: Colors.red,
-                                          ))
-                                      ,
-                                  if (formTiket[idx]['required'] == 1 &&
-                                      _showError &&
-                                      answerControllers[idx].text.trim().isEmpty)
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        eventLang['tiket_template_answer_error'],
-                                        style: TextStyle(color: Colors.red),
+                            else if (formTiket[idx]['type_form'] == 'radio') ... [
+                              if (formTiket[idx]['question'].contains('Jenis Kelamin')) ...[
+                                Row(
+                                  children: List.generate(genders.length, (indx) {
+                                    final item = genders[indx];
+                                    final bool isSelected = selected == item['label'];
+
+                                    return Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            selected = item['label'];
+                                            answerControllers[idx].text = item['label'];
+                                          });
+                                        },
+                                        child: Container(
+                                          height: 120,
+                                          margin: EdgeInsets.only(
+                                            right: indx == 0 ? 8 : 0,
+                                            left: indx == 1 ? 8 : 0,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.grey,
+                                              width: 1,
+                                            ),
+                                            color: isSelected ? Colors.green.withOpacity(0.1) : Colors.white,
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Image.network(
+                                                item['icon'] as String,
+                                                width: 50,
+                                                height: 50,
+                                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                item['label']!,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              )
+                                    );
+                                  }),
+                                ),
+                                if (formTiket[idx]['required'] == 1 &&
+                                        _showError &&
+                                        answerControllers[idx].text.trim().isEmpty)
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          eventLang['tiket_template_answer_error'],
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                              ]
+
+                              else ...[
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ...formTiket[idx]['answer']
+                                        .toString()
+                                        .split(',')
+                                        .map((option) => RadioListTile<String>(
+                                              title: Text(option.trim()),
+                                              value: option.trim(),
+                                              groupValue: answerControllers[idx].text,
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  answerControllers[idx].text = value ?? '';
+                                                });
+                                              },
+                                              contentPadding: EdgeInsets.zero,
+                                              dense: true,
+                                              activeColor: Colors.red,
+                                            ))
+                                        ,
+                                    if (formTiket[idx]['required'] == 1 &&
+                                        _showError &&
+                                        answerControllers[idx].text.trim().isEmpty)
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          eventLang['tiket_template_answer_error'],
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                  ],
+                                )
+                              ]
+                            ]
 
                             else if (formTiket[idx]['type_form'] == 'select')
                               Column(
@@ -1096,6 +1166,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                       contentPadding:
                                           const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                       hintText: eventLang['pilih_radio'],
+                                      hintStyle: TextStyle(color: Colors.grey.shade400),
                                     ),
                                   ),
                                   if (formTiket[idx]['required'] == 1 &&

@@ -20,7 +20,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class DetailEventPage extends StatefulWidget {
   final String id_event;
-  final int price;
+  final num price;
   const DetailEventPage({super.key, required this.id_event, required this.price});
 
   @override
@@ -28,7 +28,7 @@ class DetailEventPage extends StatefulWidget {
 }
 
 class _DetailEventPageState extends State<DetailEventPage> {
-  String? langCode;
+  String? langCode, currencyCode;
 
   bool _isLoading = true;
 
@@ -36,7 +36,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
   List<int> counts_tiket = [];
   List<String> ids_tiket = [];
   List<String> names_tiket = [];
-  List<int> prices_tiket = [];
+  List<num> prices_tiket = [];
   List<int?> selected_tiket = [];
 
   Map<String, dynamic> voteLang = {};
@@ -49,6 +49,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadEvent();
     });
   }
@@ -60,7 +61,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
       "id_event": widget.id_event,
     };
 
-    final resultEvent = await ApiService.post('/event/detail', body: body);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode);
     final Map<String, dynamic> tempEvent = resultEvent?['data'] ?? {};
 
     await _precacheAllImages(context, tempEvent);
@@ -96,7 +97,14 @@ class _DetailEventPageState extends State<DetailEventPage> {
       notLoginDesc = tempnotLoginDesc;
       login = templogin;
     });
-  } 
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
+  }
 
   Future<void> _precacheAllImages(
     BuildContext context,
@@ -306,7 +314,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(event['keywords']), // ambil dari api
+        title: Text(detailEvent['title']), // ambil dari api
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -587,7 +595,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                                 const SizedBox(height: 8),
                                 Text(
-                                  event['keywords'],
+                                  detailEvent['title'],
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
 
@@ -756,29 +764,32 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         ],
                       ),
 
-                      SizedBox(height: 20,),
-                      Text(
-                        eventLang['tentang_event_label'],
-                        style: TextStyle( fontWeight: FontWeight.bold),
-                      ),
+                      if (event['event']['description'] != null) ... [
 
-                      SizedBox(height: 12,),
-                      Padding(
-                        padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                        child: Html(
-                          data: event['event']['description'] ?? '-',
-                            style: {
-                              "p": Style(
-                                margin: Margins.zero,
-                                padding: HtmlPaddings.zero,
-                              ),
-                              "body": Style(
-                                margin: Margins.zero,
-                                padding: HtmlPaddings.zero,
-                              ),
-                            },
+                        SizedBox(height: 20,),
+                        Text(
+                          eventLang['tentang_event_label'],
+                          style: TextStyle( fontWeight: FontWeight.bold),
                         ),
-                      ),
+                        
+                        SizedBox(height: 12,),
+                        Padding(
+                          padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
+                          child: Html(
+                            data: event['event']['description'] ?? '-',
+                              style: {
+                                "p": Style(
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                ),
+                                "body": Style(
+                                  margin: Margins.zero,
+                                  padding: HtmlPaddings.zero,
+                                ),
+                              },
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 20),
                       Text(
@@ -898,7 +909,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          detailEvent['location_map'] ?? '-',
+                                          detailEvent['type_event'] == 'offline'
+                                          ? detailEvent['location_map'] ?? '-'
+                                          : "${detailEvent['type_event']} via ${detailEvent['venue_platform']}",
                                           style: TextStyle(
                                             color: Colors.black,
                                           ),
@@ -1008,10 +1021,18 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         }
 
                         String hargaFormatted = '-';
-                        hargaFormatted = "${detailEvent['currency']} ${formatter.format(item['price'] ?? 0)}";
+                        hargaFormatted = currencyCode == null
+                          ? "${detailEvent['currency']} ${formatter.format(item['price'] ?? 0)}"
+                          : "$currencyCode ${formatter.format(item['price'] ?? 0)}";
                         if (item['price'] == 0) {
                           hargaFormatted = voteLang['harga_detail'];
                         }
+
+                        final dateOpenTiket = DateTime.parse("${item['sale_date_start']} ${item['sale_time_start']}");
+                        final bool belumBuka = DateTime.now().isBefore(dateOpenTiket);
+
+                        final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
+                        final bool sudahTutup = DateTime.now().isAfter(dateOutTiket);
 
                         return Padding(
                           padding: EdgeInsets.only(bottom: 25),
@@ -1019,7 +1040,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             width: double.infinity,
                             padding: kGlobalPadding,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: sudahTutup ? Colors.grey.shade300 : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: Colors.grey.shade300,),
                             ),
@@ -1102,65 +1123,88 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                             ),
 
                                             SizedBox(width: 40,),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                              children: [
-                                                //button minus
-                                                InkWell(
-                                                  onTap: () {
-                                                    if (counts[index] > 0) {
-                                                      setState(() {
+                                            belumBuka
+                                            ? Container(
+                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: Text(
+                                                  eventLang['segera'], // "Segera"
+                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
+                                                ),
+                                              )
+                                            : sudahTutup
+                                              ? Container(
+                                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                                  decoration: BoxDecoration(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Text(
+                                                    eventLang['habis'], // "Habis"
+                                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
+                                                  ),
+                                                )
+                                              : Row(
+                                                  mainAxisAlignment: MainAxisAlignment.end,
+                                                  children: [
+                                                    InkWell(
+                                                      onTap: () {
                                                         if (counts[index] > 0) {
-                                                          counts[index]--;
-                                                          _syncSelectedTickets();
+                                                          setState(() {
+                                                            counts[index]--;
+                                                            _syncSelectedTickets();
+                                                          });
                                                         }
-                                                      });
-                                                    }
-                                                  },
-                                                  child: Container(
-                                                    padding: const EdgeInsets.all(8),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.red,
-                                                      borderRadius: BorderRadius.circular(100),
+                                                      },
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(8),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.red,
+                                                          borderRadius: BorderRadius.circular(100),
+                                                        ),
+                                                        child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
+                                                      ),
                                                     ),
-                                                    child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
-                                                  ),
-                                                ),
-                                            
-                                                //text field
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  counts[index].toString(),
-                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                                ),
-                                            
-                                                //button plus
-                                                const SizedBox(width: 8),
-                                                InkWell(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      if (counts[index] < item['max_qty']) {
-                                                        counts[index]++;
-                                                        _syncSelectedTickets();
-                                                      }
-                                                    });
-                                                  },
-                                                  child: Container(
-                                                    padding: const EdgeInsets.all(8),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.red,
-                                                      borderRadius: BorderRadius.circular(100),
+
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      counts[index].toString(),
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                                     ),
-                                                    child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
-                                                  ),
+
+                                                    const SizedBox(width: 8),
+                                                    InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          final maxQty = item['max_qty'];
+                                                          final sisaStok = item['sisa_stok'];
+
+                                                          final limit = sisaStok < maxQty ? sisaStok : maxQty;
+                                                          if (counts[index] < limit) {
+                                                            counts[index]++;
+                                                            _syncSelectedTickets();
+                                                          }
+                                                        });
+                                                      },
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(8),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.red,
+                                                          borderRadius: BorderRadius.circular(100),
+                                                        ),
+                                                        child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            )
                                           ],
                                         ),
 
                                         Text(
-                                          '${eventLang['stok_tiket']}: ${item['sisa_stok']}',
+                                          detailEvent['show_tickets_available'] == 1 ?
+                                          '${eventLang['stok_tiket']}: ${item['sisa_stok']}'
+                                          : '',
                                           style: TextStyle(color: Colors.grey),
                                         )
                                       ],
