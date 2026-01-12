@@ -244,10 +244,15 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   final formatter = NumberFormat.decimalPattern("id_ID");
   num totalHargaAsli = 0;
   num get totalHarga {
-    num hargaItem = hargaAsli * counts;
-    totalHargaAsli = hargaItem;
-    hargaItem = hargaItem * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
-    hargaItem = (hargaItem * 100).ceil() / 100;
+    num hargaItem = 0;
+    if (currencyCode != null) {
+      hargaItem = hargaAsli * counts;
+      totalHargaAsli = hargaItem;
+      hargaItem = hargaItem * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
+      hargaItem = (hargaItem * 100).ceil() / 100;
+    } else {
+      hargaItem = harga * counts;
+    }
     return hargaItem;
   }
 
@@ -481,25 +486,27 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                   width: double.infinity,
                   child: Column(
                     children: [
-                      detailFinalis['poster_finalis'] != null
-                      ? 
-                        Image.network(
-                          detailFinalis['poster_finalis'],
-                          width: double.infinity,
-                          fit: BoxFit.cover, 
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.network(
+                      AspectRatio(
+                        aspectRatio: 4 / 5,
+                        child: detailFinalis['poster_finalis'] != null
+                          ? Image.network(
+                              detailFinalis['poster_finalis'],
+                              width: double.infinity,
+                              fit: BoxFit.cover, 
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.network(
+                                  "$baseUrl/noimage_finalis.png",
+                                  width: double.infinity,
+                                  fit: BoxFit.cover, 
+                                );
+                              },
+                            )
+                          : Image.network(
                               "$baseUrl/noimage_finalis.png",
                               width: double.infinity,
                               fit: BoxFit.cover, 
-                            );
-                          },
-                        )
-                      : Image.network(
-                          "$baseUrl/noimage_finalis.png",
-                          width: double.infinity,
-                          fit: BoxFit.cover, 
-                        ),
+                            ),
+                      ),
                   
                       const SizedBox(height: 15,),
                       Container(
@@ -942,7 +949,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   ),
                                   child: InkWell(
                                     onTap: () async {
-                                      await TutorModal.show(context, 'id');
+                                      await TutorModal.show(context, detailvote['tutorial_vote'], detailVoteLang!['tutorial_vote_text']);
                                     },
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1542,6 +1549,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               price: hargaAsli,
                               fromDetail: true,
                               idUser: idUser,
+                              flag_login: detailvote['flag_login'],
                               rateCurrency: detailvote['rate_currency_vote'],
                               rateCurrencyUser: detailvote['rate_currency_user'],
                             ),
@@ -1562,6 +1570,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             price: hargaAsli,
                             fromDetail: true,
                             idUser: idUser,
+                            flag_login: detailvote['flag_login'],
                             rateCurrency: detailvote['rate_currency_vote'],
                             rateCurrencyUser: detailvote['rate_currency_user'],
                           ),

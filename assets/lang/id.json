@@ -63,7 +63,8 @@
       "bot_nav_1": "Beranda",
       "bot_nav_2": "Eksplor",
       "bot_nav_3": "Pesanan",
-      "bot_nav_4": "Info"
+      "bot_nav_4": "Info",
+      "more" : "Lihat Lebih Banyak"
     },
 
   "cari_vote": "Cari vote pilihanmu",
@@ -98,7 +99,10 @@
     "belum_ada_transaksi" : "Belum ada Transaksi",
     "beli_lagi" : "Beli Lagi",
     "finalis" : "Finalis",
-    "mulai_dari" : "Mulai dari"
+    "mulai_dari" : "Mulai dari",
+    "no_data" : "Data tidak ditemukan",
+    "tutorial_vote_text" : "Tutorial Voting di Kreen Vote",
+    "s_n_k_vote" : "Syarat dan Ketentuan Voting"
   },
 
   "lastPressed" : "Tekan kembali untuk keluar aplikasi",
@@ -263,8 +267,8 @@
     "warning_order_4" : " Anda sudah masuk di email.",
     "expired_at" : "Berlaku hingga ",
     "selesai" : "Selesai",
-    "segera" : "Segera",
-    "habis" : "Habis"
+    "segera" : "SEGERA",
+    "habis" : "HABIS"
   },
 
   "order_menunggu" : "Menunggu",

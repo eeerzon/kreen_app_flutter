@@ -4,7 +4,7 @@ import 'package:kreen_app_flutter/constants.dart';
 
 class TutorModal {
 
-  static Future<void> show(BuildContext context, String tutorialVote) async {
+  static Future<void> show(BuildContext context, String tutorialVote, String tutorialVoteText) async {
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,

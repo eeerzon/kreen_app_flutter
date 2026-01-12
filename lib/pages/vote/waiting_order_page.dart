@@ -16,14 +16,15 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 class WaitingOrderPage extends StatefulWidget {
   final String id_order;
   final bool formHistory;
-  const WaitingOrderPage({super.key, required this.id_order, this.formHistory = false});
+  final String? currency_session;
+  const WaitingOrderPage({super.key, required this.id_order, this.formHistory = false, required this.currency_session});
 
   @override
   State<WaitingOrderPage> createState() => _WaitingOrderPageState();
 }
 
 class _WaitingOrderPageState extends State<WaitingOrderPage> {
-  String? langCode;
+  String? langCode, currencyCode;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now();
@@ -40,6 +41,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadOrder();
       _startCountdown();
     });
@@ -80,6 +82,13 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     });
   }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
+  }
+
   Map<String, dynamic> detailOrder = {};
   Map<String, dynamic> voteOder = {};
   List<dynamic> voteOrderDetail = [];
@@ -93,7 +102,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   Future<void> _loadOrder() async {
 
-    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode);
+    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode);
 
     final tempOrder = resultOrder?['data'] ?? {};
 
@@ -299,6 +308,37 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
     String formattedDate = '-';
 
+    String? currencyRegion;
+    if (voteOder['order_region'] == "ID"){
+      currencyRegion = "IDR";
+    } else if (voteOder['order_region'] == "US"){
+      currencyRegion = "USD";
+    } else if (voteOder['order_region'] == "SG"){
+      currencyRegion = "SGD";
+    } else if (voteOder['order_region'] == "MY"){
+      currencyRegion = "MYR";
+    } else if (voteOder['order_region'] == "TH"){
+      currencyRegion = "THB";
+    } else if (voteOder['order_region'] == "VN"){
+      currencyRegion = "VND";
+    }
+
+    num user_currency_amount = num.parse(voteOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      user_currency_amount = user_currency_amount.ceil();
+    } else {
+      user_currency_amount = (user_currency_amount * 100).ceil() / 100;
+    }
+
+    num user_currency_total_payment = num.parse(voteOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      user_currency_total_payment = user_currency_total_payment.ceil();
+    } else {
+      user_currency_total_payment = (user_currency_total_payment * 100).ceil() / 100;
+    }
+
+    num fee = user_currency_total_payment - user_currency_amount;
+
     if (expiresAt.isNotEmpty) {
       try {
         // parsing string ke DateTime
@@ -440,7 +480,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Image.network(
                                     "$baseUrl/image/payment-method/${voteOder['payment_method_image']}",
@@ -455,25 +496,31 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     },
                                   ),
 
-                                  InkWell(
-                                    onTap: () {
-                                      if (tapinstruksi) {
-                                        tapinstruksi = false;
-                                      } else {
-                                        tapinstruksi = true;
-                                      }
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        Icon(Icons.info_outline, color: Colors.blue,),
-                                        Text(
-                                          paymentLang['instruksi_pembayaran'],
-                                          style: TextStyle(color: Colors.blue),
-                                        )
-                                      ],
-                                    ),
+                                  const SizedBox(width: 10,),
+                                  Text(
+                                    voteOder['bank_code'],
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   )
+
+                                  // InkWell(
+                                  //   onTap: () {
+                                  //     if (tapinstruksi) {
+                                  //       tapinstruksi = false;
+                                  //     } else {
+                                  //       tapinstruksi = true;
+                                  //     }
+                                  //   },
+                                  //   child: Row(
+                                  //     mainAxisAlignment: MainAxisAlignment.start,
+                                  //     children: [
+                                  //       Icon(Icons.info_outline, color: Colors.blue,),
+                                  //       Text(
+                                  //         paymentLang['instruksi_pembayaran'],
+                                  //         style: TextStyle(color: Colors.blue),
+                                  //       )
+                                  //     ],
+                                  //   ),
+                                  // )
                                 ],
                               ),
 
@@ -521,6 +568,30 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 color: Color.fromARGB(255, 224, 224, 224),
                               ),
 
+                              if (paymentDetail['qr_url'] != null) ...[
+                                SizedBox(height: 16,),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.network(
+                                        paymentDetail['qr_url'],
+                                        height: 200,
+                                        width: 200,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            height: 200,
+                                            width: 200,
+                                          );
+                                        },
+                                      )
+                                    ],
+                                  ),
+                                )
+                              ],
+
                               const SizedBox(height: 16,),
                               Text(
                                 paymentLang['kode_pesanan'],
@@ -533,13 +604,14 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
-                              const SizedBox(height: 25,),
-                              Text(
-                                paymentLang['nomor_pembayaran'],
-                                style: TextStyle(color: Colors.grey,),
-                              ),
-
                               if (paymentDetail['va_number'] != null) ...[
+
+                                const SizedBox(height: 25,),
+                                Text(
+                                  paymentLang['nomor_pembayaran'],
+                                  style: TextStyle(color: Colors.grey,),
+                                ),
+                              
                                 const SizedBox(height: 10,),
                                 InkWell(
                                   onTap: () async {
@@ -581,13 +653,13 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${paymentLang['total_pembayaran']} ${vote['currency_vote']}',
+                                '${paymentLang['total_pembayaran']} ($currencyRegion)',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${vote['currency_vote']} ${formatter.format(voteOder['total_amount'])}',
+                                '$currencyRegion ${formatter.format(voteOder['total_amount_pg'])}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               )
                             ],
@@ -662,7 +734,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                   ),
 
                                   Text(
-                                    '${vote['currency_vote']} ${formatter.format(voteOder['amount'])}'
+                                    '${widget.currency_session} ${formatter.format(user_currency_amount)}'
                                   )
                                 ],
                               ),
@@ -676,7 +748,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                   ),
 
                                   Text(
-                                    '${vote['currency_vote']} ${formatter.format(voteOder['fees'])}'
+                                    '${widget.currency_session} ${formatter.format(fee)}'
                                   )
                                 ],
                               ),
@@ -691,7 +763,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                   ),
 
                                   Text(
-                                    '${vote['currency_vote']} ${formatter.format(voteOder['total_amount'])}',
+                                    '${widget.currency_session} ${formatter.format(user_currency_total_payment)}',
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   )
                                 ],

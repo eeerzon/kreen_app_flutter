@@ -20,9 +20,9 @@
   "pick_language" : "Choose Language",
   "pick_currency" : "Choose Currency",
 
-  "lewati" : "Lewati",
-  "lanjut" : "Lanjut",
-  "selesai" : "Selesai",
+  "lewati" : "Skip",
+  "lanjut" : "Next",
+  "selesai" : "Done",
   "login": "Login",
   "guest_login": "Login as Guest",
   "login_as": "or",
@@ -63,7 +63,8 @@
       "bot_nav_1": "Home",
       "bot_nav_2": "Explore",
       "bot_nav_3": "Order",
-      "bot_nav_4": "Info"
+      "bot_nav_4": "Info",
+      "more" : "See More"
   },
 
   "cari_vote": "Search vote",
@@ -98,7 +99,10 @@
     "belum_ada_transaksi" : "No transaction history available",
     "beli_lagi" : "Buy Again",
     "Finalis" : "Finalist",
-    "mulai_dari" : "Start from"
+    "mulai_dari" : "Start from",
+    "no_data" : "No data found",
+    "tutorial_vote_text" : "Voting Tutorial on Kreen Vote",
+    "s_n_k_vote" : "Terms and Conditions of Voting"
   },
 
   "lastPressed" : "Press back again to exit the application",
@@ -263,8 +267,8 @@
     "warning_order_4": " you are logged in to your email.",
     "expired_at": "Valid until ",
     "selesai": "Done",
-    "segera": "Soon",
-    "habis": "Sold out"
+    "segera": "SOON",
+    "habis": "SOLD OUT"
   },
 
   "order_menunggu" : "waiting",

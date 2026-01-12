@@ -14,14 +14,16 @@ import 'package:shimmer/shimmer.dart';
 
 class WaitingOrderEvent extends StatefulWidget {
   final String id_order;
-  const WaitingOrderEvent({super.key, required this.id_order});
+  final bool formHistory;
+  final String? currency_session;
+  const WaitingOrderEvent({super.key, required this.id_order, this.formHistory = false, required this.currency_session});
 
   @override
   State<WaitingOrderEvent> createState() => _WaitingOrderEventState();
 }
 
 class _WaitingOrderEventState extends State<WaitingOrderEvent> {
-  String? langCode;
+  String? langCode, currencyCode;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now();
@@ -38,6 +40,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadOrder();
       _startCountdown();
     });
@@ -78,6 +81,13 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     });
   }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
+  }
+
   Map<String, dynamic> detailOrder = {};
   Map<String, dynamic> eventOder = {};
   List<dynamic> eventOrderDetail = [];
@@ -90,7 +100,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
   Future<void> _loadOrder() async {
 
-    final resultOrder = await ApiService.get("/order/event/${widget.id_order}");
+    final resultOrder = await ApiService.get("/order/event/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode);
 
     final tempOrder = resultOrder?['data'] ?? {};
 
@@ -267,6 +277,37 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
     String formattedDate = '-';
 
+    String? currencyRegion;
+    if (eventOder['order_region'] == "ID"){
+      currencyRegion = 'IDR';
+    } else if (eventOder['order_region'] == "US"){
+      currencyRegion = 'USD';
+    } else if (eventOder['order_region'] == "SG"){
+      currencyRegion = 'SGD';
+    } else if (eventOder['order_region'] == "MY"){
+      currencyRegion = 'MYR';
+    } else if (eventOder['order_region'] == "TH"){
+      currencyRegion = 'THB';
+    } else if (eventOder['order_region'] == "VN"){
+      currencyRegion = 'VND';
+    }
+
+    num user_currency_amount = num.parse(eventOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      user_currency_amount = user_currency_amount.ceil();
+    } else {
+      user_currency_amount = (user_currency_amount * 100).ceil() / 100;
+    }
+
+    num user_currency_total_payment = num.parse(eventOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      user_currency_total_payment = user_currency_total_payment.ceil();
+    } else {
+      user_currency_total_payment = (user_currency_total_payment * 100).ceil() / 100;
+    }
+
+    num fee = user_currency_total_payment - user_currency_amount;
+
     if (expiresAt.isNotEmpty) {
       try {
         // parsing string ke DateTime
@@ -408,7 +449,8 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Image.network(
                                     "$baseUrl/image/payment-method/${eventOder['payment_method_image']}",
@@ -423,32 +465,38 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     },
                                   ),
 
-                                  InkWell(
-                                    onTap: () {
-                                      if (tapinstruksi) {
-                                        tapinstruksi = false;
-                                      } else {
-                                        tapinstruksi = true;
-                                      }
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        Icon(Icons.info_outline, color: Colors.blue,),
-                                        Text(
-                                          paymentLang['instruksi_pembayaran'], //'Instruksi Pembayaran',
-                                          style: TextStyle(color: Colors.blue),
-                                        )
-                                      ],
-                                    ),
+                                  const SizedBox(width: 10,),
+                                  Text(
+                                    eventOder['bank_code'],
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   )
+
+                                  // InkWell(
+                                  //   onTap: () {
+                                  //     if (tapinstruksi) {
+                                  //       tapinstruksi = false;
+                                  //     } else {
+                                  //       tapinstruksi = true;
+                                  //     }
+                                  //   },
+                                  //   child: Row(
+                                  //     mainAxisAlignment: MainAxisAlignment.start,
+                                  //     children: [
+                                  //       Icon(Icons.info_outline, color: Colors.blue,),
+                                  //       Text(
+                                  //         paymentLang['instruksi_pembayaran'],
+                                  //         style: TextStyle(color: Colors.blue),
+                                  //       )
+                                  //     ],
+                                  //   ),
+                                  // )
                                 ],
                               ),
 
                               if (tapinstruksi) ... [
                                 const SizedBox(height: 10,),
                                 Text(
-                                  paymentLang['instruksi_pembayaran'], //'Instruksi Pembayaran',
+                                  paymentLang['instruksi_pembayaran'],
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
 
@@ -489,6 +537,30 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 color: Color.fromARGB(255, 224, 224, 224),
                               ),
 
+                              if (paymentDetail['qr_url'] != null) ...[
+                                SizedBox(height: 16,),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.network(
+                                        paymentDetail['qr_url'],
+                                        height: 200,
+                                        width: 200,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            height: 200,
+                                            width: 200,
+                                          );
+                                        },
+                                      )
+                                    ],
+                                  ),
+                                )
+                              ],
+
                               const SizedBox(height: 16,),
                               Text(
                                 paymentLang['kode_pesanan'], //'Kode Pesanan',
@@ -501,13 +573,14 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
-                              const SizedBox(height: 25,),
-                              Text(
-                                paymentLang['nomor_pembayaran'], //'Nomor Pembayaran',
-                                style: TextStyle(color: Colors.grey,),
-                              ),
-
                               if (paymentDetail['va_number'] != null) ... [
+
+                                const SizedBox(height: 25,),
+                                Text(
+                                  paymentLang['nomor_pembayaran'], //'Nomor Pembayaran',
+                                  style: TextStyle(color: Colors.grey,),
+                                ),
+                                
                                 const SizedBox(height: 10,),
                                 InkWell(
                                   onTap: () async {
@@ -549,13 +622,13 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${paymentLang['total_pembayaran']} ${event['currency_vote']}', //'Total Pembayaran ${event['currency_event']}',
+                                '${paymentLang['total_pembayaran']} ($currencyRegion)', //'Total Pembayaran ${event['currency_event']}',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${event['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}',
+                                '$currencyRegion ${formatter.format(paymentDetail['amount'])}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               )
                             ],
@@ -625,7 +698,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
 
                                   Text(
-                                    '${event['currency_event']} ${formatter.format(eventOder['amount'])}'
+                                    '${widget.currency_session} ${formatter.format(user_currency_amount)}'
                                   )
                                 ],
                               ),
@@ -639,7 +712,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
 
                                   Text(
-                                    '${event['currency_event']} ${formatter.format(eventOder['fees'])}'
+                                    '${widget.currency_session} ${formatter.format(fee)}'
                                   )
                                 ],
                               ),
@@ -654,7 +727,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
 
                                   Text(
-                                    '${event['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}',
+                                    '${widget.currency_session} ${formatter.format(user_currency_total_payment)}',
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   )
                                 ],

@@ -56,6 +56,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   bool _isLoading = true;
   int counts = 0;
   num? harga_akhir;
+  num harga_akhir_asli = 0;
   late String? id_paket = widget.id_paket_bw ?? '';
   int detailIndex = 0;
   Map<String, dynamic> detailFinalis = {};
@@ -479,25 +480,27 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                   width: double.infinity,
                   child: Column(
                     children: [
-                      detailFinalis['poster_finalis'] != null
-                      ? 
-                        Image.network(
-                          detailFinalis['poster_finalis'],
-                          width: double.infinity,
-                          fit: BoxFit.cover, 
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.network(
+                      AspectRatio(
+                        aspectRatio: 4 / 5,
+                        child: detailFinalis['poster_finalis'] != null
+                          ? Image.network(
+                              detailFinalis['poster_finalis'],
+                              width: double.infinity,
+                              fit: BoxFit.cover, 
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.network(
+                                  "$baseUrl/noimage_finalis.png",
+                                  width: double.infinity,
+                                  fit: BoxFit.cover, 
+                                );
+                              },
+                            )
+                          : Image.network(
                               "$baseUrl/noimage_finalis.png",
                               width: double.infinity,
                               fit: BoxFit.cover, 
-                            );
-                          },
-                        )
-                      : Image.network(
-                          "$baseUrl/noimage_finalis.png",
-                          width: double.infinity,
-                          fit: BoxFit.cover, 
-                        ),
+                            ),
+                      ),
                   
                       SizedBox(height: 15,),
                       Container(
@@ -623,7 +626,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                   if (selectedQty != null) {
                                     setState(() {
                                       counts = selectedQty['counts'];
-                                      harga_akhir = selectedQty['harga'];
+                                      harga_akhir = selectedQty['harga_akhir'];
+                                      if (currencyCode != null) {
+                                        harga_akhir_asli = selectedQty['harga_akhir_asli'];
+                                      } else {
+                                        harga_akhir_asli = selectedQty['harga_akhir'];
+                                      }
                                       id_paket = selectedQty['id_paket'];
                                     });
                                   }
@@ -788,7 +796,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                   ),
                                   child: InkWell(
                                     onTap: () async {
-                                      await TutorModal.show(context, 'id');
+                                      await TutorModal.show(context, detailvote['tutorial_vote'], detailVoteLang!['tutorial_vote_text']);
                                     },
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1387,9 +1395,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                               nama_finalis: detailFinalis['nama_finalis'],
                               counts: counts,
                               totalHarga: totalHarga,
+                              totalHargaAsli: harga_akhir_asli,
                               id_paket: id_paket!,
                               fromDetail: true,
                               idUser: idUser,
+                              flag_login: detailvote['flag_login'],
+                              rateCurrency: detailvote['rate_currency_vote'],
+                              rateCurrencyUser: detailvote['rate_currency_user'],
                             ),
                           ),
                         );
@@ -1404,9 +1416,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                           nama_finalis: detailFinalis['nama_finalis'],
                           counts: counts,
                           totalHarga: totalHarga,
+                          totalHargaAsli: harga_akhir_asli,
                           id_paket: id_paket!,
                           fromDetail: true,
                           idUser: idUser,
+                          flag_login: detailvote['flag_login'],
+                          rateCurrency: detailvote['rate_currency_vote'],
+                          rateCurrencyUser: detailvote['rate_currency_user'],
                         ),
                       ),
                     );

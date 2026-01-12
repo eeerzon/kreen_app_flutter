@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -10,14 +10,15 @@ import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ExploreVote extends StatefulWidget {
-  const ExploreVote({super.key});
+  final String keyword;
+  const ExploreVote({super.key, required this.keyword});
 
   @override
   State<ExploreVote> createState() => _ExploreVoteState();
 }
 
 class _ExploreVoteState extends State<ExploreVote> {
-  String? langCode, search;
+  String? langCode, currencyCode;
   bool isLoadingContent = true;
   bool isFirst = true;
 
@@ -29,38 +30,16 @@ class _ExploreVoteState extends State<ExploreVote> {
     
     final endpointVote = isFirst ? "/vote" : "/vote?term=$term";
 
-    final responses = await ApiService.get(endpointVote);
+    final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode);
 
     if (!mounted) return;
 
     final resultVote = responses;
 
-    await _precacheAllImages(context, resultVote!['data']);
-
     setState(() {
-      votes = resultVote['data'] ?? [];
+      votes = resultVote!['data'] ?? [];
       isLoadingContent = false;
     });
-  }
-
-
-
-  Future<void> _precacheAllImages(BuildContext context, List<dynamic> votes) async {
-    List<String> allImageUrls = [];
-
-    // ambil semua img dari vote populer
-    for (var item in votes) {
-      final url = item['img']?.toString();
-      if (url != null && url.isNotEmpty) allImageUrls.add(url);
-    }
-
-    // hilangkan duplikat biar efisien
-    allImageUrls = allImageUrls.toSet().toList();
-
-    // pre-cache semua gambar
-    for (String url in allImageUrls) {
-      await precacheImage(NetworkImage(url), context);
-    }
   }
 
   Future<void> _getBahasa() async {
@@ -69,12 +48,17 @@ class _ExploreVoteState extends State<ExploreVote> {
       langCode = code;
     });
     
-    final tempsearch = await LangService.getText(langCode!, "search");
     final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
 
     setState(() {
-      search = tempsearch;
       votelang = tempvotelang;
+    });
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
     });
   }
 
@@ -84,8 +68,17 @@ class _ExploreVoteState extends State<ExploreVote> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadContent(isFirst, null);
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant ExploreVote oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.keyword != widget.keyword) {
+      _loadContent(false, widget.keyword);
+    }
   }
 
   @override
@@ -101,38 +94,62 @@ class _ExploreVoteState extends State<ExploreVote> {
   }
 
   Widget buildSkeleton() {
-    return ListView.builder(
-      itemCount: 4,
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: 10,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.65, // sesuaikan dengan card asli
+      ),
       itemBuilder: (context, index) {
-        
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.white,
-                ),
-              ),
+        return Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        }
-        
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Container(
-              height: 150,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // image placeholder
+                Container(
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Container(
+                    height: 14,
+                    width: double.infinity,
+                    color: Colors.white,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // subtitle
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Container(
+                    height: 12,
+                    width: 80,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -141,31 +158,37 @@ class _ExploreVoteState extends State<ExploreVote> {
   }
 
   Widget buildKonten() {
+    if (votes.isEmpty) {
+      return Column(
+        children: [
+          Image.asset(
+            'assets/images/placeholder.png',
+            width: 200,
+            height: 200,
+          ),
+
+          SizedBox(height: 12,),
+
+          Text(
+            votelang['no_data'] ?? 'No Data',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // search bar
-        TextField(
-          decoration: InputDecoration(
-            hintText: search,
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            prefixIcon: Icon(Icons.search),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          onChanged: (value) {
-            _loadContent(false, value);
-            setState(() {
-              buildKonten();
-            });
-          },
-        ),
 
         // konten
-        SizedBox(height: 16,),
         Expanded(
-          child: ListView.builder(
+          child: MasonryGridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 12,
             itemCount: votes.length,
             itemBuilder: (context, index) {
               final item = votes[index];
@@ -202,7 +225,7 @@ class _ExploreVoteState extends State<ExploreVote> {
               final hargaFormatted = formatter.format(item['price'] ?? 0);
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(0),
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
@@ -215,68 +238,81 @@ class _ExploreVoteState extends State<ExploreVote> {
                     );
                   },
                   child: Container(
-                    padding: kGlobalPadding,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.grey.shade300,),
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // Gambar
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: img.isNotEmpty
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                          child: AspectRatio(
+                            aspectRatio: 4 / 5,
+                            child: img.isNotEmpty
                               ? FadeInImage.assetNetwork(
-                                  placeholder: 'assets/images/placeholder.png',
+                                  placeholder: 'assets/images/img_placeholder.jpg',
                                   image: img,
-                                  height: 100,
-                                  width: 100,
                                   fit: BoxFit.cover,
-                                  imageErrorBuilder: (context, error, stack) => Container(
-                                    height: 100,
-                                    width: 100,
-                                    color: Colors.grey[300],
-                                    alignment: Alignment.center,
-                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                  imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                    aspectRatio: 4 / 5,
+                                    child: Image.asset(
+                                      'assets/images/img_broken.jpg',
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 )
-                              : Container(
-                                  height: 100,
-                                  width: 100,
-                                  color: Colors.grey[200],
-                                  alignment: Alignment.center,
-                                  child: const Icon(Icons.image_not_supported),
+                              : Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.cover,
                                 ),
+                          ),
                         ),
-                        const SizedBox(width: 12),
 
-                        // Konten
-                        Expanded(
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                              SizedBox(
+                                height: 38,
+                                child: Text(
+                                  title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
+
                               const SizedBox(height: 4),
-                              Text(
-                                formattedDate,
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              SizedBox(
+                                height: 38,
+                                  child: Text(
+                                  formattedDate,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey
+                                  ),
+                                ),
                               ),
+                              
+
                               const SizedBox(height: 4),
                               Text(
                                 item['price'] == 0
                                 ? votelang['harga_detail']  //'Gratis'
-                                : "${item['currency']} $hargaFormatted",
+                                : currencyCode == null
+                                  ? "${item['currency']} $hargaFormatted"
+                                  : "$currencyCode $hargaFormatted",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red,
@@ -290,7 +326,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                   ),
                 ),
               );
-            },
+            }
           ),
         ),
       ],

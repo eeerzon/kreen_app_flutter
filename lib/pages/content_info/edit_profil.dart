@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -492,6 +493,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextField(
                   focusNode: firstNameFocusNode,
                   controller: firstNameController,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r"[a-zA-Z\s]"),
+                    ),
+                    NameInputFormatter(),
+                  ],
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: infoLang['nama_depan_hint'],
@@ -525,6 +532,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextField(
                   controller: lastNameController,
                   onChanged: (_) => setState(() {}),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r"[a-zA-Z\s]"),
+                    ),
+                    NameInputFormatter(),
+                  ],
                   decoration: InputDecoration(
                     hintText: infoLang['nama_belakang_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -947,3 +960,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 }
+
+class NameInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text;
+
+    // Hapus spasi di awal & akhir
+    text = text.trim();
+
+    // Ubah multiple space jadi satu
+    text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+

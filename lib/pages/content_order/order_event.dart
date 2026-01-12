@@ -21,7 +21,7 @@ class OrderEvent extends StatefulWidget {
 }
 
 class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateMixin{
-  String? langCode;
+  String? langCode, currencyCode;
   late TabController _tabController;
   bool isLoading = true;
 
@@ -35,6 +35,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadContent();
     });
   }
@@ -54,6 +55,13 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       eventlang = tempeventLang;
       orderMenunggu = temporderMenunggu;
       orderGagal = temporderGagal;
+    });
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
     });
   }
 
@@ -446,7 +454,6 @@ class _EventSuccessState extends State<EventSuccess> {
               }
 
               var qty = item['qty'].toString();
-              var price = formatterNUmber.format(item['price'] + item['fees']);
               
               if (itemEvents['order_status'] == '0'){
                 statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
@@ -465,6 +472,30 @@ class _EventSuccessState extends State<EventSuccess> {
               }
 
               var eventPrice = item['price'] ?? 0;
+
+              String? currencyRegion;
+              if (item['region'] == "EU"){
+                currencyRegion = 'EUR';
+              } else if (item['region'] == "ID"){
+                currencyRegion = 'IDR';
+              } else if (item['region'] == "PH"){
+                currencyRegion = 'PHP';
+              } else if (item['region'] == "SG"){
+                currencyRegion = 'SGD';
+              } else if (item['region'] == "US"){
+                currencyRegion = 'USD';
+              } else if (item['region'] == "TH"){
+                currencyRegion = 'THB';
+              } else if (item['region'] == "MY"){
+                currencyRegion = 'MYR';
+              } else if (item['region'] == "VN"){
+                currencyRegion = 'VND';
+              }
+
+              num totalPrice = item['price'] + item['fees'];
+              num totalPriceRegion = totalPrice * item['currency_value_region'];
+              totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
+              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
@@ -592,7 +623,7 @@ class _EventSuccessState extends State<EventSuccess> {
                                   Text(
                                     item['price'] == 0
                                     ? voteLang['harga_detail'] ?? "" //'Gratis'
-                                    : "${item['currency']} $price",
+                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ],
@@ -883,7 +914,6 @@ class _EventPendingState extends State<EventPending> {
               }
 
               var qty = item['qty'].toString();
-              var price = formatterNUmber.format(item['price'] + item['fees']);
               
               if (itemEvents['order_status'] == '0'){
                 statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
@@ -900,6 +930,30 @@ class _EventPendingState extends State<EventPending> {
               } else if (itemEvents['order_status'] == '404'){
                 statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
               }
+
+              String? currencyRegion;
+              if (item['region'] == "EU"){
+                currencyRegion = 'EUR';
+              } else if (item['region'] == "ID"){
+                currencyRegion = 'IDR';
+              } else if (item['region'] == "PH"){
+                currencyRegion = 'PHP';
+              } else if (item['region'] == "SG"){
+                currencyRegion = 'SGD';
+              } else if (item['region'] == "US"){
+                currencyRegion = 'USD';
+              } else if (item['region'] == "TH"){
+                currencyRegion = 'THB';
+              } else if (item['region'] == "MY"){
+                currencyRegion = 'MYR';
+              } else if (item['region'] == "VN"){
+                currencyRegion = 'VND';
+              }
+
+              num totalPrice = item['price'] + item['fees'];
+              num totalPriceRegion = totalPrice * item['currency_value_region'];
+              totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
+              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
@@ -1027,7 +1081,7 @@ class _EventPendingState extends State<EventPending> {
                                   Text(
                                     item['price'] == 0
                                     ? voteLang['harga_detail'] ?? "" //'Gratis'
-                                    : "${item['currency']} $price",
+                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ],
@@ -1047,7 +1101,7 @@ class _EventPendingState extends State<EventPending> {
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'])),
+                                    MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency_pg'],)),
                                   );
                                 },
                                 child: Container(
@@ -1319,7 +1373,6 @@ class _EventFailState extends State<EventFail> {
               }
 
               var qty = item['qty'].toString();
-              var price = formatterNUmber.format(item['price'] + item['fees']);
               
               if (itemEvents['order_status'] == '0'){
                 statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
@@ -1338,6 +1391,30 @@ class _EventFailState extends State<EventFail> {
               }
 
               var eventPrice = item['price'] ?? 0;
+
+              String? currencyRegion;
+              if (item['region'] == "EU"){
+                currencyRegion = 'EUR';
+              } else if (item['region'] == "ID"){
+                currencyRegion = 'IDR';
+              } else if (item['region'] == "PH"){
+                currencyRegion = 'PHP';
+              } else if (item['region'] == "SG"){
+                currencyRegion = 'SGD';
+              } else if (item['region'] == "US"){
+                currencyRegion = 'USD';
+              } else if (item['region'] == "TH"){
+                currencyRegion = 'THB';
+              } else if (item['region'] == "MY"){
+                currencyRegion = 'MYR';
+              } else if (item['region'] == "VN"){
+                currencyRegion = 'VND';
+              }
+
+              num totalPrice = item['price'] + item['fees'];
+              num totalPriceRegion = totalPrice * item['currency_value_region'];
+              totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
+              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
@@ -1465,7 +1542,7 @@ class _EventFailState extends State<EventFail> {
                                   Text(
                                     item['price'] == 0
                                     ? voteLang['harga_detail'] ?? "" //'Gratis'
-                                    : "${item['currency']} $price",
+                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ],

@@ -202,12 +202,15 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
       
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        child: token == null 
-          ? Align(
-              alignment: Alignment.center,
-              child: getLoginUser(),
-            )
-          : _pages[_selectedIndex],
+        child: token == null
+            ? KeyedSubtree(
+                key: const ValueKey('not-login'),
+                child: getLoginUser(),
+              )
+            : KeyedSubtree(
+                key: const ValueKey('logged-in'),
+                child: _pages[_selectedIndex],
+              ),
       ),
     );
   }
@@ -251,12 +254,25 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
 
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
+            onPressed: () async {
+              
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const LoginPage(notLog: true),
+                ),
               );
+
+              if (result == true) {
+                await _checkToken();
+
+                final newToken = await StorageService.getToken();
+                if (mounted) {
+                  setState(() {
+                    token = newToken;
+                  });
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

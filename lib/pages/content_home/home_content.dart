@@ -20,7 +20,14 @@ import 'package:kreen_app_flutter/widgets/auto_play_carousel.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
+  final VoidCallback onSeeMoreVote;
+  final VoidCallback onSeeMoreEvent;
+
+  const HomeContent({
+    super.key,
+    required this.onSeeMoreVote,
+    required this.onSeeMoreEvent,
+  });
 
   @override
   State<HomeContent> createState() => _HomeContentState();
@@ -42,6 +49,7 @@ class _HomeContentState extends State<HomeContent> {
   String? partner, partner_btn;
   String? news_title, news_desc;
   String? leaderboard_title;
+  String? seeMore;
 
   bool isLoadingContent = true;
 
@@ -96,6 +104,8 @@ class _HomeContentState extends State<HomeContent> {
 
       news_title = homeContent['news_title'];
       news_desc = homeContent['news_desc'];
+
+      seeMore = homeContent['more'];
 
       voteLang = tempvoteLang;
     });
@@ -643,39 +653,71 @@ class _HomeContentState extends State<HomeContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // Image.asset(
-                            //   "assets/images/img_event.png",
-                            //   width: 30,   // atur sesuai kebutuhan
+                            // SvgPicture.network(
+                            //   '$baseUrl/image/home/vote-populer.png',
+                            //   width: 30,
                             //   height: 30,
                             //   fit: BoxFit.contain,
                             // ),
-                            SvgPicture.network(
-                              '$baseUrl/image/home/star.svg',
+
+                            Image.network(
+                              '$baseUrl/image/home/vote-populer.png',
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
                             ),
 
                             const SizedBox(width: 12),
-                            //text
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     vote_title!,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 16,
-                                      color: Colors.red,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            // tombol MORE di paling kanan
+                            InkWell(
+                              onTap: widget.onSeeMoreVote,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: 150,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        seeMore!,
+                                        softWrap: true,
+                                        maxLines: 2,
+                                        textAlign: TextAlign.right,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.red,
+                                    ),
+                                  ],
+                                )
+                              ),
+                            )
                           ],
                         ),
 
@@ -749,27 +791,28 @@ class _HomeContentState extends State<HomeContent> {
                                           // gambar
                                           ClipRRect(
                                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                            child: img.isNotEmpty
-                                              ? FadeInImage.assetNetwork(
-                                                  placeholder: 'assets/images/placeholder.png',
-                                                  image: img,
-                                                  height: 180,
-                                                  width: double.infinity,
-                                                  fit: BoxFit.cover,
-                                                  fadeInDuration: const Duration(milliseconds: 300),
-                                                  imageErrorBuilder: (context, error, stack) => Container(
-                                                    height: 180,
-                                                    color: Colors.grey[300],
-                                                    alignment: Alignment.center,
-                                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                            child: AspectRatio(
+                                              aspectRatio: 4 / 5,
+                                              child: img.isNotEmpty
+                                                ? FadeInImage.assetNetwork(
+                                                    placeholder: 'assets/images/img_placeholder.jpg',
+                                                    image: img,
+                                                    width: double.infinity,
+                                                    fit: BoxFit.cover,
+                                                    fadeInDuration: const Duration(milliseconds: 300),
+                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                                      aspectRatio: 4 / 5,
+                                                      child: Image.asset(
+                                                        'assets/images/img_broken.jpg',
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.cover,
                                                   ),
-                                                )
-                                              : Container(
-                                                  height: 180,
-                                                  color: Colors.grey[200],
-                                                  alignment: Alignment.center,
-                                                  child: const Icon(Icons.image_not_supported),
-                                                ),
+                                            ),
                                           ),
 
                                           // isi teks
@@ -838,18 +881,19 @@ class _HomeContentState extends State<HomeContent> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            // Image.asset(
-                            //   "assets/images/img_event.png",
-                            //   width: 30,   // atur sesuai kebutuhan
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
-                            SvgPicture.network(
-                              '$baseUrl/image/home/vote.svg',
-                              width: 30,
+                            Image.network(
+                              "$baseUrl/image/home/juara1.png",
+                              width: 30,   // atur sesuai kebutuhan
                               height: 30,
                               fit: BoxFit.contain,
                             ),
+
+                            // SvgPicture.network(
+                            //   '$baseUrl/image/home/vote.svg',
+                            //   width: 30,
+                            //   height: 30,
+                            //   fit: BoxFit.contain,
+                            // ),
 
                             const SizedBox(width: 12),
                             //text
@@ -964,25 +1008,28 @@ class _HomeContentState extends State<HomeContent> {
                                           // gambar
                                           ClipRRect(
                                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                            child: img.isNotEmpty
-                                                ? Image.network(
-                                                    img,
-                                                    height: 180,
+                                            child: AspectRatio(
+                                              aspectRatio: 4 / 5,
+                                              child: img.isNotEmpty
+                                                ? FadeInImage.assetNetwork(
+                                                    placeholder: 'assets/images/img_placeholder.jpg',
+                                                    image: img,
                                                     width: double.infinity,
                                                     fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stack) => Container(
-                                                      height: 180,
-                                                      color: Colors.grey[300],
-                                                      alignment: Alignment.center,
-                                                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                                                    fadeInDuration: const Duration(milliseconds: 300),
+                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                                      aspectRatio: 4 / 5,
+                                                      child: Image.asset(
+                                                        'assets/images/img_broken.jpg',
+                                                        fit: BoxFit.cover,
+                                                      ),
                                                     ),
                                                   )
-                                                : Container(
-                                                    height: 180,
-                                                    color: Colors.grey[200],
-                                                    alignment: Alignment.center,
-                                                    child: const Icon(Icons.image_not_supported),
+                                                : Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.cover,
                                                   ),
+                                            ), 
                                           ),
 
                                           // isi teks
@@ -1065,17 +1112,17 @@ class _HomeContentState extends State<HomeContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // Image.asset(
-                            //   "assets/images/img_event.png",
-                            //   width: 30,   // atur sesuai kebutuhan
+                            // SvgPicture.network(
+                            //   '$baseUrl/image/home/star.svg',
+                            //   width: 30,
                             //   height: 30,
                             //   fit: BoxFit.contain,
                             // ),
-                            SvgPicture.network(
-                              '$baseUrl/image/home/star.svg',
+
+                            Image.network(
+                              '$baseUrl/image/home/hits-event.png',
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
@@ -1091,13 +1138,46 @@ class _HomeContentState extends State<HomeContent> {
                                     event_title!,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.red,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            // tombol MORE di paling kanan
+                            InkWell(
+                              onTap: widget.onSeeMoreEvent,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: 150,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        seeMore!,
+                                        softWrap: true,
+                                        maxLines: 2,
+                                        textAlign: TextAlign.right,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.red,
+                                    ),
+                                  ],
+                                )
+                              ),
+                            )
                           ],
                         ),
 
@@ -1181,25 +1261,28 @@ class _HomeContentState extends State<HomeContent> {
                                             children: [
                                               ClipRRect(
                                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                                child: img.isNotEmpty
-                                                  ? Image.network(
-                                                      img,
-                                                      height: 180,
-                                                      width: double.infinity,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stack) => Container(
-                                                        height: 180,
-                                                        color: Colors.grey[300],
-                                                        alignment: Alignment.center,
-                                                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                                                child: AspectRatio(
+                                                  aspectRatio: 4 / 5,
+                                                  child: img.isNotEmpty
+                                                    ? FadeInImage.assetNetwork(
+                                                        placeholder: 'assets/images/img_placeholder.jpg',
+                                                        image: img,
+                                                        width: double.infinity,
+                                                        fit: BoxFit.cover,
+                                                        fadeInDuration: const Duration(milliseconds: 300),
+                                                        imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                                          aspectRatio: 4 / 5,
+                                                          child: Image.asset(
+                                                            'assets/images/img_broken.jpg',
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : Image.asset(
+                                                        'assets/images/img_broken.jpg',
+                                                        fit: BoxFit.cover,
                                                       ),
-                                                    )
-                                                  : Container(
-                                                      height: 180,
-                                                      color: Colors.grey[200],
-                                                      alignment: Alignment.center,
-                                                      child: const Icon(Icons.image_not_supported),
-                                                    ),
+                                                ),
                                               ),
                                               Positioned(
                                                 top: 8,
@@ -1290,17 +1373,17 @@ class _HomeContentState extends State<HomeContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // Image.asset(
-                            //   "assets/images/img_calender.png",
-                            //   width: 30,   // atur sesuai kebutuhan
+                            // SvgPicture.network(
+                            //   '$baseUrl/image/home/vote.svg',
+                            //   width: 30,
                             //   height: 30,
                             //   fit: BoxFit.contain,
                             // ),
-                            SvgPicture.network(
-                              '$baseUrl/image/home/vote.svg',
+
+                            Image.network(
+                              '$baseUrl/image/home/vote-terbaru.png',
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
@@ -1316,7 +1399,6 @@ class _HomeContentState extends State<HomeContent> {
                                     latest_vote!,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.red,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -1324,6 +1406,40 @@ class _HomeContentState extends State<HomeContent> {
                                 ],
                               ),
                             ),
+
+                            // tombol MORE di paling kanan
+                            InkWell(
+                              onTap: widget.onSeeMoreVote,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: 150,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        seeMore!,
+                                        softWrap: true,
+                                        maxLines: 2,
+                                        textAlign: TextAlign.right,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.red,
+                                    ),
+                                  ],
+                                )
+                              ),
+                            )
                           ],
                         ),
 
@@ -1397,25 +1513,28 @@ class _HomeContentState extends State<HomeContent> {
                                           // gambar
                                           ClipRRect(
                                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                            child: img.isNotEmpty
-                                                ? Image.network(
-                                                    img,
-                                                    height: 180,
+                                            child: AspectRatio(
+                                              aspectRatio: 4 / 5,
+                                              child: img.isNotEmpty
+                                                ? FadeInImage.assetNetwork(
+                                                    placeholder: 'assets/images/img_placeholder.jpg',
+                                                    image: img,
                                                     width: double.infinity,
                                                     fit: BoxFit.cover,
-                                                    errorBuilder: (context, error, stack) => Container(
-                                                      height: 180,
-                                                      color: Colors.grey[300],
-                                                      alignment: Alignment.center,
-                                                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                                                    fadeInDuration: const Duration(milliseconds: 300),
+                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                                      aspectRatio: 4 / 5,
+                                                      child: Image.asset(
+                                                        'assets/images/img_broken.jpg',
+                                                        fit: BoxFit.cover,
+                                                      ),
                                                     ),
                                                   )
-                                                : Container(
-                                                    height: 180,
-                                                    color: Colors.grey[200],
-                                                    alignment: Alignment.center,
-                                                    child: const Icon(Icons.image_not_supported),
+                                                : Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.cover,
                                                   ),
+                                            ),
                                           ),
 
                                           // isi teks
@@ -1482,17 +1601,17 @@ class _HomeContentState extends State<HomeContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // Image.asset(
-                            //   "assets/images/img_event.png",
-                            //   width: 30,   // atur sesuai kebutuhan
+                            // SvgPicture.network(
+                            //   '$baseUrl/image/home/vote.svg',
+                            //   width: 30,
                             //   height: 30,
                             //   fit: BoxFit.contain,
                             // ),
-                            SvgPicture.network(
-                              '$baseUrl/image/home/vote.svg',
+
+                            Image.network(
+                              '$baseUrl/image/home/event-rekom.png',
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
@@ -1508,13 +1627,46 @@ class _HomeContentState extends State<HomeContent> {
                                     event_recomen!,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.red,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            // tombol MORE di paling kanan
+                            InkWell(
+                              onTap: widget.onSeeMoreEvent,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: 150,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        seeMore!,
+                                        softWrap: true,
+                                        maxLines: 2,
+                                        textAlign: TextAlign.right,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.red,
+                                    ),
+                                  ],
+                                )
+                              ),
+                            )
                           ],
                         ),
 
@@ -1598,25 +1750,28 @@ class _HomeContentState extends State<HomeContent> {
                                             children: [
                                               ClipRRect(
                                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                                child: img.isNotEmpty
-                                                  ? Image.network(
-                                                      img,
-                                                      height: 180,
-                                                      width: double.infinity,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stack) => Container(
-                                                        height: 180,
-                                                        color: Colors.grey[300],
-                                                        alignment: Alignment.center,
-                                                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                                                child: AspectRatio(
+                                                  aspectRatio: 4 / 5,
+                                                  child: img.isNotEmpty
+                                                    ? FadeInImage.assetNetwork(
+                                                        placeholder: 'assets/images/img_placeholder.jpg',
+                                                        image: img,
+                                                        width: double.infinity,
+                                                        fit: BoxFit.cover,
+                                                        fadeInDuration: const Duration(milliseconds: 300),
+                                                        imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                                          aspectRatio: 4 / 5,
+                                                          child: Image.asset(
+                                                            'assets/images/img_broken.jpg',
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : Image.asset(
+                                                        'assets/images/img_broken.jpg',
+                                                        fit: BoxFit.cover,
                                                       ),
-                                                    )
-                                                  : Container(
-                                                      height: 180,
-                                                      color: Colors.grey[200],
-                                                      alignment: Alignment.center,
-                                                      child: const Icon(Icons.image_not_supported),
-                                                    ),
+                                                ),
                                               ),
                                               Positioned(
                                                 top: 8,
@@ -1707,17 +1862,17 @@ class _HomeContentState extends State<HomeContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // Image.asset(
-                            //   "assets/images/img_search.png",
-                            //   width: 30,   // atur sesuai kebutuhan
+                            // SvgPicture.network(
+                            //   '$baseUrl/image/home/blog.svg',
+                            //   width: 30,
                             //   height: 30,
                             //   fit: BoxFit.contain,
                             // ),
-                            SvgPicture.network(
-                              '$baseUrl/image/home/blog.svg',
+
+                            Image.network(
+                              '$baseUrl/image/home/update.png',
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
@@ -1733,7 +1888,6 @@ class _HomeContentState extends State<HomeContent> {
                                     news_title!,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.red,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -1832,25 +1986,28 @@ class _HomeContentState extends State<HomeContent> {
                                           // gambar
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(8),
-                                            child: img.isNotEmpty
-                                              ? Image.network(
-                                                  img,
-                                                  height: 180,
-                                                  width: double.infinity,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stack) => Container(
-                                                    height: 180,
-                                                    color: Colors.grey[300],
-                                                    alignment: Alignment.center,
-                                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                            child: AspectRatio(
+                                              aspectRatio: 4 / 5,
+                                              child: img.isNotEmpty
+                                                ? FadeInImage.assetNetwork(
+                                                    placeholder: 'assets/images/img_placeholder.jpg',
+                                                    image: img,
+                                                    width: double.infinity,
+                                                    fit: BoxFit.cover,
+                                                    fadeInDuration: const Duration(milliseconds: 300),
+                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                                      aspectRatio: 4 / 5,
+                                                      child: Image.asset(
+                                                        'assets/images/img_broken.jpg',
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.cover,
                                                   ),
-                                                )
-                                              : Container(
-                                                  height: 180,
-                                                  color: Colors.grey[200],
-                                                  alignment: Alignment.center,
-                                                  child: const Icon(Icons.image_not_supported),
-                                                ),
+                                            ),
                                           ),
 
                                           // isi teks

@@ -50,19 +50,22 @@ class DeskripsiSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FadeInImage.assetNetwork(
-          placeholder: 'assets/images/img_placeholder.jpg',
-          image: data['banner'],
-          width: double.infinity,
-          fit: BoxFit.cover,
-          fadeInDuration: const Duration(milliseconds: 300),
-          imageErrorBuilder: (context, error, stackTrace) {
-            return Image.asset(
-              'assets/images/img_broken.jpg',
-              width: double.infinity,
-              fit: BoxFit.cover,
-            );
-          },
+        AspectRatio(
+          aspectRatio: 4 / 5,
+          child: FadeInImage.assetNetwork(
+            placeholder: 'assets/images/img_placeholder.jpg',
+            image: data['banner'],
+            width: double.infinity,
+            fit: BoxFit.cover,
+            fadeInDuration: const Duration(milliseconds: 300),
+            imageErrorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                'assets/images/img_broken.jpg',
+                width: double.infinity,
+                fit: BoxFit.cover,
+              );
+            },
+          ),
         ),
 
         const SizedBox(height: 8),
@@ -82,6 +85,8 @@ class DeskripsiSection extends StatelessWidget {
                       Text(
                         data['judul_vote'] ?? '-',
                         style: TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
 
@@ -152,7 +157,7 @@ class DeskripsiSection extends StatelessWidget {
                     const SizedBox(width: 5),
                     InkWell(
                       onTap: () async {
-                        await TutorModal.show(context, data['tutorial_vote']);
+                        await TutorModal.show(context, data['tutorial_vote'], lang['tutorial_vote_text']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -180,7 +185,7 @@ class DeskripsiSection extends StatelessWidget {
                     const SizedBox(width: 5),
                     InkWell(
                       onTap: () async {
-                        await SKModal.show(context, data['snk']);
+                        await SKModal.show(context, data['snk'], lang['s_n_k_vote']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -887,17 +892,20 @@ Widget buildTopCard({
         ),
         child: Column(
           children: [
-            Image.network(
-              image, 
-              height: isBig ? 120 : 90, 
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.network(
-                  '$baseUrl/noimage_finalis.png',
-                  height: isBig ? 120 : 90,
-                  fit: BoxFit.cover,
-                );
-              },
+            AspectRatio(
+              aspectRatio: 4 / 5,
+              child: Image.network(
+                image, 
+                height: isBig ? 120 : 90, 
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.network(
+                    '$baseUrl/noimage_finalis.png',
+                    height: isBig ? 120 : 90,
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -973,7 +981,7 @@ Widget buildListCard({
     padding: kGlobalPadding,
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       border: Border.all(color: Colors.grey.shade300,),
     ),
     child: Row(
@@ -983,19 +991,21 @@ Widget buildListCard({
         const SizedBox(width: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            image, 
-            height: 50, 
-            width: 50, 
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.network(
-                '$baseUrl/noimage_finalis.png',
-                height: 50,
-                width: 50,
+          child: SizedBox(
+            width: 50,
+            child: AspectRatio(
+              aspectRatio: 4 / 5,
+              child: Image.network(
+                image,
                 fit: BoxFit.cover,
-              );
-            },
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.network(
+                    '$baseUrl/noimage_finalis.png',
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 12),

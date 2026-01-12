@@ -19,13 +19,15 @@ class DetailOrderModal {
     List<dynamic> voteOrderDetail = [];
     List<dynamic> finalis = [];
     Map<String, dynamic> vote = {};
-    String? statusOrder;
+    String? statusOrder, currencyRegion;
     bool isLoading = true;
 
     String? langCode;
 
     Map<String, dynamic> paymentLang = {};
     Map<String, dynamic> voteLang = {};
+
+    num totalPriceRegion = 0;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
@@ -67,6 +69,28 @@ class DetailOrderModal {
       } else if (voteOder['order_status'] == '404'){
         statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
       }
+
+      if (voteOder['order_region'] == "ID"){
+        currencyRegion = "IDR";
+      } else if (voteOder['order_region'] == "US"){
+        currencyRegion = "USD";
+      } else if (voteOder['order_region'] == "SG"){
+        currencyRegion = "SGD";
+      } else if (voteOder['order_region'] == "MY"){
+        currencyRegion = "MYR";
+      } else if (voteOder['order_region'] == "TH"){
+        currencyRegion = "THB";
+      } else if (voteOder['order_region'] == "PH"){
+        currencyRegion = "PHP";
+      } else if (voteOder['order_region'] == "VN"){
+        currencyRegion = "VND";
+      } else if (voteOder['order_region'] == "EU"){
+        currencyRegion = "EUR";
+      }
+
+      totalPriceRegion = voteOder['total_amount'] * voteOder['currency_value_region'];
+      totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
+      totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
     }
 
     Widget buildSkeleton() {
@@ -454,7 +478,7 @@ class DetailOrderModal {
                                       Text(
                                         voteOder['total_amount'] == 0
                                         ? voteLang['harga_detail'] ?? "" //'Gratis'
-                                        : "${voteOder['currency_vote']} ${formatter.format(voteOder['total_amount'])}",
+                                        : "$currencyRegion ${formatter.format(totalPriceRegion)}",
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
                                     ],
@@ -579,7 +603,7 @@ class DetailOrderModal {
                               Text(voteLang['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
-                                "${voteOder['currency_vote']} ${formatter.format(voteOder['total_amount'])}",
+                                "$currencyRegion ${formatter.format(totalPriceRegion)}",
                                 style: TextStyle(fontWeight: FontWeight.bold),),
                             ]),
                             const TableRow(children: [
@@ -620,11 +644,13 @@ class DetailOrderModal {
     String? statusOrder, dateshow, maxend, formattedDate;
     bool isLoading = true;
 
-    String? langCode;
+    String? langCode, currencyRegion;
 
     Map<String, dynamic> paymentLang = {};
     Map<String, dynamic> voteLang = {};
     Map<String, dynamic> eventLang = {};
+
+    num totalPriceRegion = 0;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
@@ -703,6 +729,28 @@ class DetailOrderModal {
       } else if (eventOder['order_status'] == '404'){
         statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
       }
+
+      if (eventOder['order_region'] == "ID"){
+        currencyRegion = "IDR";
+      } else if (eventOder['order_region'] == "US"){
+        currencyRegion = "USD";
+      } else if (eventOder['order_region'] == "SG"){
+        currencyRegion = "SGD";
+      } else if (eventOder['order_region'] == "MY"){
+        currencyRegion = "MYR";
+      } else if (eventOder['order_region'] == "TH"){
+        currencyRegion = "THB";
+      } else if (eventOder['order_region'] == "PH"){
+        currencyRegion = "PHP";
+      } else if (eventOder['order_region'] == "VN"){
+        currencyRegion = "VND";
+      } else if (eventOder['order_region'] == "EU"){
+        currencyRegion = "EUR";
+      }
+
+      totalPriceRegion = eventOder['user_currency_total_payment'] * eventOder['currency_value_region'];
+      totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
+      totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
     }
 
     Widget buildSkeleton() {
@@ -1090,7 +1138,7 @@ class DetailOrderModal {
                                       Text(
                                         eventOder['amount'] == 0
                                         ? voteLang['harga_detail'] ?? "" //'Gratis'
-                                        : "${eventOder['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}",
+                                        : "$currencyRegion ${formatter.format(totalPriceRegion)}",
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
                                     ],
@@ -1283,7 +1331,7 @@ class DetailOrderModal {
                               Text(voteLang['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
-                                "${eventOder['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}",
+                                "$currencyRegion ${formatter.format(totalPriceRegion)}",
                                 style: TextStyle(fontWeight: FontWeight.bold),),
                             ]),
                             const TableRow(children: [

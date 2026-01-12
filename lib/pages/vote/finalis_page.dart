@@ -1,14 +1,12 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
 
 import 'dart:async';
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
-import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -171,13 +169,21 @@ class _FinalisPageState extends State<FinalisPage> {
   num totalHargaAsli = 0;
   num get totalHarga {
     num total = 0;
-    for (int i = 0; i < counts.length; i++) {
-      final hargaItem = num.tryParse(vote['harga_asli'].toString()) ?? 0;
-      total += counts[i] * hargaItem;
+    
+    if (currencyCode != null) {
+      for (int i = 0; i < counts.length; i++) {
+        final hargaItem = num.tryParse(vote['harga_asli'].toString()) ?? 0;
+        total += counts[i] * hargaItem;
+      }
+      totalHargaAsli = total;
+      total = total * (vote['rate_currency_user'] / vote['rate_currency_vote']);
+      total = (total * 100).ceil() / 100;
+    } else {
+      for (int i = 0; i < counts.length; i++) {
+        final hargaItem = num.tryParse(vote['harga'].toString()) ?? 0;
+        total += counts[i] * hargaItem;
+      }
     }
-    totalHargaAsli = total;
-    total = total * (vote['rate_currency_user'] / vote['rate_currency_vote']);
-    total = (total * 100).ceil() / 100;
     return total;
   }
 
@@ -449,132 +455,25 @@ class _FinalisPageState extends State<FinalisPage> {
 
                     String? idUser = getUser['id'];
 
-                    if (vote['flag_login'] == '1') {
-                      final token = await StorageService.getToken();
-
-                      if (token == null) {
-                        AwesomeDialog(
-                          context: context,
-                          dialogType: DialogType.noHeader,
-                          animType: AnimType.scale,
-                          dismissOnTouchOutside: true,
-                          body: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Icon(
-                                      Icons.close,
-                                      size: 30,
-                                    ),
-                                  )
-                                ],
-                              ),
-
-                              const SizedBox(height: 16,),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFE5E5),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Image.asset(
-                                  "assets/images/img_ovo30d.png",
-                                  height: 60,
-                                  width: 60,
-                                )
-                              ),
-
-                              const SizedBox(height: 24),
-                              Text(
-                                notLogin!,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-
-                              const SizedBox(height: 12),
-                              Text(
-                                notLoginDesc!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.black54, fontSize: 14),
-                              ),
-
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context, 
-                                    MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: color,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                                  elevation: 2,
-                                ),
-                                child: Text(
-                                  loginText!,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-                        ).show();
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StatePaymentManual(
-                              id_vote: slctedIdVote!,
-                              ids_finalis: ids_finalis,
-                              names_finalis: names_finalis,
-                              counts_finalis: counts_finalis,
-                              totalHarga: totalHarga,
-                              totalHargaAsli: totalHargaAsli,
-                              price: vote['harga_asli'],
-                              fromDetail: false,
-                              idUser: idUser,
-                              rateCurrency: vote['rate_currency_vote'],
-                              rateCurrencyUser: vote['rate_currency_user'],
-                            ),
-                          ),
-                        );
-                      }
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StatePaymentManual(
-                            id_vote: slctedIdVote!,
-                            ids_finalis: ids_finalis,
-                            names_finalis: names_finalis,
-                            counts_finalis: counts_finalis,
-                            totalHarga: totalHarga,
-                            totalHargaAsli: totalHargaAsli,
-                            price: vote['harga_asli'],
-                            fromDetail: false,
-                            idUser: idUser,
-                            rateCurrency: vote['rate_currency_vote'],
-                            rateCurrencyUser: vote['rate_currency_user'],
-                          ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StatePaymentManual(
+                          id_vote: slctedIdVote!,
+                          ids_finalis: ids_finalis,
+                          names_finalis: names_finalis,
+                          counts_finalis: counts_finalis,
+                          totalHarga: totalHarga,
+                          totalHargaAsli: totalHargaAsli,
+                          price: vote['harga_asli'],
+                          fromDetail: false,
+                          idUser: idUser,
+                          flag_login: vote['flag_login'],
+                          rateCurrency: vote['rate_currency_vote'],
+                          rateCurrencyUser: vote['rate_currency_user'],
                         ),
-                      );
-                    }
+                      ),
+                    );
                 },
                 child: Text(
                   remaining.inSeconds == 0
@@ -757,36 +656,39 @@ class _FinalisPageState extends State<FinalisPage> {
               child: Column(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(20)),
-                    child: ishas ?
-                      FadeInImage.assetNetwork(
-                        placeholder: 'assets/images/img_placeholder.jpg',
-                        image: item['poster_finalis'],
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        fadeInDuration: const Duration(milliseconds: 300),
-                        imageErrorBuilder: (context, error, stackTrace) {
-                          return Image.network(
-                            "$baseUrl/noimage_finalis.png",
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 5,
+                      child: ishas 
+                        ? FadeInImage.assetNetwork(
+                            placeholder: 'assets/images/img_placeholder.jpg',
+                            image: item['poster_finalis'],
                             width: double.infinity,
-                            fit: BoxFit.cover, 
-                          );
-                        },
-                      )
-                      : FadeInImage.assetNetwork(
-                          placeholder: 'assets/images/img_placeholder.jpg',
-                          image: "$baseUrl/noimage_finalis.png",
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 300),
-                          imageErrorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/img_broken.jpg',
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        ),
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 300),
+                            imageErrorBuilder: (context, error, stackTrace) {
+                              return Image.network(
+                                "$baseUrl/noimage_finalis.png",
+                                width: double.infinity,
+                                fit: BoxFit.cover, 
+                              );
+                            },
+                          )
+                        : FadeInImage.assetNetwork(
+                            placeholder: 'assets/images/img_placeholder.jpg',
+                            image: "$baseUrl/noimage_finalis.png",
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 300),
+                            imageErrorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/img_broken.jpg',
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
+                    ),
                   ),
 
                   const SizedBox(height: 10),
@@ -1388,6 +1290,7 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade400,),
           ),
         ),
         onChanged: onSearchChanged,

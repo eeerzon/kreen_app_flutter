@@ -24,10 +24,13 @@ class TiketEventPage extends StatefulWidget {
   final List<String>? ids_tiket;
   final List<String>? namas_tiket;
   final List<num>? prices_tiket;
+  final List<num>? prices_tiket_asli;
   final List<int> qty;
   final String? flag_samakan_input_tiket_pertama;
   final String? jenis_participant;
   final String? idUser;
+  final num rateCurrency;
+  final num rateCurrencyUser;
   
   const TiketEventPage({
     super.key, 
@@ -37,15 +40,19 @@ class TiketEventPage extends StatefulWidget {
     this.ids_tiket, 
     this.namas_tiket, 
     this.prices_tiket, 
+    this.prices_tiket_asli,
     this.flag_samakan_input_tiket_pertama,
     this.jenis_participant,
-    this.idUser});
+    this.idUser,
+    required this.rateCurrency,
+    required this.rateCurrencyUser
+  });
   @override
   State<TiketEventPage> createState() => _TiketEventPageState();
 }
 
 class _TiketEventPageState extends State<TiketEventPage> {
-  String? langCode;
+  String? langCode, currencyCode;
 
   bool _isLoading = true;
   bool _isFree = false;
@@ -149,6 +156,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadTiket();
 
       if (widget.price_global == 0) {
@@ -199,6 +207,13 @@ class _TiketEventPageState extends State<TiketEventPage> {
     });
   }
 
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
+    });
+  }
+
   Future<void> _loadTiket() async {
     final body = {
       "id_event": widget.id_event,
@@ -208,7 +223,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
     final List<dynamic> tempTiket = resultTiket?['data'] ?? [];
 
 
-    final resultEvent = await ApiService.post('/event/detail', body: body);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode);
     final Map<String, dynamic> tempEvent = resultEvent?['data'] ?? {};
 
     await _precacheAllImages(context, tempEvent);
@@ -381,6 +396,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
   Widget buildKonten() {
     final formatter = NumberFormat.decimalPattern("id_ID");
 
+    num totalHarga = 0;
+    num totalHargaAsli = 0;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -444,14 +462,17 @@ class _TiketEventPageState extends State<TiketEventPage> {
                   SizedBox(height: 10,),
                   Column(
                     children: List.generate(widget.namas_tiket!.length, (index) {
-                      if (eventTiket[index]['price'] != 0) {
-                        totalHarga = (eventTiket[index]['price'] * widget.qty[index]) as int;
-                      } else {
-                        totalHarga = eventTiket[index]['price'] as int;
-                      }
+                      final num price = widget.prices_tiket![index];
+                      final num price_asli = widget.prices_tiket_asli![index];
+                      final int qty = widget.qty[index];
+
+                      totalHarga += price * qty;
+                      totalHargaAsli += price_asli * qty;
                         
                       String hargaFormatted = '-';
-                      hargaFormatted = "${detailEvent['currency']} ${formatter.format(eventTiket[index]['price'] ?? 0)}";
+                      hargaFormatted = currencyCode == null
+                        ? "${detailEvent['currency']} ${formatter.format(price)}"
+                        : "$currencyCode ${formatter.format(price)}";
                       if (eventTiket[index]['price'] == 0) {
                         hargaFormatted = voteLang['harga_detail'];
                       }
@@ -488,7 +509,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                       Text(
                         totalHarga == 0
                           ? voteLang['harga_detail']
-                          : '${detailEvent['currency']} ${formatter.format(totalHarga)}'
+                          : currencyCode == null
+                            ? '${detailEvent['currency']} ${formatter.format(totalHarga)}'
+                            : '$currencyCode ${formatter.format(totalHarga)}',
                       )
                     ],
                   ),
@@ -1291,7 +1314,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                               names_tiket: widget.namas_tiket!, 
                               counts_tiket: widget.qty, 
                               prices_tiket: widget.prices_tiket!, 
+                              prices_tiket_asli: widget.prices_tiket_asli!,
                               totalHarga: totalHarga,
+                              totalHargaAsli: totalHargaAsli,
                               first_names: nameControllers,
                               genders: selectedGenders,
                               emails: emailControllers,
@@ -1303,6 +1328,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                               fromDetail: true,
                               jenis_participant: widget.jenis_participant!,
                               idUser: widget.idUser,
+                              rateCurrency: widget.rateCurrency,
+                              rateCurrencyUser: widget.rateCurrencyUser,
                             ),
                           ),
                         );

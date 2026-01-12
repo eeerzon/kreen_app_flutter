@@ -4,7 +4,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:kreen_app_flutter/constants.dart';
 
 class SKModal {
-  static Future<void> show(BuildContext context, String snk) async {
+  static Future<void> show(BuildContext context, String snk, String snkText) async {
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
@@ -28,7 +28,7 @@ class SKModal {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Syarat dan ketentuan Voting',
+                          snkText,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,

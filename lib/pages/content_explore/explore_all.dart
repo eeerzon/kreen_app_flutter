@@ -1,46 +1,32 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
-class ExploreEvent extends StatefulWidget {
+class ExploreAll extends StatefulWidget {
   final String keyword;
-  const ExploreEvent({super.key, required this.keyword});
+  const ExploreAll({super.key, required this.keyword});
 
   @override
-  State<ExploreEvent> createState() => _ExploreEventState();
+  State<ExploreAll> createState() => _ExploreAllState();
 }
 
-class _ExploreEventState extends State<ExploreEvent> {
+class _ExploreAllState extends State<ExploreAll> {
   String? langCode, currencyCode;
   bool isLoadingContent = true;
   bool isFirst = true;
-  
+
+  List<dynamic> allData = [];
   List<dynamic> events = [];
+  List<dynamic> votes = [];
+  List<dynamic> allDataCombained = [];
 
   Map<String, dynamic> votelang = {};
-
-  Future<void> _loadContent(bool isFirst, String? term) async {
-    
-    final endpointEvent = isFirst ? "/event" : "/event?term=$term";
-
-    final responses = await ApiService.get(endpointEvent, xLanguage: langCode, xCurrency: currencyCode);
-
-    if (!mounted) return;
-    
-    final resultEvent = responses;
-
-    setState(() {
-      events = resultEvent!['data'] ?? [];
-      isLoadingContent = false;
-    });
-  }
 
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -62,6 +48,32 @@ class _ExploreEventState extends State<ExploreEvent> {
     });
   }
 
+  Future<void> _loadContent(bool isFirst, String? term) async {
+    final endpointAll = isFirst ? "/global-search" : "/global-search?term=$term";
+
+    final responses = await ApiService.get(endpointAll, xLanguage: langCode, xCurrency: currencyCode);
+
+    if (!mounted) return;
+
+    final resultAll = responses;
+
+    events = resultAll!['data']['events'] as List<dynamic>;
+
+    votes = resultAll['data']['votes'] as List<dynamic>;
+
+    List<dynamic> allItems = [
+      ...events,
+      ...votes,
+    ];
+
+    sortByNearestDate(allItems);
+
+    setState(() {
+      allDataCombained = allItems;
+      isLoadingContent = false;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -74,7 +86,7 @@ class _ExploreEventState extends State<ExploreEvent> {
   }
 
   @override
-  void didUpdateWidget(covariant ExploreEvent oldWidget) {
+  void didUpdateWidget(covariant ExploreAll oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.keyword != widget.keyword) {
       _loadContent(false, widget.keyword);
@@ -157,9 +169,8 @@ class _ExploreEventState extends State<ExploreEvent> {
     );
   }
 
-
   Widget buildKonten() {
-    if (events.isEmpty) {
+    if (allDataCombained.isEmpty) {
       return Column(
         children: [
           Image.asset(
@@ -171,7 +182,7 @@ class _ExploreEventState extends State<ExploreEvent> {
           SizedBox(height: 12,),
 
           Text(
-            votelang['no_data'] ?? 'Tidak ada data',
+            votelang['no_data'] ?? 'No Data',
             style: TextStyle(
               fontWeight: FontWeight.bold,
             ),
@@ -184,15 +195,15 @@ class _ExploreEventState extends State<ExploreEvent> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
 
-        // konten
+        //konten
         Expanded(
           child: MasonryGridView.count(
             crossAxisCount: 2,
             mainAxisSpacing: 16,
             crossAxisSpacing: 12,
-            itemCount: events.length,
+            itemCount: allDataCombained.length,
             itemBuilder: (context, index) {
-              final item = events[index];
+              final item = allDataCombained[index];
               final title = item['title']?.toString() ?? 'Tanpa Judul';
               final dateStr = item['date_event']?.toString() ?? '-';
               final img = item['img']?.toString() ?? '';
@@ -229,13 +240,27 @@ class _ExploreEventState extends State<ExploreEvent> {
                 padding: const EdgeInsets.all(0),
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            DetailEventPage(id_event: item['id_event'].toString(), price: item['price'],),
-                      ),
-                    );
+                    if (item['jenis'] == 'event') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              DetailEventPage(
+                                id_event: item['id_event'].toString(), 
+                                price: item['price'],
+                              ),
+                        ),
+                      );
+                    } else if (item['jenis'] == 'vote') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailVotePage(
+                            id_event: item['id_event'].toString(),
+                          ),
+                        ),
+                      );
+                    }
                   },
                   child: Container(
                     width: double.infinity,
@@ -332,4 +357,23 @@ class _ExploreEventState extends State<ExploreEvent> {
       ],
     );
   }
+
+  DateTime parseDate(String date) {
+    return DateTime.parse(date); // yyyy-MM-dd
+  }
+
+  void sortByNearestDate(List<dynamic> list) {
+    final now = DateTime.now();
+
+    list.sort((a, b) {
+      final dateA = parseDate(a['date_event']);
+      final dateB = parseDate(b['date_event']);
+
+      final diffA = dateA.difference(now).inDays.abs();
+      final diffB = dateB.difference(now).inDays.abs();
+
+      return diffA.compareTo(diffB);
+    });
+  }
+
 }

@@ -1,6 +1,5 @@
 // ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously, prefer_typing_uninitialized_variables
 
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
@@ -11,7 +10,6 @@ import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
-import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -46,11 +44,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   bool _isLoading = true;
   int counts = 0;
   num? harga_akhir;
+  num harga_akhir_asli = 0;
   late String? id_paket = widget.id_paket_bw;
   int detailIndex = 0;
   Map<String, dynamic> detailFinalis = {};
   TextEditingController? controllers;
   Map<String, dynamic> detailvote = {};
+  Map<String, dynamic> voteLang = {};
 
   String? langCode, currencyCode;
   String? notLogin, notLoginDesc, loginText;
@@ -163,6 +163,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     });
 
     final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
+    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
     final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
     final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
     final templogin = await LangService.getText(langCode!, "login");
@@ -194,6 +195,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       videoProfilText = tempdetailFinalis['profile_video'];
       noValidVideo = tempdetailFinalis['video_no_valid'];
       socialMediaText = tempdetailFinalis['sosial_media'];
+
+      voteLang = tempvoteLang;
     });
   }
 
@@ -233,8 +236,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   final formatter = NumberFormat.decimalPattern("id_ID");
   num get totalHarga {
+    if (widget.total_detail != null && widget.total_detail != 0) {
+      return widget.total_detail;
+    }
+
     final hargaItem = harga_akhir;
     if (hargaItem == null) return 0;
+
     return hargaItem;
   }
 
@@ -417,25 +425,28 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   width: double.infinity,
                   child: Column(
                     children: [
-                      detailFinalis['poster_finalis'] != null
-                      ? 
-                        Image.network(
-                          detailFinalis['poster_finalis'],
-                          width: double.infinity,
-                          fit: BoxFit.cover, 
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.network(
+                      AspectRatio(
+                        aspectRatio: 4 / 5,
+                        child: detailFinalis['poster_finalis'] != null
+                          ? Image.network(
+                              detailFinalis['poster_finalis'],
+                              width: double.infinity,
+                              fit: BoxFit.cover, 
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.network(
+                                  "$baseUrl/noimage_finalis.png",
+                                  width: double.infinity,
+                                  fit: BoxFit.cover, 
+                                );
+                              },
+                            )
+                          : Image.network(
                               "$baseUrl/noimage_finalis.png",
                               width: double.infinity,
                               fit: BoxFit.cover, 
-                            );
-                          },
-                        )
-                      : Image.network(
-                          "$baseUrl/noimage_finalis.png",
-                          width: double.infinity,
-                          fit: BoxFit.cover, 
-                        ),
+                            ),
+                      ),
+                      
                   
                       SizedBox(height: 15,),
                       Container(
@@ -562,7 +573,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   if (selectedQty != null) {
                                     setState(() {
                                       counts = selectedQty['counts'];
-                                      harga_akhir = selectedQty['harga'];
+                                      harga_akhir = selectedQty['harga_akhir'];
+                                      if (currencyCode != null) {
+                                        harga_akhir_asli = selectedQty['harga_akhir_asli'];
+                                      } else {
+                                        harga_akhir_asli = selectedQty['harga_akhir'];
+                                      }
                                       id_paket = selectedQty['id_paket'];
                                     });
                                   }
@@ -725,7 +741,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   ),
                                   child: InkWell(
                                     onTap: () async {
-                                      await TutorModal.show(context, 'id');
+                                      await TutorModal.show(context, detailvote['tutorial_vote'], voteLang['tutorial_vote_text']);
                                     },
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -895,126 +911,25 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
                   String? idUser = getUser['id'];
 
-                  if (detailvote['flag_login'] == '1') {
-                    final token = await StorageService.getToken();
-
-                      if (token == null) {
-                        AwesomeDialog(
-                          context: context,
-                          dialogType: DialogType.noHeader,
-                          animType: AnimType.scale,
-                          dismissOnTouchOutside: true,
-                          body: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Icon(
-                                      Icons.close,
-                                      size: 30,
-                                    ),
-                                  )
-                                ],
-                              ),
-
-                              const SizedBox(height: 16,),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFE5E5),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Image.asset(
-                                  "assets/images/img_ovo30d.png",
-                                  height: 60,
-                                  width: 60,
-                                )
-                              ),
-
-                              const SizedBox(height: 24),
-                              Text(
-                                notLogin!,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-
-                              const SizedBox(height: 12),
-                              Text(
-                                notLoginDesc!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.black54, fontSize: 14),
-                              ),
-
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context, 
-                                    MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: color,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                                  elevation: 2,
-                                ),
-                                child: Text(
-                                  loginText!,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-                        ).show();
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StatePaymentPaket(
-                              id_vote: detailFinalis['id_vote'],
-                              id_finalis: detailFinalis['id_finalis'],
-                              nama_finalis: detailFinalis['nama_finalis'],
-                              counts: counts,
-                              totalHarga: totalHarga,
-                              id_paket: id_paket!,
-                              fromDetail: true,
-                              idUser: idUser,
-                            ),
-                          ),
-                        );
-                      }
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StatePaymentPaket(
-                          id_vote: detailFinalis['id_vote'],
-                          id_finalis: detailFinalis['id_finalis'],
-                          nama_finalis: detailFinalis['nama_finalis'],
-                          counts: counts,
-                          totalHarga: totalHarga,
-                          id_paket: id_paket!,
-                          fromDetail: true,
-                          idUser: idUser,
-                        ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StatePaymentPaket(
+                        id_vote: detailFinalis['id_vote'],
+                        id_finalis: detailFinalis['id_finalis'],
+                        nama_finalis: detailFinalis['nama_finalis'],
+                        counts: counts,
+                        totalHarga: totalHarga,
+                        totalHargaAsli: harga_akhir_asli,
+                        id_paket: id_paket!,
+                        fromDetail: true,
+                        idUser: idUser,
+                        flag_login: detailvote['flag_login'],
+                        rateCurrency: detailvote['rate_currency_vote'],
+                        rateCurrencyUser: detailvote['rate_currency_user'],
                       ),
-                    );
-                  }
+                    ),
+                  );
 
                   
                 },

@@ -10,6 +10,7 @@ class PaketVoteModal {
   static Future<Map<String, dynamic>?> show(BuildContext context, int index, List<Map<String, dynamic>> paketTerbaik, List<Map<String, dynamic>> paketLainnya, Color color, Color bgColor, String? idPaketBw, String currency) async {
     int? selectedIndex, selectedVotes, counts;
     num? hargaGet;
+    num? hargaGetAsli;
     String? idPaket;
 
     final formatter = NumberFormat.decimalPattern("id_ID");
@@ -142,6 +143,7 @@ class PaketVoteModal {
                                 final qty = int.tryParse(item['qty'].toString()) ?? 0;
                                 final harga = double.tryParse(item['harga'].toString());
                                 final hargaAkhir = double.tryParse(item['harga_akhir'].toString());
+                                final hargaAkhirAsli = double.tryParse(item['harga_akhir_asli'].toString());
                                 final diskon = int.tryParse(item['diskon_persen']?.toString() ?? '0') ?? 0;
 
                                 final isSelected = selectedIndex == idx;
@@ -153,6 +155,7 @@ class PaketVoteModal {
                                       selectedVotes = qty;
                                       counts = qty;
                                       hargaGet = hargaAkhir;
+                                      hargaGetAsli = hargaAkhirAsli;
                                       idPaket = item['id'];
                                     });
                                   },
@@ -160,11 +163,10 @@ class PaketVoteModal {
                                     color: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     child: Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 6),
                                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                                       decoration: BoxDecoration(
                                         color: isSelected ? bgColor : Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(color: Colors.grey.shade300,),
                                       ),
                                       child: Row(
@@ -238,7 +240,8 @@ class PaketVoteModal {
                                 final item = entry.value;
 
                                 final qty = int.tryParse(item['qty'].toString()) ?? 0;
-                                final harga = double.tryParse(item['harga'].toString()) ?? 0;
+                                final harga = double.tryParse(item['harga_akhir'].toString()) ?? 0;
+                                final hargaAsli = double.tryParse(item['harga_akhir_asli'].toString()) ?? 0;
 
                                 final isSelected = selectedIndex == idx;
 
@@ -249,6 +252,7 @@ class PaketVoteModal {
                                       selectedVotes = qty;
                                       counts = qty;
                                       hargaGet = harga;
+                                      hargaGetAsli = hargaAsli;
                                       idPaket = item['id'];
                                     });
                                   },
@@ -256,11 +260,10 @@ class PaketVoteModal {
                                     color: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     child: Container(
-                                      margin: const EdgeInsets.symmetric(vertical: 6),
                                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                                       decoration: BoxDecoration(
                                         color: isSelected ? bgColor : Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(color: Colors.grey.shade300,),
                                       ),
                                       child: Row(
@@ -318,7 +321,7 @@ class PaketVoteModal {
                               ),
                               onPressed: selectedVotes == null
                                   ? null
-                                  : () => Navigator.pop(context, {'id_paket': idPaket, 'counts': counts, 'harga': hargaGet,}),
+                                  : () => Navigator.pop(context, {'id_paket': idPaket, 'counts': counts, 'harga_akhir': hargaGet, 'harga_akhir_asli': hargaGetAsli}),
                               child: Text(
                                 modalLang['konfirmasi'] ?? "", // "Konfirmasi",
                                 style: TextStyle(color: Colors.white),

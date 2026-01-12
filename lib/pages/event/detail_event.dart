@@ -37,6 +37,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
   List<String> ids_tiket = [];
   List<String> names_tiket = [];
   List<num> prices_tiket = [];
+  List<num> prices_tiket_asli = [];
   List<int?> selected_tiket = [];
 
   Map<String, dynamic> voteLang = {};
@@ -435,9 +436,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                   ids_tiket: ids_tiket,
                                   namas_tiket: names_tiket,
                                   prices_tiket: prices_tiket,
+                                  prices_tiket_asli: prices_tiket_asli,
                                   flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
                                   jenis_participant: detailEvent['jenis_participant'],
                                   idUser: idUser,
+                                  rateCurrency: detailEvent['rate_currency_event'],
+                                  rateCurrencyUser: detailEvent['rate_currency_user'],
                                 ),
                               ),
                             );
@@ -452,9 +456,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                   ids_tiket: ids_tiket,
                                   namas_tiket: names_tiket,
                                   prices_tiket: prices_tiket,
+                                  prices_tiket_asli: prices_tiket_asli,
                                   flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
                                   jenis_participant: detailEvent['jenis_participant'],
                                   idUser: idUser,
+                                  rateCurrency: detailEvent['rate_currency_event'],
+                                  rateCurrencyUser: detailEvent['rate_currency_user'],
                                 ),
                               ),
                             );
@@ -472,9 +479,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 ids_tiket: ids_tiket,
                                 namas_tiket: names_tiket,
                                 prices_tiket: prices_tiket,
+                                prices_tiket_asli: prices_tiket_asli,
                                 flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
                                 jenis_participant: detailEvent['jenis_participant'],
                                 idUser: idUser,
+                                rateCurrency: detailEvent['rate_currency_event'],
+                                rateCurrencyUser: detailEvent['rate_currency_user'],
                               ),
                             ),
                           );
@@ -489,9 +499,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 ids_tiket: ids_tiket,
                                 namas_tiket: names_tiket,
                                 prices_tiket: prices_tiket,
+                                prices_tiket_asli: prices_tiket_asli,
                                 flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
                                 jenis_participant: detailEvent['jenis_participant'],
                                 idUser: idUser,
+                                rateCurrency: detailEvent['rate_currency_event'],
+                                rateCurrencyUser: detailEvent['rate_currency_user'],
                               ),
                             ),
                           );
@@ -553,19 +566,22 @@ class _DetailEventPageState extends State<DetailEventPage> {
                       //   width: double.infinity,
                       // ),
 
-                      FadeInImage.assetNetwork(
-                        placeholder: 'assets/images/img_placeholder.jpg',
-                        image: detailEvent['img_organizer'],
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        fadeInDuration: const Duration(milliseconds: 300),
-                        imageErrorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/img_broken.jpg',
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          );
-                        },
+                      AspectRatio(
+                        aspectRatio: 4 / 5,
+                        child: FadeInImage.assetNetwork(
+                          placeholder: 'assets/images/img_placeholder.jpg',
+                          image: detailEvent['img_organizer'],
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 300),
+                          imageErrorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/images/img_broken.jpg',
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -598,72 +614,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                   detailEvent['title'],
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
-
-                                const SizedBox(height: 8),
-
-                                // Wrap maksimum 2 baris
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxHeight: 70, // cukup untuk 2 row chip
-                                  ),
-                                  child: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green.shade50,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          event['status'],
-                                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade50,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          detailEvent['flag_private'] == 1
-                                          ? "Private Event"
-                                          : 'Public Event',
-                                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.purple.shade50,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          detailEvent['type_event'],
-                                          style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.shade50,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          event['harga_max'] == 0
-                                          ? voteLang['harga_detail']
-                                          : eventLang['berbayar'],
-                                          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -683,6 +633,70 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             ),
                           )
                         ],
+                      ),
+
+                      SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxHeight: 70, // cukup untuk 2 row chip
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                event['status'],
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                detailEvent['flag_private'] == 1
+                                ? "Private Event"
+                                : 'Public Event',
+                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.purple.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                detailEvent['type_event'],
+                                style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                event['harga_max'] == 0
+                                ? voteLang['harga_detail']
+                                : eventLang['berbayar'],
+                                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
 
                       const SizedBox(height: 12),
@@ -1032,7 +1046,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         final bool belumBuka = DateTime.now().isBefore(dateOpenTiket);
 
                         final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
-                        final bool sudahTutup = DateTime.now().isAfter(dateOutTiket);
+                        final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0;
 
                         return Padding(
                           padding: EdgeInsets.only(bottom: 25),
@@ -1232,6 +1246,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
     names_tiket.clear();
     counts_tiket.clear();
     prices_tiket.clear();
+    prices_tiket_asli.clear();
 
     for (int i = 0; i < event['event_ticket'].length; i++) {
       final item = event['event_ticket'][i];
@@ -1241,6 +1256,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
         names_tiket.add(item['name_ticket']);
         counts_tiket.add(count);
         prices_tiket.add(item['price']);
+        prices_tiket_asli.add(item['price_asli']);
       }
     }
   }

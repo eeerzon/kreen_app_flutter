@@ -292,6 +292,12 @@ class _RegisPageState extends State<RegisPage> {
                   TextField(
                     controller: _namaController,
                     onChanged: (_) => setState(() {}),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-Z\s]"),
+                      ),
+                      NameInputFormatter(),
+                    ],
                     decoration: InputDecoration(
                       hintText: fullName!,
                       hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -586,6 +592,27 @@ class _RegisPageState extends State<RegisPage> {
           )
         ],
       ),
+    );
+  }
+}
+
+class NameInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text;
+
+    // Hapus spasi di awal & akhir
+    text = text.trim();
+
+    // Ubah multiple space jadi satu
+    text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

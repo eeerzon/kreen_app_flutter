@@ -21,14 +21,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final prefs = FlutterSecureStorage();
 
   List<Map<String, dynamic>> pages = [];
-  String dialog_title = "";
-  String lewati = "";
-  String lanjut = "";
-  String selesai = "";
-  String login = "";
-  String guest = "";
-  String? langCode;
+  String? dialog_title;
+  String? lewati;
+  String? lanjut;
+  String? selesai;
+  String? login;
+  String? guest;
+  String? langCode, currencyCode;
 
+  String _selectedLang = "id";
+  final Map<String, String> languages = {
+    "id": "Indonesia",
+    "en": "English"
+  };
 
   @override
   void initState() {
@@ -36,57 +41,53 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      _selectedLang = langCode!;
+      await _getCurrency();
       await _loadLanguage(langCode ?? "id");
     });
   }
 
   Future<void> _getBahasa() async {
-    langCode = await StorageService.getLanguage() ?? "id";
+    final code = await StorageService.getLanguage() ?? "id";
+
+    setState(() {
+      langCode = code;
+    });
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency() ?? "IDR";
+    await StorageService.setCurrency(code);
+
+    setState(() {
+      currencyCode = code;
+    });
   }
 
   //setting bahasa
   Future<void> _loadLanguage(String langCode) async {
     StorageService.setLanguage(langCode);
-    
-    final data = await LangService.loadOnboarding(langCode);
-    setState(() {
-      pages = data;
-    });
 
-    final data_dialog = await LangService.getText(langCode, "pick_language");
-    setState(() {
-      dialog_title = data_dialog;
-    });
+    final onboarding = await LangService.loadOnboarding(langCode);
+    final title = await LangService.getText(langCode, "pick_language");
+    final lewatiText = await LangService.getText(langCode, "lewati");
+    final lanjutText = await LangService.getText(langCode, "lanjut");
+    final selesaiText = await LangService.getText(langCode, "selesai");
+    final loginText = await LangService.getText(langCode, "login");
+    final guestText = await LangService.getText(langCode, "guest_login");
 
+    if (!mounted) return;
 
-    final data_lewati = await LangService.getText(langCode, "lewati");
     setState(() {
-      lewati = data_lewati;
-    });
-    final data_lanjut = await LangService.getText(langCode, "lanjut");
-    setState(() {
-      lanjut = data_lanjut;
-    });
-    final data_selesai = await LangService.getText(langCode, "selesai");
-    setState(() {
-      selesai = data_selesai;
-    });
-
-    final data_login = await LangService.getText(langCode, "login");
-    setState(() {
-      login = data_login;
-    });
-    final data_guest = await LangService.getText(langCode, "guest_login");
-    setState(() {
-      guest = data_guest;
+      pages = onboarding;
+      dialog_title = title;
+      lewati = lewatiText;
+      lanjut = lanjutText;
+      selesai = selesaiText;
+      login = loginText;
+      guest = guestText;
     });
   }
-
-  String _selectedLang = "id";
-  final Map<String, String> languages = {
-    "id": "Indonesia",
-    "en": "English"
-  };
 
   void _showLanguageDialog() {
     showDialog(
@@ -102,7 +103,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(dialog_title),
+                  Text(dialog_title ?? '-'),
                   IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
@@ -117,16 +118,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       value: entry.key,
                       groupValue: tempLang,
                       onChanged: (val) async {
-                        if (val != null) {
-                          setState(() {
-                            _selectedLang = val; // update global
-                          });
-                          setStateDialog(() {
-                            tempLang = val; // update local
-                          });
-                          await _loadLanguage(val);
-                          Navigator.pop(context); // langsung tutup popup
-                        }
+                        if (val == null) return;
+
+                        setStateDialog(() {
+                          tempLang = val;
+                        });
+
+                        await _loadLanguage(val);
+
+                        setState(() {
+                          _selectedLang = val;
+                        });
+
+                        Navigator.pop(context);
                       },
                       title: Row(
                         children: [
@@ -252,7 +256,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               ),
                               onPressed: _goToLogin,
                               child: Text(
-                                login,
+                                login ?? "-",
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
@@ -260,7 +264,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             GestureDetector(
                               onTap: _goToHome,
                               child: Text(
-                                guest,
+                                guest ?? "-",
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.red,
@@ -289,7 +293,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       TextButton(
                         onPressed: _finishOnboarding,
                         child: Text(
-                          lewati,
+                          lewati ?? "-",
                           style: TextStyle(color: Colors.grey, fontSize: 16),
                         ),
                       ),
@@ -316,7 +320,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       TextButton(
                         onPressed: _nextPage,
                         child: Text(
-                          _currentPage == pages.length - 1 ? selesai : lanjut,
+                          _currentPage == pages.length - 1 ? (selesai ?? "-") : (lanjut ?? "-"),
                           style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,

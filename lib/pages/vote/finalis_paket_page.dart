@@ -1,14 +1,12 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
 
 import 'dart:async';
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
-import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis_paket.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -34,6 +32,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   bool _isLoading = true;
   int counts = 0;
   num? harga_akhir;
+  num harga_akhir_asli = 0;
   String id_paket = '';
   String? slctedIdVote, slctedIdFinalis, slctedNamaFinalis;
 
@@ -463,126 +462,25 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
                       String? idUser = getUser['id'];
 
-                      if (vote['flag_login'] == '1') {
-                        final token = await StorageService.getToken();
-
-                        if (token == null) {
-                          AwesomeDialog(
-                            context: context,
-                            dialogType: DialogType.noHeader,
-                            animType: AnimType.scale,
-                            dismissOnTouchOutside: true,
-                            body: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    InkWell(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 30,
-                                      ),
-                                    )
-                                  ],
-                                ),
-
-                                const SizedBox(height: 16,),
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFE5E5),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Image.asset(
-                                    "assets/images/img_ovo30d.png",
-                                    height: 60,
-                                    width: 60,
-                                  )
-                                ),
-
-                                const SizedBox(height: 24),
-                                Text(
-                                  notLogin!,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-
-                                const SizedBox(height: 12),
-                                Text(
-                                  notLoginDesc!,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.black54, fontSize: 14),
-                                ),
-
-                                const SizedBox(height: 24),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    Navigator.push(
-                                      context, 
-                                      MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: color,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                                    elevation: 2,
-                                  ),
-                                  child: Text(
-                                    loginText!,
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                ),
-                                
-                                const SizedBox(height: 24),
-                              ],
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatePaymentPaket(
+                            id_vote: slctedIdVote!,
+                            id_finalis: slctedIdFinalis!,
+                            nama_finalis: slctedNamaFinalis!,
+                            counts: counts,
+                            totalHarga: totalHarga,
+                            totalHargaAsli: harga_akhir_asli,
+                            id_paket: id_paket,
+                            fromDetail: false,
+                            idUser: idUser,
+                            flag_login: vote['flag_login'],
+                            rateCurrency: vote['rate_currency_vote'],
+                            rateCurrencyUser: vote['rate_currency_user'],
                             ),
-                          ).show();
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StatePaymentPaket(
-                                id_vote: slctedIdVote!,
-                                id_finalis: slctedIdFinalis!,
-                                nama_finalis: slctedNamaFinalis!,
-                                counts: counts,
-                                totalHarga: totalHarga,
-                                id_paket: id_paket,
-                                fromDetail: false,
-                                idUser: idUser,
-                                ),
-                            ),
-                          );
-                        }
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StatePaymentPaket(
-                              id_vote: slctedIdVote!,
-                              id_finalis: slctedIdFinalis!,
-                              nama_finalis: slctedNamaFinalis!,
-                              counts: counts,
-                              totalHarga: totalHarga,
-                              id_paket: id_paket,
-                              fromDetail: false,
-                              idUser: idUser,
-                              ),
-                          ),
-                        );
-                      }
+                        ),
+                      );
                     },
                 child: Text(
                   remaining.inSeconds == 0
@@ -735,36 +633,39 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(20)),
-                  child: ishas ?
-                    FadeInImage.assetNetwork(
-                      placeholder: 'assets/images/img_placeholder.jpg',
-                      image: item['poster_finalis'],
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 300),
-                      imageErrorBuilder: (context, error, stackTrace) {
-                        return Image.network(
-                          "$baseUrl/noimage_finalis.png",
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: AspectRatio(
+                    aspectRatio: 4 / 5,
+                    child: ishas 
+                      ? FadeInImage.assetNetwork(
+                          placeholder: 'assets/images/img_placeholder.jpg',
+                          image: item['poster_finalis'],
                           width: double.infinity,
-                          fit: BoxFit.cover, 
-                        );
-                      },
-                    )
-                    : FadeInImage.assetNetwork(
-                        placeholder: 'assets/images/img_placeholder.jpg',
-                        image: "$baseUrl/noimage_finalis.png",
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        fadeInDuration: const Duration(milliseconds: 300),
-                        imageErrorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/images/img_broken.jpg',
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      ),
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 300),
+                          imageErrorBuilder: (context, error, stackTrace) {
+                            return Image.network(
+                              "$baseUrl/noimage_finalis.png",
+                              width: double.infinity,
+                              fit: BoxFit.cover, 
+                            );
+                          },
+                        )
+                      : FadeInImage.assetNetwork(
+                          placeholder: 'assets/images/img_placeholder.jpg',
+                          image: "$baseUrl/noimage_finalis.png",
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 300),
+                          imageErrorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/images/img_broken.jpg',
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                  ),
                 ),
 
                 const SizedBox(height: 10),
@@ -910,7 +811,12 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                           if (selectedQty != null) {
                             setState(() {
                               counts = selectedQty['counts'];
-                              harga_akhir = selectedQty['harga'];
+                              harga_akhir = selectedQty['harga_akhir'];
+                              if (currencyCode != null) {
+                                harga_akhir_asli = selectedQty['harga_akhir_asli'];
+                              } else {
+                                harga_akhir_asli = selectedQty['harga_akhir'];
+                              }
                               id_paket = selectedQty['id_paket'];
                             });
                           }
@@ -1011,6 +917,7 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade400,),
           ),
         ),
         onChanged: onSearchChanged,

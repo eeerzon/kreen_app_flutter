@@ -36,10 +36,14 @@ class _HomePageState extends State<HomePage> {
   String? lastPressedMessage;
 
   int _selectedIndex = 0;
+  int _exploreTabIndex = 0;
   // daftar halaman
-  final List<Widget> _pages = [
-    const HomeContent(),   // bikin widget khusus isi Home
-    const ExplorePage(),   // halaman Eksplore
+  List<Widget> get _pages => [
+    HomeContent(
+      onSeeMoreVote: () => _openExplore(1),
+      onSeeMoreEvent: () => _openExplore(2),
+    ),   // bikin widget khusus isi Home
+    ExplorePage(initialTab: _exploreTabIndex),   // halaman Eksplore
     const OrderPage(),    // halaman Pesanan
     const InfoPage(),      // halaman Info
   ];
@@ -184,6 +188,7 @@ class _HomePageState extends State<HomePage> {
     return Expanded(
       child: InkWell(
         onTap: () {
+          _onNavTap(index);
           if (index == 2) {
             Navigator.push(
               context,
@@ -212,4 +217,23 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+  
+  void _openExplore(int tabIndex) {
+    setState(() {
+      _exploreTabIndex = tabIndex; // vote / event
+      _selectedIndex = 1;          // tab Explore
+    });
+  }
+
+  void _onNavTap(int index) {
+    setState(() {
+      _selectedIndex = index;
+
+      // RESET eksplor tab saat klik bottomnav
+      if (index == 1) {
+        _exploreTabIndex = 0;
+      }
+    });
+  }
+
 }
