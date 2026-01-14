@@ -102,7 +102,8 @@
     "mulai_dari" : "Mulai dari",
     "no_data" : "Data tidak ditemukan",
     "tutorial_vote_text" : "Tutorial Voting di Kreen Vote",
-    "s_n_k_vote" : "Syarat dan Ketentuan Voting"
+    "s_n_k_vote" : "Syarat dan Ketentuan Voting",
+    "paket" : "Paket"
   },
 
   "lastPressed" : "Tekan kembali untuk keluar aplikasi",
@@ -268,7 +269,16 @@
     "expired_at" : "Berlaku hingga ",
     "selesai" : "Selesai",
     "segera" : "SEGERA",
-    "habis" : "HABIS"
+    "habis" : "HABIS",
+    "pembicara" : "Pembicara",
+    "moderator": "Moderator",
+    "doorprize": "Doorprize",
+    "sponsor": "Sponsor",
+    "media_partner": "Media Partner",
+    "supported": "Supported by",
+    "guest_star": "Guest Star",
+    "special_perform": "Special Perform",
+    "custom_section": "Custom Section"
   },
 
   "order_menunggu" : "Menunggu",
@@ -336,6 +346,7 @@
     "currency" : "Mata Uang",
     "desc_email_1" : "Email verifikasi telah dikirim",
     "desc_email_2" : "Kami telah mengirim email verifikasi ke ",
-    "desc_email_3" : "Silakan buka email tersebut dan klik link verifikasi untuk mengaktifkan akun Anda."
+    "desc_email_3" : "Silakan buka email tersebut dan klik link verifikasi untuk mengaktifkan akun Anda.",
+    "syarat_dan_ketentuan" : "Syarat dan Ketentuan"
   }
 }

@@ -5,14 +5,14 @@ import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
-class PrivacyPolicyPage extends StatefulWidget {
-  const PrivacyPolicyPage({super.key});
+class SnkPage extends StatefulWidget {
+  const SnkPage({super.key});
 
   @override
-  State<PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
+  State<SnkPage> createState() => _SnkPageState();
 }
 
-class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
+class _SnkPageState extends State<SnkPage> {
   String? langCode;
   bool isLoading = true;
 
@@ -39,7 +39,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   }
 
   Future<void> _loadKonten() async {
-    final resultInformasi = await ApiService.get("/information?code=pp");
+    final resultInformasi = await ApiService.get("/information?code=snk");
     setState(() {
       infoKonten = resultInformasi?['data'] ?? [];
       isLoading = false;
@@ -55,27 +55,31 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(infoLang['kebijakan_privasi']),
+        title: Text(infoLang['syarat_dan_ketentuan']),
         centerTitle: false,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
 
-      body: isLoading ? const Center(child: CircularProgressIndicator(color: Colors.red,),) :  SingleChildScrollView(
-        child: Container(
-          color: Colors.white,
-          padding: kGlobalPadding,
-          child: Html(
-            data: langCode == 'en'
-              ? infoKonten[0]['en_content']
-              : infoKonten[0]['content'],
-          ),
-        ),
-      ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Colors.red,
+              ),
+            )
+          : SingleChildScrollView(
+              child: Container(
+                color: Colors.white,
+                padding: kGlobalPadding,
+                child: Html(
+                  data: langCode == 'en'
+                    ? infoKonten[0]['en_content']
+                    : infoKonten[0]['content'],
+                ),
+              ),
+            ),
     );
   }
 }

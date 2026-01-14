@@ -221,7 +221,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                 }
               }
 
-              final formatter = NumberFormat.decimalPattern("id_ID");
+              final formatter = NumberFormat.decimalPattern("en_US");
               final hargaFormatted = formatter.format(item['price'] ?? 0);
 
               return Padding(

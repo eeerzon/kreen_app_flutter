@@ -50,6 +50,9 @@ class _FinalisPageState extends State<FinalisPage> {
   String? detailfinalisText, cariFinalisText;
   String? noDataText;
 
+  int totalQty = 0;
+  int countData = 0;
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +96,7 @@ class _FinalisPageState extends State<FinalisPage> {
     }
   }
 
+  Map<String, dynamic> voteLang = {};
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
 
@@ -105,6 +109,8 @@ class _FinalisPageState extends State<FinalisPage> {
     final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
     final templogin = await LangService.getText(langCode!, "login");
     final tempsearchHintText = await LangService.getText(langCode!, "search");
+
+    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
 
     setState(() {
       totalHargaText = tempdetailFinalis['total_harga'];
@@ -132,6 +138,8 @@ class _FinalisPageState extends State<FinalisPage> {
       cariFinalisText = tempdetailFinalis['search_finalis'];
 
       noDataText = tempdetailFinalis['no_data'];
+
+      voteLang = tempvoteLang;
     });
   }
 
@@ -165,8 +173,9 @@ class _FinalisPageState extends State<FinalisPage> {
     }
   }
   
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   num totalHargaAsli = 0;
+
   num get totalHarga {
     num total = 0;
     
@@ -187,10 +196,39 @@ class _FinalisPageState extends State<FinalisPage> {
     return total;
   }
 
-  void _updateCountFromInput(int index, String value) {
+  void _updateCountFromInput(int index, String value, Map item) {
     final parsed = int.tryParse(value) ?? 0;
+
     setState(() {
       counts[index] = parsed;
+      controllers[index].text = parsed.toString();
+
+      final idFinalis = item['id_finalis'];
+      final namaFinalis = item['nama_finalis'];
+
+      final existingIndex = ids_finalis.indexOf(idFinalis);
+
+      if (parsed > 0) {
+        if (existingIndex == -1) {
+          ids_finalis.add(idFinalis);
+          names_finalis.add(namaFinalis);
+          counts_finalis.add(parsed);
+        } else {
+          counts_finalis[existingIndex] = parsed;
+          names_finalis[existingIndex] = namaFinalis;
+        }
+      } else {
+        if (existingIndex != -1) {
+          ids_finalis.removeAt(existingIndex);
+          names_finalis.removeAt(existingIndex);
+          counts_finalis.removeAt(existingIndex);
+        }
+      }
+
+      slctedIdVote = item['id_vote'];
+
+      totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+      countData = counts_finalis.length;
     });
   }
 
@@ -373,7 +411,7 @@ class _FinalisPageState extends State<FinalisPage> {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (vote['theme_name'] != null) {
       themeName = vote['theme_name'];
     }
@@ -403,10 +441,9 @@ class _FinalisPageState extends State<FinalisPage> {
         ),
       ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
+      bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -427,6 +464,12 @@ class _FinalisPageState extends State<FinalisPage> {
                       color: color,
                     ),
                   ),
+                  Text(
+                    "Qty $totalQty ${voteLang['text_vote']}\n$countData ${voteLang['finalis']}(s)",
+                    style: TextStyle(fontSize: 12,),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
                 ],
               ),
 
@@ -589,7 +632,7 @@ class _FinalisPageState extends State<FinalisPage> {
 
   Widget buildGridView(Map<String, dynamic> vote, List<dynamic> listFinalis, Color color, Color bgColor, String theme_name) {
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
     final hargaFormatted = formatter.format(vote['harga'] ?? 0);
 
     final voteOptions = [10, 50, 100, 250, 500, 1000];
@@ -697,23 +740,12 @@ class _FinalisPageState extends State<FinalisPage> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
 
-                  const SizedBox(height: 10),
-                  (item['nama_tambahan'] == null || item['nama_tambahan'].toString().trim().isEmpty)
-                    ? Text(
-                        noDataText!,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    : Text(item['nama_tambahan'],
-                      style: const TextStyle(color: Colors.grey),
+                  if (item['nama_tambahan'] != null && item['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                    SizedBox(height: 10,),
+                    Text(item['nama_tambahan'],
+                      style: TextStyle(color: Colors.grey),
                     ),
-                
-                    if (vote['flag_hide_nomor_urut'] == "0") ... [
-                      const SizedBox(height: 10),
-                      Text(item['nomor_urut'].toString()),
-                    ],
+                  ],
 
                   const SizedBox(height: 15),
                   Row(
@@ -778,31 +810,35 @@ class _FinalisPageState extends State<FinalisPage> {
                     ],
                   ),
                   const SizedBox(height: 15),
-                  InkWell(
-                    onTap: () {
-                      Navigator.push(
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => DetailFinalisPage(
-                              id_finalis: item['id_finalis'], 
-                              count: counts[index], 
+                              id_finalis: item['id_finalis'],
+                              count: counts[index],
                               indexWrap: selectedIndexes[index],
                               close_payment: vote['close_payment'],
                               tanggal_buka_payment: formattedDate,
                               flag_hide_no_urut: vote['flag_hide_nomor_urut'],
-                              ),
+                            ),
                           ),
                         );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 60),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        detailfinalisText!,
-                        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 60),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          detailfinalisText!,
+                          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
@@ -868,6 +904,9 @@ class _FinalisPageState extends State<FinalisPage> {
                                       }
 
                                       slctedIdVote = item['id_vote'];
+
+                                      totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                      countData = counts_finalis.length;
                                     });
                                   }
                                 },
@@ -907,7 +946,7 @@ class _FinalisPageState extends State<FinalisPage> {
                               isCollapsed: true,
                               contentPadding: EdgeInsets.all(8),
                             ),
-                            onChanged: (value) => _updateCountFromInput(index, value),
+                            onChanged: (value) => _updateCountFromInput(index, value, item),
                             onTap: () {
                               controllers[index].selection = TextSelection(
                                 baseOffset: 0,
@@ -952,6 +991,9 @@ class _FinalisPageState extends State<FinalisPage> {
                                     }
 
                                     slctedIdVote = item['id_vote'];
+
+                                    totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                    countData = counts_finalis.length;
                                   });
                                 },
                           child: Container(
@@ -1032,7 +1074,7 @@ class _FinalisPageState extends State<FinalisPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      NumberFormat.decimalPattern("id_ID").format(voteCount),
+                                      NumberFormat.decimalPattern("en_US").format(voteCount),
                                       style: TextStyle(
                                         color: isSelected ? Colors.white : Colors.black,
                                         fontWeight: FontWeight.bold,
@@ -1282,19 +1324,25 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(20,),
-      child: TextField(
-        autofocus: false,
-        decoration: InputDecoration(
-          hintText: searchHintText,
-          hintStyle: TextStyle(color: Colors.grey.shade400),
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade400,),
+      child: SizedBox(
+        height: 48,
+        child: TextField(
+          autofocus: false,
+          textAlignVertical: TextAlignVertical.center,
+          decoration: InputDecoration(
+            hintText: searchHintText,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            hintStyle: TextStyle(color: Colors.grey.shade400),
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade400,),
+            ),
           ),
+          onChanged: onSearchChanged,
         ),
-        onChanged: onSearchChanged,
-      ),
+      )
     );
   }
 

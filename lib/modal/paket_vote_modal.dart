@@ -13,7 +13,7 @@ class PaketVoteModal {
     num? hargaGetAsli;
     String? idPaket;
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
     bool isLoading = true;
 
     String? langCode;
@@ -177,7 +177,7 @@ class PaketVoteModal {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                "${NumberFormat.decimalPattern("id_ID").format(qty)} Vote",
+                                                "${NumberFormat.decimalPattern("en_US").format(qty)} Vote",
                                                 style: TextStyle(
                                                   color: Colors.black,
                                                   fontWeight: FontWeight.bold,
@@ -270,7 +270,7 @@ class PaketVoteModal {
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            "${NumberFormat.decimalPattern("id_ID").format(qty)} Vote",
+                                            "${NumberFormat.decimalPattern("en_US").format(qty)} Vote",
                                             style: TextStyle(
                                               color: Colors.black,
                                               fontWeight: FontWeight.bold,
@@ -321,7 +321,7 @@ class PaketVoteModal {
                               ),
                               onPressed: selectedVotes == null
                                   ? null
-                                  : () => Navigator.pop(context, {'id_paket': idPaket, 'counts': counts, 'harga_akhir': hargaGet, 'harga_akhir_asli': hargaGetAsli}),
+                                  : () => Navigator.pop(context, {'id_paket': idPaket, 'counts': counts, 'harga_akhir': hargaGet, 'harga_akhir_asli': hargaGetAsli, "count_data": 1}),
                               child: Text(
                                 modalLang['konfirmasi'] ?? "", // "Konfirmasi",
                                 style: TextStyle(color: Colors.white),

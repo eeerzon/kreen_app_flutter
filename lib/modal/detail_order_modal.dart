@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class DetailOrderModal {
   static Future<void> show(BuildContext context, String idOrder) async {
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> voteOder = {};
     List<dynamic> voteOrderDetail = [];
@@ -635,7 +635,7 @@ class DetailOrderModal {
 
 
   static Future<void> showEvent(BuildContext context, String idOrder, bool isSukses) async {
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
     
     Map<String, dynamic> eventOder = {};
     List<dynamic> eventOrderDetail = [];

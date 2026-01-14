@@ -24,7 +24,7 @@ class AddSupportPage extends StatefulWidget {
 
 class _AddSupportPageState extends State<AddSupportPage> {
   bool _isLoading = true;
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
 
   bool isAnonymous = false;
   final TextEditingController _supportController = TextEditingController();

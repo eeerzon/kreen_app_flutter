@@ -60,6 +60,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   String? noDataText;
   String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidText, socialMediaText;
 
+  int totalQty = 0;
+  int countData = 1;
+
   @override
   void initState() {
     super.initState();
@@ -178,7 +181,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       detailfinalisText = tempdetailFinalis['detail_finalis'];
 
       noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['age'];
+      ageText = tempdetailFinalis['usia'];
       activityText = tempdetailFinalis['aktivitas'];
       biographyText = tempdetailFinalis['biografi'];
       scanQrText = tempdetailFinalis['scan_vote'];
@@ -226,7 +229,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   num totalHargaAsli = 0;
   num get totalHarga {
     num hargaItem = 0;
@@ -241,10 +244,36 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     return hargaItem;
   }
 
-  void _updateCountFromInput(String value) {
+  void _updateCountFromInput(String value, Map item) {
     final parsed = int.tryParse(value) ?? 0;
+
     setState(() {
       counts = parsed;
+      controllers!.text = parsed.toString();
+
+      final idFinalis = item['id_finalis'];
+      final namaFinalis = item['nama_finalis'];
+
+      final existingIndex = ids_finalis.indexOf(idFinalis);
+
+      if (parsed > 0) {
+        if (existingIndex == -1) {
+          ids_finalis.add(idFinalis);
+          names_finalis.add(namaFinalis);
+          counts_finalis.add(parsed);
+        } else {
+          counts_finalis[existingIndex] = parsed;
+          names_finalis[existingIndex] = namaFinalis;
+        }
+      } else {
+        if (existingIndex != -1) {
+          ids_finalis.removeAt(existingIndex);
+          names_finalis.removeAt(existingIndex);
+          counts_finalis.removeAt(existingIndex);
+        }
+      }
+
+      totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
     });
   }
 
@@ -371,7 +400,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (detailvote.containsKey('theme_name') && detailvote['theme_name'] != null) {
       themeName = detailvote['theme_name'].toString();
     }
@@ -455,18 +484,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                   
-                            const SizedBox(height: 10,),
-                            (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
-                              ? Text(
-                                  noDataText!,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                )
-                              : Text(detailFinalis['nama_tambahan'],
-                                style: const TextStyle(color: Colors.grey),
+                            if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                              SizedBox(height: 10,),
+                              Text(detailFinalis['nama_tambahan'],
+                                style: TextStyle(color: Colors.grey),
                               ),
+                            ],
 
                             if (widget.flag_hide_no_urut == "0") ... [
                               const SizedBox(height: 10,),
@@ -615,6 +638,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                                 names_finalis[existingIndex] = namaFinalis;
                                               }
                                             }
+
+                                            totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
                                           });
                                         }
                                       },
@@ -647,7 +672,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         isCollapsed: true, // hilangkan padding bawaan
                                         contentPadding: EdgeInsets.all(8),
                                       ),
-                                      onChanged: (value) => _updateCountFromInput(value),
+                                      onChanged: (value) => _updateCountFromInput(value, detailFinalis),
                                       onTap: () {
                                         // langsung block semua teks ketika diklik
                                         controllers!.selection = TextSelection(
@@ -687,6 +712,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                               names_finalis.removeAt(existingIndex);
                                               counts_finalis.removeAt(existingIndex);
                                             }
+
+                                            totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
                                           });
                                         },
                                     child: Container(
@@ -751,7 +778,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            NumberFormat.decimalPattern("id_ID").format(voteCount),
+                                            NumberFormat.decimalPattern("en_US").format(voteCount),
                                             style: TextStyle(
                                               color: isSelected ? Colors.white : Colors.black,
                                               fontWeight: FontWeight.bold,
@@ -770,76 +797,10 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                           ],
                         ),
                       ),
-                  
-                      const SizedBox(height: 12,),
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                  
-                              if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
-                                SizedBox(height: 12,),
-                                Text(
-                                  ageText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                  
-                                (detailFinalis['usia'] == 0)
-                                  ? Text(
-                                      noDataText!,
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    )
-                                  : Text(detailFinalis['usia'].toString(),
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                              ],
-                  
-                              if (detailFinalis['profesi'].toString().isNotEmpty) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  activityText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  detailFinalis['profesi']
-                                ),
-                              ],
-                  
-                              if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  biographyText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Html(
-                                  data: detailFinalis['deskripsi'],
-                                  style: {
-                                    '*': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                    ),
-                                    'p': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                    )
-                                  },
-                                ),
-                              ],
-                  
-                              const SizedBox(height: 12,),
-                            ],
-                          ),
-                        ),
-                      ),
-                      
-                      if (detailFinalis['id_qrcode'] != null) ... [
+
+                      if (detailFinalis['usia'] != 0 ||
+                          (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
+                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
                         const SizedBox(height: 12,),
                         Container(
                           width: double.infinity,
@@ -847,98 +808,168 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                           child: Padding(
                             padding: kGlobalPadding,
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                  
-                                const SizedBox(height: 12,),
-                                Image.network(
-                                  'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${detailFinalis['id_qrcode']}',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.contain,
-                                ),
-                  
-                                const SizedBox(height: 12,),
-                                Text(
-                                  scanQrText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                  
-                                const SizedBox(height: 12,),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: canDownload ? color : Colors.grey,
-                                    borderRadius: BorderRadius.circular(8),
+                    
+                                if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    ageText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
-                                  child: InkWell(
-                                    onTap: canDownload ? () {
-                                      
-                                    }
-                                    : null,
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          downloadQrText!,
-                                          style: TextStyle(color: Colors.white),
+                    
+                                  (detailFinalis['usia'] == 0)
+                                    ? Text(
+                                        noDataText!,
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontStyle: FontStyle.italic,
                                         ),
-                                        const SizedBox(width: 10,),
-                                        Icon(
-                                          Icons.download, color: Colors.white, size: 15,
-                                        )
-                                      ],
-                                    )
-                                  )
-                                ),
-                  
-                                const SizedBox(height: 12,),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(8),
+                                      )
+                                    : Text(detailFinalis['usia'].toString(),
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                ],
+                    
+                                if (detailFinalis['profesi'].toString().isNotEmpty) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    activityText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
-                                  child: InkWell(
-                                    onTap: () async {
-                                      await TutorModal.show(context, detailvote['tutorial_vote'], voteLang['tutorial_vote_text']);
+                                  Text(
+                                    detailFinalis['profesi']
+                                  ),
+                                ],
+                    
+                                if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    biographyText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Html(
+                                    data: detailFinalis['deskripsi'],
+                                    style: {
+                                      '*': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      ),
+                                      'p': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      )
                                     },
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          tataCaraText!,
-                                          style: TextStyle(color: Colors.blue),
-                                        ),
-                                        const SizedBox(width: 10,),
-                                        Icon(
-                                          Icons.info, color: Colors.blue, size: 15,
-                                        )
-                                      ],
-                                    )
-                                  )
-                                ),
+                                  ),
+                                ],
+                    
                                 const SizedBox(height: 12,),
-                              ],
-                            ),
-                          )
-                        ),
-                  
-                        if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            color: Colors.white,
-                            width: double.infinity,
-                            padding: kGlobalPadding,
-                            child: Column(
-                              children: [
-                                VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidText!,),
                               ],
                             ),
                           ),
+                        ),
+                        
+                        if (detailFinalis['id_qrcode'] != null) ... [
+                          const SizedBox(height: 12,),
+                          Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            child: Padding(
+                              padding: kGlobalPadding,
+                              child: Column(
+                                children: [
+                    
+                                  const SizedBox(height: 12,),
+                                  Image.network(
+                                    'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${detailFinalis['id_qrcode']}',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.contain,
+                                  ),
+                    
+                                  const SizedBox(height: 12,),
+                                  Text(
+                                    scanQrText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                    
+                                  const SizedBox(height: 12,),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: canDownload ? color : Colors.grey,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: InkWell(
+                                      onTap: canDownload ? () {
+                                        
+                                      }
+                                      : null,
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            downloadQrText!,
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          const SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.download, color: Colors.white, size: 15,
+                                          )
+                                        ],
+                                      )
+                                    )
+                                  ),
+                    
+                                  const SizedBox(height: 12,),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: InkWell(
+                                      onTap: () async {
+                                        await TutorModal.show(context, detailvote['tutorial_vote'], voteLang['tutorial_vote_text']);
+                                      },
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            tataCaraText!,
+                                            style: TextStyle(color: Colors.blue),
+                                          ),
+                                          const SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.info, color: Colors.blue, size: 15,
+                                          )
+                                        ],
+                                      )
+                                    )
+                                  ),
+                                  const SizedBox(height: 12,),
+                                ],
+                              ),
+                            )
+                          ),
+                    
+                          if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              color: Colors.white,
+                              width: double.infinity,
+                              padding: kGlobalPadding,
+                              child: Column(
+                                children: [
+                                  VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidText!,),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                   
@@ -1020,10 +1051,10 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         ],
       ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1044,6 +1075,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                       color: color,
                     ),
                   ),
+                  Text(
+                    "Qty $totalQty ${voteLang['text_vote']}\n$countData ${voteLang['finalis']}(s)",
+                    style: TextStyle(fontSize: 12,),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
                 ],
               ),
 

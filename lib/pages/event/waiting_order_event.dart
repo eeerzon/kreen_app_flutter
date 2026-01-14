@@ -142,7 +142,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
 
   @override
   void dispose() {
@@ -467,29 +467,32 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                                   const SizedBox(width: 10,),
                                   Text(
-                                    eventOder['bank_code'],
+                                    eventOder['bank_code'] ?? "",
                                     style: TextStyle(fontWeight: FontWeight.bold),
-                                  )
+                                  ),
 
-                                  // InkWell(
-                                  //   onTap: () {
-                                  //     if (tapinstruksi) {
-                                  //       tapinstruksi = false;
-                                  //     } else {
-                                  //       tapinstruksi = true;
-                                  //     }
-                                  //   },
-                                  //   child: Row(
-                                  //     mainAxisAlignment: MainAxisAlignment.start,
-                                  //     children: [
-                                  //       Icon(Icons.info_outline, color: Colors.blue,),
-                                  //       Text(
-                                  //         paymentLang['instruksi_pembayaran'],
-                                  //         style: TextStyle(color: Colors.blue),
-                                  //       )
-                                  //     ],
-                                  //   ),
-                                  // )
+                                  if (eventOder['bank_code'] == null || eventOder['bank_code'] == "") ... [
+                                    InkWell(
+                                      onTap: () {
+                                        if (tapinstruksi) {
+                                          tapinstruksi = false;
+                                        } else {
+                                          tapinstruksi = true;
+                                        }
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.info_outline, color: Colors.blue,),
+                                          Text(
+                                            paymentLang['instruksi_pembayaran'],
+                                            style: TextStyle(color: Colors.blue),
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  ],
+                                  
                                 ],
                               ),
 
@@ -739,23 +742,26 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
 
                       const SizedBox(height: 30,),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 60),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                        onPressed: () async {
-                          await CheckPaymentModal.showEvent(
-                            context,
-                            widget.id_order
-                          );
-                        },
-                        child: Text(
-                          paymentLang['check_status'], //"Check Status Pesanan",
-                          style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                          onPressed: () async {
+                            await CheckPaymentModal.show(
+                              context,
+                              widget.id_order
+                            );
+                          },
+                          child: Text(
+                            paymentLang['check_status'],
+                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
                         ),
                       ),
                     ],

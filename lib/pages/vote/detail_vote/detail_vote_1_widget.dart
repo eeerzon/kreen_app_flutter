@@ -289,7 +289,7 @@ class LeaderboardSection extends StatelessWidget {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (data['theme_name'] != null) {
       themeName = data['theme_name'];
     }
@@ -500,7 +500,7 @@ class InfoSection extends StatelessWidget {
       }
     }
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
     final hargaFormatted = formatter.format(data['harga'] ?? 0);
 
     DateTime mulai = DateTime.parse("${data['tanggal_grandfinal_mulai']} ${data['waktu_mulai']}");

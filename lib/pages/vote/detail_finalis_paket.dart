@@ -61,6 +61,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   String? noDataText;
   String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidVideo, socialMediaText;
 
+  int countData = 0;
+  num totalHargaPaket = 0;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +72,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       await _getBahasa();
       await _getCurrency();
       await _loadFinalis();
+
+      totalHargaPaket = widget.total_detail;
     });
   }
 
@@ -186,7 +191,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       detailfinalisText = tempdetailFinalis['detail_finalis'];
 
       noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['age'];
+      ageText = tempdetailFinalis['usia'];
       activityText = tempdetailFinalis['aktivitas'];
       biographyText = tempdetailFinalis['biografi'];
       scanQrText = tempdetailFinalis['scan_vote'];
@@ -234,7 +239,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   num get totalHarga {
     if (widget.total_detail != null && widget.total_detail != 0) {
       return widget.total_detail;
@@ -460,18 +465,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                   
-                            SizedBox(height: 10,),
-                            (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
-                              ? Text(
-                                  noDataText!,
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                )
-                              : Text(detailFinalis['nama_tambahan'],
+                            if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                              SizedBox(height: 10,),
+                              Text(detailFinalis['nama_tambahan'],
                                 style: TextStyle(color: Colors.grey),
                               ),
+                            ],
                   
                             if (widget.flag_hide_no_urut == "0") ...[
                               SizedBox(height: 10,),
@@ -580,6 +579,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                         harga_akhir_asli = selectedQty['harga_akhir'];
                                       }
                                       id_paket = selectedQty['id_paket'];
+                                      totalHargaPaket = harga_akhir as num;
+                                      countData = selectedQty['count_data'];
                                     });
                                   }
                                 },
@@ -608,74 +609,78 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                           ],
                         ),
                       ),
+                      if (detailFinalis['usia'] != 0 ||
+                          (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
+                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
                   
-                      SizedBox(height: 12,),
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              
-                              if (detailFinalis['usia'] != 0) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  ageText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                  
-                                (detailFinalis['usia'] == 0)
-                                  ? Text(
-                                      noDataText!,
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    )
-                                  : Text(detailFinalis['usia'].toString(),
-                                    style: TextStyle(color: Colors.grey),
+                        SizedBox(height: 12,),
+                        Container(
+                          width: double.infinity,
+                          color: Colors.white,
+                          child: Padding(
+                            padding: kGlobalPadding,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                
+                                if (detailFinalis['usia'] != 0) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    ageText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
-                              ],
-                  
-                              if (detailFinalis['profesi'] != null) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  activityText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  detailFinalis['profesi']
-                                ),
-                              ],
-                  
-                              if (detailFinalis['deskripsi'] != null) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  biographyText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Html(
-                                  data: detailFinalis['deskripsi'],
-                                  style: {
-                                    '*': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
+                    
+                                  (detailFinalis['usia'] == 0)
+                                    ? Text(
+                                        noDataText!,
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      )
+                                    : Text(detailFinalis['usia'].toString(),
+                                      style: TextStyle(color: Colors.grey),
                                     ),
-                                    'p': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                    )
-                                  },
-                                ),
+                                ],
+                    
+                                if (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    activityText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    detailFinalis['profesi']
+                                  ),
+                                ],
+                    
+                                if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '') ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    biographyText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Html(
+                                    data: detailFinalis['deskripsi'],
+                                    style: {
+                                      '*': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      ),
+                                      'p': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      )
+                                    },
+                                  ),
+                                ],
+                    
+                                SizedBox(height: 12,),
                               ],
-                  
-                               SizedBox(height: 12,),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
+                        )
+                      ],
                   
                       if (detailFinalis['id_qrcode'] != null) ... [
                         SizedBox(height: 12,),
@@ -859,10 +864,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         ],
       ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
+      bottomNavigationBar: SafeArea(
         child: Padding(
-          padding:  EdgeInsets.all(8),
+          padding:  EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -876,12 +880,16 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                     harga == 0
                     ? hargaDetail!
                     : currencyCode == null
-                      ? "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}"
-                      : "$currencyCode ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
+                      ? "${detailvote['currency']} ${formatter.format(totalHargaPaket)}"
+                      : "$currencyCode ${formatter.format(totalHargaPaket)}",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
+                  ),
+                  Text(
+                    "${voteLang['paket']} $counts\n$countData ${voteLang['finalis']}(s)",
+                    style: TextStyle(fontSize: 12),
                   ),
                 ],
               ),

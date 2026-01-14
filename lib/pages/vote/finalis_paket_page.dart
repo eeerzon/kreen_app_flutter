@@ -45,6 +45,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   String? countDownText, daysText, hoursText, minutesText, secondsText;
   String? buttonPilihPaketText;
   String? detailfinalisText, cariFinalisText;
+  String? noDataText;
+
+  int countData = 0;
 
   @override
   void initState() {
@@ -115,6 +118,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     }
   }
 
+  Map<String, dynamic> voteLang = {};
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
 
@@ -127,6 +131,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
     final templogin = await LangService.getText(langCode!, "login");
     final tempsearchHintText = await LangService.getText(langCode!, "search");
+
+    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
 
     setState(() {
       totalHargaText = tempdetailFinalis['total_harga'];
@@ -153,6 +159,10 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       buttonPilihPaketText = tempdetailFinalis['pick_paket'];
       detailfinalisText = tempdetailFinalis['detail_finalis'];
       cariFinalisText = tempdetailFinalis['search_finalis'];
+
+      noDataText = tempdetailFinalis['no_data'];
+
+      voteLang = tempvoteLang;
     });
   }
 
@@ -186,7 +196,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     }
   }
   
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   num get totalHarga {
     final hargaItem = harga_akhir;
     if (hargaItem == null) return 0;
@@ -380,7 +390,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (vote['theme_name'] != null) {
       themeName = vote['theme_name'];
     }
@@ -410,10 +420,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
         ),
       ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
+      bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -433,6 +442,10 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
+                  ),
+                  Text(
+                    "${voteLang['paket']} $counts ${voteLang['text_vote']}\n$countData ${voteLang['finalis']}(s)",
+                    style: TextStyle(fontSize: 12),
                   ),
                 ],
               ),
@@ -555,7 +568,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-              child: buildGridView(vote, finalis, color, bgColor, themeName),
+              child: buildGridView(vote, finalis, color, bgColor, themeName, noDataText),
             ),
           ),
         ],
@@ -563,9 +576,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     );
   }
 
-  Widget buildGridView(Map<String, dynamic> vote, List<dynamic> listFinalis, Color color, Color bgColor, String theme_name) {
+  Widget buildGridView(Map<String, dynamic> vote, List<dynamic> listFinalis, Color color, Color bgColor, String theme_name, String? noDataText) {
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
     final hargaFormatted = formatter.format(vote['harga'] ?? 0);
 
 
@@ -673,12 +686,13 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                   item['nama_finalis'],
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-
-                const SizedBox(height: 10),
-                Text(
-                  item['nama_tambahan'] ?? '',
-                  style: const TextStyle(color: Colors.grey),
-                ),
+                
+                if (item['nama_tambahan'] != null && item['nama_tambahan'] != "") ... [
+                  SizedBox(height: 10),
+                  Text(item['nama_tambahan'],
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
                 
                 if (vote['flag_hide_nomor_urut'] == "0") ... [
                   const SizedBox(height: 10),
@@ -748,12 +762,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                   ],
                 ),
                 const SizedBox(height: 15),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 60),
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                Material(
+                  color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
                       Navigator.push(
@@ -773,22 +783,23 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                         ),
                       );
                     },
-                    child: Text(
-                      detailfinalisText!,
-                      style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 60),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        detailfinalisText!,
+                        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
                 
                 const SizedBox(height: 15),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
-                  decoration: BoxDecoration(
-                    color: (remaining.inSeconds == 0 || vote['close_payment'] == '1' || isBeforeOpen)
-                      ? Colors.grey
-                      : color,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                Material(
+                  color: Colors.transparent,
                   child: InkWell(
                     onTap: (vote['close_payment'] == '1' || isBeforeOpen)
                       ? null
@@ -818,6 +829,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                                 harga_akhir_asli = selectedQty['harga_akhir'];
                               }
                               id_paket = selectedQty['id_paket'];
+                              countData = selectedQty['count_data'];
                             });
                           }
 
@@ -825,27 +837,35 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                           slctedIdFinalis = item['id_finalis'];
                           slctedNamaFinalis = item['nama_finalis'];
                         },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            buttonText,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
+                      decoration: BoxDecoration(
+                        color: (remaining.inSeconds == 0 || vote['close_payment'] == '1' || isBeforeOpen)
+                          ? Colors.grey
+                          : color,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              buttonText,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
-                        ),
-                        if (vote['close_payment'] != '1') ...[
-                          SizedBox(width: 10),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: Colors.white,
-                            size: 15,
-                          ),
+                          if (vote['close_payment'] != '1') ...[
+                            // SizedBox(width: 10),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Colors.white,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  )
+                  ),
                 ),
               ],
             ),
@@ -909,19 +929,25 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(20,),
-      child: TextField(
-        autofocus: false,
-        decoration: InputDecoration(
-          hintText: searchHintText,
-          hintStyle: TextStyle(color: Colors.grey.shade400),
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade400,),
+      child: SizedBox(
+        height: 48,
+        child: TextField(
+          autofocus: false,
+          textAlignVertical: TextAlignVertical.center,
+          decoration: InputDecoration(
+            hintText: searchHintText,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            hintStyle: TextStyle(color: Colors.grey.shade400),
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade400,),
+            ),
           ),
+          onChanged: onSearchChanged,
         ),
-        onChanged: onSearchChanged,
-      ),
+      )
     );
   }
 

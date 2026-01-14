@@ -118,7 +118,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       detailfinalisText = tempdetailFinalis['detail_finalis'];
 
       noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['age'];
+      ageText = tempdetailFinalis['usia'];
       activityText = tempdetailFinalis['aktivitas'];
       biographyText = tempdetailFinalis['biografi'];
       scanQrText = tempdetailFinalis['scan_vote'];
@@ -241,7 +241,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   num totalHargaAsli = 0;
   num get totalHarga {
     num hargaItem = 0;
@@ -398,7 +398,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (detailvote.containsKey('theme_name') && detailvote['theme_name'] != null) {
       themeName = detailvote['theme_name'].toString();
     }
@@ -435,7 +435,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       }
     }
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     DateTime mulai = DateTime.parse("${detailvote['tanggal_grandfinal_mulai']} ${detailvote['waktu_mulai']}");
     DateTime selesai = DateTime.parse("${detailvote['tanggal_grandfinal_mulai']} ${detailvote['waktu_selesai']}");
@@ -520,19 +520,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               detailFinalis['nama_finalis'],
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                  
-                            const SizedBox(height: 10,),
-                            (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
-                              ? Text(
-                                  noDataText!,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                )
-                              : Text(detailFinalis['nama_tambahan'],
-                                style: const TextStyle(color: Colors.grey),
-                              ),
+
+                            if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                              const SizedBox(height: 10,),
+                              Text(detailFinalis['nama_tambahan'],
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                            ],
                   
                             if (widget.flag_hide_nomor_urut == "0") ...[
                               const SizedBox(height: 10,),
@@ -797,7 +791,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            NumberFormat.decimalPattern("id_ID").format(voteCount),
+                                            NumberFormat.decimalPattern("en_US").format(voteCount),
                                             style: TextStyle(
                                               color: isSelected ? Colors.white : Colors.black,
                                               fontWeight: FontWeight.bold,
@@ -816,74 +810,78 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                           ],
                         ),
                       ),
-                  
-                      const SizedBox(height: 12,),
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                  
-                              if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
-                                SizedBox(height: 12,),
-                                Text(
-                                  ageText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                  
-                                (detailFinalis['usia'] == 0)
-                                  ? Text(
-                                      noDataText!,
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    )
-                                  : Text(detailFinalis['usia'].toString(),
-                                    style: TextStyle(color: Colors.grey),
+
+                      if (detailFinalis['usia'] != 0 ||
+                          (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
+                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
+                        const SizedBox(height: 12,),
+                        Container(
+                          width: double.infinity,
+                          color: Colors.white,
+                          child: Padding(
+                            padding: kGlobalPadding,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                    
+                                if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    ageText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
-                              ],
-                  
-                              if (detailFinalis['profesi'].toString().isNotEmpty) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  activityText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  detailFinalis['profesi']
-                                ),
-                              ],
-                  
-                              if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  biographyText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Html(
-                                  data: detailFinalis['deskripsi'],
-                                  style: {
-                                    '*': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
+                    
+                                  (detailFinalis['usia'] == 0)
+                                    ? Text(
+                                        noDataText!,
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      )
+                                    : Text(detailFinalis['usia'].toString(),
+                                      style: TextStyle(color: Colors.grey),
                                     ),
-                                    'p': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                    )
-                                  },
-                                ),
+                                ],
+                    
+                                if (detailFinalis['profesi'].toString().isNotEmpty) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    activityText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    detailFinalis['profesi']
+                                  ),
+                                ],
+                    
+                                if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    biographyText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Html(
+                                    data: detailFinalis['deskripsi'],
+                                    style: {
+                                      '*': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      ),
+                                      'p': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      )
+                                    },
+                                  ),
+                                ],
+                    
+                                const SizedBox(height: 12,),
                               ],
-                  
-                              const SizedBox(height: 12,),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                       
                       if (detailFinalis['id_qrcode'] != null) ... [
                         const SizedBox(height: 12,),

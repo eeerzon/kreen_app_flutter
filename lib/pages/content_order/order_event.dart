@@ -286,7 +286,7 @@ class _EventSuccessState extends State<EventSuccess> {
 
   String? langCode;
 
-  final formatterNUmber = NumberFormat.decimalPattern("id_ID");
+  final formatterNUmber = NumberFormat.decimalPattern("en_US");
 
   String statusOrder = '';
 
@@ -747,7 +747,7 @@ class _EventPendingState extends State<EventPending> {
 
   String? langCode;
 
-  final formatterNUmber = NumberFormat.decimalPattern("id_ID");
+  final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
 
   @override
@@ -1206,7 +1206,7 @@ class _EventFailState extends State<EventFail> {
 
   String? langCode;
 
-  final formatterNUmber = NumberFormat.decimalPattern("id_ID");
+  final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
 
   @override

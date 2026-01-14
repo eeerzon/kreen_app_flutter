@@ -173,7 +173,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
 
   @override
   void dispose() {
@@ -480,8 +480,9 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                // mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                mainAxisAlignment: MainAxisAlignment.start,
+                                mainAxisAlignment: paymentDetail['qr_url'] != null
+                                  ? MainAxisAlignment.start
+                                  : MainAxisAlignment.spaceAround,
                                 children: [
                                   Image.network(
                                     "$baseUrl/image/payment-method/${voteOder['payment_method_image']}",
@@ -496,31 +497,33 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     },
                                   ),
 
-                                  const SizedBox(width: 10,),
-                                  Text(
-                                    voteOder['bank_code'],
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  )
-
-                                  // InkWell(
-                                  //   onTap: () {
-                                  //     if (tapinstruksi) {
-                                  //       tapinstruksi = false;
-                                  //     } else {
-                                  //       tapinstruksi = true;
-                                  //     }
-                                  //   },
-                                  //   child: Row(
-                                  //     mainAxisAlignment: MainAxisAlignment.start,
-                                  //     children: [
-                                  //       Icon(Icons.info_outline, color: Colors.blue,),
-                                  //       Text(
-                                  //         paymentLang['instruksi_pembayaran'],
-                                  //         style: TextStyle(color: Colors.blue),
-                                  //       )
-                                  //     ],
-                                  //   ),
-                                  // )
+                                  if (paymentDetail['qr_url'] != null) ...[
+                                    const SizedBox(width: 10,),
+                                    Text(
+                                      voteOder['bank_code'],
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    )
+                                  ] else ...[
+                                    InkWell(
+                                      onTap: () {
+                                        if (tapinstruksi) {
+                                          tapinstruksi = false;
+                                        } else {
+                                          tapinstruksi = true;
+                                        }
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.info_outline, color: Colors.blue,),
+                                          Text(
+                                            paymentLang['instruksi_pembayaran'],
+                                            style: TextStyle(color: Colors.blue),
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  ]
                                 ],
                               ),
 
@@ -775,23 +778,26 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
 
                       const SizedBox(height: 30,),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 60),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                        onPressed: () async {
-                          await CheckPaymentModal.show(
-                            context,
-                            widget.id_order
-                          );
-                        },
-                        child: Text(
-                          paymentLang['check_status'],
-                          style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                          onPressed: () async {
+                            await CheckPaymentModal.show(
+                              context,
+                              widget.id_order
+                            );
+                          },
+                          child: Text(
+                            paymentLang['check_status'],
+                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
                         ),
                       ),
                     ],

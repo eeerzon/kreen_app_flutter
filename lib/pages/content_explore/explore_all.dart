@@ -233,8 +233,14 @@ class _ExploreAllState extends State<ExploreAll> {
                 }
               }
 
-              final formatter = NumberFormat.decimalPattern("id_ID");
+              final formatter = NumberFormat.decimalPattern("en_US");
               final hargaFormatted = formatter.format(item['price'] ?? 0);
+
+              final typeEvent = item['type_event'] ?? '-';
+              Color colorType = Colors.blue;
+              if (typeEvent == 'offline') {
+                colorType = Colors.red;
+              }
 
               return Padding(
                 padding: const EdgeInsets.all(0),
@@ -272,29 +278,54 @@ class _ExploreAllState extends State<ExploreAll> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                          child: AspectRatio(
-                            aspectRatio: 4 / 5,
-                            child: img.isNotEmpty
-                              ? FadeInImage.assetNetwork(
-                                  placeholder: 'assets/images/img_placeholder.jpg',
-                                  image: img,
-                                  fit: BoxFit.cover,
-                                  imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                    aspectRatio: 4 / 5,
-                                    child: Image.asset(
+                        //gambar
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: img.isNotEmpty
+                                  ? FadeInImage.assetNetwork(
+                                      placeholder: 'assets/images/img_placeholder.jpg',
+                                      image: img,
+                                      fit: BoxFit.cover,
+                                      imageErrorBuilder: (context, error, stack) => AspectRatio(
+                                        aspectRatio: 4 / 5,
+                                        child: Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    )
+                                  : Image.asset(
                                       'assets/images/img_broken.jpg',
                                       fit: BoxFit.cover,
                                     ),
-                                  ),
-                                )
-                              : Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.cover,
+                              ),
+                            ),
+
+                            if (item['jenis'] == 'event') Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
-                          ),
+                                child: Text(
+                                  typeEvent.toString().toUpperCase(),
+                                  style: TextStyle(
+                                    color: colorType,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        
 
                         const SizedBox(height: 4),
                         Padding(

@@ -13,6 +13,7 @@ import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_finalis_paket.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/infinite_sponsor.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:share_plus/share_plus.dart';
@@ -84,7 +85,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (widget.data['theme_name'] != null) {
       themeName = widget.data['theme_name'];
     }
@@ -127,7 +128,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
       }
     }
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
     final hargaFormatted = formatter.format(widget.data['harga'] ?? 0);
 
     DateTime mulai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai']} ${widget.data['waktu_mulai']}");
@@ -307,8 +308,8 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
 
+              const SizedBox(height: 8),
               Container(
                 color: Colors.white,
                 child: Padding(
@@ -352,8 +353,8 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                         ],
                       ),
 
-                      if (strSponsor.isNotEmpty) ... [
-                        const SizedBox(height: 40,),
+                      if (sponsors.isNotEmpty) ... [
+                        const SizedBox(height: 20,),
                           Text(
                             'Sponsor',
                             style: TextStyle(fontWeight: FontWeight.bold),
@@ -368,7 +369,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                           ),
                       ],
 
-                      const SizedBox(height: 40,),
+                      const SizedBox(height: 20,),
                       Text(
                         lang['deskripsi'],
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -755,20 +756,25 @@ class LeaderboardSection_2 extends StatelessWidget {
                 colors = Colors.brown;
               }
 
-              return buildTopCard(
-                context: context, 
-                rank: item['rank'], 
-                name: item['nama_finalis'], 
-                votes: item['total_voters'] ?? 0, 
-                color: colors, 
-                isBig: big, 
-                image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
-                tema: color, 
-                idFinalis: item['id_finalis'].toString(),
-                remaining: remaining,
-                lang: lang,
-                flag_hide_no_urut: data['flag_hide_nomor_urut']
-              );
+              if (item['total_voters'] > 0){
+                return buildTopCard(
+                  context: context, 
+                  rank: item['rank'], 
+                  name: item['nama_finalis'], 
+                  votes: item['total_voters'], 
+                  color: colors, 
+                  isBig: big, 
+                  image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                  tema: color, 
+                  idFinalis: item['id_finalis'].toString(),
+                  remaining: remaining,
+                  lang: lang,
+                  flag_hide_no_urut: data['flag_hide_nomor_urut'],
+                  flag_paket : data['flag_paket']
+                );
+              } else{
+                return SizedBox.shrink();
+              }
 
             }).toList(),
           ),
@@ -955,6 +961,7 @@ Widget buildTopCard({
   required Duration remaining,
   required Map<String, dynamic> lang,
   required String flag_hide_no_urut,
+  required String flag_paket,
 }) {
   String crownImage = '';
   switch (rank) {
@@ -1018,17 +1025,33 @@ Widget buildTopCard({
             const SizedBox(height: 6),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailFinalisPage(
-                      id_finalis: idFinalis,
-                      count: 0,
-                      indexWrap: null,
-                      flag_hide_no_urut: flag_hide_no_urut,
+                if (flag_paket == '0') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailFinalisPage(
+                        id_finalis: idFinalis,
+                        count: 0,
+                        indexWrap: null,
+                        flag_hide_no_urut: flag_hide_no_urut,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailFinalisPaketPage(
+                        id_finalis: idFinalis,
+                        vote: 0,
+                        index: 0,
+                        total_detail: 0,
+                        id_paket_bw: null,
+                        flag_hide_no_urut: flag_hide_no_urut,
+                      ),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 13),

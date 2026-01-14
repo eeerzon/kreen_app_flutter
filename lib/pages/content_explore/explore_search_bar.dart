@@ -48,16 +48,18 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
       : Row(
           children: [
             Expanded(
-              child: Container(
-                color: Colors.white,
+              child: SizedBox(
                 height: 48,
                 child: TextField(
                   onChanged: widget.onChanged,
                   controller: widget.controller,
+                  textAlignVertical: TextAlignVertical.center,
                   decoration: InputDecoration(
                     hintText: search,
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     prefixIcon: const Icon(Icons.search),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade400,),

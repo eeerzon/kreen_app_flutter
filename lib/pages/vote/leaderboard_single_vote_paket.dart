@@ -118,7 +118,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       detailfinalisText = tempdetailFinalis['detail_finalis'];
 
       noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['age'];
+      ageText = tempdetailFinalis['usia'];
       activityText = tempdetailFinalis['aktivitas'];
       biographyText = tempdetailFinalis['biografi'];
       scanQrText = tempdetailFinalis['scan_vote'];
@@ -244,7 +244,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   num get totalHarga {
     final hargaItem = harga_akhir;
     if (hargaItem == null) return 0;
@@ -386,7 +386,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (detailvote['theme_name'] != null) {
       themeName = detailvote['theme_name'];
     }
@@ -429,7 +429,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       }
     }
 
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     DateTime mulai = DateTime.parse("${detailvote['tanggal_grandfinal_mulai']} ${detailvote['waktu_mulai']}");
     DateTime selesai = DateTime.parse("${detailvote['tanggal_grandfinal_mulai']} ${detailvote['waktu_selesai']}");
@@ -513,19 +513,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                               detailFinalis['nama_finalis'],
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                  
-                            SizedBox(height: 10,),
-                            (detailFinalis['nama_tambahan'] == null || detailFinalis['nama_tambahan'].toString().trim().isEmpty)
-                              ? Text(
-                                  noDataText!,
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                )
-                              : Text(detailFinalis['nama_tambahan'],
-                                style: TextStyle(color: Colors.grey),
-                              ),
+
+                            if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                              const SizedBox(height: 10,),
+                              Text(detailFinalis['nama_tambahan'],
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                            ],
                   
                             if (widget.flag_hide_nomor_urut == "0") ...[
                               SizedBox(height: 10,),
@@ -601,136 +595,142 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                             ),
                   
                             SizedBox(height: 30,),
-                            Container(
-                              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
-                              decoration: BoxDecoration(
-                                color: isTutup || widget.close_payment == '1'  ? Colors.grey : color,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                            Material(
+                              color: Colors.transparent,
                               child: InkWell(
                                 onTap: (isTutup || widget.close_payment == '1')
-                                ? null
-                                : () async {
-                  
-                                  final selectedQty = await PaketVoteModal.show(
-                                    context,
-                                    detailIndex,
-                                    paketTerbaik,
-                                    paketLainnya,
-                                    color,
-                                    bgColor,
-                                    id_paket!,
-                                    currencyCode ?? detailvote['currency']
-                                  );
-                  
-                                  if (selectedQty != null) {
-                                    setState(() {
-                                      counts = selectedQty['counts'];
-                                      harga_akhir = selectedQty['harga_akhir'];
-                                      if (currencyCode != null) {
-                                        harga_akhir_asli = selectedQty['harga_akhir_asli'];
-                                      } else {
-                                        harga_akhir_asli = selectedQty['harga_akhir'];
-                                      }
-                                      id_paket = selectedQty['id_paket'];
-                                    });
-                                  }
+                                  ? null
+                                  : () async {
+                    
+                                    final selectedQty = await PaketVoteModal.show(
+                                      context,
+                                      detailIndex,
+                                      paketTerbaik,
+                                      paketLainnya,
+                                      color,
+                                      bgColor,
+                                      id_paket!,
+                                      currencyCode ?? detailvote['currency']
+                                    );
+                    
+                                    if (selectedQty != null) {
+                                      setState(() {
+                                        counts = selectedQty['counts'];
+                                        harga_akhir = selectedQty['harga_akhir'];
+                                        if (currencyCode != null) {
+                                          harga_akhir_asli = selectedQty['harga_akhir_asli'];
+                                        } else {
+                                          harga_akhir_asli = selectedQty['harga_akhir'];
+                                        }
+                                        id_paket = selectedQty['id_paket'];
+                                      });
+                                    }
                                 },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        widget.close_payment == '1'
-                                            ? '$voteOpenAgain ${widget.tanggal_buka_vote}'
-                                            : buttonPilihPaketText!,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.white),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
+                                  decoration: BoxDecoration(
+                                    color: (isTutup || widget.close_payment == '1')
+                                      ? Colors.grey
+                                      : color,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          buttonPilihPaketText!,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
                                       ),
-                                    ),
-                                    if (widget.close_payment != '1') ...[
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: Colors.white,
-                                        size: 15,
-                                      ),
+                                      if (widget.close_payment != '1') ...[
+                                        // SizedBox(width: 10),
+                                        Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: Colors.white,
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              )
-                            ),
+                              ),
+                            )
                           ],
                         ),
                       ),
-                  
-                      SizedBox(height: 12,),
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              
-                              if (detailFinalis['usia'] != 0) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  ageText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                  
-                                (detailFinalis['usia'] == 0)
-                                  ? Text(
-                                      noDataText!,
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    )
-                                  : Text(detailFinalis['usia'].toString(),
-                                    style: TextStyle(color: Colors.grey),
+
+                      if (detailFinalis['usia'] != 0 ||
+                          (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
+                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
+                        SizedBox(height: 12,),
+                        Container(
+                          width: double.infinity,
+                          color: Colors.white,
+                          child: Padding(
+                            padding: kGlobalPadding,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                
+                                if (detailFinalis['usia'] != 0) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    ageText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
-                              ],
-                  
-                              if (detailFinalis['profesi'].toString().isNotEmpty) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  activityText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  detailFinalis['profesi']
-                                ),
-                              ],
-                  
-                              if (detailFinalis['deskripsi'] != null) ... [
-                                SizedBox(height: 12,),
-                                Text(
-                                  biographyText!,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Html(
-                                  data: detailFinalis['deskripsi'],
-                                  style: {
-                                    '*': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
+                    
+                                  (detailFinalis['usia'] == 0)
+                                    ? Text(
+                                        noDataText!,
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      )
+                                    : Text(detailFinalis['usia'].toString(),
+                                      style: TextStyle(color: Colors.grey),
                                     ),
-                                    'p': Style(
-                                      margin: Margins.zero,
-                                      padding: HtmlPaddings.zero,
-                                    )
-                                  },
-                                ),
+                                ],
+                    
+                                if (detailFinalis['profesi'].toString().isNotEmpty) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    activityText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    detailFinalis['profesi']
+                                  ),
+                                ],
+                    
+                                if (detailFinalis['deskripsi'] != null) ... [
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    biographyText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Html(
+                                    data: detailFinalis['deskripsi'],
+                                    style: {
+                                      '*': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      ),
+                                      'p': Style(
+                                        margin: Margins.zero,
+                                        padding: HtmlPaddings.zero,
+                                      )
+                                    },
+                                  ),
+                                ],
+                    
+                                SizedBox(height: 12,),
                               ],
-                  
-                               SizedBox(height: 12,),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                   
                       if (detailFinalis['id_qrcode'] != null) ... [
                         SizedBox(height: 12,),

@@ -19,7 +19,7 @@ class OrderEventPaid extends StatefulWidget {
 }
 
 class _OrderEventPaidState extends State<OrderEventPaid> {
-  final formatter = NumberFormat.decimalPattern("id_ID");
+  final formatter = NumberFormat.decimalPattern("en_US");
   String? langCode;
   bool _isLoading = true;
 

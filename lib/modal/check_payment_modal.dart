@@ -11,7 +11,7 @@ import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class CheckPaymentModal {
   static Future<void> show(BuildContext context, String idOrder) async {
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> voteOrder = {};
     List<dynamic> voteOrderDetail = [];
@@ -242,7 +242,7 @@ class CheckPaymentModal {
 
 
   static Future<void> showEvent(BuildContext context, String idOrder) async {
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> eventOrder = {};
     List<dynamic> eventOrderDetail = [];

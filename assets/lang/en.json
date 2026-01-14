@@ -83,7 +83,7 @@
     "lokasi" : "Location",
     "harga" : "Price",
     "harga_detail" : "Free",
-    "text_vote" : "Votes",
+    "text_vote" : "Vote(s)",
     "no_leaderboard" : "No Leaderboard Available",
     "kata_mereka" : "What People Say",
     "no_support" : "No support comment available",
@@ -98,11 +98,12 @@
     "no_more" : "No more data available",
     "belum_ada_transaksi" : "No transaction history available",
     "beli_lagi" : "Buy Again",
-    "Finalis" : "Finalist",
+    "finalis" : "Finalist",
     "mulai_dari" : "Start from",
     "no_data" : "No data found",
     "tutorial_vote_text" : "Voting Tutorial on Kreen Vote",
-    "s_n_k_vote" : "Terms and Conditions of Voting"
+    "s_n_k_vote" : "Terms and Conditions of Voting",
+    "paket" : "Package"
   },
 
   "lastPressed" : "Press back again to exit the application",
@@ -268,7 +269,16 @@
     "expired_at": "Valid until ",
     "selesai": "Done",
     "segera": "SOON",
-    "habis": "SOLD OUT"
+    "habis": "SOLD OUT",
+    "pembicara" : "Speaker",
+    "moderator": "Moderator",
+    "doorprize": "Prize",
+    "sponsor": "Sponsor",
+    "media_partner": "Media Partner",
+    "supported": "Supported by",
+    "guest_star": "Guest Star",
+    "special_perform": "Special Perform",
+    "custom_section": "Custom Section"
   },
 
   "order_menunggu" : "waiting",
@@ -336,6 +346,7 @@
     "currency" : "Currency",
     "desc_email_1" : "Email verification has been sent",
     "desc_email_2" : "We have sent an email verification to ",
-    "desc_email_3" : "Please open the email and click the verification link to activate your account."
+    "desc_email_3" : "Please open the email and click the verification link to activate your account.",
+    "syarat_dan_ketentuan" : "Terms and Conditions"
   }
 }

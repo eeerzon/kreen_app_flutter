@@ -283,7 +283,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
 
   String? langCode;
 
-  final formatterNUmber = NumberFormat.decimalPattern("id_ID");
+  final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
 
   @override
@@ -745,7 +745,7 @@ class _VotePendingState extends State<VotePending> {
 
   String? langCode;
 
-  final formatterNUmber = NumberFormat.decimalPattern("id_ID");
+  final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
 
   @override
@@ -1201,7 +1201,7 @@ class _VoteFailState extends State<VoteFail> {
 
   String? langCode;
 
-  final formatterNUmber = NumberFormat.decimalPattern("id_ID");
+  final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
 
   @override
