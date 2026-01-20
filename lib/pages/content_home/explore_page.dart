@@ -23,6 +23,10 @@ class _ExplorePageState extends State<ExplorePage> {
 
   final TextEditingController _searchController = TextEditingController();
 
+  List<String> timeFilter = ['this_week','this_month','next_month'];
+  List<String> priceFilter = ['free','paid'];
+
+
   @override
   void initState() {
     super.initState();
@@ -52,9 +56,21 @@ class _ExplorePageState extends State<ExplorePage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      ExploreAll(keyword: _keyword),
-      ExploreVote(keyword: _keyword),
-      ExploreEvent(keyword: _keyword),
+      ExploreAll(
+        keyword: _keyword,
+        timeFilter: timeFilter,
+        priceFilter: priceFilter,
+      ),
+      ExploreVote(
+        keyword: _keyword,
+        timeFilter: timeFilter,
+        priceFilter: priceFilter,
+      ),
+      ExploreEvent(
+        keyword: _keyword,
+        timeFilter: timeFilter,
+        priceFilter: priceFilter,
+      ),
     ];
 
     return Scaffold(
@@ -116,7 +132,15 @@ class _ExplorePageState extends State<ExplorePage> {
             
             ExploreSearchBar(
               controller: _searchController, 
-              onChanged: onSearch
+              onChanged: onSearch,
+              initialTime: timeFilter,
+              initialPrice: priceFilter,
+              onFilterApply: (time, price) {
+                setState(() {
+                  timeFilter = time;
+                  priceFilter = price;
+                });
+              },
             ),
             const SizedBox(height: 16),
             ExploreFilter(

@@ -11,7 +11,15 @@ import 'package:shimmer/shimmer.dart';
 
 class ExploreEvent extends StatefulWidget {
   final String keyword;
-  const ExploreEvent({super.key, required this.keyword});
+  final List<String> timeFilter;
+  final List<String> priceFilter;
+
+  const ExploreEvent({
+    super.key, 
+    required this.keyword,
+    required this.timeFilter,
+    required this.priceFilter
+  });
 
   @override
   State<ExploreEvent> createState() => _ExploreEventState();
@@ -24,7 +32,7 @@ class _ExploreEventState extends State<ExploreEvent> {
   
   List<dynamic> events = [];
 
-  Map<String, dynamic> votelang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future<void> _loadContent(bool isFirst, String? term) async {
     
@@ -48,10 +56,10 @@ class _ExploreEventState extends State<ExploreEvent> {
       langCode = code;
     });
     
-    final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      votelang = tempvotelang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -171,7 +179,7 @@ class _ExploreEventState extends State<ExploreEvent> {
           SizedBox(height: 12,),
 
           Text(
-            votelang['no_data'] ?? 'Tidak ada data',
+            bahasa['no_data'] ?? 'Tidak ada data',
             style: TextStyle(
               fontWeight: FontWeight.bold,
             ),
@@ -320,6 +328,13 @@ class _ExploreEventState extends State<ExploreEvent> {
                                 ),
                               ),
 
+                              //penyelenggara
+                              const SizedBox(height: 4),
+                              Text(
+                                item['nama_penyelenggara'],
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+
                               const SizedBox(height: 4),
                               SizedBox(
                                 height: 38,
@@ -337,7 +352,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                               const SizedBox(height: 4),
                               Text(
                                 item['price'] == 0
-                                ? votelang['harga_detail']  //'Gratis'
+                                ? bahasa['harga_detail']  //'Gratis'
                                 : currencyCode == null
                                   ? "${item['currency']} $hargaFormatted"
                                   : "$currencyCode $hargaFormatted",

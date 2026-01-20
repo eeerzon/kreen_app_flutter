@@ -11,7 +11,15 @@ import 'package:shimmer/shimmer.dart';
 
 class ExploreVote extends StatefulWidget {
   final String keyword;
-  const ExploreVote({super.key, required this.keyword});
+  final List<String> timeFilter;
+  final List<String> priceFilter;
+
+  const ExploreVote({
+    super.key, 
+    required this.keyword,
+    required this.timeFilter,
+    required this.priceFilter
+  });
 
   @override
   State<ExploreVote> createState() => _ExploreVoteState();
@@ -24,7 +32,7 @@ class _ExploreVoteState extends State<ExploreVote> {
 
   List<dynamic> votes = [];
 
-  Map<String, dynamic> votelang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future<void> _loadContent(bool isFirst, String? term) async {
     
@@ -48,10 +56,10 @@ class _ExploreVoteState extends State<ExploreVote> {
       langCode = code;
     });
     
-    final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      votelang = tempvotelang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -170,7 +178,7 @@ class _ExploreVoteState extends State<ExploreVote> {
           SizedBox(height: 12,),
 
           Text(
-            votelang['no_data'] ?? 'No Data',
+            bahasa['no_data'] ?? 'No Data',
             style: TextStyle(
               fontWeight: FontWeight.bold,
             ),
@@ -290,6 +298,13 @@ class _ExploreVoteState extends State<ExploreVote> {
                                 ),
                               ),
 
+                              //penyelenggara
+                              const SizedBox(height: 4),
+                              Text(
+                                item['nama_penyelenggara'],
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+
                               const SizedBox(height: 4),
                               SizedBox(
                                 height: 38,
@@ -307,7 +322,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                               const SizedBox(height: 4),
                               Text(
                                 item['price'] == 0
-                                ? votelang['harga_detail']  //'Gratis'
+                                ? bahasa['harga_detail']  //'Gratis'
                                 : currencyCode == null
                                   ? "${item['currency']} $hargaFormatted"
                                   : "$currencyCode $hargaFormatted",

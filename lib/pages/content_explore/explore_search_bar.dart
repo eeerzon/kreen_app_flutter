@@ -1,6 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
+import 'package:kreen_app_flutter/modal/modal_filter.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
@@ -8,7 +9,18 @@ class ExploreSearchBar extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
 
-  const ExploreSearchBar({super.key, required this.controller, required this.onChanged});
+  final List<String> initialTime;
+  final List<String> initialPrice;
+  final Function(List<String>, List<String>) onFilterApply;
+
+  const ExploreSearchBar({
+    super.key, 
+    required this.controller, 
+    required this.onChanged,
+    required this.initialTime,
+    required this.initialPrice,
+    required this.onFilterApply,
+  });
 
   @override
   _ExploreSearchBarState createState() => _ExploreSearchBarState();
@@ -24,13 +36,16 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
       langCode = code;
     });
     
-    final tempsearch = await LangService.getText(langCode!, "search");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      search = tempsearch;
+      search = tempbahasa['search'];
       isLoading = false;
     });
   }
+
+  late List<String> paramTime;
+  late List<String> paramPrice;
   
   @override
   void initState() {
@@ -39,6 +54,9 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
     });
+
+    paramTime = List.from(widget.initialTime);
+    paramPrice = List.from(widget.initialPrice);
   }
 
   @override
@@ -69,9 +87,25 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
               ),
             ),
             
+            SizedBox(width: 4,),
             IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.filter_alt_outlined, size: 30,),
+              onPressed: () async {
+                final result = await ModalFilter.show(
+                  context,
+                  langCode!,
+                  paramTime,
+                  paramPrice,
+                );
+
+                if (result != null) {
+                  setState(() {
+                    paramTime = result['time']!;
+                    paramPrice = result['price']!;
+                  });
+                  widget.onFilterApply(paramTime, paramPrice);
+                }
+              },
+              icon: const Icon(Icons.filter_alt_outlined, size: 34,),
             ),
           ],
         );
