@@ -6,6 +6,7 @@ import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 
 
 class VotePage extends StatefulWidget {
@@ -30,13 +31,13 @@ class _VotePageState extends State<VotePage> {
   }
 
   Future<void> _getBahasa() async {
-    final code = await prefs.read(key: 'bahasa');
+    final code = await StorageService.getLanguage();
 
-    final text = await LangService.getText(code!, 'cari_vote');
+    final bahasa = await LangService.getJsonData(code!, 'bahasa');
 
     setState(() {
       langCode = code;
-      cari_vote = text;
+      cari_vote = bahasa['cari_vote'];
     });
   }
 

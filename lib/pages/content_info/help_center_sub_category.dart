@@ -19,7 +19,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
   String? langCode, search;
   bool isLoading = true;
 
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
   
   List<dynamic> subKategori = [];
   Map<int, List<dynamic>> questionsBySub = {};
@@ -39,9 +39,9 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
 
-    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
     setState(() {
-      infoLang = tempinfolang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -67,7 +67,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(infoLang['pusat_bantuan']),
+        title: Text(bahasa['pusat_bantuan']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),

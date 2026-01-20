@@ -58,9 +58,9 @@ class _ArticleWebViewState extends State<ArticleWebView> {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
 
-    final tempArtikel = await LangService.getText(langCode!, "artikel");
+    final tempArtikel = await LangService.getJsonData(langCode!, "bahasa");
     setState(() {
-      artikel = tempArtikel;
+      artikel = tempArtikel['artikel'];
       isLoading = false;
     });
   }

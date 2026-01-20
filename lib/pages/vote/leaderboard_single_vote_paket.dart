@@ -64,7 +64,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   Map<String, dynamic> detailvote = {};
   List<dynamic> ranking = [];
 
-  Map<String, dynamic>? detailVoteLang;
+  Map<String, dynamic>? bahasa;
 
   String? notLogin, notLoginDesc, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
@@ -92,41 +92,37 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       langCode = code;
     });
 
-    final tempDetailVoteLang = await LangService.getJsonData(langCode!, "detail_vote");
-    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      detailVoteLang = tempDetailVoteLang;
+      bahasa = tempbahasa;
 
-      totalHargaText = tempdetailFinalis['total_harga'];
-      hargaText = tempdetailFinalis['harga'];
-      hargaDetail = tempdetailFinalis['harga_detail'];
-      bayarText = tempdetailFinalis['bayar'];
+      totalHargaText = tempbahasa['total_harga'];
+      hargaText = tempbahasa['harga'];
+      hargaDetail = tempbahasa['harga_detail'];
+      bayarText = tempbahasa['bayar'];
 
-      endVote = tempdetailFinalis['end_vote'];
-      voteOpen = tempdetailFinalis['vote_open'];
-      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      endVote = tempbahasa['end_vote'];
+      voteOpen = tempbahasa['vote_open'];
+      voteOpenAgain = tempbahasa['vote_open_again'];
       
-      notLogin = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      loginText = templogin;
+      notLogin = tempbahasa['notLogin'];
+      notLoginDesc = tempbahasa['notLoginDesc'];
+      loginText = tempbahasa['login'];
 
-      buttonPilihPaketText = tempdetailFinalis['pick_paket'];
-      detailfinalisText = tempdetailFinalis['detail_finalis'];
+      buttonPilihPaketText = tempbahasa['pick_paket'];
+      detailfinalisText = tempbahasa['detail_finalis'];
 
-      noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['usia'];
-      activityText = tempdetailFinalis['aktivitas'];
-      biographyText = tempdetailFinalis['biografi'];
-      scanQrText = tempdetailFinalis['scan_vote'];
-      downloadQrText = tempdetailFinalis['unduh_qr'];
-      tataCaraText = tempdetailFinalis['tatacara_vote'];
-      videoProfilText = tempdetailFinalis['profile_video'];
-      noValidVideo = tempdetailFinalis['video_no_valid'];
-      socialMediaText = tempdetailFinalis['sosial_media'];
+      noDataText = tempbahasa['no_data'];
+      ageText = tempbahasa['usia'];
+      activityText = tempbahasa['aktivitas'];
+      biographyText = tempbahasa['biografi'];
+      scanQrText = tempbahasa['scan_vote'];
+      downloadQrText = tempbahasa['unduh_qr'];
+      tataCaraText = tempbahasa['tatacara_vote'];
+      videoProfilText = tempbahasa['profile_video'];
+      noValidVideo = tempbahasa['video_no_valid'];
+      socialMediaText = tempbahasa['sosial_media'];
     });
   }
 
@@ -796,7 +792,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                   ),
                                   child: InkWell(
                                     onTap: () async {
-                                      await TutorModal.show(context, detailvote['tutorial_vote'], detailVoteLang!['tutorial_vote_text']);
+                                      await TutorModal.show(context, detailvote['tutorial_vote'], bahasa!['tutorial_vote_text']);
                                     },
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -943,7 +939,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  detailVoteLang!['penyelenggara'],
+                                                  bahasa!['penyelenggara'],
                                                   style: TextStyle(
                                                     color: Colors.grey,
                                                   ),
@@ -1016,7 +1012,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
                                       const SizedBox(height: 20,),
                                       Text(
-                                        detailVoteLang!['grandfinal_detail'],
+                                        bahasa!['grandfinal_detail'],
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
 
@@ -1221,7 +1217,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                             // === LEADERBOARD ===
                             if (detailvote['leaderboard_limit_tampil'] != -1)
                               DetailVoteLang(
-                                values: detailVoteLang!,
+                                values: bahasa!,
                                 child: Container(
                                   color: Colors.white,
                                   padding: kGlobalPadding,

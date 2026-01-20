@@ -44,11 +44,11 @@ class _CharityPageState extends State<CharityPage> {
   Future<void> _getBahasa() async {
     final code = await prefs.read(key: 'bahasa');
 
-    final text = await LangService.getText(code!, 'cari_charity');
+    final bahasa = await LangService.getJsonData(code!, 'bahasa');
 
     setState(() {
       langCode = code;
-      cari_charity = text;
+      cari_charity = bahasa['cari_charity'];
     });
   }
 

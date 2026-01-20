@@ -140,4 +140,13 @@ class StorageService {
   static Future<void> clearLoginMethod() async {
     await _storage.delete(key: 'login_method');
   }
+
+  static Future<void> setGuestMode(bool value) async {
+    await _storage.write(key: 'isGuest', value: value ? '1' : '0');
+  }
+
+  static Future<bool> isGuestMode() async {
+    final v = await _storage.read(key: 'isGuest');
+    return v == '1';
+  }
 }

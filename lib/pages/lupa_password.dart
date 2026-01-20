@@ -17,7 +17,7 @@ class LupaPasswordPage extends StatefulWidget {
 class _LupaPasswordPageState extends State<LupaPasswordPage> {
   String? langCode;
   String? lupaPassword, lupaPasswordDesc, emailHint, sendEmail, requestSend;
-  Map<String, dynamic> eventLang = {};
+  Map<String, dynamic> bahasa = {};
 
   bool isLoading = true;
   final _emailController = TextEditingController();
@@ -37,22 +37,17 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
     setState(() {
       langCode = code;
     });
-
-    final tempLupaPassword = await LangService.getText(langCode!, "lupa_password");
-    final tempLupaPasswordDesc = await LangService.getText(langCode!, "lupa_password_desc");
-    final tempemailHint = await LangService.getText(langCode!, "input_email");
-    final tempsendEmail = await LangService.getText(langCode!, "kirim_email");
-    final temprequestSend = await LangService.getText(langCode!, "request_kirim");
-    final tempeventLang = await LangService.getJsonData(langCode!, "event");
+    
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      lupaPassword = tempLupaPassword;
-      lupaPasswordDesc = tempLupaPasswordDesc;
-      emailHint = tempemailHint;
-      sendEmail = tempsendEmail;
-      requestSend = temprequestSend;
+      lupaPassword = tempbahasa["lupa_password"];
+      lupaPasswordDesc = tempbahasa["lupa_password_desc"];
+      emailHint = tempbahasa["input_email"];
+      sendEmail = tempbahasa["kirim_email"];
+      requestSend = tempbahasa["request_kirim"];
 
-      eventLang = tempeventLang;
+      bahasa = tempbahasa;
 
       isLoading = false;
     });
@@ -127,7 +122,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
                         filled: true,
                         fillColor: Colors.white,
                         errorText: _emailTouched && !isValidEmail(_emailController.text)
-                          ? eventLang['error_email_1']
+                          ? bahasa['error_email_1']
                           : null,
                       ),
                     ),

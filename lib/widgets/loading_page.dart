@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 
-void showLoadingDialog(BuildContext context) {
+void showLoadingDialog(BuildContext context, String loading) {
     AwesomeDialog(
       context: context,
       dialogType: DialogType.noHeader,
@@ -9,10 +9,10 @@ void showLoadingDialog(BuildContext context) {
       dismissOnBackKeyPress: false,
       body: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           CircularProgressIndicator(color: Colors.red),
           SizedBox(height: 16),
-          Text("Memuat data..."),
+          Text(loading),
         ],
       ),
     ).show();

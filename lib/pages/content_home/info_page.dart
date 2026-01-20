@@ -28,7 +28,7 @@ class _InfoPageState extends State<InfoPage> {
   String? token;
 
   bool isLoading = true;
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
 
   @override
   void initState() {
@@ -56,19 +56,15 @@ class _InfoPageState extends State<InfoPage> {
     setState(() {
       langCode = code;
     });
-
-    final templogin = await LangService.getText(langCode!, 'login');
-    final tempdaftar = await LangService.getText(langCode!, 'daftar');
-    final tempdialog_language = await LangService.getText(langCode!, 'pick_language');
-    final tempdialog_currency = await LangService.getText(langCode!, 'pick_currency');
-    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
+    
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
 
     setState(() {
-      login = templogin;
-      daftar = tempdaftar;
-      dialog_language = tempdialog_language;
-      dialog_currency = tempdialog_currency;
-      infoLang = tempinfolang;
+      bahasa = tempbahasa;
+      login = bahasa['login'];
+      daftar = bahasa['daftar'];
+      dialog_language = bahasa['pick_language'];
+      dialog_currency = bahasa['pick_currency'];
     });
   }
 
@@ -331,7 +327,7 @@ class _InfoPageState extends State<InfoPage> {
                           
                               SizedBox(width: 12,),
                               Text(
-                                infoLang['profil'], //"Profil"
+                                bahasa['profil'], //"Profil"
                               )
                             ],
                           ),
@@ -426,7 +422,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            infoLang['bahasa'], //"Bahasa"
+                            bahasa['bahasa'], //"Bahasa"
                           )
                         ],
                       ),
@@ -461,7 +457,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            infoLang['currency'], //"Mata Uang"
+                            bahasa['currency'], //"Mata Uang"
                           )
                         ],
                       ),
@@ -503,7 +499,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            infoLang['pusat_bantuan'], //"Pusat Bantuan"
+                            bahasa['pusat_bantuan'], //"Pusat Bantuan"
                           )
                         ],
                       ),
@@ -545,7 +541,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            "${infoLang['tentang']} Kreen", //"Tentang"
+                            "${bahasa['tentang']} Kreen", //"Tentang"
                           )
                         ],
                       ),
@@ -587,7 +583,7 @@ class _InfoPageState extends State<InfoPage> {
                       
                           SizedBox(width: 12,),
                           Text(
-                            infoLang['kebijakan_privasi'], //"Kebijakan Privasi"
+                            bahasa['kebijakan_privasi'], //"Kebijakan Privasi"
                           )
                         ],
                       ),

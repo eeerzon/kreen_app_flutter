@@ -17,12 +17,12 @@ class PaketVoteModal {
     bool isLoading = true;
 
     String? langCode;
-    Map<String, dynamic> modalLang = {};
+    Map<String, dynamic> bahasa = {};
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
-      modalLang = await LangService.getJsonData(langCode!, "modal");
+      bahasa = await LangService.getJsonData(langCode!, "bahasa");
     }
 
     Widget buildSkeleton() {
@@ -107,7 +107,7 @@ class PaketVoteModal {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            modalLang["pilih_paket"] ?? "", // "Pilih Paket Vote",
+                            bahasa["pilih_paket"] ?? "", // "Pilih Paket Vote",
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
@@ -120,7 +120,7 @@ class PaketVoteModal {
                       const SizedBox(height: 4),
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: Text(modalLang["pilih_paket_desc"] ?? ""), //"Silahkan pilih paket vote anda.."
+                        child: Text(bahasa["pilih_paket_desc"] ?? ""), //"Silahkan pilih paket vote anda.."
                       ),
                       const SizedBox(height: 16),
 
@@ -131,7 +131,7 @@ class PaketVoteModal {
                             // SECTION 1 — Paket Terbaik
                             if (paketTerbaik.isNotEmpty) ...[
                               Text(
-                                modalLang["paket_terbaik"] ?? "", //"Paket Terbaik buat kamu",
+                                bahasa["paket_terbaik"] ?? "", //"Paket Terbaik buat kamu",
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                               const SizedBox(height: 8),
@@ -230,7 +230,7 @@ class PaketVoteModal {
                             // SECTION 2 — Paket Lainnya
                             if (paketLainnya.isNotEmpty) ...[
                               Text(
-                                modalLang["paket_lainnya"] ?? "", //"Paket Lainnya",
+                                bahasa["paket_lainnya"] ?? "", //"Paket Lainnya",
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                               const SizedBox(height: 8),
@@ -323,7 +323,7 @@ class PaketVoteModal {
                                   ? null
                                   : () => Navigator.pop(context, {'id_paket': idPaket, 'counts': counts, 'harga_akhir': hargaGet, 'harga_akhir_asli': hargaGetAsli, "count_data": 1}),
                               child: Text(
-                                modalLang['konfirmasi'] ?? "", // "Konfirmasi",
+                                bahasa['konfirmasi'] ?? "", // "Konfirmasi",
                                 style: TextStyle(color: Colors.white),
                               ),
                             ),
@@ -345,7 +345,7 @@ class PaketVoteModal {
                                 Navigator.pop(context);
                               },
                               child: Text(
-                                modalLang['batal'] ?? "", //]"Cancel",
+                                bahasa['batal'] ?? "", //]"Cancel",
                                 style: TextStyle(color: Colors.black),
                               ),
                             ),

@@ -20,11 +20,11 @@ class CheckPaymentModal {
     String? statusOrder;
 
     String? langCode;
-    Map<String, dynamic> paymentlang = {};
+    Map<String, dynamic> bahasa = {};
     Future<void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
-      paymentlang = await LangService.getJsonData(langCode!, "payment");
+      bahasa = await LangService.getJsonData(langCode!, "bahasa");
     }
 
     Future<void> loadOrder() async {
@@ -37,19 +37,19 @@ class CheckPaymentModal {
       vote = tempOrder['vote'] ?? {};
 
       if (voteOrder['order_status'] == '0'){
-        statusOrder = paymentlang['status_order_0'];
+        statusOrder = bahasa['status_order_0'];
       } else if (voteOrder['order_status'] == '1'){
-        statusOrder = paymentlang['status_order_1'];
+        statusOrder = bahasa['status_order_1'];
       } else if (voteOrder['order_status'] == '2'){
-        statusOrder = paymentlang['status_order_2'];
+        statusOrder = bahasa['status_order_2'];
       } else if (voteOrder['order_status'] == '3'){
-        statusOrder = paymentlang['status_order_3'];
+        statusOrder = bahasa['status_order_3'];
       } else if (voteOrder['order_status'] == '4'){
-        statusOrder = paymentlang['status_order_4'];
+        statusOrder = bahasa['status_order_4'];
       } else if (voteOrder['order_status'] == '20'){
-        statusOrder = paymentlang['status_order_20'];
+        statusOrder = bahasa['status_order_20'];
       } else if (voteOrder['order_status'] == '404'){
-        statusOrder = paymentlang['status_order_404'];
+        statusOrder = bahasa['status_order_404'];
       }
     }
 
@@ -78,7 +78,7 @@ class CheckPaymentModal {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          paymentlang['info_pesanan'],
+                          bahasa['info_pesanan'],
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -149,7 +149,7 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          Text(paymentlang['total_bayar']),
+                          Text(bahasa['total_bayar']),
                           const Text(' :  '),
                           Text(
                             voteOrder.isNotEmpty
@@ -164,7 +164,7 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          Text(paymentlang['status_pembayaran']),
+                          Text(bahasa['status_pembayaran']),
                           const Text(' :  '),
                           Text(
                             statusOrder ?? '-',
@@ -195,7 +195,7 @@ class CheckPaymentModal {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh, color: Colors.white),
                       label: Text(
-                        paymentlang['check_status'],
+                        bahasa['check_status'],
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white),
                       ),

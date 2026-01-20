@@ -64,7 +64,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   final List<int> voteOptions = [10, 50, 100, 250, 500, 1000];
   int? selectedVotes;
 
-  Map<String, dynamic>? detailVoteLang;
+  Map<String, dynamic>? bahasa;
 
   String? notLogin, notLoginDesc, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
@@ -73,6 +73,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   String? detailfinalisText;
   String? noDataText;
   String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidVideo, socialMediaText;
+
+  int totalQty = 0;
+  int countData = 1;
 
   @override
   void initState() {
@@ -92,41 +95,37 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       langCode = code;
     });
 
-    final tempDetailVoteLang = await LangService.getJsonData(langCode!, "detail_vote");
-    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      detailVoteLang = tempDetailVoteLang;
+      bahasa = tempbahasa;
 
-      totalHargaText = tempdetailFinalis['total_harga'];
-      hargaText = tempdetailFinalis['harga'];
-      hargaDetail = tempdetailFinalis['harga_detail'];
-      bayarText = tempdetailFinalis['bayar'];
+      totalHargaText = tempbahasa['total_harga'];
+      hargaText = tempbahasa['harga'];
+      hargaDetail = tempbahasa['harga_detail'];
+      bayarText = tempbahasa['bayar'];
 
-      endVote = tempdetailFinalis['end_vote'];
-      voteOpen = tempdetailFinalis['vote_open'];
-      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      endVote = tempbahasa['end_vote'];
+      voteOpen = tempbahasa['vote_open'];
+      voteOpenAgain = tempbahasa['vote_open_again'];
       
-      notLogin = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      loginText = templogin;
+      notLogin = tempbahasa['notLogin'];
+      notLoginDesc = tempbahasa['notLoginDesc'];
+      loginText = tempbahasa['login'];
 
-      buttonPilihPaketText = tempdetailFinalis['pick_paket'];
-      detailfinalisText = tempdetailFinalis['detail_finalis'];
+      buttonPilihPaketText = tempbahasa['pick_paket'];
+      detailfinalisText = tempbahasa['detail_finalis'];
 
-      noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['usia'];
-      activityText = tempdetailFinalis['aktivitas'];
-      biographyText = tempdetailFinalis['biografi'];
-      scanQrText = tempdetailFinalis['scan_vote'];
-      downloadQrText = tempdetailFinalis['unduh_qr'];
-      tataCaraText = tempdetailFinalis['tatacara_vote'];
-      videoProfilText = tempdetailFinalis['profile_video'];
-      noValidVideo = tempdetailFinalis['video_no_valid'];
-      socialMediaText = tempdetailFinalis['sosial_media'];
+      noDataText = tempbahasa['no_data'];
+      ageText = tempbahasa['usia'];
+      activityText = tempbahasa['aktivitas'];
+      biographyText = tempbahasa['biografi'];
+      scanQrText = tempbahasa['scan_vote'];
+      downloadQrText = tempbahasa['unduh_qr'];
+      tataCaraText = tempbahasa['tatacara_vote'];
+      videoProfilText = tempbahasa['profile_video'];
+      noValidVideo = tempbahasa['video_no_valid'];
+      socialMediaText = tempbahasa['sosial_media'];
     });
   }
 
@@ -256,10 +255,52 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     return hargaItem;
   }
 
-  void _updateCountFromInput(String value) {
-    final parsed = int.tryParse(value) ?? 0;
+  void _updateCountFromInput(String value, Map item, Map vote) {
+    final int batas = int.tryParse(
+      vote['batas_qty']?.toString() ?? '0'
+    ) ?? 0;
+    
+    int input = int.tryParse(value) ?? 0;
+
+    if (batas > 0 && input > batas) {
+      input = batas;
+    }
+
+    if (controllers!.text != input.toString()) {
+      controllers!.text = input.toString();
+      controllers!.selection = TextSelection.fromPosition(
+        TextPosition(offset: controllers!.text.length),
+      );
+    }
+
     setState(() {
-      counts = parsed;
+
+      counts = input;
+      // controllers!.text = parsed.toString();
+
+      final idFinalis = item['id_finalis'];
+      final namaFinalis = item['nama_finalis'];
+
+      final existingIndex = ids_finalis.indexOf(idFinalis);
+
+      if (input > 0) {
+        if (existingIndex == -1) {
+          ids_finalis.add(idFinalis);
+          names_finalis.add(namaFinalis);
+          counts_finalis.add(input);
+        } else {
+          counts_finalis[existingIndex] = input;
+          names_finalis[existingIndex] = namaFinalis;
+        }
+      } else {
+        if (existingIndex != -1) {
+          ids_finalis.removeAt(existingIndex);
+          names_finalis.removeAt(existingIndex);
+          counts_finalis.removeAt(existingIndex);
+        }
+      }
+
+      totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
     });
   }
 
@@ -654,6 +695,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                                 names_finalis[existingIndex] = namaFinalis;
                                               }
                                             }
+
+                                            totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
                                           });
                                         }
                                       },
@@ -687,7 +730,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                         isCollapsed: true, // hilangkan padding bawaan
                                         contentPadding: EdgeInsets.all(8),
                                       ),
-                                      onChanged: (value) => _updateCountFromInput(value),
+                                      onChanged: (value) => _updateCountFromInput(value, detailFinalis, detailvote),
                                       onTap: () {
                                         // langsung block semua teks ketika diklik
                                         controllers!.selection = TextSelection(
@@ -705,6 +748,11 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                       ? null
                                       : () {
                                           setState(() {
+
+                                            if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
+                                              return; // tidak menambah lagi
+                                            }
+
                                             counts++;
                                             controllers!.text = counts.toString();
                   
@@ -727,6 +775,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                               names_finalis.removeAt(existingIndex);
                                               counts_finalis.removeAt(existingIndex);
                                             }
+
+                                            totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
                                           });
                                         },
                                     child: Container(
@@ -947,7 +997,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   ),
                                   child: InkWell(
                                     onTap: () async {
-                                      await TutorModal.show(context, detailvote['tutorial_vote'], detailVoteLang!['tutorial_vote_text']);
+                                      await TutorModal.show(context, detailvote['tutorial_vote'], bahasa!['tutorial_vote_text']);
                                     },
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -1093,7 +1143,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  detailVoteLang!['penyelenggara'],
+                                                  bahasa!['penyelenggara'],
                                                   style: TextStyle(
                                                     color: Colors.grey,
                                                   ),
@@ -1166,7 +1216,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
                                       const SizedBox(height: 20,),
                                       Text(
-                                        detailVoteLang!['grandfinal_detail'],
+                                        bahasa!['grandfinal_detail'],
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
 
@@ -1371,7 +1421,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             // === LEADERBOARD ===
                             if (detailvote['leaderboard_limit_tampil'] != -1)
                               DetailVoteLang(
-                                values: detailVoteLang!,
+                                values: bahasa!,
                                 child: Container(
                                   color: Colors.white,
                                   padding: kGlobalPadding,

@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 
 
 class EventPage extends StatefulWidget {
@@ -29,13 +30,13 @@ class _EventPageState extends State<EventPage> {
   }
 
   Future<void> _getBahasa() async {
-    final code = await prefs.read(key: 'bahasa');
+    final code = await StorageService.getLanguage();
 
-    final text = await LangService.getText(code!, 'cari_event');
+    final bahasa = await LangService.getJsonData(code!, 'bahasa');
 
     setState(() {
       langCode = code;
-      cari_event = text;
+      cari_event = bahasa['cari_event'];
     });
   }
 

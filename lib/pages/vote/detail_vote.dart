@@ -43,7 +43,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
   bool _isLoading = true;
 
-  Map<String, dynamic>? detailVoteLang;
+  Map<String, dynamic>? bahasa;
   String? detailVoteLangText;
 
   @override
@@ -133,11 +133,11 @@ class _DetailVotePageState extends State<DetailVotePage> {
       langCode = code;
     });
 
-    final tempDetailVoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      detailVoteLang = tempDetailVoteLang;
-      detailVoteLangText = tempDetailVoteLang['button_find_finalist'];
+      bahasa = tempbahasa;
+      detailVoteLangText = tempbahasa['button_find_finalist'];
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -498,7 +498,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
           //konten
           DetailVoteLang(
-            values: detailVoteLang!,
+            values: bahasa!,
             child: Expanded(
               child: ListView(
                 controller: _scrollController,

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -11,6 +12,8 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_form.dart';
+import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
+import 'package:kreen_app_flutter/pages/content_info/snk_page.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/order_event_paid.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -69,9 +72,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
   String? namaLabel, namaHint;
   String? nohpLabel, nohpHint, nohpError;
   String? cobaLagi;
-  Map<String, dynamic> voteLang = {};
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> eventLang = {};
+  Map<String, dynamic> bahasa = {};
 
   bool isValidEmail(String email) {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
@@ -83,36 +84,53 @@ class _TiketEventPageState extends State<TiketEventPage> {
     return regex.hasMatch(phone);
   }
   
-  int? _duplicateEmailIndex;
-  int? _duplicatePhoneIndex;
-  int? _duplicateNameIndex;
+  Set<int> _duplicateEmailIndexes = {};
+  Set<int> _duplicatePhoneIndexes = {};
+  Set<int> _duplicateNameIndexes = {};
 
   void checkDuplicateInputs() {
-    Set<String> emails = {};
-    Set<String> phones = {};
-    Set<String> names = {};
-
-    int? dupEmail, dupPhone, dupName;
+    Map<String, List<int>> emailMap = {};
+    Map<String, List<int>> phoneMap = {};
+    Map<String, List<int>> nameMap = {};
 
     for (int i = 0; i < totalQty; i++) {
       final e = emailControllers[i].text.trim();
       final p = phoneControllers[i].text.trim();
       final n = nameControllers[i].text.trim();
 
-      if (emails.contains(e)) { dupEmail = i; }
-      else { emails.add(e); }
+      if (e.isNotEmpty) {
+        emailMap.putIfAbsent(e, () => []).add(i);
+      }
 
-      if (phones.contains(p)) { dupPhone = i; }
-      else { phones.add(p); }
+      if (p.isNotEmpty) {
+        phoneMap.putIfAbsent(p, () => []).add(i);
+      }
 
-      if (names.contains(n)) { dupName = i; }
-      else { names.add(n); }
+      if (n.isNotEmpty) {
+        nameMap.putIfAbsent(n, () => []).add(i);
+      }
     }
 
+    Set<int> dupEmail = {};
+    Set<int> dupPhone = {};
+    Set<int> dupName = {};
+
+    emailMap.forEach((key, indexes) {
+      if (indexes.length > 1) dupEmail.addAll(indexes);
+    });
+
+    phoneMap.forEach((key, indexes) {
+      if (indexes.length > 1) dupPhone.addAll(indexes);
+    });
+
+    nameMap.forEach((key, indexes) {
+      if (indexes.length > 1) dupName.addAll(indexes);
+    });
+
     setState(() {
-      _duplicateEmailIndex = dupEmail;
-      _duplicatePhoneIndex = dupPhone;
-      _duplicateNameIndex = dupName;
+      _duplicateEmailIndexes = dupEmail;
+      _duplicatePhoneIndexes = dupPhone;
+      _duplicateNameIndexes = dupName;
     });
   }
 
@@ -120,8 +138,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
   late List<List<TextEditingController>> answerControllers;
 
   late final genders = [
-    {'label': paymentLang['gender_1'], 'icon': '$baseUrl/image/male.png'},
-    {'label': paymentLang['gender_2'], 'icon': '$baseUrl/image/female.png'},
+    {'label': bahasa['gender_1'], 'icon': '$baseUrl/image/male.png'},
+    {'label': bahasa['gender_2'], 'icon': '$baseUrl/image/female.png'},
   ];
 
   late final int totalQty;
@@ -136,6 +154,12 @@ class _TiketEventPageState extends State<TiketEventPage> {
   List<dynamic> eventTiket = [];
 
   int totalHarga = 0;
+
+  List<FocusNode> emailFocusNodes = [];
+  List<FocusNode> nameFocusNodes = [];
+  List<FocusNode> phoneFocusNodes = [];
+  List<FocusNode> genderFocusNodes = [];
+  List<FocusNode> indikatorFocus = [];
 
   @override
   void initState() {
@@ -153,6 +177,11 @@ class _TiketEventPageState extends State<TiketEventPage> {
     selectedGenders = List.generate(totalQty, (_) => null);
     phoneControllers = List.generate(totalQty, (_) => TextEditingController());
     _isCheckedList = List.generate(totalQty, (_) => false);
+
+    emailFocusNodes = List.generate(totalQty, (_) => FocusNode());
+    nameFocusNodes = List.generate(totalQty, (_) => FocusNode());
+    phoneFocusNodes = List.generate(totalQty, (_) => FocusNode());
+    genderFocusNodes = List.generate(totalQty, (_) => FocusNode());
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
@@ -177,33 +206,20 @@ class _TiketEventPageState extends State<TiketEventPage> {
     setState(() {
       langCode = code;
     });
-
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
-    final tempnamalabel = await LangService.getText(langCode!, "nama_lengkap_label");
-    final tempnamahint = await LangService.getText(langCode!, "nama_lengkap");
-    final tempnohplabel = await LangService.getText(langCode!, "nomor_hp_label");
-    final tempnohphint = await LangService.getText(langCode!, "nomor_hp");
-    final tempnohperror = await LangService.getText(langCode!, "nomor_hp_error");
-    final tempcobalagi = await LangService.getText(langCode!, "coba_lagi");
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempeventLang = await LangService.getJsonData(langCode!, "event");
+    
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      notLoginText = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      login = templogin;
-      namaLabel = tempnamalabel;
-      namaHint = tempnamahint;
-      nohpLabel = tempnohplabel;
-      nohpHint = tempnohphint;
-      nohpError = tempnohperror;
-      cobaLagi = tempcobalagi;
-      voteLang = tempvoteLang;
-      paymentLang = temppaymentLang;
-      eventLang = tempeventLang;
+      bahasa = tempbahasa;
+      notLoginText = bahasa['notLogin'];
+      notLoginDesc = bahasa['notLoginDesc'];
+      login = bahasa['login'];
+      namaLabel = bahasa['nama_lengkap_label'];
+      namaHint = bahasa['nama_lengkap'];
+      nohpLabel = bahasa['nomor_hp_label'];
+      nohpHint = bahasa['nomor_hp'];
+      nohpError = bahasa['nomor_hp_error'];
+      cobaLagi = bahasa['coba_lagi'];
     });
   }
 
@@ -245,6 +261,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
           ids_order_form_master = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => ''),);
           answers = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => ''),);
           answerControllers = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => TextEditingController()),);
+
+          indikatorFocus = List.generate(formTiket.length, (_) => FocusNode());
         });
       }
     }
@@ -394,7 +412,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
   }
 
   Widget buildKonten() {
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     num totalHarga = 0;
     num totalHargaAsli = 0;
@@ -406,7 +424,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(paymentLang['tiket']),
+        title: Text(bahasa['tiket']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -474,7 +492,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         ? "${detailEvent['currency']} ${formatter.format(price)}"
                         : "$currencyCode ${formatter.format(price)}";
                       if (eventTiket[index]['price'] == 0) {
-                        hargaFormatted = voteLang['harga_detail'];
+                        hargaFormatted = bahasa['harga_detail'];
                       }
 
                       return Padding(
@@ -508,7 +526,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
                       Text(
                         totalHarga == 0
-                          ? voteLang['harga_detail']
+                          ? bahasa['harga_detail']
                           : currencyCode == null
                             ? '${detailEvent['currency']} ${formatter.format(totalHarga)}'
                             : '$currencyCode ${formatter.format(totalHarga)}',
@@ -542,12 +560,12 @@ class _TiketEventPageState extends State<TiketEventPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  eventLang['data_diri'],
+                                  bahasa['data_diri'],
                                   style: TextStyle(fontWeight: FontWeight.bold,),
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  paymentLang['sub_titel_2'],
+                                  bahasa['sub_titel_2'],
                                   softWrap: true,
                                 ),
                               ],
@@ -571,7 +589,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                 ),
                                 SizedBox(width: 6),
                                 Text(
-                                  "${paymentLang['tiket']} ${index + 1}",
+                                  "${bahasa['tiket']} ${index + 1}",
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ],
@@ -619,7 +637,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                             ),
                             SizedBox(width: 8),
                             Expanded(
-                              child: Text("${eventLang['samakan_input']} ${paymentLang['tiket']} 1"),
+                              child: Text("${bahasa['samakan_input']} ${bahasa['tiket']} 1"),
                             ),
                           ],
                         ),
@@ -648,6 +666,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                       ),
                       const SizedBox(height: 4),
                       TextField(
+                        focusNode: emailFocusNodes[index],
                         controller: emailControllers[index],
                         onChanged: (value) {
                           if (widget.flag_samakan_input_tiket_pertama == '0') {
@@ -669,12 +688,12 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         },
                         autofocus: false,
                         decoration: InputDecoration(
-                          hintText: eventLang['email_hint'],
+                          hintText: bahasa['email_hint'],
                           hintStyle: TextStyle(color: Colors.grey.shade400),
                           errorText: _showError && !isValidEmail(emailControllers[index].text)
-                            ? eventLang['error_email_1']
-                            : _duplicateEmailIndex == index
-                                ? eventLang['error_email_2']
+                            ? bahasa['error_email_1']
+                            : _duplicateEmailIndexes.contains(index)
+                                ? bahasa['error_email_2']
                                 : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -690,13 +709,13 @@ class _TiketEventPageState extends State<TiketEventPage> {
                       ),
                       SizedBox(height: 4,),
                       Text(
-                          eventLang['info_email'],
+                          bahasa['info_email'],
                         ),
                       if (_showError && emailControllers[index].text.trim().isEmpty)
                         Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            eventLang['error_email_3'],
+                            bahasa['error_email_3'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -714,6 +733,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                       ),
                       const SizedBox(height: 4),
                       TextField(
+                        focusNode: nameFocusNodes[index],
                         controller: nameControllers[index],
                         onChanged: (value) {
                           if (widget.flag_samakan_input_tiket_pertama == '0') {
@@ -737,8 +757,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         decoration: InputDecoration(
                           hintText: namaHint,
                           hintStyle: TextStyle(color: Colors.grey.shade400),
-                          errorText: _duplicateNameIndex == index
-                            ? eventLang['error_nama_1']
+                          errorText: _duplicateNameIndexes.contains(index)
+                            ? bahasa['error_nama_1']
                             : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -756,86 +776,85 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            eventLang['error_nama_2'],
+                            bahasa['error_nama_2'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
 
                       SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Text(
-                            paymentLang['gender_label'],
-                          ),
-                          Text(
-                            "*", style: TextStyle(color: Colors.red)
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        children: List.generate(genders.length, (indx) {
-                          final item = genders[indx];
-                          final isSelectedGender = selectedGenders[index] == item['label'];
+                      Focus(
+                        focusNode: genderFocusNodes[index],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(bahasa['gender_label']),
+                                const Text("*", style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
 
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedGenders[index] = item['label'];
-                                  gender = item['label'];
-                                  
-                                  if (index == 0) {
-                                    for (int i = 1; i < totalQty; i++) {
-                                      if (_isCheckedList[i]) {
-                                        selectedGenders[i] = selectedGenders[0];
-                                      }
-                                    }
-                                  }
-                                });
-                              },
-                              child: Container(
-                                height: 120,
-                                margin: EdgeInsets.only(
-                                  right: indx == 0 ? 8 : 0,
-                                  left: indx == 1 ? 8 : 0,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.grey,
-                                    width: 1,
+                            Row(
+                              children: List.generate(genders.length, (indx) {
+                                final item = genders[indx];
+                                final isSelectedGender =
+                                    selectedGenders[index] == item['label'];
+
+                                return Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedGenders[index] = item['label'];
+
+                                        // copy ke tiket lain jika mode samakan aktif
+                                        if (index == 0) {
+                                          for (int i = 1; i < totalQty; i++) {
+                                            if (_isCheckedList[i]) {
+                                              selectedGenders[i] = selectedGenders[0];
+                                            }
+                                          }
+                                        }
+                                      });
+                                    },
+                                    child: Container(
+                                      height: 120,
+                                      margin: EdgeInsets.only(
+                                        right: indx == 0 ? 8 : 0,
+                                        left: indx == 1 ? 8 : 0,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.grey),
+                                        color: isSelectedGender
+                                            ? Colors.green.withOpacity(0.1)
+                                            : Colors.white,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Image.network(item['icon'], width: 50, height: 50),
+                                          const SizedBox(height: 8),
+                                          Text(item['label']),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                  color: isSelectedGender ? Colors.green.withOpacity(0.1) : Colors.white,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Image.network(
-                                      item['icon'] as String,
-                                      width: 50,
-                                      height: 50,
-                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      item['label']!,
-                                    ),
-                                  ],
+                                );
+                              }),
+                            ),
+
+                            if (_showError && selectedGenders[index] == null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  bahasa['gender_error'],
+                                  style: const TextStyle(color: Colors.red),
                                 ),
                               ),
-                            ),
-                          );
-                        }),
-                      ),
-                      if (_showError && selectedGenders[index] == null)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Text(
-                            paymentLang['gender_error'],
-                            style: TextStyle(color: Colors.red),
-                          ),
+                          ],
                         ),
+                      ),
 
                       SizedBox(height: 12,),
                       Row(
@@ -850,6 +869,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                       ),
                       const SizedBox(height: 4),
                       TextField(
+                        focusNode: phoneFocusNodes[index],
                         controller: phoneControllers[index],
                         onChanged: (value) {
                           setState(() {
@@ -883,8 +903,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           errorText: phoneControllers[index].text.isNotEmpty &&
                                   !isValidPhone(phoneControllers[index].text)
                               ? nohpError
-                              : _duplicatePhoneIndex == index
-                                  ? eventLang['error_nohp_1']
+                              : _duplicatePhoneIndexes.contains(index)
+                                  ? bahasa['error_nohp_1']
                                   : null,
                           errorMaxLines: 3,
                           border: OutlineInputBorder(
@@ -903,7 +923,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         Padding(
                           padding: EdgeInsets.only(top: 4),
                           child: Text(
-                            eventLang['error_nohp_2'],
+                            bahasa['error_nohp_2'],
                             style: TextStyle(color: Colors.red),
                           ),
                         ),
@@ -915,7 +935,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        paymentLang['sub_titel_2']
+                        bahasa['sub_titel_2']
                       ),
 
                       SizedBox(height: 20,),
@@ -941,6 +961,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                               const SizedBox(height: 4),
                               if (formTiket[idx]['type_form'] == 'varchar') ... [
                                 TextField(
+                                  focusNode: indikatorFocus[idx],
                                   controller: answerControllers[index][idx],  
                                   onChanged: (value) {
                                     answerControllers[index][idx].text = value;
@@ -949,7 +970,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                   },
                                   autofocus: false,
                                   decoration: InputDecoration(
-                                    hintText: eventLang['tiket_template_answer_hint'],
+                                    hintText: bahasa['tiket_template_answer_hint'],
                                     hintStyle: TextStyle(color: Colors.grey.shade400),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -967,161 +988,170 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                   Padding(
                                     padding: EdgeInsets.only(top: 4),
                                     child: Text(
-                                      eventLang['tiket_template_answer_error'],
+                                      bahasa['tiket_template_answer_error'],
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),
                               ] 
 
                               else if (formTiket[idx]['type_form'] == 'file') ... [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () async {
-                                        final result = await FilePicker.platform.pickFiles(
-                                          type: FileType.any,
-                                        );
+                                Focus(
+                                  focusNode: indikatorFocus[idx],
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () async {
+                                          final result = await FilePicker.platform.pickFiles(
+                                            type: FileType.any,
+                                          );
 
-                                        if (result != null && result.files.single.path != null) {
-                                          final file = File(result.files.single.path!);
-                                          final fileName = path.basename(file.path);
-                                          final resultUpload = await ApiService.postImage('/uploads/tmp', file: file);
-                                          final List<dynamic> tempData = resultUpload?['data'] ?? [];
-                                          final storedFileName = tempData[0]['stored_as'];
+                                          if (result != null && result.files.single.path != null) {
+                                            final file = File(result.files.single.path!);
+                                            final fileName = path.basename(file.path);
+                                            final resultUpload = await ApiService.postImage('/uploads/tmp', file: file);
+                                            final List<dynamic> tempData = resultUpload?['data'] ?? [];
+                                            final storedFileName = tempData[0]['stored_as'];
 
-                                          setState(() {
-                                            answerControllers[index][idx].text = fileName;
+                                            setState(() {
+                                              answerControllers[index][idx].text = fileName;
 
-                                            if (answers[index].length > idx) {
-                                              answers[index][idx] = storedFileName;
-                                            } else {
-                                              answers[index].add(storedFileName);
-                                            }
-                                          });
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.grey),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                answerControllers[index][idx].text.isNotEmpty
-                                                    ? path.basename(answerControllers[index][idx].text)
-                                                    : eventLang['pilih_file'],
-                                                style: TextStyle(
-                                                  color: answerControllers[index][idx].text.isNotEmpty
-                                                      ? Colors.black
-                                                      : Colors.grey,
+                                              if (answers[index].length > idx) {
+                                                answers[index][idx] = storedFileName;
+                                              } else {
+                                                answers[index].add(storedFileName);
+                                              }
+                                            });
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: Colors.grey),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  answerControllers[index][idx].text.isNotEmpty
+                                                      ? path.basename(answerControllers[index][idx].text)
+                                                      : bahasa['pilih_file'],
+                                                  style: TextStyle(
+                                                    color: answerControllers[index][idx].text.isNotEmpty
+                                                        ? Colors.black
+                                                        : Colors.grey,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                            ),
-                                            const Icon(Icons.upload_file, color: Colors.red),
-                                          ],
+                                              const Icon(Icons.upload_file, color: Colors.red),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    if (formTiket[idx]['required'] == 1 &&
-                                        _showError &&
-                                        answerControllers[index][idx].text.trim().isEmpty)
-                                      Padding(
-                                        padding: EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          eventLang['tiket_template_answer_error'],
-                                          style: TextStyle(color: Colors.red),
+                                      if (formTiket[idx]['required'] == 1 &&
+                                          _showError &&
+                                          answerControllers[index][idx].text.trim().isEmpty)
+                                        Padding(
+                                          padding: EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            bahasa['tiket_template_answer_error'],
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ),
-                                      ),
-                                  ],
-                                )
+                                    ],
+                                  ),
+                                ),
                               ]
 
                               else if (formTiket[idx]['type_form'] == 'radio')
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ...formTiket[idx]['answer']
-                                        .toString()
-                                        .split(',')
-                                        .map((option) => RadioListTile<String>(
-                                              title: Text(option.trim()),
-                                              value: option.trim(),
-                                              groupValue: answerControllers[index][idx].text,
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  answerControllers[index][idx].text = value ?? '';
+                                Focus(
+                                  focusNode: indikatorFocus[idx],
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ...formTiket[idx]['answer']
+                                          .toString()
+                                          .split(',')
+                                          .map((option) => RadioListTile<String>(
+                                                title: Text(option.trim()),
+                                                value: option.trim(),
+                                                groupValue: answerControllers[index][idx].text,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    answerControllers[index][idx].text = value ?? '';
 
-                                                  answers[index][idx] = value ?? '';
-                                                });
-                                              },
-                                              contentPadding: EdgeInsets.zero,
-                                              dense: true,
-                                              activeColor: Colors.red,
-                                            ))
-                                        ,
-                                    if (formTiket[idx]['required'] == 1 &&
-                                        _showError &&
-                                        answerControllers[index][idx].text.trim().isEmpty)
-                                      Padding(
-                                        padding: EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          eventLang['tiket_template_answer_error'],
-                                          style: TextStyle(color: Colors.red),
+                                                    answers[index][idx] = value ?? '';
+                                                  });
+                                                },
+                                                contentPadding: EdgeInsets.zero,
+                                                dense: true,
+                                                activeColor: Colors.red,
+                                              ))
+                                          ,
+                                      if (formTiket[idx]['required'] == 1 &&
+                                          _showError &&
+                                          answerControllers[index][idx].text.trim().isEmpty)
+                                        Padding(
+                                          padding: EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            bahasa['tiket_template_answer_error'],
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 )
 
                               else if (formTiket[idx]['type_form'] == 'select')
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    DropdownButtonFormField<String>(
-                                      value: answerControllers[index][idx].text.isNotEmpty
-                                          ? answerControllers[index][idx].text
-                                          : null,
-                                      items: formTiket[idx]['answer']
-                                          .toString()
-                                          .split(',')
-                                          .map((option) => DropdownMenuItem<String>(
-                                                value: option.trim(),
-                                                child: Text(option.trim()),
-                                              ))
-                                          .toList(),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          answerControllers[index][idx].text = value ?? '';
+                                Focus(
+                                  focusNode: indikatorFocus[idx],
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      DropdownButtonFormField<String>(
+                                        value: answerControllers[index][idx].text.isNotEmpty
+                                            ? answerControllers[index][idx].text
+                                            : null,
+                                        items: formTiket[idx]['answer']
+                                            .toString()
+                                            .split(',')
+                                            .map((option) => DropdownMenuItem<String>(
+                                                  value: option.trim(),
+                                                  child: Text(option.trim()),
+                                                ))
+                                            .toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            answerControllers[index][idx].text = value ?? '';
 
-                                          answers[index][idx] = value ?? '';
-                                        });
-                                      },
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                                        hintText: eventLang['pilih_radio'],
-                                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                                      ),
-                                    ),
-                                    if (formTiket[idx]['required'] == 1 &&
-                                        _showError &&
-                                        answerControllers[index][idx].text.trim().isEmpty)
-                                      Padding(
-                                        padding: EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          eventLang['tiket_template_answer_error'],
-                                          style: TextStyle(color: Colors.red),
+                                            answers[index][idx] = value ?? '';
+                                          });
+                                        },
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                                          hintText: bahasa['pilih_radio'],
+                                          hintStyle: TextStyle(color: Colors.grey.shade400),
                                         ),
                                       ),
-                                  ],
+                                      if (formTiket[idx]['required'] == 1 &&
+                                          _showError &&
+                                          answerControllers[index][idx].text.trim().isEmpty)
+                                        Padding(
+                                          padding: EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            bahasa['tiket_template_answer_error'],
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 )
                             ],
                           ),
@@ -1146,20 +1176,40 @@ class _TiketEventPageState extends State<TiketEventPage> {
                     TextSpan(
                       style: TextStyle(color: Colors.black),
                       children: [
-                        TextSpan(text: paymentLang['kebijakan_privasi_1']),
+                        TextSpan(text: bahasa['kebijakan_privasi_1']),
                         TextSpan(
                             text: "KREEN ",),
                         TextSpan(
                             text:
-                                paymentLang['kebijakan_privasi_2']),
+                                bahasa['kebijakan_privasi_2']),
                         TextSpan(
-                            text: paymentLang['kebijakan_privasi_3'],
-                            style: TextStyle(color: Colors.red)),
-                        TextSpan(text: paymentLang['kebijakan_privasi_4']),
+                            text: bahasa['kebijakan_privasi_3'],
+                            style: TextStyle(color: Colors.red),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SnkPage(),
+                                  ),
+                                );
+                              },
+                          ),
+                        TextSpan(text: bahasa['kebijakan_privasi_4']),
                         TextSpan(
-                            text: paymentLang['kebijakan_privasi_5'],
-                            style: TextStyle(color: Colors.red)),
-                        TextSpan(text: paymentLang['kebijakan_privasi_6']),
+                            text: bahasa['kebijakan_privasi_5'],
+                            style: TextStyle(color: Colors.red),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PrivacyPolicyPage(),
+                                  ),
+                                );
+                              },
+                        ),
+                        TextSpan(text: bahasa['kebijakan_privasi_6']),
                       ],
                     ),
                     textAlign: TextAlign.justify,
@@ -1354,8 +1404,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           SizedBox(width: 8),
                           Text(
                             _isFree
-                            ? eventLang['pilih_tiket']
-                            : eventLang['pilih_pembayaran'],
+                            ? bahasa['pilih_tiket']
+                            : bahasa['pilih_pembayaran'],
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -1376,39 +1426,67 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
   bool _validateAllForm() {
     bool isValid = true;
+    FocusNode? firstErrorFocus;
+
+    checkDuplicateInputs();
 
     for (int i = 0; i < totalQty; i++) {
       // email
       if (emailControllers[i].text.trim().isEmpty ||
-          !isValidEmail(emailControllers[i].text)) {
+          !isValidEmail(emailControllers[i].text) ||
+          _duplicateEmailIndexes.contains(i)) {
         isValid = false;
+        firstErrorFocus ??= emailFocusNodes[i];
       }
 
       // nama
-      if (nameControllers[i].text.trim().isEmpty) {
+      if (nameControllers[i].text.trim().isEmpty ||
+          _duplicateNameIndexes.contains(i)) {
         isValid = false;
+        firstErrorFocus ??= nameFocusNodes[i];
       }
 
       // gender
       if (selectedGenders[i] == null) {
         isValid = false;
+        firstErrorFocus ??= genderFocusNodes[i];
       }
 
       // phone
       if (phoneControllers[i].text.trim().isEmpty ||
-          !isValidPhone(phoneControllers[i].text)) {
+          !isValidPhone(phoneControllers[i].text) ||
+          _duplicatePhoneIndexes.contains(i)) {
         isValid = false;
+        firstErrorFocus ??= phoneFocusNodes[i];
       }
 
       // form tiket
       for (int j = 0; j < formTiket.length; j++) {
         if (formTiket[j]['required'] == 1 &&
-            answers[i][j].toString().trim().isEmpty) {
+            answers[j].toString().trim().isEmpty) {
           isValid = false;
+          firstErrorFocus ??= indikatorFocus[j];
         }
       }
     }
 
+    if (!isValid && firstErrorFocus != null) {
+      _scrollToFocus(firstErrorFocus);
+      firstErrorFocus.requestFocus();
+    }
+
     return isValid;
+  }
+
+  void _scrollToFocus(FocusNode focusNode) {
+    final context = focusNode.context;
+    if (context == null) return;
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.2,
+    );
   }
 }

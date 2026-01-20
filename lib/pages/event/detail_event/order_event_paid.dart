@@ -33,9 +33,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   String? statusOrder, dateshow, maxend, formattedDate, penyelenggara, venue_name;
   var qty, price;
 
-  Map<String, dynamic> voteLang = {};
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> eventLang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future<void> _loadOrder() async {
 
@@ -134,14 +132,10 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
       langCode = code;
     });
 
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempeventlang = await LangService.getJsonData(langCode!, "event");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      voteLang = tempvoteLang;
-      paymentLang = temppaymentLang;
-      eventLang = tempeventlang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -292,14 +286,14 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                       SizedBox(height: 8),
                       Text(
                         //'Selamat... Pesananmu Berhasil',
-                        eventLang['order_sukses'],
+                        bahasa['order_sukses'],
                         textAlign: TextAlign.center,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 8),
                       Text(
                         //'Cek email kamu. Jika kamu tidak ketemu, jangan lupa cek SPAM atau PROMOSI.',
-                        eventLang['order_sukses_desc'],
+                        bahasa['order_sukses_desc'],
                         softWrap: true,
                         textAlign: TextAlign.center,
                       ),
@@ -322,8 +316,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                             alignment: Alignment.center,
                             child: Text(
                               eventOder['amount'] == 0
-                              ? voteLang['harga_detail'] //"Gratis"
-                              : eventLang['berbayar'], // "Berbayar",
+                              ? bahasa['harga_detail'] //"Gratis"
+                              : bahasa['berbayar'], // "Berbayar",
                               style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -375,7 +369,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                   children: [
                                     Text(
                                       //'Diselenggarakan Oleh: ',
-                                      "${voteLang['penyelenggara']}: ",
+                                      "${bahasa['penyelenggara']}: ",
                                       style: TextStyle(color: Colors.grey),
                                     ),
                                     Text(
@@ -432,7 +426,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            '${voteLang['lokasi']}: ${venue_name ?? '-'}',
+                                            '${bahasa['lokasi']}: ${venue_name ?? '-'}',
                                             style: TextStyle(
                                               color: Colors.black,
                                             ),
@@ -453,7 +447,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           //"Total Pembayaran",
-                          paymentLang['total_pembayaran'],
+                          bahasa['total_pembayaran'],
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -463,7 +457,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           eventOder['amount'] == 0
-                          ? voteLang['harga_detail'] //"Gratis"
+                          ? bahasa['harga_detail'] //"Gratis"
                           : "${eventOder['currency_event']} ${formatter.format(eventOder['amount'] + eventOder['fees'])}",
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                         ),
@@ -489,17 +483,17 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                   TextSpan(
                                     style: TextStyle(color: Colors.black),
                                     children: [
-                                      TextSpan(text: eventLang['warning_order_1']), //"QR Code digunakan untuk akses masuk. ",
+                                      TextSpan(text: bahasa['warning_order_1']), //"QR Code digunakan untuk akses masuk. ",
                                       TextSpan(
-                                        text: eventLang['warning_order_2'], //"Screenshot QR Code ",
+                                        text: bahasa['warning_order_2'], //"Screenshot QR Code ",
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
-                                      TextSpan(text: eventLang['warning_order_3']), //" atau pastikan "
+                                      TextSpan(text: bahasa['warning_order_3']), //" atau pastikan "
                                       TextSpan(
                                         text: "E-Ticket",
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
-                                      TextSpan(text: eventLang['warning_order_4']), //" Anda sudah masuk di email."
+                                      TextSpan(text: bahasa['warning_order_4']), //" Anda sudah masuk di email."
                                     ],
                                   ),
                                   textAlign: TextAlign.justify,
@@ -544,7 +538,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '${paymentLang['tiket']} ${index + 1} ${item['ticket_name']}',
+                                                '${bahasa['tiket']} ${index + 1} ${item['ticket_name']}',
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
                                               const SizedBox(height: 8),
@@ -560,7 +554,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                               const SizedBox(height: 8),
                                               Text(
                                                 //"Berlaku hingga"
-                                                '${eventLang['expired_at']} \n$formattedDate $dateshow \n$maxend',
+                                                '${bahasa['expired_at']} \n$formattedDate $dateshow \n$maxend',
                                                 softWrap: true,
                                               ),
                                             ],
@@ -612,7 +606,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                           Navigator.pop(context);
                         },
                         child: Text(
-                          eventLang['selesai'], //"Selesai",
+                          bahasa['selesai'], //"Selesai",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,

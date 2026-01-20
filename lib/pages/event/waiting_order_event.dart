@@ -62,8 +62,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     });
   }
 
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> detailFinalisLang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -72,12 +71,10 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       langCode = code;
     });
 
-    final temppaymentlang = await LangService.getJsonData(langCode!, "payment");
-    final tempdetailfinalislang = await LangService.getJsonData(langCode!, "detail_finalis");
+    final tempbahasa = await LangService.getJsonData(langCode!, "paymbahasaent");
 
     setState(() {
-      paymentLang = temppaymentlang;
-      detailFinalisLang = tempdetailfinalislang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -278,18 +275,22 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     String formattedDate = '-';
 
     String? currencyRegion;
-    if (eventOder['order_region'] == "ID"){
-      currencyRegion = 'IDR';
-    } else if (eventOder['order_region'] == "US"){
-      currencyRegion = 'USD';
-    } else if (eventOder['order_region'] == "SG"){
-      currencyRegion = 'SGD';
+    if (eventOder['order_region'] == "EU"){
+      currencyRegion = "EUR";
+    } else if (eventOder['order_region'] == "ID"){
+      currencyRegion = "IDR";
     } else if (eventOder['order_region'] == "MY"){
-      currencyRegion = 'MYR';
+      currencyRegion = "MYR";
+    } else if (eventOder['order_region'] == "PH"){
+      currencyRegion = "PHP";
+    } else if (eventOder['order_region'] == "SG"){
+      currencyRegion = "SGD";
     } else if (eventOder['order_region'] == "TH"){
-      currencyRegion = 'THB';
+      currencyRegion = "THB";
+    } else if (eventOder['order_region'] == "US"){
+      currencyRegion = "USD";
     } else if (eventOder['order_region'] == "VN"){
-      currencyRegion = 'VND';
+      currencyRegion = "VND";
     }
 
     num user_currency_amount = num.parse(eventOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
@@ -341,7 +342,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(paymentLang['header']),
+        title: Text(bahasa['header']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -369,7 +370,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
-                          paymentLang['dont_close'], //'Jangan tutup halaman ini sebelum Anda menyelesaikan pembayaran',
+                          bahasa['dont_close'], //'Jangan tutup halaman ini sebelum Anda menyelesaikan pembayaran',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           softWrap: true,
@@ -400,7 +401,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                   child: Column(
                     children: [
 
-                      Text(paymentLang['sisa_waktu']), //const Text("Sisa Waktu Pembayaran"),
+                      Text(bahasa['sisa_waktu']), //const Text("Sisa Waktu Pembayaran"),
 
                       const SizedBox(height: 10),
                       Container(
@@ -416,15 +417,15 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _timeBox("$hours".padLeft(2, "0"), detailFinalisLang['hour']), //"Jam"
+                                  _timeBox("$hours".padLeft(2, "0"), bahasa['hour']), //"Jam"
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$minutes".padLeft(2, "0"), detailFinalisLang['minute']), //"Menit"
+                                  _timeBox("$minutes".padLeft(2, "0"), bahasa['minute']), //"Menit"
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$seconds".padLeft(2, "0"), detailFinalisLang['second']), //"Detik"
+                                  _timeBox("$seconds".padLeft(2, "0"), bahasa['second']), //"Detik"
                                 ],
                               ),
                             ],
@@ -433,7 +434,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                       ),
 
                       const SizedBox(height: 16),
-                      Text(paymentLang['selesaikan_pembayaran']), //const Text("Selesaikan pembayaranmu sebelum"),
+                      Text(bahasa['selesaikan_pembayaran']), //const Text("Selesaikan pembayaranmu sebelum"),
                       Text(
                         formattedDate,
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -485,7 +486,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                         children: [
                                           Icon(Icons.info_outline, color: Colors.blue,),
                                           Text(
-                                            paymentLang['instruksi_pembayaran'],
+                                            bahasa['instruksi_pembayaran'],
                                             style: TextStyle(color: Colors.blue),
                                           )
                                         ],
@@ -499,7 +500,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               if (tapinstruksi) ... [
                                 const SizedBox(height: 10,),
                                 Text(
-                                  paymentLang['instruksi_pembayaran'],
+                                  bahasa['instruksi_pembayaran'],
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
 
@@ -566,7 +567,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                               const SizedBox(height: 16,),
                               Text(
-                                paymentLang['kode_pesanan'], //'Kode Pesanan',
+                                bahasa['kode_pesanan'], //'Kode Pesanan',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
@@ -580,7 +581,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                                 const SizedBox(height: 25,),
                                 Text(
-                                  paymentLang['nomor_pembayaran'], //'Nomor Pembayaran',
+                                  bahasa['nomor_pembayaran'], //'Nomor Pembayaran',
                                   style: TextStyle(color: Colors.grey,),
                                 ),
                                 
@@ -596,7 +597,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                       // Tampilkan snackbar konfirmasi
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text(paymentLang['copyVA']), //content: Text('Nomor VA berhasil disalin'),
+                                          content: Text(bahasa['copyVA']), //content: Text('Nomor VA berhasil disalin'),
                                           backgroundColor: Colors.green,
                                           duration: const Duration(seconds: 2),
                                           behavior: SnackBarBehavior.floating,
@@ -625,7 +626,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${paymentLang['total_pembayaran']} ($currencyRegion)', //'Total Pembayaran ${event['currency_event']}',
+                                '${bahasa['total_pembayaran']} ($currencyRegion)', //'Total Pembayaran ${event['currency_event']}',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
@@ -688,7 +689,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               
                               const SizedBox(height: 20,),
                               Text(
-                                paymentLang['ringkasan_pembayaran'], //'Ringkasan Pembayaran',
+                                bahasa['ringkasan_pembayaran'], //'Ringkasan Pembayaran',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
@@ -697,7 +698,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    detailFinalisLang['total_harga'], //'Total Harga'
+                                    bahasa['total_harga'], //'Total Harga'
                                   ),
 
                                   Text(
@@ -711,7 +712,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    paymentLang['biaya_layanan'], //'Biaya Layanan'
+                                    bahasa['biaya_layanan'], //'Biaya Layanan'
                                   ),
 
                                   Text(
@@ -725,7 +726,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    paymentLang['total_pembayaran'], //'Total Pembayaran',
+                                    bahasa['total_pembayaran'], //'Total Pembayaran',
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
 
@@ -759,7 +760,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                             );
                           },
                           child: Text(
-                            paymentLang['check_status'],
+                            bahasa['check_status'],
                             style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
@@ -813,7 +814,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                   const SizedBox(height: 20),
                   Text(
-                    paymentLang['link_kadaluarsa'], //'Link Pembayaran Kadaluwarsa',
+                    bahasa['link_kadaluarsa'], //'Link Pembayaran Kadaluwarsa',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -823,7 +824,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                   const SizedBox(height: 10),
                   Text(
-                    paymentLang['link_kadaluarsa_desc'], //'Maaf... Tautan ini memiliki batas waktu akses demi keamanan dan pengelolaan akses yang lebih baik.',
+                    bahasa['link_kadaluarsa_desc'], //'Maaf... Tautan ini memiliki batas waktu akses demi keamanan dan pengelolaan akses yang lebih baik.',
                     textAlign: TextAlign.center,
                   ),
 
@@ -840,7 +841,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                       Navigator.pop(context);
                     },
                     child: Text(
-                      paymentLang['transaksi_lagi'], //"Ayo, lakukan transaksi kembali",
+                      bahasa['transaksi_lagi'], //"Ayo, lakukan transaksi kembali",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -851,11 +852,11 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                   const SizedBox(height: 20),
                   RichText(
                     text: TextSpan(
-                      text: paymentLang['kendala'], // 'Jika kendala berlanjut, hubungi ',
+                      text: bahasa['kendala'], // 'Jika kendala berlanjut, hubungi ',
                       style: TextStyle(color: Colors.black),
                       children: [
                         TextSpan(
-                          text: paymentLang['kontak'], // "Kontak Kami",
+                          text: bahasa['kontak'], // "Kontak Kami",
                           style: TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,

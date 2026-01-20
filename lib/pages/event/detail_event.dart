@@ -1,9 +1,9 @@
 
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use, prefer_typing_uninitialized_variables
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
+// import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -40,9 +40,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
   List<num> prices_tiket_asli = [];
   List<int?> selected_tiket = [];
 
-  Map<String, dynamic> voteLang = {};
-  Map<String, dynamic> eventLang = {};
+  Map<String, dynamic> bahasa = {};
   String? notLoginText, notLoginDesc, login;
+
+  var customSection;
+  List<dynamic> sections = [];
 
   @override
   void initState() {
@@ -85,18 +87,13 @@ class _DetailEventPageState extends State<DetailEventPage> {
       langCode = code;
     });
 
-    final tempvotelang = await LangService.getJsonData(langCode!, "detail_vote");
-    final tempeventlang = await LangService.getJsonData(langCode!, "event");
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      voteLang = tempvotelang;
-      eventLang = tempeventlang;
-      notLoginText = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      login = templogin;
+      bahasa = tempbahasa;
+      notLoginText = bahasa['notLogin'];
+      notLoginDesc = bahasa['notLoginDesc'];
+      login = bahasa['login'];
     });
   }
 
@@ -301,12 +298,23 @@ class _DetailEventPageState extends State<DetailEventPage> {
   bool get isButtonEnabled => counts.isNotEmpty && counts.any((c) => c > 0);
 
   Widget buildKontenEvent() {
-    final formatter = NumberFormat.decimalPattern("id_ID");
+    final formatter = NumberFormat.decimalPattern("en_US");
 
     var detailEvent = event['event'];
     List<dynamic> eventTiket = event['event_ticket'] ?? [];
     // var eventDate = event['eventdate'][0];
     var eventDateTime = event['event_datetime'] ?? [];
+
+    if (event['custom_section'] != null && event['custom_section'].isNotEmpty) {
+      customSection = event['custom_section'] as Map<String, dynamic>;
+    
+      sections = customSection.values.map((section) {
+        return {
+          'label': section['label'],
+          'items': (section['isi'] as Map<String, dynamic>).values.toList()
+        };
+      }).toList();
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -333,185 +341,185 @@ class _DetailEventPageState extends State<DetailEventPage> {
           height: 60,
           child: InkWell(
             onTap: isButtonEnabled
-                    ? () async {
-                      final getUser = await StorageService.getUser();
+              ? () async {
+                final getUser = await StorageService.getUser();
 
-                      String? idUser = getUser['id'];
+                String? idUser = getUser['id'];
 
-                      if (detailEvent['jenis_participant'] == 'Umum') {
-                        final token = await StorageService.getToken();
+                if (detailEvent['jenis_participant'] == 'Umum') {
+                  final token = await StorageService.getToken();
 
-                        if (token == null) {
-                          AwesomeDialog(
-                            context: context,
-                            dialogType: DialogType.noHeader,
-                            animType: AnimType.scale,
-                            dismissOnTouchOutside: true,
-                            body: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    InkWell(
-                                      onTap: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 30,
-                                      ),
-                                    )
-                                  ],
+                  if (token == null) {
+                    AwesomeDialog(
+                      context: context,
+                      dialogType: DialogType.noHeader,
+                      animType: AnimType.scale,
+                      dismissOnTouchOutside: true,
+                      body: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Icon(
+                                  Icons.close,
+                                  size: 30,
                                 ),
+                              )
+                            ],
+                          ),
 
-                                const SizedBox(height: 16,),
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFE5E5),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Image.asset(
-                                    "assets/images/img_ovo30d.png",
-                                    height: 60,
-                                    width: 60,
-                                  )
-                                ),
-
-                                const SizedBox(height: 24),
-                                Text(
-                                  notLoginText!,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-
-                                const SizedBox(height: 12),
-                                Text(
-                                  notLoginDesc!,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.black54, fontSize: 14),
-                                ),
-
-                                const SizedBox(height: 24),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    Navigator.push(
-                                      context, 
-                                      MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                                    elevation: 2,
-                                  ),
-                                  child: Text(
-                                    login!,
-                                    style: TextStyle(fontSize: 16, color: Colors.white),
-                                  ),
-                                ),
-                                
-                                const SizedBox(height: 24),
-                              ],
+                          const SizedBox(height: 16,),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFE5E5),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ).show();
-                        } else {
-                          if (detailEvent['flag_only_bayer'] == 1) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TiketGlobalPage(
-                                  id_event: widget.id_event,
-                                  price_global: widget.price,
-                                  qty: counts_tiket,
-                                  ids_tiket: ids_tiket,
-                                  namas_tiket: names_tiket,
-                                  prices_tiket: prices_tiket,
-                                  prices_tiket_asli: prices_tiket_asli,
-                                  flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
-                                  jenis_participant: detailEvent['jenis_participant'],
-                                  idUser: idUser,
-                                  rateCurrency: detailEvent['rate_currency_event'],
-                                  rateCurrencyUser: detailEvent['rate_currency_user'],
-                                ),
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => TiketEventPage(
-                                  id_event: widget.id_event,
-                                  price_global: widget.price,
-                                  qty: counts_tiket,
-                                  ids_tiket: ids_tiket,
-                                  namas_tiket: names_tiket,
-                                  prices_tiket: prices_tiket,
-                                  prices_tiket_asli: prices_tiket_asli,
-                                  flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
-                                  jenis_participant: detailEvent['jenis_participant'],
-                                  idUser: idUser,
-                                  rateCurrency: detailEvent['rate_currency_event'],
-                                  rateCurrencyUser: detailEvent['rate_currency_user'],
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      } else {
-                        if (detailEvent['flag_only_bayer'] == 1) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TiketGlobalPage(
-                                id_event: widget.id_event,
-                                price_global: widget.price,
-                                qty: counts_tiket,
-                                ids_tiket: ids_tiket,
-                                namas_tiket: names_tiket,
-                                prices_tiket: prices_tiket,
-                                prices_tiket_asli: prices_tiket_asli,
-                                flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
-                                jenis_participant: detailEvent['jenis_participant'],
-                                idUser: idUser,
-                                rateCurrency: detailEvent['rate_currency_event'],
-                                rateCurrencyUser: detailEvent['rate_currency_user'],
-                              ),
+                            child: Image.asset(
+                              "assets/images/img_ovo30d.png",
+                              height: 60,
+                              width: 60,
+                            )
+                          ),
+
+                          const SizedBox(height: 24),
+                          Text(
+                            notLoginText!,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
                             ),
-                          );
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TiketEventPage(
-                                id_event: widget.id_event,
-                                price_global: widget.price,
-                                qty: counts_tiket,
-                                ids_tiket: ids_tiket,
-                                namas_tiket: names_tiket,
-                                prices_tiket: prices_tiket,
-                                prices_tiket_asli: prices_tiket_asli,
-                                flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
-                                jenis_participant: detailEvent['jenis_participant'],
-                                idUser: idUser,
-                                rateCurrency: detailEvent['rate_currency_event'],
-                                rateCurrencyUser: detailEvent['rate_currency_user'],
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: 12),
+                          Text(
+                            notLoginDesc!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.black54, fontSize: 14),
+                          ),
+
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context, 
+                                MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
+                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                              elevation: 2,
                             ),
-                          );
-                        }
-                      }
+                            child: Text(
+                              login!,
+                              style: TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ).show();
+                  } else {
+                    if (detailEvent['flag_only_bayer'] == 1) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TiketGlobalPage(
+                            id_event: widget.id_event,
+                            price_global: widget.price,
+                            qty: counts_tiket,
+                            ids_tiket: ids_tiket,
+                            namas_tiket: names_tiket,
+                            prices_tiket: prices_tiket,
+                            prices_tiket_asli: prices_tiket_asli,
+                            flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
+                            jenis_participant: detailEvent['jenis_participant'],
+                            idUser: idUser,
+                            rateCurrency: detailEvent['rate_currency_event'],
+                            rateCurrencyUser: detailEvent['rate_currency_user'],
+                          ),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TiketEventPage(
+                            id_event: widget.id_event,
+                            price_global: widget.price,
+                            qty: counts_tiket,
+                            ids_tiket: ids_tiket,
+                            namas_tiket: names_tiket,
+                            prices_tiket: prices_tiket,
+                            prices_tiket_asli: prices_tiket_asli,
+                            flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
+                            jenis_participant: detailEvent['jenis_participant'],
+                            idUser: idUser,
+                            rateCurrency: detailEvent['rate_currency_event'],
+                            rateCurrencyUser: detailEvent['rate_currency_user'],
+                          ),
+                        ),
+                      );
                     }
-                    : null,
+                  }
+                } else {
+                  if (detailEvent['flag_only_bayer'] == 1) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TiketGlobalPage(
+                          id_event: widget.id_event,
+                          price_global: widget.price,
+                          qty: counts_tiket,
+                          ids_tiket: ids_tiket,
+                          namas_tiket: names_tiket,
+                          prices_tiket: prices_tiket,
+                          prices_tiket_asli: prices_tiket_asli,
+                          flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
+                          jenis_participant: detailEvent['jenis_participant'],
+                          idUser: idUser,
+                          rateCurrency: detailEvent['rate_currency_event'],
+                          rateCurrencyUser: detailEvent['rate_currency_user'],
+                        ),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TiketEventPage(
+                          id_event: widget.id_event,
+                          price_global: widget.price,
+                          qty: counts_tiket,
+                          ids_tiket: ids_tiket,
+                          namas_tiket: names_tiket,
+                          prices_tiket: prices_tiket,
+                          prices_tiket_asli: prices_tiket_asli,
+                          flag_samakan_input_tiket_pertama: detailEvent['flag_samakan_input_tiket_pertama'],
+                          jenis_participant: detailEvent['jenis_participant'],
+                          idUser: idUser,
+                          rateCurrency: detailEvent['rate_currency_event'],
+                          rateCurrencyUser: detailEvent['rate_currency_user'],
+                        ),
+                      ),
+                    );
+                  }
+                }
+              }
+              : null,
             borderRadius: BorderRadius.circular(30),
             child: Container(
               width: double.infinity,
@@ -532,7 +540,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    eventLang['beli_tiket'],
+                    bahasa['beli_tiket'],
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -690,8 +698,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               ),
                               child: Text(
                                 event['harga_max'] == 0
-                                ? voteLang['harga_detail']
-                                : eventLang['berbayar'],
+                                ? bahasa['harga_detail']
+                                : bahasa['berbayar'],
                                 style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -725,7 +733,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  voteLang['penyelenggara'],
+                                  bahasa['penyelenggara'],
                                   style: TextStyle(
                                     color: Colors.grey,
                                   ),
@@ -778,36 +786,36 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         ],
                       ),
 
-                      if (event['event']['description'] != null) ... [
+                      // if (event['event']['description'] != null) ... [
 
-                        SizedBox(height: 20,),
-                        Text(
-                          eventLang['tentang_event_label'],
-                          style: TextStyle( fontWeight: FontWeight.bold),
-                        ),
+                      //   SizedBox(height: 20,),
+                      //   Text(
+                      //     eventLang['tentang_event_label'],
+                      //     style: TextStyle( fontWeight: FontWeight.bold),
+                      //   ),
                         
-                        SizedBox(height: 12,),
-                        Padding(
-                          padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                          child: Html(
-                            data: event['event']['description'] ?? '-',
-                              style: {
-                                "p": Style(
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                ),
-                                "body": Style(
-                                  margin: Margins.zero,
-                                  padding: HtmlPaddings.zero,
-                                ),
-                              },
-                          ),
-                        ),
-                      ],
+                      //   SizedBox(height: 12,),
+                      //   Padding(
+                      //     padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
+                      //     child: Html(
+                      //       data: event['event']['description'] ?? '-',
+                      //         style: {
+                      //           "p": Style(
+                      //             margin: Margins.zero,
+                      //             padding: HtmlPaddings.zero,
+                      //           ),
+                      //           "body": Style(
+                      //             margin: Margins.zero,
+                      //             padding: HtmlPaddings.zero,
+                      //           ),
+                      //         },
+                      //     ),
+                      //   ),
+                      // ],
 
                       const SizedBox(height: 20),
                       Text(
-                        eventLang['tgl_waktu_label'],
+                        bahasa['tgl_waktu_label'],
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
@@ -894,7 +902,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                       const SizedBox(height: 20),
                       Text(
-                        voteLang['lokasi'],
+                        bahasa['lokasi'],
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
@@ -997,6 +1005,785 @@ class _DetailEventPageState extends State<DetailEventPage> {
                       //   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 16),
                       // ),
 
+                      if (event['speaker'] != null && event['speaker'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['pembicara'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['speaker'].length, (index) {
+                                final item = event['speaker'][index];
+                                final isLast = index == event['speaker'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'] ?? '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                item['profession'] != null && item['profession'] != "" ? item['profession'] : '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                        )
+                      ],
+
+                      if (event['moderator'] != null && event['moderator'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['moderator'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['moderator'].length, (index) {
+                                final item = event['moderator'][index];
+                                final isLast = index == event['moderator'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'] ?? '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                item['profession'] != null && item['profession'] != "" ? item['profession'] : '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            )
+                          )
+                        )
+                      ],
+
+                      if (event['doorprize'] != null && event['doorprize'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['doorprize'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['doorprize'].length, (index) {
+                                final item = event['doorprize'][index];
+                                final isLast = index == event['doorprize'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name_doorprize'] ?? '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                "${item['qty']} ${item['type_qty']}",
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                        )
+                      ],
+
+                      if (event['sponsor'] != null && event['sponsor'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['sponsor'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['sponsor'].length, (index) {
+                                final item = event['sponsor'][index];
+                                final isLast = index == event['sponsor'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'],
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                        )
+                      ],
+
+                      if (event['media_partner'] != null && event['media_partner'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['media_partner'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['media_partner'].length, (index) {
+                                final item = event['media_partner'][index];
+                                final isLast = index == event['media_partner'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'],
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                        )
+                      ],
+
+                      if (event['supported'] != null && event['supported'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['supported'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['supported'].length, (index) {
+                                final item = event['supported'][index];
+                                final isLast = index == event['supported'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'],
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                        )
+                      ],
+
+                      if (event['guest_star'] != null && event['guest_star'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['guest_star'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['guest_star'].length, (index) {
+                                final item = event['guest_star'][index];
+                                final isLast = index == event['guest_star'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'] ?? '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+
+                                              SizedBox(height: 4),
+                                              Text(
+                                                item['performance_type'] != null && item['performance_type'] != "" ? item['performance_type'] : '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            )
+                          )
+                        )
+                      ],
+
+                      if (event['special_perform'] != null && event['special_perform'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          bahasa['special_perform'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: List.generate(event['special_perform'].length, (index) {
+                                final item = event['special_perform'][index];
+                                final isLast = index == event['special_perform'].length - 1;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(50),
+                                            child: Center(
+                                              child: Image.network(
+                                                item['img'],
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.network(
+                                                    "$baseUrl/image/null.png",
+                                                    width: 50,
+                                                    height: 50,
+                                                    fit: BoxFit.fill,
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 12),
+                                        //text
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item['name'] ?? '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                              
+                                              SizedBox(height: 4),
+                                              Text(
+                                                item['performance_type'] != null && item['performance_type'] != "" ? item['performance_type'] : '-',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    if (!isLast) const SizedBox(height: 10),
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                        )
+                      ],
+
+                      if (event['custom_section'] != null && event['custom_section'].isNotEmpty) ...[
+                        SizedBox(height: 20),
+                        Text(
+                          sections[0]['label'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: sections.map((section) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    
+                                    ...section['items'].map<Widget>((item) {
+                                      return Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            width: 50,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.red,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(50),
+                                              child: Center(
+                                                child: Image.network(
+                                                  item['img'],
+                                                  width: 50,
+                                                  height: 50,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Image.network(
+                                                      "$baseUrl/image/null.png",
+                                                      width: 50,
+                                                      height: 50,
+                                                      fit: BoxFit.cover,
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          const SizedBox(width: 12),
+                                          //text
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  item['name'] ?? '-',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold
+                                                  ),
+                                                ),
+
+                                                SizedBox(height: 4),
+                                                Text(
+                                                  item['title'] ?? '-',
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        )
+                      ],
+
                       const SizedBox(height: 30,),
                       ...List.generate(eventTiket.length, (index) {
                         final item = eventTiket[index];
@@ -1039,7 +1826,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                           ? "${detailEvent['currency']} ${formatter.format(item['price'] ?? 0)}"
                           : "$currencyCode ${formatter.format(item['price'] ?? 0)}";
                         if (item['price'] == 0) {
-                          hargaFormatted = voteLang['harga_detail'];
+                          hargaFormatted = bahasa['harga_detail'];
                         }
 
                         final dateOpenTiket = DateTime.parse("${item['sale_date_start']} ${item['sale_time_start']}");
@@ -1109,7 +1896,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                                             SizedBox(width: 10,),
                                             Text(
-                                              '${eventLang['berakhir']} $formattedDate',
+                                              '${bahasa['berakhir']} $formattedDate',
                                               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                                             ),
                                           ],
@@ -1144,7 +1931,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                                 child: Text(
-                                                  eventLang['segera'], // "Segera"
+                                                  bahasa['segera'], // "Segera"
                                                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
                                                 ),
                                               )
@@ -1155,7 +1942,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                     borderRadius: BorderRadius.circular(8),
                                                   ),
                                                   child: Text(
-                                                    eventLang['habis'], // "Habis"
+                                                    bahasa['habis'], // "Habis"
                                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
                                                   ),
                                                 )
@@ -1217,7 +2004,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                                         Text(
                                           detailEvent['show_tickets_available'] == 1 ?
-                                          '${eventLang['stok_tiket']}: ${item['sisa_stok']}'
+                                          '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
                                           : '',
                                           style: TextStyle(color: Colors.grey),
                                         )

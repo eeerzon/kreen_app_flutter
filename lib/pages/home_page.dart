@@ -10,6 +10,7 @@ import 'package:kreen_app_flutter/pages/content_home/info_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/order_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/scan_page.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class HomePage extends StatefulWidget {
@@ -69,28 +70,36 @@ class _HomePageState extends State<HomePage> {
     });
 
     // baru load content
-    final homeContent = await LangService.getJsonData(langCode!, "home_content");
-    final templastPressedMessage = await LangService.getText(langCode!, "lastPressed");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      home = homeContent['bot_nav_1'];
-      explore = homeContent['bot_nav_2'];
-      order = homeContent['bot_nav_3'];
-      info = homeContent['bot_nav_4'];
+      home = tempbahasa['bot_nav_1'];
+      explore = tempbahasa['bot_nav_2'];
+      order = tempbahasa['bot_nav_3'];
+      info = tempbahasa['bot_nav_4'];
 
-      lastPressedMessage = templastPressedMessage;
+      lastPressedMessage = tempbahasa['lastPressed'];
     });
   }
 
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
+
     if (mounted) {
       setState(() {
         token = storedToken;
-        if (token == null && widget.fromLogout == false) {
-          Future.microtask(() => CheckingUserModal.show(context, langCode!));  
-        }
       });
+
+      if (token == null &&
+          !SessionManager.isGuest &&
+          !SessionManager.checkingUserModalShown) {
+
+        SessionManager.checkingUserModalShown = true;
+
+        Future.microtask(() {
+          CheckingUserModal.show(context, langCode!);
+        });
+      }
     }
   }
 
@@ -98,17 +107,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // kalau data bahasa belum siap, tampilkan loading
-    // if (home == null || explore == null || order == null || info == null) {
-    //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     showLoadingDialog(context);
-    //   });
-    //   return const Scaffold(); // kosongin dulu
-    // } else {
-    //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     hideLoadingDialog(context);
-    //   });
-    // }
 
     return WillPopScope(
       onWillPop: () async {
@@ -122,15 +120,6 @@ class _HomePageState extends State<HomePage> {
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );
-
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   const SnackBar(
-          //     content: Text('Tekan sekali lagi untuk keluar', textAlign: TextAlign.center,),
-          //     duration: Duration(seconds: 1),
-          //     behavior: SnackBarBehavior.floating,
-          //     margin: EdgeInsets.only(bottom: 50, left: 20, right: 20),
-          //   ),
-          // );
 
           return false;
         }
@@ -189,16 +178,6 @@ class _HomePageState extends State<HomePage> {
       child: InkWell(
         onTap: () {
           _onNavTap(index);
-          if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const OrderPage()),
-            );
-          } else {
-            setState(() {
-              _selectedIndex = index;
-            });
-          }
         },
 
         child: Column(
@@ -225,15 +204,29 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _onNavTap(int index) {
-    setState(() {
-      _selectedIndex = index;
+  void _onNavTap(int index) async {
 
-      // RESET eksplor tab saat klik bottomnav
-      if (index == 1) {
-        _exploreTabIndex = 0;
-      }
-    });
+    if (index == 1) {
+      _exploreTabIndex = 0;
+    }
+    
+    if (index == 2) {
+      final previousIndex = _selectedIndex;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const OrderPage()),
+      );
+
+      // setelah OrderPage di-pop
+      setState(() {
+        _selectedIndex = previousIndex;
+      });
+
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
-
 }

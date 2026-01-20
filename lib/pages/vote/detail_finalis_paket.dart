@@ -10,6 +10,7 @@ import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
+import 'package:kreen_app_flutter/pages/vote/download_qr.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -37,7 +38,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   num? harga;
   num? hargaAsli;
   bool isTutup = false;
-  bool canDownload = false;
+  bool canDownload = true;
 
   String buttonText = '';
 
@@ -50,7 +51,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   Map<String, dynamic> detailFinalis = {};
   TextEditingController? controllers;
   Map<String, dynamic> detailvote = {};
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   String? langCode, currencyCode;
   String? notLogin, notLoginDesc, loginText;
@@ -167,41 +168,36 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       langCode = code;
     });
 
-    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
-    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
 
     setState(() {
-      totalHargaText = tempdetailFinalis['total_harga'];
-      hargaText = tempdetailFinalis['harga'];
-      hargaDetail = tempdetailFinalis['harga_detail'];
-      bayarText = tempdetailFinalis['bayar'];
+      bahasa = tempbahasa;
+      totalHargaText = bahasa['total_harga'];
+      hargaText = bahasa['harga'];
+      hargaDetail = bahasa['harga_detail'];
+      bayarText = bahasa['bayar'];
 
-      endVote = tempdetailFinalis['end_vote'];
-      voteOpen = tempdetailFinalis['vote_open'];
-      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      endVote = bahasa['end_vote'];
+      voteOpen = bahasa['vote_open'];
+      voteOpenAgain = bahasa['vote_open_again'];
       
-      notLogin = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      loginText = templogin;
+      notLogin = bahasa['notLogin'];
+      notLoginDesc = bahasa['notLoginDesc'];
+      loginText = bahasa['login'];
 
-      buttonPilihPaketText = tempdetailFinalis['pick_paket'];
-      detailfinalisText = tempdetailFinalis['detail_finalis'];
+      buttonPilihPaketText = bahasa['pick_paket'];
+      detailfinalisText = bahasa['detail_finalis'];
 
-      noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['usia'];
-      activityText = tempdetailFinalis['aktivitas'];
-      biographyText = tempdetailFinalis['biografi'];
-      scanQrText = tempdetailFinalis['scan_vote'];
-      downloadQrText = tempdetailFinalis['unduh_qr'];
-      tataCaraText = tempdetailFinalis['tatacara_vote'];
-      videoProfilText = tempdetailFinalis['profile_video'];
-      noValidVideo = tempdetailFinalis['video_no_valid'];
-      socialMediaText = tempdetailFinalis['sosial_media'];
-
-      voteLang = tempvoteLang;
+      noDataText = bahasa['no_data'];
+      ageText = bahasa['usia'];
+      activityText = bahasa['aktivitas'];
+      biographyText = bahasa['biografi'];
+      scanQrText = bahasa['scan_vote'];
+      downloadQrText = bahasa['unduh_qr'];
+      tataCaraText = bahasa['tatacara_vote'];
+      videoProfilText = bahasa['profile_video'];
+      noValidVideo = bahasa['video_no_valid'];
+      socialMediaText = bahasa['sosial_media'];
     });
   }
 
@@ -707,33 +703,43 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                 ),
                   
                                 SizedBox(height: 12,),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: canDownload ? color : Colors.grey,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                                Material(
+                                  color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: canDownload ? () {
-                                      
-                                    }
-                                    : null,
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          downloadQrText!,
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        SizedBox(width: 10,),
-                                        Icon(
-                                          Icons.download, color: Colors.white, size: 15,
-                                        )
-                                      ],
-                                    )
-                                  )
+                                    onTap: canDownload 
+                                      ? () async {
+                                          await downloadQrImage(
+                                            context, 
+                                            detailFinalis['id_qrcode'],
+                                            bahasa['download_scan_gagal'],
+                                            bahasa['download_scan_berhasil'],
+                                            bahasa['kesalahan_simpan_scan'],
+                                          );
+                                        }
+                                      : null,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: canDownload ? color : Colors.grey,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            downloadQrText!,
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.download, color: Colors.white, size: 15,
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                   
                                 SizedBox(height: 12,),
@@ -746,7 +752,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   ),
                                   child: InkWell(
                                     onTap: () async {
-                                      await TutorModal.show(context, detailvote['tutorial_vote'], voteLang['tutorial_vote_text']);
+                                      await TutorModal.show(context, detailvote['tutorial_vote'], bahasa['tutorial_vote_text']);
                                     },
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -888,7 +894,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                     ),
                   ),
                   Text(
-                    "${voteLang['paket']} $counts\n$countData ${voteLang['finalis']}(s)",
+                    "${bahasa['paket']} $counts\n$countData ${bahasa['finalis']}(s)",
                     style: TextStyle(fontSize: 12),
                   ),
                 ],

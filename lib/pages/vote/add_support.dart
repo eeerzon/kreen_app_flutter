@@ -38,7 +38,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
   List<dynamic> finalis = [];
 
   String? langCode;
-  Map<String, dynamic> detailVoteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   @override
   void initState() {
@@ -57,10 +57,10 @@ class _AddSupportPageState extends State<AddSupportPage> {
       langCode = code;
     });
 
-    final tempDetailVoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      detailVoteLang = tempDetailVoteLang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -235,7 +235,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(detailVoteLang['send_support'] ?? '',),
+        title: Text(bahasa['send_support'] ?? '',),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -265,13 +265,13 @@ class _AddSupportPageState extends State<AddSupportPage> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  detailVoteLang['vote_success'],
+                  bahasa['vote_success'],
                   textAlign: TextAlign.center,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  detailVoteLang['dukung'],
+                  bahasa['dukung'],
                   softWrap: true,
                   textAlign: TextAlign.center,
                 ),
@@ -320,7 +320,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${detailVoteLang['penyelenggara']}: ',
+                                '${bahasa['penyelenggara']}: ',
                                 style: TextStyle(color: Colors.grey),
                               ),
                               Text(
@@ -377,7 +377,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      '${detailVoteLang['lokasi']} : ${vote['lokasi_nama_tempat'] ?? '-'}',
+                                      '${bahasa['lokasi']} : ${vote['lokasi_nama_tempat'] ?? '-'}',
                                       style: TextStyle(
                                         color: Colors.black,
                                       ),
@@ -489,7 +489,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
             
                 const SizedBox(height: 16),
                 Text(
-                  detailVoteLang['support'],
+                  bahasa['support'],
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
             
@@ -498,7 +498,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   controller: _supportController,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: detailVoteLang['support_hint'],
+                    hintText: bahasa['support_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -555,7 +555,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                       ),
                     ),
                     child: Text(
-                      detailVoteLang['send_support'],
+                      bahasa['send_support'],
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),

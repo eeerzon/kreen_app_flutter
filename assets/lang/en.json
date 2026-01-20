@@ -17,62 +17,58 @@
     }
   ],
 
-  "pick_language" : "Choose Language",
-  "pick_currency" : "Choose Currency",
+  "bahasa": {
+    "pick_language" : "Choose Language",
+    "pick_currency" : "Choose Currency",
 
-  "lewati" : "Skip",
-  "lanjut" : "Next",
-  "selesai" : "Done",
-  "login": "Login",
-  "guest_login": "Login as Guest",
-  "login_as": "or",
+    "lewati" : "Skip",
+    "lanjut" : "Next",
+    "selesai" : "Done",
+    "login": "Login",
+    "guest_login": "Login as Guest",
+    "login_as": "or",
 
-  "input_email": "Email",
-  "kirim_email": "Send Email",
-  "request_kirim" : "Request sent successfully",
-  "input_password": "Password",
-  "lupa_password": "Forgot password",
-  "lupa_password_desc": "Enter your email to reset your password",
-  "belum": "Don't have a Kreen account yet? ",
-  "daftar": "Register",
-  "keluar": "Logout",
+    "input_email": "Email",
+    "kirim_email": "Send Email",
+    "request_kirim" : "Request sent successfully",
+    "input_password": "Password",
+    "lupa_password": "Forgot password",
+    "lupa_password_desc": "Enter your email to reset your password",
+    "belum": "Don't have a Kreen account yet? ",
+    "daftar": "Register",
+    "keluar": "Logout",
+  
+    "top_nav": "Welcome to Kreen",
 
-  "home_content": 
-    {
-      "top_nav": "Welcome to Kreen",
+    "event_title": "Popular Events",
+    "event_recomen": "Recommended Events",
+    "event_desc": "Vote now, secure your ticket, and be part of the excitement!",
 
-      "event_title": "Popular Events",
-      "event_recomen": "Recommended Events",
-      "event_desc": "Vote now, secure your ticket, and be part of the excitement!",
+    "vote_title": "Most Popular Vote",
 
-      "vote_title": "Most Popular Vote",
+    "leaderboard_title": "Support your favorite finalist",
 
-      "leaderboard_title": "Support your favorite finalist",
+    "latest_vote": "Latest Vote",
 
-      "latest_vote": "Latest Vote",
+    "comingsoon_title": "Upcoming Events",
+    "comingsoon_desc": "Choose your finalist, prepare your ticket the big event is coming soon!",
 
-      "comingsoon_title": "Upcoming Events",
-      "comingsoon_desc": "Choose your finalist, prepare your ticket the big event is coming soon!",
+    "partner": "Create Your Event & Voting Now",
+    "partner_btn": "Become Our Partner",
 
-      "partner": "Create Your Event & Voting Now",
-      "partner_btn": "Become Our Partner",
+    "news_title": "Get the Latest Update",
+    "news_desc": "Discover the newest and most updated sources of information here!",
 
-      "news_title": "Get the Latest Update",
-      "news_desc": "Discover the newest and most updated sources of information here!",
+    "bot_nav_1": "Home",
+    "bot_nav_2": "Explore",
+    "bot_nav_3": "Order",
+    "bot_nav_4": "Info",
+    "more" : "See More",
 
-      "bot_nav_1": "Home",
-      "bot_nav_2": "Explore",
-      "bot_nav_3": "Order",
-      "bot_nav_4": "Info",
-      "more" : "See More"
-  },
-
-  "cari_vote": "Search vote",
-  "cari_event": "Search event",
-  "cari_charity": "Search charity",
-
-  "detail_vote":
-  {
+    "cari_vote": "Search vote",
+    "cari_event": "Search event",
+    "cari_charity": "Search charity",
+    
     "button_find_finalist": "Find Finalists",
     "tutorial_vote": "Vote Tutorial",
     "faq_vote": "FAQ Vote",
@@ -103,40 +99,36 @@
     "no_data" : "No data found",
     "tutorial_vote_text" : "Voting Tutorial on Kreen Vote",
     "s_n_k_vote" : "Terms and Conditions of Voting",
-    "paket" : "Package"
-  },
+    "paket" : "Package",
 
-  "lastPressed" : "Press back again to exit the application",
-  "gagal_login" : "Incorrect email or password",
-  "cancel_login" : "Login failed or cancelled",
+    "lastPressed" : "Press back again to exit the application",
+    "gagal_login" : "Incorrect email or password",
+    "cancel_login" : "Login failed or cancelled",
 
-  "search" : "Search",
+    "search" : "Search",
 
-  "appBarTitle" : "History Order",
+    "appBarTitle" : "History Order",
 
-  "notLogin": "Please Login First",
-  "notLoginDesc": "Click the button below to go to the login page",
+    "notLogin": "Please Login First",
+    "notLoginDesc": "Click the button below to go to the login page",
 
-  "google_login" : "Login with Google",
-  "nama_lengkap_label": "Full Name",
-  "nama_lengkap": "Enter full name",
-  "email_label": "Email",
-  "nomor_hp_label": "Phone Number",
-  "nomor_hp": "Enter phone number",
-  "nomor_hp_error" : "Phone number must be 10-13 digits and start with 08",
-  "password_label": "Password",
-  "konfirmasi_password_label": "Confirm Password",
-  "konfirmasi_password": "Confirm password",
-  "sudah_punya_akun": "Already have a Kreen account? ",
+    "google_login" : "Login with Google",
+    "nama_lengkap_label": "Full Name",
+    "nama_lengkap": "Enter full name",
+    "email_label": "Email",
+    "nomor_hp_label": "Phone Number",
+    "nomor_hp": "Enter phone number",
+    "nomor_hp_error" : "Phone number must be 10-13 digits and start with 08",
+    "password_label": "Password",
+    "konfirmasi_password_label": "Confirm Password",
+    "konfirmasi_password": "Confirm password",
+    "sudah_punya_akun": "Already have a Kreen account? ",
 
-  "coba_lagi": "An error occurred. Please try again.",
+    "coba_lagi": "An error occurred. Please try again.",
 
-  "artikel" : "Article",
-
-  "detail_finalis" : {
-    "button_find_finalist": "Find Finalists",
+    "artikel" : "Article",
+    
     "total_harga": "Total Price",
-    "harga_detail" : "Free",
     "end_vote" : "Voting has ended",
     "bayar" : "Proceed to Payment",
     "countdown_vote" : "Countdown to Vote Closure",
@@ -147,10 +139,8 @@
     "vote_open" : "Vote will open on",
     "vote_open_again" : "Vote will reopen on",
     "pick_paket" : "Choose Vote Package",
-    "harga" : "Price",
     "detail_finalis" : "Finalist Details",
     "search_finalis" : "Search Finalists ...",
-    "no_data" : "No data",
     "usia" : "Age",
     "aktivitas" : "Activity",
     "biografi" : "Biography",
@@ -159,10 +149,8 @@
     "tatacara_vote" : "How to Vote",
     "profile_video" : "Profile Video",
     "video_no_valid" : "Invalid video",
-    "sosial_media" : "Social Media"
-  },
+    "sosial_media" : "Social Media",
 
-  "payment": {
     "header": "Payment",
     "sub_titel_1": "Let's Fill in Your Personal Data...",
     "sub_titel_2": "Complete your data to proceed",
@@ -230,10 +218,8 @@
     "metode_pembayaran" : "Payment Method",
     "informasi_tiket" : "Ticket Information",
     "detail_pembayaran" : "Payment Details",
-    "another_payment" : "Try again with another payment method"
-  },
+    "another_payment" : "Try again with another payment method",
 
-  "event" : {
     "beli_tiket" : "Select Ticket",
     "berbayar" : "Paid",
     "tentang_event_label" : "About Event",
@@ -267,7 +253,6 @@
     "warning_order_3": " and make sure ",
     "warning_order_4": " you are logged in to your email.",
     "expired_at": "Valid until ",
-    "selesai": "Done",
     "segera": "SOON",
     "habis": "SOLD OUT",
     "pembicara" : "Speaker",
@@ -278,13 +263,11 @@
     "supported": "Supported by",
     "guest_star": "Guest Star",
     "special_perform": "Special Perform",
-    "custom_section": "Custom Section"
-  },
+    "custom_section": "Custom Section",
 
-  "order_menunggu" : "waiting",
-  "order_gagal" : "Failed",
-
-  "modal": {
+    "order_menunggu" : "waiting",
+    "order_gagal" : "Failed",
+    
     "gps_aktif": "Please enable GPS first.",
     "izin_lokasi": "Location permission is required to continue.",
     "izin_lokasi_ditolak": "Location permission is permanently denied. Please open settings to enable it.",
@@ -292,11 +275,7 @@
     "pilih_paket_desc": "Please select your vote package.",
     "paket_terbaik": "Best Package for You",
     "paket_lainnya": "Other Packages",
-    "konfirmasi": "Confirm",
-    "batal": "Cancel"
-  },
 
-  "info": {
     "profil": "Profile",
     "bahasa": "Language",
     "pusat_bantuan": "Help Center",
@@ -314,7 +293,6 @@
     "old_password_hint": "Enter your old password",
     "new_password_label": "New Password",
     "new_password_hint": "Enter your new password",
-    "konfirmasi_password_label": "Confirm Password",
     "konfirmasi_password_hint": "Re-enter your new password",
     "simpan": "Save",
     "sukses_info" : "Password successfully changed",
@@ -347,6 +325,21 @@
     "desc_email_1" : "Email verification has been sent",
     "desc_email_2" : "We have sent an email verification to ",
     "desc_email_3" : "Please open the email and click the verification link to activate your account.",
-    "syarat_dan_ketentuan" : "Terms and Conditions"
+    "syarat_dan_ketentuan" : "Terms and Conditions",
+    
+    "scan_dari_galeri" : "Scan From Gallery",
+    "qr_terdeteksi" : "QR Code detected",
+    "scan_lagi" : "Scan Again",
+    "gagal_scan_1" : "Image does not contain QR Code",
+    "gagal_scan_2" : "Failed to read QR Code from image",
+    "download_scan_gagal" : "Failed to download QR Code",
+    "download_scan_berhasil" : "QR Code saved",
+    "kesalahan_simpan_scan" : "An error occurred while saving QR Code",
+    "tentang_kami" : "About Us",
+    "loading" : "Loading data...",
+    "time" : "Time",
+    "this_week" : "This week",
+    "this_month" : "This month",
+    "next_month" : "Next month"
   }
 }

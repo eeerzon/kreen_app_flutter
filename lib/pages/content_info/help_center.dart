@@ -19,7 +19,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   String? langCode, search;
   bool isLoading = true;
 
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
 
   List<dynamic> kategori = [];
   List<dynamic> subKategori = [];
@@ -40,11 +40,10 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
 
-    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
-    final tempsearch = await LangService.getText(langCode!, "search");
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
     setState(() {
-      infoLang = tempinfolang;
-      search = tempsearch;
+      bahasa = tempbahasa;
+      search = bahasa['search'];
     });
   }
 
@@ -182,7 +181,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(infoLang['pusat_bantuan']),
+        title: Text(bahasa['pusat_bantuan']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -220,7 +219,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
               //konten
               SizedBox(height: 16),
               Text(
-                infoLang['kategori_informasi'],
+                bahasa['kategori_informasi'],
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
 
@@ -299,7 +298,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
               }),
               
               Text(
-                infoLang['pertanyaan_populer'],
+                bahasa['pertanyaan_populer'],
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
 

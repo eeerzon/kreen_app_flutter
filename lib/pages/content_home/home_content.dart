@@ -39,7 +39,7 @@ class _HomeContentState extends State<HomeContent> {
   String? currencyCode;
   String? login;
   String? token;
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   String? selamatDatang, first_name, photo_user;
 
@@ -80,34 +80,32 @@ class _HomeContentState extends State<HomeContent> {
       langCode = code;
     });
 
-    final homeContent = await LangService.getJsonData(langCode!, "home_content");
-    final tempLogin = await LangService.getText(langCode!, 'login');
-    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      selamatDatang = homeContent['top_nav'];
-      login = tempLogin;
-      event_title = homeContent['event_title'];
-      event_recomen = homeContent['event_recomen'];
-      event_desc = homeContent['event_desc'];
+      bahasa = tempbahasa;
 
-      vote_title = homeContent['vote_title'];
-      latest_vote = homeContent['latest_vote'];
+      selamatDatang = bahasa['top_nav'];
+      login = bahasa['login'];
+      event_title = bahasa['event_title'];
+      event_recomen = bahasa['event_recomen'];
+      event_desc = bahasa['event_desc'];
 
-      leaderboard_title = homeContent['leaderboard_title'];
+      vote_title = bahasa['vote_title'];
+      latest_vote = bahasa['latest_vote'];
 
-      comingsoon_title = homeContent['comingsoon_title'];
-      comingsoon_desc = homeContent['comingsoon_desc'];
+      leaderboard_title = bahasa['leaderboard_title'];
 
-      partner = homeContent['partner'];
-      partner_btn = homeContent['partner_btn'];
+      comingsoon_title = bahasa['comingsoon_title'];
+      comingsoon_desc = bahasa['comingsoon_desc'];
 
-      news_title = homeContent['news_title'];
-      news_desc = homeContent['news_desc'];
+      partner = bahasa['partner'];
+      partner_btn = bahasa['partner_btn'];
 
-      seeMore = homeContent['more'];
+      news_title = bahasa['news_title'];
+      news_desc = bahasa['news_desc'];
 
-      voteLang = tempvoteLang;
+      seeMore = bahasa['more'];
     });
   }
 
@@ -691,7 +689,7 @@ class _HomeContentState extends State<HomeContent> {
                               borderRadius: BorderRadius.circular(8),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
-                                  maxWidth: 150,
+                                  maxWidth: 180,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
@@ -762,7 +760,7 @@ class _HomeContentState extends State<HomeContent> {
                                 }
                               }
 
-                              final formatter = NumberFormat.decimalPattern("id_ID");
+                              final formatter = NumberFormat.decimalPattern("en_US");
                               final hargaFormatted = formatter.format(item['price'] ?? 0);
 
                               return Padding(
@@ -834,15 +832,23 @@ class _HomeContentState extends State<HomeContent> {
                                                     ),
                                                   ),
                                                 ),
+                                                //penyelenggara
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  item['nama_penyelenggara'],
+                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                ),
+                                                //tgl
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   formattedDate,
                                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
+                                                //harga
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? voteLang['harga_detail'] //'Gratis'
+                                                  ? bahasa['harga_detail'] //'Gratis'
                                                   : currencyCode == null 
                                                     ? "${item['currency']} $hargaFormatted"
                                                     : "$currencyCode $hargaFormatted",
@@ -1151,7 +1157,7 @@ class _HomeContentState extends State<HomeContent> {
                               borderRadius: BorderRadius.circular(8),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
-                                  maxWidth: 150,
+                                  maxWidth: 180,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1224,7 +1230,7 @@ class _HomeContentState extends State<HomeContent> {
                               }
 
                               String hargaFormatted = '-';
-                              final formatter = NumberFormat.decimalPattern("id_ID");
+                              final formatter = NumberFormat.decimalPattern("en_US");
                               hargaFormatted = formatter.format(item['price'] ?? 0);
 
                               final type_event = item['type_event'] ?? '-';
@@ -1323,21 +1329,29 @@ class _HomeContentState extends State<HomeContent> {
                                                     ),
                                                   ),
                                                 ),
+                                                //penyelenggara
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  item['nama_penyelenggara'],
+                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                ),
+                                                //tgl
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   formattedDate,
                                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
+                                                //harga
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
                                                   ? '' //"Harga"
-                                                  : voteLang['mulai_dari'] //"Mulai dari",
+                                                  : bahasa['mulai_dari'] //"Mulai dari",
                                                 ),
                                                 const SizedBox(height: 4,),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? voteLang['harga_detail'] //'Gratis'
+                                                  ? bahasa['harga_detail'] //'Gratis'
                                                   : currencyCode == null 
                                                     ? "${item['currency']} $hargaFormatted"
                                                     : "$currencyCode $hargaFormatted",
@@ -1413,7 +1427,7 @@ class _HomeContentState extends State<HomeContent> {
                               borderRadius: BorderRadius.circular(8),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
-                                  maxWidth: 150,
+                                  maxWidth: 180,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1484,7 +1498,7 @@ class _HomeContentState extends State<HomeContent> {
                                 }
                               }
 
-                              final formatter = NumberFormat.decimalPattern("id_ID");
+                              final formatter = NumberFormat.decimalPattern("en_US");
                               final hargaFormatted = formatter.format(item['price'] ?? 0);
 
                               return Padding(
@@ -1556,15 +1570,23 @@ class _HomeContentState extends State<HomeContent> {
                                                     ),
                                                   ),
                                                 ),
+                                                //penyelenggara
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  item['nama_penyelenggara'],
+                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                ),
+                                                //tgl
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   formattedDate,
                                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
+                                                //harga
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? voteLang['harga_detail'] //'Gratis'
+                                                  ? bahasa['harga_detail'] //'Gratis'
                                                   : currencyCode == null 
                                                     ? "${item['currency']} $hargaFormatted"
                                                     : "$currencyCode $hargaFormatted",
@@ -1640,7 +1662,7 @@ class _HomeContentState extends State<HomeContent> {
                               borderRadius: BorderRadius.circular(8),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
-                                  maxWidth: 150,
+                                  maxWidth: 180,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1713,7 +1735,7 @@ class _HomeContentState extends State<HomeContent> {
                               }
 
                               String hargaFormatted = '-';
-                              final formatter = NumberFormat.decimalPattern("id_ID");
+                              final formatter = NumberFormat.decimalPattern("en_US");
                               hargaFormatted = formatter.format(item['price'] ?? 0);
 
                               final type_event = item['type_event'] ?? '-';
@@ -1812,21 +1834,29 @@ class _HomeContentState extends State<HomeContent> {
                                                     ),
                                                   ),
                                                 ),
+                                                //penyelenggara
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  item['nama_penyelenggara'],
+                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                ),
+                                                //tgl
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   formattedDate,
                                                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                 ),
+                                                //harga
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   item['price'] == 0
                                                   ? '' //"Harga"
-                                                  : voteLang['mulai_dari'] //"Mulai dari",
+                                                  : bahasa['mulai_dari'] //"Mulai dari",
                                                 ),
                                                 const SizedBox(height: 4,),
                                                 Text(
                                                   item['price'] == 0
-                                                  ? voteLang['harga_detail'] //'Gratis'
+                                                  ? bahasa['harga_detail'] //'Gratis'
                                                   : currencyCode == null 
                                                     ? "${item['currency']} $hargaFormatted"
                                                     : "$currencyCode $hargaFormatted",

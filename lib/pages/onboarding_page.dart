@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kreen_app_flutter/services/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'login_page.dart';
 import 'home_page.dart';
@@ -69,23 +70,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
     StorageService.setLanguage(langCode);
 
     final onboarding = await LangService.loadOnboarding(langCode);
-    final title = await LangService.getText(langCode, "pick_language");
-    final lewatiText = await LangService.getText(langCode, "lewati");
-    final lanjutText = await LangService.getText(langCode, "lanjut");
-    final selesaiText = await LangService.getText(langCode, "selesai");
-    final loginText = await LangService.getText(langCode, "login");
-    final guestText = await LangService.getText(langCode, "guest_login");
+    final tempbahasa = await LangService.getJsonData(langCode, "bahasa");
 
     if (!mounted) return;
 
     setState(() {
       pages = onboarding;
-      dialog_title = title;
-      lewati = lewatiText;
-      lanjut = lanjutText;
-      selesai = selesaiText;
-      login = loginText;
-      guest = guestText;
+      dialog_title = tempbahasa['pick_language'];
+      lewati = tempbahasa['lewati'];
+      lanjut = tempbahasa['lanjut'];
+      selesai = tempbahasa['selesai'];
+      login = tempbahasa['login'];
+      guest = tempbahasa['guest_login'];
     });
   }
 
@@ -181,6 +177,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   void _goToLogin() async {
     await _setOnboardingDone();
+
+  SessionManager.isGuest = false;
+  SessionManager.checkingUserModalShown = false;
+  
     if (!mounted) return;
     Navigator.push(
       context,
@@ -190,6 +190,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   void _goToHome() async {
     await _setOnboardingDone();
+
+  SessionManager.isGuest = true;
+  SessionManager.checkingUserModalShown = true;
+
     if (!mounted) return;
     Navigator.pushReplacement(
       context,

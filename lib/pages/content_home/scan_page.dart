@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:qr_code_dart_scan/qr_code_dart_scan.dart';
 import 'package:vibration/vibration.dart';
 
@@ -23,10 +25,16 @@ class _ScannerPageState extends State<ScannerPage>
 
   Key scannerKey = UniqueKey();
   bool showScanner = true;
+  String? langCode;
+  Map<String, dynamic> bahasa = {};
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
 
     animController = AnimationController(
       vsync: this,
@@ -36,6 +44,20 @@ class _ScannerPageState extends State<ScannerPage>
     anim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: animController, curve: Curves.easeInOut),
     );
+  }
+
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+
+    setState(() {
+      langCode = code;
+    });
+
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
+
+    setState(() {
+      bahasa = tempbahasa;
+    });
   }
 
   @override
@@ -120,7 +142,7 @@ class _ScannerPageState extends State<ScannerPage>
                     ),
                   ),
                   icon: const Icon(Icons.image),
-                  label: const Text("Scan dari Gallery"),
+                  label: Text(bahasa['scan_dari_galeri']),
                   onPressed: _pickImageFromGallery,
                 ),
 
@@ -165,8 +187,8 @@ class _ScannerPageState extends State<ScannerPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "QR Code Terdeteksi",
+            Text(
+              bahasa['rq_terdeteksi'],
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -185,7 +207,7 @@ class _ScannerPageState extends State<ScannerPage>
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  "Lanjut",
+                  bahasa['lanjut'],
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -217,7 +239,7 @@ class _ScannerPageState extends State<ScannerPage>
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  "Scan Lagi",
+                  bahasa['scan_lagi'],
                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -241,12 +263,12 @@ class _ScannerPageState extends State<ScannerPage>
         _onScanResult(result);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Gambar tidak mengandung QR Code")),
+          SnackBar(content: Text(bahasa['gagal_scan_1'])),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal membaca QR dari gambar")),
+        SnackBar(content: Text(bahasa['gagal_scan_2'])),
       );
     }
   }

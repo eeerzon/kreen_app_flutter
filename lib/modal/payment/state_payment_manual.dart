@@ -102,7 +102,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   bool isLoading = true;
 
   String? langCode, currencyCode, token;
-  Map<String, dynamic> paymentLang = {};
+  Map<String, dynamic> bahasa = {};
   Map<String, dynamic> detailVoteLang = {};
   Map<String, dynamic> eventLang = {};
   String? namaLengkapLabel, namaLengkapHint;
@@ -181,30 +181,17 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     final lang = await StorageService.getLanguage();
     setState(() => langCode = lang);
 
-    final tempPayment = await LangService.getJsonData(langCode!, "payment");
-    final tempnamalabel = await LangService.getText(langCode!, "nama_lengkap_label");
-    final tempnamahint = await LangService.getText(langCode!, "nama_lengkap");
-    final tempnohplabel = await LangService.getText(langCode!, "nomor_hp_label");
-    final tempnohphint = await LangService.getText(langCode!, "nomor_hp");
-    final tempcobalagi = await LangService.getText(langCode!, "coba_lagi");
-
-    final tempemailHint = await LangService.getText(langCode!, "input_email");
-
-    final tempdetailvote = await LangService.getJsonData(langCode!, "detail_vote");
-    final tempeventLang = await LangService.getJsonData(langCode!, "event");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = tempPayment;
-      namaLengkapLabel = tempnamalabel;
-      namaLengkapHint = tempnamahint;
-      phoneLabel = tempnohplabel;
-      phoneHint = tempnohphint;
-      cobaLagi = tempcobalagi;
+      bahasa = tempbahasa;
+      namaLengkapLabel = bahasa['nama_lengkap_label'];
+      namaLengkapHint = bahasa['nama_lengkap'];
+      phoneLabel = bahasa['nomor_hp_label'];
+      phoneHint = bahasa['nomor_hp'];
+      cobaLagi = bahasa['coba_lagi'];
 
-      emailHint = tempemailHint;
-
-      detailVoteLang = tempdetailvote;
-      eventLang = tempeventLang;
+      emailHint = bahasa['input_email'];
     });
   }
 
@@ -228,7 +215,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     _emailController.text = email;
 
     if (gender.isNotEmpty) {
-      selectedGender = gender.toLowerCase() == 'male' ? paymentLang['gender_1'] : paymentLang['gender_2'];
+      selectedGender = gender.toLowerCase() == 'male' ? bahasa['gender_1'] : bahasa['gender_2'];
     }
 
     final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
@@ -541,7 +528,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               dialogType: DialogType.error,
               animType: AnimType.topSlide,
               title: 'Oops!',
-              desc: "${resultVoteOrder['message']}\n${paymentLang['another_payment']}",
+              desc: "${resultVoteOrder['message']}\n${bahasa['another_payment']}",
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -652,7 +639,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               dialogType: DialogType.error,
               animType: AnimType.topSlide,
               title: 'Oops!',
-              desc: "${resultVoteOrder['message']}\n${paymentLang['another_payment']}",
+              desc: "${resultVoteOrder['message']}\n${bahasa['another_payment']}",
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -680,8 +667,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     }
 
     final genders = [
-      {'label': paymentLang['gender_1'], 'icon': '$baseUrl/image/male.png'},
-      {'label': paymentLang['gender_2'], 'icon': '$baseUrl/image/female.png'},
+      {'label': bahasa['gender_1'], 'icon': '$baseUrl/image/male.png'},
+      {'label': bahasa['gender_2'], 'icon': '$baseUrl/image/female.png'},
     ];
     
     final creditCard = payment['Credit Card'] ?? [];
@@ -717,7 +704,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        paymentLang['batal'],
+                        bahasa['batal'],
                         style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -736,7 +723,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        paymentLang['konfirmasi'],
+                        bahasa['konfirmasi'],
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -764,7 +751,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      paymentLang['header'],
+                      bahasa['header'],
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
@@ -789,11 +776,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         const SizedBox(height: 4),
                         //konten
                         Text(
-                          paymentLang['sub_titel_1'],
+                          bahasa['sub_titel_1'],
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          paymentLang['sub_titel_2'],
+                          bahasa['sub_titel_2'],
                         ),
           
                         const SizedBox(height: 12),
@@ -830,7 +817,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           Padding(
                             padding: EdgeInsets.only(top: 4),
                             child: Text(
-                              paymentLang['nama_lengkap_error'],
+                              bahasa['nama_lengkap_error'],
                               style: TextStyle(color: Colors.red),
                             ),
                           ),
@@ -839,7 +826,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         Row(
                           children: [
                             Text(
-                              paymentLang['gender_label']
+                              bahasa['gender_label']
                             ),
                             Text(
                               "*", style: TextStyle(color: Colors.red)
@@ -908,7 +895,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           Padding(
                             padding: EdgeInsets.only(top: 4),
                             child: Text(
-                              paymentLang['gender_error'],
+                              bahasa['gender_error'],
                               style: TextStyle(color: Colors.red),
                             ),
                           ),
@@ -1015,7 +1002,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     ? TextInputType.number
                                     : TextInputType.text,
                                 decoration: InputDecoration(
-                                  hintText: "${paymentLang['hint_label_indikator_1']} $label ${paymentLang['hint_label_indikator_2']}",
+                                  hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
                                   hintStyle: TextStyle(color: Colors.grey.shade400),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -1030,7 +1017,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   children: [
                                     Icon(Icons.info_outline, color: Colors.blue,),
                                     Text(
-                                      paymentLang['warning_indikator_phone'],
+                                      bahasa['warning_indikator_phone'],
                                       style: TextStyle(color: Colors.blue),
                                     )
                                   ],
@@ -1039,7 +1026,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   Padding(
                                     padding: EdgeInsets.only(top: 4),
                                     child: Text(
-                                      paymentLang['error_indikator_phone'],
+                                      bahasa['error_indikator_phone'],
                                       style: TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -1089,11 +1076,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           
                           const SizedBox(height: 12),
                           Text(
-                            paymentLang['pilih_payment'],
+                            bahasa['pilih_payment'],
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            paymentLang['sub_pilih_payment'],
+                            bahasa['sub_pilih_payment'],
                           ),
           
                           const SizedBox(height: 12,),
@@ -1283,8 +1270,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -1295,11 +1282,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -1317,7 +1304,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
                                                           Text(
-                                                            paymentLang['kartu_credit'],
+                                                            bahasa['kartu_credit'],
                                                           ),
                                                           Container(
                                                             color: Colors.white,
@@ -1604,8 +1591,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -1616,11 +1603,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -1828,8 +1815,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -1840,11 +1827,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2051,8 +2038,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2063,11 +2050,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2274,8 +2261,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2286,11 +2273,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2497,8 +2484,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2509,11 +2496,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2720,8 +2707,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2732,11 +2719,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2934,8 +2921,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text(
                                                                     currencyCode == null
-                                                                      ? "${paymentLang['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                      : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                      ? "${bahasa['limit_min']} $voteCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                      : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -2946,11 +2933,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                                   padding: const EdgeInsets.only(top: 4.0),
                                                                   child: Text( limit_max == 0
                                                                     ? currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                                     : currencyCode == null
-                                                                      ? "${paymentLang['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
-                                                                      : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                      ? "${bahasa['limit_max']} $voteCurrency ${formatter.format((roundedValueMax))}"
+                                                                      : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                                     softWrap: true,
                                                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                                   ),
@@ -3022,7 +3009,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           if (selectedIndex != null) ...[
                             const SizedBox(height: 25),
                             Text(
-                              paymentLang['detail_harga'],
+                              bahasa['detail_harga'],
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
           
@@ -3063,7 +3050,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(paymentLang['biaya_layanan']),
+                                Text(bahasa['biaya_layanan']),
                                 Text(
                                   currencyCode == null
                                   ? '$voteCurrency ${formatter.format(feeLayanan)}'
@@ -3082,7 +3069,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(paymentLang['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
+                                Text(bahasa['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
                                 Text(
                                   currencyCode == null
                                   ? "$voteCurrency ${formatter.format(totalPayment)}"
@@ -3109,11 +3096,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   Expanded(
                                     child: RichText(
                                       text: TextSpan(
-                                        text: paymentLang['masalah'],
+                                        text: bahasa['masalah'],
                                         style: TextStyle(color: Colors.black),
                                         children: [
                                           TextSpan(
-                                            text: paymentLang['bantuan'],
+                                            text: bahasa['bantuan'],
                                             style: TextStyle(
                                               color: Colors.blue,
                                               fontWeight: FontWeight.bold,
@@ -3143,7 +3130,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      paymentLang['vote_final'],
+                                      bahasa['vote_final'],
                                       style: TextStyle(
                                         color: Colors.red.shade800,
                                         fontWeight: FontWeight.w500,
@@ -3169,14 +3156,14 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     text: TextSpan(
                                       style: TextStyle(color: Colors.black),
                                       children: [
-                                        TextSpan(text: paymentLang['kebijakan_privasi_1']),
+                                        TextSpan(text: bahasa['kebijakan_privasi_1']),
                                         TextSpan(
                                             text: "KREEN ",),
                                         TextSpan(
                                             text:
-                                                paymentLang['kebijakan_privasi_2']),
+                                                bahasa['kebijakan_privasi_2']),
                                         TextSpan(
-                                            text: paymentLang['kebijakan_privasi_3'],
+                                            text: bahasa['kebijakan_privasi_3'],
                                             style: TextStyle(color: Colors.red),
                                             recognizer: TapGestureRecognizer()
                                               ..onTap = () {
@@ -3188,9 +3175,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                 );
                                               },
                                         ),
-                                        TextSpan(text: paymentLang['kebijakan_privasi_4']),
+                                        TextSpan(text: bahasa['kebijakan_privasi_4']),
                                         TextSpan(
-                                            text: paymentLang['kebijakan_privasi_5'],
+                                            text: bahasa['kebijakan_privasi_5'],
                                             style: TextStyle(color: Colors.red),
                                             recognizer: TapGestureRecognizer()
                                               ..onTap = () {
@@ -3202,7 +3189,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                 );
                                               },
                                         ),
-                                        TextSpan(text: paymentLang['kebijakan_privasi_6']),
+                                        TextSpan(text: bahasa['kebijakan_privasi_6']),
                                       ],
                                     ),
                                   ),
@@ -3227,7 +3214,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       style: TextStyle(color: Colors.black),
                                       children: [
                                         TextSpan(
-                                          text: paymentLang['setuju_syarat'],
+                                          text: bahasa['setuju_syarat'],
                                         )
                                       ]
                                     )
@@ -3262,9 +3249,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       text: TextSpan(
                                         style: TextStyle(color: Colors.black),
                                         children: [
-                                          TextSpan(text: paymentLang['kebijakan_privasi_7']),
+                                          TextSpan(text: bahasa['kebijakan_privasi_7']),
                                           TextSpan(text: "$totalVotes ${detailVoteLang['text_vote']}", style: TextStyle(fontWeight: FontWeight.bold)),
-                                          TextSpan(text: paymentLang['kebijakan_privasi_8']),
+                                          TextSpan(text: bahasa['kebijakan_privasi_8']),
                                           TextSpan(
                                               text: currencyCode == null
                                                 ? "$voteCurrency ${formatter.format(totalPayment)}"
@@ -3272,7 +3259,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               style: TextStyle(fontWeight: FontWeight.bold)),
                                           TextSpan(
                                               text:
-                                                  paymentLang['kebijakan_privasi_9']),
+                                                  bahasa['kebijakan_privasi_9']),
                                         ],
                                       ),
                                     ),
@@ -3286,7 +3273,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               Padding(
                                 padding: EdgeInsets.only(bottom: 8),
                                 child: Text(
-                                  paymentLang['checkbox_error'],
+                                  bahasa['checkbox_error'],
                                   style: TextStyle(
                                       color: Colors.red),
                                 ),
@@ -3312,14 +3299,14 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   text: TextSpan(
                                     style: TextStyle(color: Colors.black),
                                     children: [
-                                      TextSpan(text: paymentLang['kebijakan_privasi_1']),
+                                      TextSpan(text: bahasa['kebijakan_privasi_1']),
                                       TextSpan(
                                           text: "KREEN ",),
                                       TextSpan(
                                           text:
-                                              paymentLang['kebijakan_privasi_2']),
+                                              bahasa['kebijakan_privasi_2']),
                                       TextSpan(
-                                          text: paymentLang['kebijakan_privasi_3'],
+                                          text: bahasa['kebijakan_privasi_3'],
                                           style: TextStyle(color: Colors.red),
                                           recognizer: TapGestureRecognizer()
                                             ..onTap = () {
@@ -3331,9 +3318,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               );
                                             },
                                       ),
-                                      TextSpan(text: paymentLang['kebijakan_privasi_4']),
+                                      TextSpan(text: bahasa['kebijakan_privasi_4']),
                                       TextSpan(
-                                          text: paymentLang['kebijakan_privasi_5'],
+                                          text: bahasa['kebijakan_privasi_5'],
                                           style: TextStyle(color: Colors.red),
                                           recognizer: TapGestureRecognizer()
                                             ..onTap = () {
@@ -3345,7 +3332,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               );
                                             },
                                       ),
-                                      TextSpan(text: paymentLang['kebijakan_privasi_6']),
+                                      TextSpan(text: bahasa['kebijakan_privasi_6']),
                                     ],
                                   ),
                                 ),
@@ -3370,7 +3357,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     style: TextStyle(color: Colors.black),
                                     children: [
                                       TextSpan(
-                                        text: paymentLang['setuju_syarat'],
+                                        text: bahasa['setuju_syarat'],
                                       )
                                     ]
                                   )
@@ -3382,15 +3369,17 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         ],
           
                         const SizedBox(height: 4),
-                        if (_showError && selectedIndex == null)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              paymentLang['checkbox_error'],
-                              style: TextStyle(
-                                  color: Colors.red),
+                        if (widget.totalHargaAsli != 0) ... [
+                          if (_showError && selectedIndex == null)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                bahasa['checkbox_error'],
+                                style: TextStyle(
+                                    color: Colors.red),
+                              ),
                             ),
-                          ),
+                        ]
                       ],
                     ),
                   ),
@@ -3476,9 +3465,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       }
     }
 
-    if (selectedIndex == null) {
-      isValid = false;
-      paymentError = true;
+    if (widget.totalHargaAsli != 0) {
+      if (selectedIndex == null) {
+        isValid = false;
+        paymentError = true;
+      }
     }
 
     if (widget.totalHargaAsli != 0 && !_isChecked3) {

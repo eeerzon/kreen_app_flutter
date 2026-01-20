@@ -35,6 +35,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   bool tapinstruksi = false;
 
+  bool isExpired = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,12 +61,17 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     final difference = deadline.difference(now);
 
     setState(() {
-      remaining = difference.isNegative ? Duration.zero : difference;
+      if (difference.isNegative) {
+        remaining = Duration.zero;
+        isExpired = true;
+        _timer?.cancel();
+      } else {
+        remaining = difference;
+      }
     });
   }
 
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> detailFinalisLang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -73,12 +80,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       langCode = code;
     });
 
-    final temppaymentlang = await LangService.getJsonData(langCode!, "payment");
-    final tempdetailfinalislang = await LangService.getJsonData(langCode!, "detail_finalis");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = temppaymentlang;
-      detailFinalisLang = tempdetailfinalislang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -183,11 +188,15 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenOrder()
-    );
+    if (_isLoading) {
+      return Scaffold(body: buildSkeletonHome());
+    }
+
+    if (isExpired) {
+      return buildLinkKadaluarsa();
+    }
+
+    return buildKontenOrder();
   }
 
   Widget buildSkeletonHome() {
@@ -291,16 +300,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   Widget buildKontenOrder() {
-    // Cek waktu kadaluarsa
-    if (expiresAt.isNotEmpty) {
-      final expiredDate = DateTime.parse(expiresAt);
-      final now = DateTime.now();
-
-      if (now.isAfter(expiredDate)) {
-        // waktu sudah lewat, tampilkan halaman kadaluarsa
-        return buildLinkKadaluarsa();
-      }
-    }
     
     final hours = remaining.inHours % 24;
     final minutes = remaining.inMinutes % 60;
@@ -309,18 +308,30 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     String formattedDate = '-';
 
     String? currencyRegion;
-    if (voteOder['order_region'] == "ID"){
+    if (voteOder['order_region'] == "EU"){
+      currencyRegion = "EUR";
+    } else if (voteOder['order_region'] == "ID"){
       currencyRegion = "IDR";
-    } else if (voteOder['order_region'] == "US"){
-      currencyRegion = "USD";
-    } else if (voteOder['order_region'] == "SG"){
-      currencyRegion = "SGD";
     } else if (voteOder['order_region'] == "MY"){
       currencyRegion = "MYR";
+    } else if (voteOder['order_region'] == "PH"){
+      currencyRegion = "PHP";
+    } else if (voteOder['order_region'] == "SG"){
+      currencyRegion = "SGD";
     } else if (voteOder['order_region'] == "TH"){
       currencyRegion = "THB";
+    } else if (voteOder['order_region'] == "US"){
+      currencyRegion = "USD";
     } else if (voteOder['order_region'] == "VN"){
       currencyRegion = "VND";
+    }
+    
+    num sum_amount = voteOder['total_amount'] * voteOder['currency_value_region'];
+    num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      total_amount_pg = total_amount_pg.ceil();
+    } else {
+      total_amount_pg = (total_amount_pg * 100).ceil() / 100;
     }
 
     num user_currency_amount = num.parse(voteOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
@@ -372,7 +383,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(paymentLang['header']),
+        title: Text(bahasa['header']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -400,7 +411,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
-                          paymentLang['dont_close'],
+                          bahasa['dont_close'],
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           softWrap: true,
@@ -431,7 +442,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                   child: Column(
                     children: [
 
-                      Text(paymentLang['sisa_waktu']),
+                      Text(bahasa['sisa_waktu']),
 
                       const SizedBox(height: 10),
                       Container(
@@ -447,15 +458,15 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _timeBox("$hours".padLeft(2, "0"), detailFinalisLang['hour']),
+                                  _timeBox("$hours".padLeft(2, "0"), bahasa['hour']),
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$minutes".padLeft(2, "0"), detailFinalisLang['minute']),
+                                  _timeBox("$minutes".padLeft(2, "0"), bahasa['minute']),
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$seconds".padLeft(2, "0"), detailFinalisLang['second']),
+                                  _timeBox("$seconds".padLeft(2, "0"), bahasa['second']),
                                 ],
                               ),
                             ],
@@ -464,7 +475,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       ),
 
                       const SizedBox(height: 16),
-                      Text(paymentLang['selesaikan_pembayaran']),
+                      Text(bahasa['selesaikan_pembayaran']),
                       Text(
                         formattedDate,
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -517,7 +528,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                         children: [
                                           Icon(Icons.info_outline, color: Colors.blue,),
                                           Text(
-                                            paymentLang['instruksi_pembayaran'],
+                                            bahasa['instruksi_pembayaran'],
                                             style: TextStyle(color: Colors.blue),
                                           )
                                         ],
@@ -530,7 +541,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               if (tapinstruksi) ... [
                                 const SizedBox(height: 10,),
                                 Text(
-                                  paymentLang['instruksi_pembayaran'],
+                                  bahasa['instruksi_pembayaran'],
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
 
@@ -597,7 +608,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 16,),
                               Text(
-                                paymentLang['kode_pesanan'],
+                                bahasa['kode_pesanan'],
                                 style: TextStyle(color: Colors.grey),
                               ),
 
@@ -611,7 +622,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                                 const SizedBox(height: 25,),
                                 Text(
-                                  paymentLang['nomor_pembayaran'],
+                                  bahasa['nomor_pembayaran'],
                                   style: TextStyle(color: Colors.grey,),
                                 ),
                               
@@ -627,7 +638,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                       // Tampilkan snackbar konfirmasi
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text(paymentLang['copyVA']),
+                                          content: Text(bahasa['copyVA']),
                                           backgroundColor: Colors.green,
                                           duration: const Duration(seconds: 2),
                                           behavior: SnackBarBehavior.floating,
@@ -656,13 +667,13 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${paymentLang['total_pembayaran']} ($currencyRegion)',
+                                '${bahasa['total_pembayaran']} ($currencyRegion)',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
                               const SizedBox(height: 10,),
                               Text(
-                                '$currencyRegion ${formatter.format(voteOder['total_amount_pg'])}',
+                                '$currencyRegion ${formatter.format(total_amount_pg)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               )
                             ],
@@ -699,32 +710,34 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                   ),
 
                                   const SizedBox(width: 10,),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        vote['judul_vote'],
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          vote['judul_vote'],
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        ),
 
-                                      const SizedBox(height: 8,),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: List.generate(finalis.length, (i) {
-                                          return Text(
-                                            '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote(s)',
-                                            style: const TextStyle(color: Colors.grey),
-                                          );
-                                        }),
-                                      ),
-                                    ],
-                                  )
+                                        const SizedBox(height: 8,),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: List.generate(finalis.length, (i) {
+                                            return Text(
+                                              '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote(s)',
+                                              style: const TextStyle(color: Colors.grey),
+                                            );
+                                          }),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                               
                               const SizedBox(height: 20,),
                               Text(
-                                paymentLang['ringkasan_pembayaran'],
+                                bahasa['ringkasan_pembayaran'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
@@ -733,7 +746,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    detailFinalisLang['total_harga'],
+                                    bahasa['total_harga'],
                                   ),
 
                                   Text(
@@ -747,7 +760,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    paymentLang['biaya_layanan'],
+                                    bahasa['biaya_layanan'],
                                   ),
 
                                   Text(
@@ -761,7 +774,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    paymentLang['total_pembayaran'],
+                                    bahasa['total_pembayaran'],
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
 
@@ -795,7 +808,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             );
                           },
                           child: Text(
-                            paymentLang['check_status'],
+                            bahasa['check_status'],
                             style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
@@ -819,7 +832,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(paymentLang['header']),
+        title: Text(bahasa['header']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -863,7 +876,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         
                 const SizedBox(height: 20),
                 Text(
-                  paymentLang['link_kadaluarsa'],
+                  bahasa['link_kadaluarsa'],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -873,7 +886,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         
                 const SizedBox(height: 10),
                 Text(
-                  paymentLang['link_kadaluarsa_desc'],
+                  bahasa['link_kadaluarsa_desc'],
                   textAlign: TextAlign.center,
                 ),
         
@@ -900,7 +913,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                     }
                   },
                   child: Text(
-                    paymentLang['transaksi_lagi'],
+                    bahasa['transaksi_lagi'],
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -911,11 +924,11 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                 const SizedBox(height: 20),
                 RichText(
                   text: TextSpan(
-                    text: paymentLang['kendala'],
+                    text: bahasa['kendala'],
                     style: TextStyle(color: Colors.black),
                     children: [
                       TextSpan(
-                        text: paymentLang['kontak'],
+                        text: bahasa['kontak'],
                         style: TextStyle(
                           color: Colors.red,
                           fontWeight: FontWeight.bold,

@@ -50,8 +50,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController twitterController;
 
   bool isLoading = true;
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
   String? emailHint, phoneLabel, phoneHint, phoneError;
   String? verifEmail;
 
@@ -82,26 +81,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
 
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempinfoLang = await LangService.getJsonData(langCode!, "info");
-    final tempemailHint = await LangService.getText(langCode!, "input_email");
-    final tempphoneLabel = await LangService.getText(langCode!, "nomor_hp_label");
-    final tempphoneHint = await LangService.getText(langCode!, "nomor_hp");
-    final tempphoneError = await LangService.getText(langCode!, "nomor_hp_error");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
+    
     setState(() {
-      paymentLang = temppaymentLang;
-      infoLang = tempinfoLang;
-      emailHint = tempemailHint;
-      phoneLabel = tempphoneLabel;
-      phoneHint = tempphoneHint;
-      phoneError = tempphoneError;
+      bahasa = tempbahasa;
+      emailHint = bahasa['input_email'];
+      phoneLabel = bahasa['nomor_hp_label'];
+      phoneHint = bahasa['nomor_hp'];
+      phoneError = bahasa['nomor_hp_error'];
       isLoading = false;
     });
   }
 
   late final genders = [
-    {'label': paymentLang['gender_1'], 'icon': '$baseUrl/image/male.png'},
-    {'label': paymentLang['gender_2'], 'icon': '$baseUrl/image/female.png'},
+    {'label': bahasa['gender_1'], 'icon': '$baseUrl/image/male.png'},
+    {'label': bahasa['gender_2'], 'icon': '$baseUrl/image/female.png'},
   ];
 
   bool get isSvg {
@@ -171,8 +165,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(infoLang['alert_size_file_1']),  //"Ukuran File Terlalu Besar"
-          content: Text(infoLang['alert_size_file_2']), //"Silakan pilih gambar dengan ukuran maksimal 1 MB."
+          title: Text(bahasa['alert_size_file_1']),  //"Ukuran File Terlalu Besar"
+          content: Text(bahasa['alert_size_file_2']), //"Silakan pilih gambar dengan ukuran maksimal 1 MB."
           actions: [
             TextButton(
               child: const Text("OK"),
@@ -194,7 +188,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         children: [
           ListTile(
             leading: const Icon(Icons.photo),
-            title: Text(infoLang['pilih_galeri']),
+            title: Text(bahasa['pilih_galeri']),
             onTap: () {
               Navigator.pop(context);
               pickImage();
@@ -202,7 +196,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
           ListTile(
             leading: const Icon(Icons.camera_alt),
-            title: Text(infoLang['pilih_kamera']),
+            title: Text(bahasa['pilih_kamera']),
             onTap: () {
               Navigator.pop(context);
               pickFromCamera();
@@ -281,7 +275,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(infoLang['sukses_info_profil'])), //"Profil berhasil diubah"
+        SnackBar(content: Text(bahasa['sukses_info_profil'])), //"Profil berhasil diubah"
       );
 
       Navigator.pop(context, true);
@@ -331,7 +325,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       initialDate: initialDate,
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      helpText: infoLang['pilih_dob'],
+      helpText: bahasa['pilih_dob'],
     );
 
     if (picked != null) {
@@ -411,7 +405,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text('Edit ${infoLang['profil']}'),
+        title: Text('Edit ${bahasa['profil']}'),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -477,7 +471,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['informasi_utama'] , //'Informasi Utama',
+                    bahasa['informasi_utama'] , //'Informasi Utama',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -486,7 +480,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['nama_depan_label']
+                    bahasa['nama_depan_label']
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -501,7 +495,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ],
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: infoLang['nama_depan_hint'],
+                    hintText: bahasa['nama_depan_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -525,7 +519,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['nama_belakang_label']
+                    bahasa['nama_belakang_label']
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -539,7 +533,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     NameInputFormatter(),
                   ],
                   decoration: InputDecoration(
-                    hintText: infoLang['nama_belakang_hint'],
+                    hintText: bahasa['nama_belakang_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -553,7 +547,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['dob_label'],
+                    bahasa['dob_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -563,7 +557,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   readOnly: true,
                   onTap: () => _selectDate(context),
                   decoration: InputDecoration(
-                    hintText: infoLang['pilih_dob'],
+                    hintText: bahasa['pilih_dob'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -588,7 +582,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    paymentLang['gender_label'], //'Jenis Kelamin'
+                    bahasa['gender_label'], //'Jenis Kelamin'
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -641,7 +635,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['company_label'], //'Perusahaan'
+                    bahasa['company_label'], //'Perusahaan'
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -649,7 +643,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: companyController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: infoLang['company_hint'],
+                    hintText: bahasa['company_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -663,7 +657,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['job_label'], //'Jabatan'
+                    bahasa['job_label'], //'Jabatan'
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -671,7 +665,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: jobTitleController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: infoLang['job_hint'],
+                    hintText: bahasa['job_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -685,7 +679,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['informasi_akun'], //']'Informasi Akun',
+                    bahasa['informasi_akun'], //']'Informasi Akun',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -716,7 +710,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Text(
-                      infoLang['verified_email'], //"Email kamu belum diverifikasi. 
+                      bahasa['verified_email'], //"Email kamu belum diverifikasi. 
                       style: TextStyle(color: Colors.red),
                     )
                   )
@@ -774,7 +768,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['media_sosial'], //'Media Sosial',
+                    bahasa['media_sosial'], //'Media Sosial',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -782,7 +776,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['uname_linkedin_label'],
+                    bahasa['uname_linkedin_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -790,7 +784,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: linkedinController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: infoLang['uname_linkedin_hint'],
+                    hintText: bahasa['uname_linkedin_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -821,7 +815,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['uname_instagram_label'],
+                    bahasa['uname_instagram_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -829,7 +823,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: igController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: infoLang['uname_instagram_hint'],
+                    hintText: bahasa['uname_instagram_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -860,7 +854,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Text(
-                    infoLang['uname_twitter_label'],
+                    bahasa['uname_twitter_label'],
                   ),
                 ),
                 SizedBox(height: 8,),
@@ -868,7 +862,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: twitterController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: infoLang['uname_twitter_hint'],
+                    hintText: bahasa['uname_twitter_hint'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -910,7 +904,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      infoLang['simpan'],
+                      bahasa['simpan'],
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),

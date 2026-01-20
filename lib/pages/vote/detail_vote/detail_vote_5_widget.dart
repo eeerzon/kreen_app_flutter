@@ -779,17 +779,21 @@ class LeaderboardSection_5 extends StatelessWidget {
             const SizedBox(height: 20),
             Column(
               children: others.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20), // jarak antar item
-                    child: buildListCard(
-                      rank: item['rank'],
-                      name: item['nama_finalis'],
-                      votes: item['total_voters'],
-                      image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
-                      persentase: item['percent'],
-                      tema: color
-                    ),
-                );
+                if ((item['total_voters'] ?? 0) > 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20), // jarak antar item
+                      child: buildListCard(
+                        rank: item['rank'],
+                        name: item['nama_finalis'],
+                        votes: item['total_voters'],
+                        image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                        persentase: item['percent'],
+                        tema: color
+                      ),
+                  );
+                } else{
+                  return SizedBox.shrink();
+                }
               }).toList(),
             )
           ]

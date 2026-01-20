@@ -16,7 +16,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   String? langCode;
   bool isLoading = true;
 
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
   List<dynamic> infoKonten = [];
 
   @override
@@ -32,9 +32,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
 
-    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
     setState(() {
-      infoLang = tempinfolang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -55,7 +55,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(infoLang['kebijakan_privasi']),
+        title: Text(bahasa['kebijakan_privasi']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),

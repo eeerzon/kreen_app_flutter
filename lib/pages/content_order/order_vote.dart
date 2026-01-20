@@ -25,7 +25,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
   late TabController _tabController;
   bool isLoading = true;
 
-  Map<String, dynamic> eventlang = {};
+  Map<String, dynamic> bahasa = {};
   String? orderMenunggu, orderGagal;
 
   @override
@@ -47,14 +47,12 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       langCode = code;
     });
 
-    final tempeventLang = await LangService.getJsonData(langCode!, "event");
-    final temporderMenunggu = await LangService.getText(langCode!, "order_menunggu");
-    final temporderGagal = await LangService.getText(langCode!, "order_gagal");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
     
     setState(() {
-      eventlang = tempeventLang;
-      orderMenunggu = temporderMenunggu;
-      orderGagal = temporderGagal;
+      bahasa = tempbahasa;
+      orderMenunggu = bahasa['order_menunggu'];
+      orderGagal = bahasa['order_gagal'];
     });
   }
 
@@ -180,7 +178,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
             labelColor: Colors.red,
             unselectedLabelColor: Colors.grey,
             tabs: [
-              Tab(icon: Icon(Icons.check_circle_outline), text: eventlang['selesai']), //selesai
+              Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
               Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
               Tab(icon: Icon(Icons.close_rounded), text: orderGagal), //gagal
             ],
@@ -308,8 +306,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
 
   }
 
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -317,12 +314,10 @@ class _VoteSuccessState extends State<VoteSuccess> {
       langCode = code;
     });
 
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = temppaymentLang;
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
 
       isLoading = false;
     });
@@ -453,19 +448,19 @@ class _VoteSuccessState extends State<VoteSuccess> {
               var qty = item['qty'].toString();
               
               if (itemVotes['order_status'] == '0'){
-                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
+                statusOrder = bahasa['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemVotes['order_status'] == '1'){
-                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
+                statusOrder = bahasa['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemVotes['order_status'] == '2'){
-                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
+                statusOrder = bahasa['status_order_2'] ?? '-'; // 'batal';
               } else if (itemVotes['order_status'] == '3'){
-                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
+                statusOrder = bahasa['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemVotes['order_status'] == '4'){
-                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
+                statusOrder = bahasa['status_order_4'] ?? '-'; // 'refund';
               } else if (itemVotes['order_status'] == '20'){
-                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
+                statusOrder = bahasa['status_order_20'] ?? '-'; // 'expired';
               } else if (itemVotes['order_status'] == '404'){
-                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
+                statusOrder = bahasa['status_order_404'] ?? '-'; // 'hidden';
               }
 
               String? currencyRegion;
@@ -612,12 +607,12 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${voteLang['text_vote']}"
+                                    "$qty ${bahasa['text_vote']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? voteLang['harga_detail'] ?? "" //'Gratis'
+                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
                                     : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -653,7 +648,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                   alignment: Alignment.center,
                                   child: Text(
                                       //"Vote Lagi",
-                                      voteLang['vote_lagi'] ?? "",
+                                      bahasa['vote_lagi'] ?? "",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -703,7 +698,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                   child: Center(
                     child: Text(
                       //"Tidak ada data lagi",
-                      voteLang['no_more'] ?? "",
+                      bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -769,8 +764,7 @@ class _VotePendingState extends State<VotePending> {
     });
   }
 
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -778,12 +772,10 @@ class _VotePendingState extends State<VotePending> {
       langCode = code;
     });
 
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = temppaymentLang;
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
 
       isLoading = false;
     });
@@ -914,35 +906,39 @@ class _VotePendingState extends State<VotePending> {
               var qty = item['qty'].toString();
               
               if (itemVotes['order_status'] == '0'){
-                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
+                statusOrder = bahasa['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemVotes['order_status'] == '1'){
-                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
+                statusOrder = bahasa['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemVotes['order_status'] == '2'){
-                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
+                statusOrder = bahasa['status_order_2'] ?? '-'; // 'batal';
               } else if (itemVotes['order_status'] == '3'){
-                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
+                statusOrder = bahasa['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemVotes['order_status'] == '4'){
-                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
+                statusOrder = bahasa['status_order_4'] ?? '-'; // 'refund';
               } else if (itemVotes['order_status'] == '20'){
-                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
+                statusOrder = bahasa['status_order_20'] ?? '-'; // 'expired';
               } else if (itemVotes['order_status'] == '404'){
-                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
+                statusOrder = bahasa['status_order_404'] ?? '-'; // 'hidden';
               }
 
               String? currencyRegion;
-                if (item['region'] == "ID"){
-                  currencyRegion = 'IDR';
-                } else if (item['region'] == "US"){
-                  currencyRegion = 'USD';
-                } else if (item['region'] == "SG"){
-                  currencyRegion = 'SGD';
-                } else if (item['region'] == "MY"){
-                  currencyRegion = 'MYR';
-                } else if (item['region'] == "TH"){
-                  currencyRegion = 'THB';
-                } else if (item['region'] == "VN"){
-                  currencyRegion = 'VND';
-                }
+              if (item['order_region'] == "EU"){
+                currencyRegion = "EUR";
+              } else if (item['order_region'] == "ID"){
+                currencyRegion = "IDR";
+              } else if (item['order_region'] == "MY"){
+                currencyRegion = "MYR";
+              } else if (item['order_region'] == "PH"){
+                currencyRegion = "PHP";
+              } else if (item['order_region'] == "SG"){
+                currencyRegion = "SGD";
+              } else if (item['order_region'] == "TH"){
+                currencyRegion = "THB";
+              } else if (item['order_region'] == "US"){
+                currencyRegion = "USD";
+              } else if (item['order_region'] == "VN"){
+                currencyRegion = "VND";
+              }
 
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
@@ -1069,12 +1065,12 @@ class _VotePendingState extends State<VotePending> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${voteLang['text_vote']}"
+                                    "$qty ${bahasa['text_vote']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? voteLang['harga_detail'] //'Gratis'
+                                    ? bahasa['harga_detail'] //'Gratis'
                                     : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1107,7 +1103,7 @@ class _VotePendingState extends State<VotePending> {
                                   alignment: Alignment.center,
                                   child: Text(
                                       //"Kembali ke Pembayaran",
-                                      voteLang['back_payment'] ?? "",
+                                      bahasa['back_payment'] ?? "",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -1157,7 +1153,7 @@ class _VotePendingState extends State<VotePending> {
                   child: Center(
                     child: Text(
                       //"Tidak ada data lagi",
-                      voteLang['no_more'] ?? "",
+                      bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -1225,8 +1221,7 @@ class _VoteFailState extends State<VoteFail> {
     });
   }
 
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -1234,12 +1229,10 @@ class _VoteFailState extends State<VoteFail> {
       langCode = code;
     });
 
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = temppaymentLang;
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
 
       isLoading = false;
     });
@@ -1370,35 +1363,39 @@ class _VoteFailState extends State<VoteFail> {
               var qty = item['qty'].toString();
               
               if (itemVotes['order_status'] == '0'){
-                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
+                statusOrder = bahasa['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemVotes['order_status'] == '1'){
-                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
+                statusOrder = bahasa['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemVotes['order_status'] == '2'){
-                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
+                statusOrder = bahasa['status_order_2'] ?? '-'; // 'batal';
               } else if (itemVotes['order_status'] == '3'){
-                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
+                statusOrder = bahasa['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemVotes['order_status'] == '4'){
-                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
+                statusOrder = bahasa['status_order_4'] ?? '-'; // 'refund';
               } else if (itemVotes['order_status'] == '20'){
-                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
+                statusOrder = bahasa['status_order_20'] ?? '-'; // 'expired';
               } else if (itemVotes['order_status'] == '404'){
-                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
+                statusOrder = bahasa['status_order_404'] ?? '-'; // 'hidden';
               }
 
               String? currencyRegion;
-                if (item['region'] == "ID"){
-                  currencyRegion = 'IDR';
-                } else if (item['region'] == "US"){
-                  currencyRegion = 'USD';
-                } else if (item['region'] == "SG"){
-                  currencyRegion = 'SGD';
-                } else if (item['region'] == "MY"){
-                  currencyRegion = 'MYR';
-                } else if (item['region'] == "TH"){
-                  currencyRegion = 'THB';
-                } else if (item['region'] == "VN"){
-                  currencyRegion = 'VND';
-                }
+              if (item['order_region'] == "EU"){
+                currencyRegion = "EUR";
+              } else if (item['order_region'] == "ID"){
+                currencyRegion = "IDR";
+              } else if (item['order_region'] == "MY"){
+                currencyRegion = "MYR";
+              } else if (item['order_region'] == "PH"){
+                currencyRegion = "PHP";
+              } else if (item['order_region'] == "SG"){
+                currencyRegion = "SGD";
+              } else if (item['order_region'] == "TH"){
+                currencyRegion = "THB";
+              } else if (item['order_region'] == "US"){
+                currencyRegion = "USD";
+              } else if (item['order_region'] == "VN"){
+                currencyRegion = "VND";
+              }
 
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
@@ -1525,12 +1522,12 @@ class _VoteFailState extends State<VoteFail> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${voteLang['text_vote']}"
+                                    "$qty ${bahasa['text_vote']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? voteLang['harga_detail'] //'Gratis'
+                                    ? bahasa['harga_detail'] //'Gratis'
                                     : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1566,7 +1563,7 @@ class _VoteFailState extends State<VoteFail> {
                                   alignment: Alignment.center,
                                   child: Text(
                                     //"Ulangi Pembelian",
-                                    voteLang['retry_payment'] ?? "",
+                                    bahasa['retry_payment'] ?? "",
                                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -1612,7 +1609,7 @@ class _VoteFailState extends State<VoteFail> {
                   child: Center(
                     child: Text(
                       //"Tidak ada data lagi",
-                      voteLang['no_more'] ?? "",
+                      bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),

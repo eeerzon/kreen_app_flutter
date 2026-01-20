@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kreen_app_flutter/pages/lupa_password.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:kreen_app_flutter/widgets/google_login.dart';
 import 'package:kreen_app_flutter/widgets/loading_page.dart';
@@ -56,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _doLogin() async {
-    showLoadingDialog(context); // tampilkan loading
+    showLoadingDialog(context, bahasa!['loading']); // tampilkan loading
     
     final body = {
       "email": _emailController.text.trim(),
@@ -92,6 +93,9 @@ class _LoginPageState extends State<LoginPage> {
         link_ig: user['link_ig'],
         link_twitter: user['link_twitter'],
       );
+
+      SessionManager.isGuest = true;
+      SessionManager.checkingUserModalShown = true;
 
       if (widget.notLog) {
         // jika login dari halaman lain
@@ -154,6 +158,9 @@ class _LoginPageState extends State<LoginPage> {
           link_twitter: user['link_twitter'],
         );
 
+        SessionManager.isGuest = false;
+        SessionManager.checkingUserModalShown = false;
+
         if (widget.notLog) {
           // jika login dari halaman lain
           Navigator.pop(context, true);
@@ -181,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   //setting bahasa
-
+  Map<String, dynamic>? bahasa;
   Future<void> _getBahasa() async {
     final templangCode = await StorageService.getLanguage();
 
@@ -190,30 +197,22 @@ class _LoginPageState extends State<LoginPage> {
       langCode = templangCode;
     });
     
-    final tempdialog_language = await LangService.getText(langCode!, "pick_language");
-    final tempinput_email = await LangService.getText(langCode!, "input_email");
-    final tempinput_password = await LangService.getText(langCode!, "input_password");
-    final templupa_password = await LangService.getText(langCode!, "lupa_password");
-    final templogin = await LangService.getText(langCode!, "login");
-    final templogin_as = await LangService.getText(langCode!, "login_as");
-    final tempbelum = await LangService.getText(langCode!, "belum");
-    final tempdaftar = await LangService.getText(langCode!, "daftar");
-    final tempgoogleLogin = await LangService.getText(langCode!, "google_login");
-    final tempgagalLogin = await LangService.getText(langCode!, "gagal_login");
-    final tempcancelLogin = await LangService.getText(langCode!, "cancel_login");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      dialog_language = tempdialog_language;
-      input_email = tempinput_email;
-      input_password = tempinput_password;
-      lupa_password = templupa_password;
-      login = templogin;
-      login_as = templogin_as;
-      belum = tempbelum;
-      daftar = tempdaftar;
-      googleLogin = tempgoogleLogin;
-      gagalLogin = tempgagalLogin;
-      cancelLogin = tempcancelLogin;
+      bahasa = tempbahasa;
+
+      dialog_language = tempbahasa['pick_language'];
+      input_email = tempbahasa['input_email'];
+      input_password = tempbahasa['input_password'];
+      lupa_password = tempbahasa['lupa_password'];
+      login = tempbahasa['login'];
+      login_as = tempbahasa['login_as'];
+      belum = tempbahasa['belum'];
+      daftar = tempbahasa['daftar'];
+      googleLogin = tempbahasa['google_login'];
+      gagalLogin = tempbahasa['gagal_login'];
+      cancelLogin = tempbahasa['cancel_login'];
 
       isLoading = false;
     });

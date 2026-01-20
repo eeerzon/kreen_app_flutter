@@ -33,7 +33,7 @@ class DeskripsiSection extends StatelessWidget {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (data['theme_name'] != null) {
       themeName = data['theme_name'];
     }

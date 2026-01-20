@@ -41,16 +41,14 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
       langCode = code;
     });
     
-    final tempappBarTitle = await LangService.getText(langCode!, "appBarTitle");
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
+
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      appBarTitle = tempappBarTitle;
-      notLoginText = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      login = templogin;
+      appBarTitle = tempbahasa['appBarTitle'];
+      notLoginText = tempbahasa['notLogin'];
+      notLoginDesc = tempbahasa['notLoginDesc'];
+      login = tempbahasa['login'];
     });
   }
 

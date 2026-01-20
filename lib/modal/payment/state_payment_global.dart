@@ -102,8 +102,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   bool isLoading = true;
 
   String? langCode, currencyCode, token;
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> detailVoteLang = {};
+  Map<String, dynamic> bahasa = {};
   String? namaLengkapLabel, namaLengkapHint;
   String? phoneLabel, phoneHint;
   String? cobaLagi;
@@ -189,24 +188,15 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     final lang = await StorageService.getLanguage();
     setState(() => langCode = lang);
 
-    final tempPayment = await LangService.getJsonData(langCode!, "payment");
-    final tempnamalabel = await LangService.getText(langCode!, "nama_lengkap_label");
-    final tempnamahint = await LangService.getText(langCode!, "nama_lengkap");
-    final tempnohplabel = await LangService.getText(langCode!, "nomor_hp_label");
-    final tempnohphint = await LangService.getText(langCode!, "nomor_hp");
-    final tempcobalagi = await LangService.getText(langCode!, "coba_lagi");
-
-    final tempdetailvote = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = tempPayment;
-      namaLengkapLabel = tempnamalabel;
-      namaLengkapHint = tempnamahint;
-      phoneLabel = tempnohplabel;
-      phoneHint = tempnohphint;
-      cobaLagi = tempcobalagi;
-
-      detailVoteLang = tempdetailvote;
+      bahasa = tempbahasa;
+      namaLengkapLabel = bahasa['nama_lengkap_label'];
+      namaLengkapHint = bahasa['nama_lengkap'];
+      phoneLabel = bahasa['nomor_hp_label'];
+      phoneHint = bahasa['nomor_hp'];
+      cobaLagi = bahasa['coba_lagi'];
     });
   }
 
@@ -483,7 +473,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: "${resultEventOrder['message']}\n${paymentLang['another_payment']}",
+            desc: "${resultEventOrder['message']}\n${bahasa['another_payment']}",
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -540,7 +530,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  paymentLang['header'], //"Pembayaran",
+                  bahasa['header'], //"Pembayaran",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
@@ -576,11 +566,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
                     const SizedBox(height: 12),
                     Text(
-                      paymentLang['pilih_payment'], //"Pilih Metode Pembayaran",
+                      bahasa['pilih_payment'], //"Pilih Metode Pembayaran",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      paymentLang['sub_pilih_payment'], //"Yuk pilih metode pembayaranmu...",
+                      bahasa['sub_pilih_payment'], //"Yuk pilih metode pembayaranmu...",
                     ),
 
                     const SizedBox(height: 12,),
@@ -766,8 +756,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -778,11 +768,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1087,8 +1077,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1099,11 +1089,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1309,8 +1299,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1321,11 +1311,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1530,8 +1520,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1542,11 +1532,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1751,8 +1741,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1763,11 +1753,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1972,8 +1962,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -1984,11 +1974,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -2193,8 +2183,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -2205,11 +2195,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -2406,8 +2396,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text(
                                                               currencyCode == null
-                                                                ? "${paymentLang['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${paymentLang['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
+                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
+                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -2418,11 +2408,11 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                                             padding: const EdgeInsets.only(top: 4.0),
                                                             child: Text( limit_max == 0
                                                               ? currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
                                                               : currencyCode == null
-                                                                ? "${paymentLang['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${paymentLang['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
+                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
+                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
                                                               softWrap: true,
                                                               style: const TextStyle(color: Colors.grey, fontSize: 12),
                                                             ),
@@ -2495,7 +2485,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                     if (selectedIndex != null) ...[
                       const SizedBox(height: 25),
                       Text(
-                        paymentLang['detail_harga'], //"Detail Harga"
+                        bahasa['detail_harga'], //"Detail Harga"
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
 
@@ -2526,7 +2516,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(paymentLang['biaya_layanan']), //"Biaya Layanan"
+                              Text(bahasa['biaya_layanan']), //"Biaya Layanan"
                               Text(
                                 currencyCode == null
                                   ? '$eventCurrency ${formatter.format(feeLayanan)}'
@@ -2546,7 +2536,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               //"Total Bayar"
-                              Text(paymentLang['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(bahasa['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
                               Text(
                                 currencyCode == null
                                   ? "$eventCurrency ${formatter.format(totalPayment)}"
@@ -2576,7 +2566,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        paymentLang['batal'],
+                                        bahasa['batal'],
                                         style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                                       ),
                                     ),
@@ -2595,7 +2585,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        paymentLang['konfirmasi'],
+                                        bahasa['konfirmasi'],
                                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                       ),
                                     ),

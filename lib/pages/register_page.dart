@@ -62,7 +62,7 @@ class _RegisPageState extends State<RegisPage> {
   int errorCode = 0;
   Map<String, dynamic> errorMessage = {};
   void _doRegis() async {
-    showLoadingDialog(context);
+    showLoadingDialog(context, bahasa['loading']);
 
     final body = {
       "email": _emailController.text,
@@ -186,6 +186,7 @@ class _RegisPageState extends State<RegisPage> {
   String? cancelLogin;
   bool isLoading = true;
 
+  Map<String, dynamic> bahasa = {};
   Future<void> _getBahasa() async {
     final templangCode = await StorageService.getLanguage();
 
@@ -193,47 +194,31 @@ class _RegisPageState extends State<RegisPage> {
     setState(() {
       langCode = templangCode;
     });
-
-    final tempgoogleLogin = await LangService.getText(langCode!, "google_login");
-
-    final tempfullNameLabel = await LangService.getText(langCode!, "nama_lengkap_label");
-    final tempfullName = await LangService.getText(langCode!, "nama_lengkap");
-    final tempemailLabel = await LangService.getText(langCode!, "email_label");
-    final tempemail = await LangService.getText(langCode!, "input_email");
-    final tempphoneLabel = await LangService.getText(langCode!, "nomor_hp_label");
-    final tempphone = await LangService.getText(langCode!, "nomor_hp");
-    final tempphoneError = await LangService.getText(langCode!, "nomor_hp_error");
-    final temppasswordLabel = await LangService.getText(langCode!, "password_label");
-    final temppassword = await LangService.getText(langCode!, "input_password");
-    final tempconfirmPasswordLabel = await LangService.getText(langCode!, "konfirmasi_password_label");
-    final tempconfirmPassword = await LangService.getText(langCode!, "konfirmasi_password");
-    final tempdaftarText = await LangService.getText(langCode!, "daftar");
-    final tempsudahPunyaAkunText = await LangService.getText(langCode!, "sudah_punya_akun");
-
-    final templogin = await LangService.getText(langCode!, "login");
-    final temploginAs = await LangService.getText(langCode!, "login_as");
-    final tempcancelLogin = await LangService.getText(langCode!, "cancel_login");
+    
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      googleLogin = tempgoogleLogin;
+      bahasa = tempbahasa;
 
-      fullNameLabel = tempfullNameLabel;
-      fullName = tempfullName;
-      emailLabel = tempemailLabel;
-      email = tempemail;
-      phoneLabel = tempphoneLabel;
-      phone = tempphone;
-      phoneError = tempphoneError;
-      passwordLabel = temppasswordLabel;
-      password = temppassword;
-      confirmPasswordLabel = tempconfirmPasswordLabel;
-      confirmPassword = tempconfirmPassword;
-      daftarText = tempdaftarText;
-      sudahPunyaAkunText = tempsudahPunyaAkunText;
+      googleLogin = tempbahasa['google_login'];
 
-      login = templogin;
-      loginAs = temploginAs;
-      cancelLogin = tempcancelLogin;
+      fullNameLabel = tempbahasa['nama_lengkap_label'];
+      fullName = tempbahasa['nama_lengkap'];
+      emailLabel = tempbahasa['email_label'];
+      email = tempbahasa['input_email'];
+      phoneLabel = tempbahasa['nomor_hp_label'];
+      phone = tempbahasa['nomor_hp'];
+      phoneError = tempbahasa['nomor_hp_error'];
+      passwordLabel = tempbahasa['password_label'];
+      password = tempbahasa['input_password'];
+      confirmPasswordLabel = tempbahasa['konfirmasi_password_label'];
+      confirmPassword = tempbahasa['konfirmasi_password'];
+      daftarText = tempbahasa['daftar'];
+      sudahPunyaAkunText = tempbahasa['sudah_punya_akun'];
+
+      login = tempbahasa['login'];
+      loginAs = tempbahasa['login_as'];
+      cancelLogin = tempbahasa['cancel_login'];
 
       isLoading = false;
     });

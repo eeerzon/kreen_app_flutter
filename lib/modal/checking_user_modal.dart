@@ -11,11 +11,11 @@ class CheckingUserModal {
     final data = await LangService.loadOnboarding(langCode);
     pages = data;
 
-    final homeContent = await LangService.getJsonData(langCode, "home_content");
-    String? selamatDatang = homeContent['top_nav'];
+    final bahasa = await LangService.getJsonData(langCode, "bahasa");
+    String? selamatDatang = bahasa['top_nav'];
 
-    String? login = await LangService.getText(langCode, 'login');
-    String? loginAs = await LangService.getText(langCode, 'guest_login');
+    String? login = bahasa['login'];
+    String? loginAs = bahasa['guest_login'];
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
       context: context,
@@ -86,7 +86,7 @@ class CheckingUserModal {
                         );
                       },
                       child: Text(
-                        login,
+                        login ?? "",
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
@@ -97,7 +97,7 @@ class CheckingUserModal {
                       Navigator.pop(context);
                     },
                     child: Text(
-                        loginAs,
+                        loginAs ?? "",
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red), 
                       )
                     )

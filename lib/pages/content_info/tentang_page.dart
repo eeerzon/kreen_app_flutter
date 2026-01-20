@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -22,9 +24,17 @@ class _TentangPageState extends State<TentangPage> {
     }
   }
 
+  String? langCode;
+  bool isLoading = true;
+
+  Map<String, dynamic> bahasa = {};
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
 
     String link = 'https://www.youtube.com/embed/vrPwy3HZe-w?si=lAEecnRgNEN2ZZGE';
 
@@ -39,6 +49,17 @@ class _TentangPageState extends State<TentangPage> {
     );
   }
 
+  Future<void> _getBahasa() async {
+    final code = await StorageService.getLanguage();
+    setState(() => langCode = code);
+
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
+    setState(() {
+      bahasa = tempbahasa;
+      isLoading = false;
+    });
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -47,14 +68,14 @@ class _TentangPageState extends State<TentangPage> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return isLoading ? const Center(child: CircularProgressIndicator(color: Colors.red,),) : Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text("Tentang Kami"),
+        title: Text(bahasa['tentang_kami']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),

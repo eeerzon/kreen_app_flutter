@@ -16,7 +16,7 @@ class _SnkPageState extends State<SnkPage> {
   String? langCode;
   bool isLoading = true;
 
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
   List<dynamic> infoKonten = [];
 
   @override
@@ -32,9 +32,9 @@ class _SnkPageState extends State<SnkPage> {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
 
-    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
     setState(() {
-      infoLang = tempinfolang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -55,7 +55,7 @@ class _SnkPageState extends State<SnkPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(infoLang['syarat_dan_ketentuan']),
+        title: Text(bahasa['syarat_dan_ketentuan']),
         centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),

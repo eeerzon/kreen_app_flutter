@@ -9,6 +9,7 @@ import 'package:kreen_app_flutter/constants.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
+import 'package:kreen_app_flutter/pages/vote/download_qr.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -33,7 +34,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   num harga = 0;
   num hargaAsli = 0;
   bool isTutup = false;
-  bool canDownload = false;
+  bool canDownload = true;
 
   String buttonText = '';
 
@@ -42,7 +43,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   Map<String, dynamic> detailFinalis = {};
   TextEditingController? controllers;
   Map<String, dynamic> detailvote = {};
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   var idVote;
   List<String> ids_finalis = [];
@@ -158,40 +159,39 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       langCode = code;
     });
 
-    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
-    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
     final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
     final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
     final templogin = await LangService.getText(langCode!, "login");
 
     setState(() {
-      totalHargaText = tempdetailFinalis['total_harga'];
-      hargaText = tempdetailFinalis['harga'];
-      hargaDetail = tempdetailFinalis['harga_detail'];
-      bayarText = tempdetailFinalis['bayar'];
+      totalHargaText = tempbahasa['total_harga'];
+      hargaText = tempbahasa['harga'];
+      hargaDetail = tempbahasa['harga_detail'];
+      bayarText = tempbahasa['bayar'];
 
-      endVote = tempdetailFinalis['end_vote'];
-      voteOpen = tempdetailFinalis['vote_open'];
-      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      endVote = tempbahasa['end_vote'];
+      voteOpen = tempbahasa['vote_open'];
+      voteOpenAgain = tempbahasa['vote_open_again'];
       
       notLogin = tempnotLoginText;
       notLoginDesc = tempnotLoginDesc;
       loginText = templogin;
       
-      detailfinalisText = tempdetailFinalis['detail_finalis'];
+      detailfinalisText = tempbahasa['detail_finalis'];
 
-      noDataText = tempdetailFinalis['no_data'];
-      ageText = tempdetailFinalis['usia'];
-      activityText = tempdetailFinalis['aktivitas'];
-      biographyText = tempdetailFinalis['biografi'];
-      scanQrText = tempdetailFinalis['scan_vote'];
-      downloadQrText = tempdetailFinalis['unduh_qr'];
-      tataCaraText = tempdetailFinalis['tatacara_vote'];
-      videoProfilText = tempdetailFinalis['profile_video'];
-      noValidText = tempdetailFinalis['video_no_valid'];
-      socialMediaText = tempdetailFinalis['sosial_media'];
+      noDataText = tempbahasa['no_data'];
+      ageText = tempbahasa['usia'];
+      activityText = tempbahasa['aktivitas'];
+      biographyText = tempbahasa['biografi'];
+      scanQrText = tempbahasa['scan_vote'];
+      downloadQrText = tempbahasa['unduh_qr'];
+      tataCaraText = tempbahasa['tatacara_vote'];
+      videoProfilText = tempbahasa['profile_video'];
+      noValidText = tempbahasa['video_no_valid'];
+      socialMediaText = tempbahasa['sosial_media'];
 
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -244,25 +244,41 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     return hargaItem;
   }
 
-  void _updateCountFromInput(String value, Map item) {
-    final parsed = int.tryParse(value) ?? 0;
+  void _updateCountFromInput(String value, Map item, Map vote) {
+    final int batas = int.tryParse(
+      vote['batas_qty']?.toString() ?? '0'
+    ) ?? 0;
+    
+    int input = int.tryParse(value) ?? 0;
+
+    if (batas > 0 && input > batas) {
+      input = batas;
+    }
+
+    if (controllers!.text != input.toString()) {
+      controllers!.text = input.toString();
+      controllers!.selection = TextSelection.fromPosition(
+        TextPosition(offset: controllers!.text.length),
+      );
+    }
 
     setState(() {
-      counts = parsed;
-      controllers!.text = parsed.toString();
+
+      counts = input;
+      // controllers!.text = parsed.toString();
 
       final idFinalis = item['id_finalis'];
       final namaFinalis = item['nama_finalis'];
 
       final existingIndex = ids_finalis.indexOf(idFinalis);
 
-      if (parsed > 0) {
+      if (input > 0) {
         if (existingIndex == -1) {
           ids_finalis.add(idFinalis);
           names_finalis.add(namaFinalis);
-          counts_finalis.add(parsed);
+          counts_finalis.add(input);
         } else {
-          counts_finalis[existingIndex] = parsed;
+          counts_finalis[existingIndex] = input;
           names_finalis[existingIndex] = namaFinalis;
         }
       } else {
@@ -672,7 +688,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         isCollapsed: true, // hilangkan padding bawaan
                                         contentPadding: EdgeInsets.all(8),
                                       ),
-                                      onChanged: (value) => _updateCountFromInput(value, detailFinalis),
+                                      onChanged: (value) => _updateCountFromInput(value, detailFinalis, detailvote),
                                       onTap: () {
                                         // langsung block semua teks ketika diklik
                                         controllers!.selection = TextSelection(
@@ -690,6 +706,11 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       ? null
                                       : () {
                                           setState(() {
+                                            // Jika batas > 0 dan sudah mencapai batas -> stop
+                                            if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
+                                              return; // tidak menambah lagi
+                                            }
+                                            
                                             counts++;
                                             controllers!.text = counts.toString();
                   
@@ -728,72 +749,75 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 ],
                               ),
                             ],
-                  
-                            const SizedBox(height: 15,),
-                            if (counts > 0)
-                              Wrap(
-                                spacing: 5,
-                                runSpacing: 5,
-                                alignment: WrapAlignment.center,
-                                children: voteOptions.asMap().entries.map((entry) {
-                                  final voteCount = entry.value;
-                                  final isSelected = selectedVotes == voteCount && counts > 0;
-                  
-                                  return InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedVotes = voteCount;
-                                        counts = voteCount;
-                                        controllers!.text = counts.toString();
-                                        
-                                        final namaFinalis = detailFinalis['nama_finalis'];
-                                        final existingIndex = ids_finalis.indexOf(widget.id_finalis);
-                  
-                  
-                                        if (counts > 0) {
-                                          if (existingIndex == -1) {
-                                            ids_finalis.add(widget.id_finalis);
-                                            names_finalis.add(namaFinalis);
-                                            counts_finalis.add(counts);
-                                          } else {
-                                            counts_finalis[existingIndex] = counts;
-                                            names_finalis[existingIndex] = namaFinalis;
+
+                            if (detailvote['batas_qty'] == 0) ...[
+                              if (counts > 10) ...[
+                                const SizedBox(height: 15,),
+                                Wrap(
+                                  spacing: 5,
+                                  runSpacing: 5,
+                                  alignment: WrapAlignment.center,
+                                  children: voteOptions.asMap().entries.map((entry) {
+                                    final voteCount = entry.value;
+                                    final isSelected = selectedVotes == voteCount && counts > 0;
+                    
+                                    return InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedVotes = voteCount;
+                                          counts = voteCount;
+                                          controllers!.text = counts.toString();
+                                          
+                                          final namaFinalis = detailFinalis['nama_finalis'];
+                                          final existingIndex = ids_finalis.indexOf(widget.id_finalis);
+                    
+                    
+                                          if (counts > 0) {
+                                            if (existingIndex == -1) {
+                                              ids_finalis.add(widget.id_finalis);
+                                              names_finalis.add(namaFinalis);
+                                              counts_finalis.add(counts);
+                                            } else {
+                                              counts_finalis[existingIndex] = counts;
+                                              names_finalis[existingIndex] = namaFinalis;
+                                            }
+                                          } else if (counts == 0 && existingIndex != -1) {
+                                            ids_finalis.removeAt(existingIndex);
+                                            names_finalis.removeAt(existingIndex);
+                                            counts_finalis.removeAt(existingIndex);
                                           }
-                                        } else if (counts == 0 && existingIndex != -1) {
-                                          ids_finalis.removeAt(existingIndex);
-                                          names_finalis.removeAt(existingIndex);
-                                          counts_finalis.removeAt(existingIndex);
-                                        }
-                                      });
-                                    },
-                  
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? color : Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: color),
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            NumberFormat.decimalPattern("en_US").format(voteCount),
-                                            style: TextStyle(
-                                              color: isSelected ? Colors.white : Colors.black,
-                                              fontWeight: FontWeight.bold,
+                                        });
+                                      },
+                    
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? color : Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: color),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              NumberFormat.decimalPattern("en_US").format(voteCount),
+                                              style: TextStyle(
+                                                color: isSelected ? Colors.white : Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          Text("vote", 
-                                            style: TextStyle(fontSize: 12,
-                                            color: isSelected ? Colors.white : Colors.black,)
-                                          ),
-                                        ],
+                                            Text("vote", 
+                                              style: TextStyle(fontSize: 12,
+                                              color: isSelected ? Colors.white : Colors.black,)
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ]
+                            ]
                           ],
                         ),
                       ),
@@ -902,8 +926,14 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: InkWell(
-                                      onTap: canDownload ? () {
-                                        
+                                      onTap: canDownload ? () async {
+                                        await downloadQrImage(
+                                          context, 
+                                          detailFinalis['id_qrcode'],
+                                          bahasa['download_scan_gagal'],
+                                          bahasa['download_scan_berhasil'],
+                                          bahasa['kesalahan_simpan_scan'],
+                                        );
                                       }
                                       : null,
                                       child: Row(
@@ -933,7 +963,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     ),
                                     child: InkWell(
                                       onTap: () async {
-                                        await TutorModal.show(context, detailvote['tutorial_vote'], voteLang['tutorial_vote_text']);
+                                        await TutorModal.show(context, detailvote['tutorial_vote'], bahasa['tutorial_vote_text']);
                                       },
                                       child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1076,7 +1106,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                     ),
                   ),
                   Text(
-                    "Qty $totalQty ${voteLang['text_vote']}\n$countData ${voteLang['finalis']}(s)",
+                    "Qty $totalQty ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
                     style: TextStyle(fontSize: 12,),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

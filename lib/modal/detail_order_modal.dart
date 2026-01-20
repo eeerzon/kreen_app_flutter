@@ -24,16 +24,14 @@ class DetailOrderModal {
 
     String? langCode;
 
-    Map<String, dynamic> paymentLang = {};
-    Map<String, dynamic> voteLang = {};
+    Map<String, dynamic> bahasa = {};
 
     num totalPriceRegion = 0;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
-      paymentLang = await LangService.getJsonData(langCode!, "payment");
-      voteLang = await LangService.getJsonData(langCode!, "detail_vote");
+      bahasa = await LangService.getJsonData(langCode!, "bahasa");
 
       isLoading = false;
     }
@@ -55,37 +53,37 @@ class DetailOrderModal {
       vote = tempVote;
       
       if (voteOder['order_status'] == '0'){
-        statusOrder = paymentLang['status_order_0'] ?? ""; // 'gagal';
+        statusOrder = bahasa['status_order_0'] ?? ""; // 'gagal';
       } else if (voteOder['order_status'] == '1'){
-        statusOrder = paymentLang['status_order_1'] ?? ""; // 'selesai';
+        statusOrder = bahasa['status_order_1'] ?? ""; // 'selesai';
       } else if (voteOder['order_status'] == '2'){
-        statusOrder = paymentLang['status_order_2'] ?? ""; // 'batal';
+        statusOrder = bahasa['status_order_2'] ?? ""; // 'batal';
       } else if (voteOder['order_status'] == '3'){
-        statusOrder = paymentLang['status_order_3'] ?? ""; // 'menunggu';
+        statusOrder = bahasa['status_order_3'] ?? ""; // 'menunggu';
       } else if (voteOder['order_status'] == '4'){
-        statusOrder = paymentLang['status_order_4'] ?? ""; // 'refund';
+        statusOrder = bahasa['status_order_4'] ?? ""; // 'refund';
       } else if (voteOder['order_status'] == '20'){
-        statusOrder = paymentLang['status_order_20'] ?? ""; // 'expired';
+        statusOrder = bahasa['status_order_20'] ?? ""; // 'expired';
       } else if (voteOder['order_status'] == '404'){
-        statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
+        statusOrder = bahasa['status_order_404'] ?? ""; // 'hidden';
       }
-
-      if (voteOder['order_region'] == "ID"){
+      
+      if (voteOder['order_region'] == "EU"){
+        currencyRegion = "EUR";
+      } else if (voteOder['order_region'] == "ID"){
         currencyRegion = "IDR";
-      } else if (voteOder['order_region'] == "US"){
-        currencyRegion = "USD";
-      } else if (voteOder['order_region'] == "SG"){
-        currencyRegion = "SGD";
       } else if (voteOder['order_region'] == "MY"){
         currencyRegion = "MYR";
-      } else if (voteOder['order_region'] == "TH"){
-        currencyRegion = "THB";
       } else if (voteOder['order_region'] == "PH"){
         currencyRegion = "PHP";
+      } else if (voteOder['order_region'] == "SG"){
+        currencyRegion = "SGD";
+      } else if (voteOder['order_region'] == "TH"){
+        currencyRegion = "THB";
+      } else if (voteOder['order_region'] == "US"){
+        currencyRegion = "USD";
       } else if (voteOder['order_region'] == "VN"){
         currencyRegion = "VND";
-      } else if (voteOder['order_region'] == "EU"){
-        currencyRegion = "EUR";
       }
 
       totalPriceRegion = voteOder['total_amount'] * voteOder['currency_value_region'];
@@ -477,7 +475,7 @@ class DetailOrderModal {
                                       const SizedBox(height: 4),
                                       Text(
                                         voteOder['total_amount'] == 0
-                                        ? voteLang['harga_detail'] ?? "" //'Gratis'
+                                        ? bahasa['harga_detail'] ?? "" //'Gratis'
                                         : "$currencyRegion ${formatter.format(totalPriceRegion)}",
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
@@ -493,7 +491,7 @@ class DetailOrderModal {
 
                     const SizedBox(height: 16),
                     Text(
-                      voteLang['finalis'] ?? "",
+                      bahasa['finalis'] ?? "",
                     ),
 
                     SizedBox(height: 8,),
@@ -548,7 +546,7 @@ class DetailOrderModal {
                                       
                                       const SizedBox(height: 4),
                                       Text(
-                                        "${formatter.format(voteOrderDetail[index]['qty'])} ${voteLang['text_vote']}",
+                                        "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_vote']}",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.red,
@@ -567,7 +565,7 @@ class DetailOrderModal {
                     if (voteOder['total_amount'] != 0) ... {
                       const SizedBox(height: 16),
                       Text(
-                        paymentLang['pembayaran'] ?? "", //'Pembayaran',
+                        bahasa['pembayaran'] ?? "", //'Pembayaran',
                       ),
 
                       SizedBox(height: 8,),
@@ -600,7 +598,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              Text(voteLang['harga'] ?? "", style: TextStyle(color: Colors.grey),),
+                              Text(bahasa['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 "$currencyRegion ${formatter.format(totalPriceRegion)}",
@@ -612,7 +610,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              Text(paymentLang['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
+                              Text(bahasa['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 voteOder['payment_method_name'],
@@ -729,23 +727,23 @@ class DetailOrderModal {
       } else if (eventOder['order_status'] == '404'){
         statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
       }
-
-      if (eventOder['order_region'] == "ID"){
+      
+      if (eventOder['order_region'] == "EU"){
+        currencyRegion = "EUR";
+      } else if (eventOder['order_region'] == "ID"){
         currencyRegion = "IDR";
-      } else if (eventOder['order_region'] == "US"){
-        currencyRegion = "USD";
-      } else if (eventOder['order_region'] == "SG"){
-        currencyRegion = "SGD";
       } else if (eventOder['order_region'] == "MY"){
         currencyRegion = "MYR";
-      } else if (eventOder['order_region'] == "TH"){
-        currencyRegion = "THB";
       } else if (eventOder['order_region'] == "PH"){
         currencyRegion = "PHP";
+      } else if (eventOder['order_region'] == "SG"){
+        currencyRegion = "SGD";
+      } else if (eventOder['order_region'] == "TH"){
+        currencyRegion = "THB";
+      } else if (eventOder['order_region'] == "US"){
+        currencyRegion = "USD";
       } else if (eventOder['order_region'] == "VN"){
         currencyRegion = "VND";
-      } else if (eventOder['order_region'] == "EU"){
-        currencyRegion = "EUR";
       }
 
       totalPriceRegion = eventOder['user_currency_total_payment'] * eventOder['currency_value_region'];

@@ -14,6 +14,7 @@ import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -42,7 +43,7 @@ class _ProfileState extends State<Profile> {
 
   bool isLoading = true;
 
-  Map<String, dynamic> infoLang = {};
+  Map<String, dynamic> bahasa = {};
 
   @override
   void initState() {
@@ -97,14 +98,12 @@ class _ProfileState extends State<Profile> {
       langCode = code;
     });
     
-    final templogin = await LangService.getText(langCode!, 'login');
-    final tempkeluar = await LangService.getText(langCode!, 'keluar');
-    final tempinfolang = await LangService.getJsonData(langCode!, 'info');
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
 
     setState(() {
-      login = templogin;
-      keluar = tempkeluar;
-      infoLang = tempinfolang;
+      bahasa = tempbahasa;
+      login = bahasa['login'];
+      keluar = bahasa['keluar'];
     });
   }
 
@@ -297,7 +296,7 @@ class _ProfileState extends State<Profile> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(infoLang['profil'] ?? ""),
+        title: Text(bahasa['profil'] ?? ""),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -431,7 +430,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      infoLang['informasi_utama'] ?? "", //'Informasi Utama',
+                      bahasa['informasi_utama'] ?? "", //'Informasi Utama',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -528,7 +527,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      infoLang['informasi_akun'] ?? "", //'Informasi Akun',
+                      bahasa['informasi_akun'] ?? "", //'Informasi Akun',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -588,7 +587,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      infoLang['media_sosial'] ?? "", //'Media Sosial',
+                      bahasa['media_sosial'] ?? "", //'Media Sosial',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -666,7 +665,7 @@ class _ProfileState extends State<Profile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      infoLang['keamanan'] ?? "", //'Keamanan & Regulasi',
+                      bahasa['keamanan'] ?? "", //'Keamanan & Regulasi',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
 
@@ -702,7 +701,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    infoLang['pengaturan_password'] ?? "", //'Pengaturan Sandi',
+                                    bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
                                   )
                                 ],
                               ),
@@ -717,6 +716,43 @@ class _ProfileState extends State<Profile> {
                             SizedBox(
                               child: InkWell(
                                 onTap: () async {
+
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: Text(langCode == 'id' ? "Konfirmasi" : "Confirmation"),
+                                        content: Text(
+                                          langCode == 'id'
+                                            ? "Kirim email verifikasi ke $email ?"
+                                            : "Send verification email to $email ?"
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: Text(langCode == 'id' ? "Batal" : "Cancel"),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: Text(
+                                              langCode == 'id' ? "Kirim" : "Send",
+                                              style: const TextStyle(color: Colors.white),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+
+                                  if (confirm != true) return;
+                                  
                                   final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null);
 
                                   if (resultVerifEmail?['rc'] == 200) {
@@ -725,15 +761,13 @@ class _ProfileState extends State<Profile> {
                                       dialogType: DialogType.success,
                                       title: langCode == 'id' ? 'Berhasil' : 'Success',
                                       desc:
-                                        "${infoLang['desc_email_1']}\n"
-                                        "${infoLang['desc_email_2']} $email\n"
-                                        "${infoLang['desc_email_3']}",
+                                        "${bahasa['desc_email_1']}\n"
+                                        "${bahasa['desc_email_2']} $email\n"
+                                        "${bahasa['desc_email_3']}",
                                       transitionAnimationDuration: const Duration(milliseconds: 1000),
                                       btnOkText: "OK",
                                       btnOkColor: Colors.red,
-                                      btnOkOnPress: () {
-                                        Navigator.of(context).pop();
-                                      },
+                                      btnOkOnPress: () {},
                                     ).show();
                                   } else {
                                     AwesomeDialog(
@@ -757,7 +791,7 @@ class _ProfileState extends State<Profile> {
 
                                     SizedBox(width: 12,),
                                     Text(
-                                      infoLang['verif_email'] ?? "", //']'Verifikasi Email',
+                                      bahasa['verif_email'] ?? "", //']'Verifikasi Email',
                                     ),
                                   ],
                                 ),
@@ -787,7 +821,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    infoLang['pusat_bantuan'] ?? "", //'Pusat Bantuan',
+                                    bahasa['pusat_bantuan'] ?? "", //'Pusat Bantuan',
                                   )
                                 ],
                               ),
@@ -809,7 +843,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    infoLang['kebijakan_privasi'] ?? "", //'Kebijakan Privasi',
+                                    bahasa['kebijakan_privasi'] ?? "", //'Kebijakan Privasi',
                                   )
                                 ],
                               ),
@@ -837,6 +871,9 @@ class _ProfileState extends State<Profile> {
                     await StorageService.clearUser();
                     await StorageService.clearToken();
                     await StorageService.clearLoginMethod();
+
+                    SessionManager.isGuest = false;
+                    SessionManager.checkingUserModalShown = false;
                     
                     setState(() {
                       Navigator.pushAndRemoveUntil(

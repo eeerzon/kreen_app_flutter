@@ -118,7 +118,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     }
   }
 
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
 
@@ -126,43 +126,37 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       langCode = code;
     });
 
-    final tempdetailFinalis = await LangService.getJsonData(langCode!, 'detail_finalis');
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
-    final tempsearchHintText = await LangService.getText(langCode!, "search");
-
-    final tempvoteLang = await LangService.getJsonData(langCode!, 'detail_vote');
+    final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
 
     setState(() {
-      totalHargaText = tempdetailFinalis['total_harga'];
-      hargaText = tempdetailFinalis['harga'];
-      hargaDetail = tempdetailFinalis['harga_detail'];
-      bayarText = tempdetailFinalis['bayar'];
+      bahasa = tempbahasa;
 
-      endVote = tempdetailFinalis['end_vote'];
-      voteOpen = tempdetailFinalis['vote_open'];
-      voteOpenAgain = tempdetailFinalis['vote_open_again'];
+      totalHargaText = tempbahasa['total_harga'];
+      hargaText = tempbahasa['harga'];
+      hargaDetail = tempbahasa['harga_detail'];
+      bayarText = tempbahasa['bayar'];
 
-      countDownText = tempdetailFinalis['countdown_vote'];
-      daysText = tempdetailFinalis['day'];
-      hoursText = tempdetailFinalis['hour'];
-      minutesText = tempdetailFinalis['minute'];
-      secondsText = tempdetailFinalis['second'];
+      endVote = tempbahasa['end_vote'];
+      voteOpen = tempbahasa['vote_open'];
+      voteOpenAgain = tempbahasa['vote_open_again'];
 
-      findFinalistText = tempdetailFinalis['button_find_finalist'];
-      notLogin = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      loginText = templogin;
-      searchHintText = tempsearchHintText;
+      countDownText = tempbahasa['countdown_vote'];
+      daysText = tempbahasa['day'];
+      hoursText = tempbahasa['hour'];
+      minutesText = tempbahasa['minute'];
+      secondsText = tempbahasa['second'];
 
-      buttonPilihPaketText = tempdetailFinalis['pick_paket'];
-      detailfinalisText = tempdetailFinalis['detail_finalis'];
-      cariFinalisText = tempdetailFinalis['search_finalis'];
+      findFinalistText = tempbahasa['button_find_finalist'];
+      notLogin = tempbahasa['notLogin'];
+      notLoginDesc = tempbahasa['notLoginDesc'];
+      loginText = tempbahasa['login'];
+      searchHintText = tempbahasa['search'];
 
-      noDataText = tempdetailFinalis['no_data'];
+      buttonPilihPaketText = tempbahasa['pick_paket'];
+      detailfinalisText = tempbahasa['detail_finalis'];
+      cariFinalisText = tempbahasa['search_finalis'];
 
-      voteLang = tempvoteLang;
+      noDataText = tempbahasa['no_data'];
     });
   }
 
@@ -444,7 +438,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                     ),
                   ),
                   Text(
-                    "${voteLang['paket']} $counts ${voteLang['text_vote']}\n$countData ${voteLang['finalis']}(s)",
+                    "${bahasa['paket']} $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
                     style: TextStyle(fontSize: 12),
                   ),
                 ],
