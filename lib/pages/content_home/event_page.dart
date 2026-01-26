@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -161,7 +161,9 @@ class _EventPageState extends State<EventPage> {
                   child: Image.network(
                     item['img_organizer'] ?? "",
                     errorBuilder: (context, error, stackTrace) {
-                      return const SizedBox.shrink(); // kosongin aja
+                      return Image.asset(
+                        'assets/images/img_broken.jpg',
+                      );
                     },
                   ),
                 ),
@@ -216,7 +218,9 @@ class _EventPageState extends State<EventPage> {
                 child: Image.network(
                   item['img_organizer'] ?? "",
                   errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox.shrink(); // kosongin aja
+                    return Image.asset(
+                      'assets/images/img_broken.jpg',
+                    );
                   },
                 )
 

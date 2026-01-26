@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 
 class ApiService {
 
@@ -13,33 +15,75 @@ class ApiService {
 
   /// POST request
   static Future<Map<String, dynamic>?> post(
-    String endpoint, {
-    Map<String, dynamic>? body,
-    String? xLanguage,
-    String? xCurrency,
-  }) async {
+    String endpoint, 
+    {
+      Map<String, dynamic>? body,
+      String? xLanguage,
+      String? xCurrency,
+    }
+  ) async {
+    final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
+
     Map<String, String> headers = {
       'API-Secret-Key':
           'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
       'Content-Type': 'application/json',
-      'x-language': xLanguage ?? 'id',
+      'x-language': xLanguage,
       'x-currency': ?xCurrency,
     };
     final url = Uri.parse("$baseapiUrl$endpoint");
 
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: body != null ? json.encode(body) : null,
-    );
-    return json.decode(response.body) as Map<String, dynamic>;
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body != null ? json.encode(body) : null,
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        return {
+          "rc": response.statusCode,
+          "status": false,
+          "message": "Server error (${response.statusCode})",
+          "data": []
+        };
+      }
+    } on TimeoutException {
+      return {
+        "rc": 408,
+        "status": false,
+        "message": bahasa['timeout'],
+        "data": []
+      };
+    } on SocketException {
+      return {
+        "rc": 503,
+        "status": false,
+        "message": bahasa['no_internet'],
+        "data": []
+      };
+    } catch (e) {
+      return {
+        "rc": 500,
+        "status": false,
+        "message": bahasa['error'],
+        "data": []
+      };
+    }
   }
 
   // POST upload image
   static Future<Map<String, dynamic>?> postImage(
-    String endpoint, {
-    File? file,
-  }) async {
+    String endpoint, 
+    {
+      File? file,
+      String? xLanguage,
+    }
+  ) async {
+    final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
+
     final url = Uri.parse("$baseapiUrl$endpoint");
 
     var request = http.MultipartRequest("POST", url);
@@ -52,21 +96,54 @@ class ApiService {
       );
     }
 
-    final streamedResponse = await request.send();
-    final respStr = await streamedResponse.stream.bytesToString();
+    try {
+      final streamedResponse = await request.send();
+      final respStr = await streamedResponse.stream.bytesToString();
 
-    if (streamedResponse.statusCode == 200) {
-      return json.decode(respStr) as Map<String, dynamic>;
-    } else {
-      return null;
+      if (streamedResponse.statusCode == 200) {
+        return json.decode(respStr) as Map<String, dynamic>;
+      } else {
+        return {
+          "rc": streamedResponse.statusCode,
+          "status": false,
+          "message": "Server error (${streamedResponse.statusCode})",
+          "data": []
+        };
+      }
+    } on TimeoutException {
+      return {
+        "rc": 408,
+        "status": false,
+        "message": bahasa['timeout'],
+        "data": []
+      };
+    } on SocketException {
+      return {
+        "rc": 503,
+        "status": false,
+        "message": bahasa['no_internet'],
+        "data": []
+      };
+    } catch (e) {
+      return {
+        "rc": 500,
+        "status": false,
+        "message": bahasa['error'],
+        "data": []
+      };
     }
   }
 
   static Future<Map<String, dynamic>?> postSetProfil(
-    String endpoint, {
-    String? token,
-    Map<String, dynamic>? body,
-  }) async {
+    String endpoint, 
+    {
+      String? token,
+      Map<String, dynamic>? body,
+      String? xLanguage,
+    }
+  ) async {
+    final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
+
     final url = Uri.parse(endpoint);
 
     var headers = {
@@ -75,28 +152,62 @@ class ApiService {
       'Content-Type': 'application/json'
     };
 
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: body != null ? json.encode(body) : null,
-    );
-    
-    return json.decode(response.body) as Map<String, dynamic>;
+    try {
+      final response = await http
+        .get(url, headers: headers)
+        .timeout(Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        return {
+          "rc": response.statusCode,
+          "status": false,
+          "message": "Server error (${response.statusCode})",
+          "data": []
+        };
+      }
+    } on TimeoutException {
+      return {
+        "rc": 408,
+        "status": false,
+        "message": bahasa['timeout'],
+        "data": []
+      };
+    } on SocketException {
+      return {
+        "rc": 503,
+        "status": false,
+        "message": bahasa['no_internet'],
+        "data": []
+      };
+    } catch (e) {
+      return {
+        "rc": 500,
+        "status": false,
+        "message": bahasa['error'],
+        "data": []
+      };
+    }
   }
 
 
   /// GET request
   static Future<Map<String, dynamic>?> get(
-    String endpoint, {
-    Map<String, String>? params,
-    String? xLanguage,
-    String? xCurrency,
-  }) async {
+    String endpoint, 
+    {
+      Map<String, String>? params,
+      String? xLanguage,
+      String? xCurrency,
+    }
+  ) async {
+    final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
+
     Map<String, String> headers = {
       'API-Secret-Key':
           'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
       'Content-Type': 'application/json',
-      'x-language': xLanguage ?? 'id',
+      'x-language': xLanguage,
       'x-currency': ?xCurrency,
     };
 
@@ -107,12 +218,42 @@ class ApiService {
       url = url.replace(queryParameters: params);
     }
 
-    final response = await http.get(url, headers: headers);
+    try {
+      final response = await http
+        .get(url, headers: headers)
+        .timeout(Duration(seconds: 15));
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
-    } else {
-      return null;
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        return {
+          "rc": response.statusCode,
+          "status": false,
+          "message": "Server error (${response.statusCode})",
+          "data": []
+        };
+      }
+    } on TimeoutException {
+      return {
+        "rc": 408,
+        "status": false,
+        "message": bahasa['timeout'],
+        "data": []
+      };
+    } on SocketException {
+      return {
+        "rc": 503,
+        "status": false,
+        "message": bahasa['no_internet'],
+        "data": []
+      };
+    } catch (e) {
+      return {
+        "rc": 500,
+        "status": false,
+        "message": bahasa['error'],
+        "data": []
+      };
     }
   }
 }

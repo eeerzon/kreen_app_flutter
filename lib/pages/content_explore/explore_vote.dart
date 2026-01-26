@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -13,12 +14,14 @@ class ExploreVote extends StatefulWidget {
   final String keyword;
   final List<String> timeFilter;
   final List<String> priceFilter;
+  final int pageFilter;
 
   const ExploreVote({
     super.key, 
     required this.keyword,
     required this.timeFilter,
-    required this.priceFilter
+    required this.priceFilter,
+    required this.pageFilter
   });
 
   @override
@@ -27,26 +30,62 @@ class ExploreVote extends StatefulWidget {
 
 class _ExploreVoteState extends State<ExploreVote> {
   String? langCode, currencyCode;
-  bool isLoadingContent = true;
-  bool isFirst = true;
+  bool isLoadingMore = false;
+  bool isFirstLoad = true;
 
   List<dynamic> votes = [];
 
   Map<String, dynamic> bahasa = {};
 
+  final ScrollController _scrollController = ScrollController();
+  bool hasMore = true;
+  int limit = 6;
+  late int currentPage = widget.pageFilter;
+
+  List<dynamic> pageVotes = [];
+
+  bool showErrorBar = false;
+  String errorMessage = "";
+
   Future<void> _loadContent(bool isFirst, String? term) async {
-    
-    final endpointVote = isFirst ? "/vote" : "/vote?term=$term";
+    String filterTime = "";
+    if (widget.timeFilter.isNotEmpty) {
+      filterTime = widget.timeFilter.join(",");
+    }
+
+    String filterPrice = "";
+    if (widget.priceFilter.isNotEmpty) {
+      filterPrice = widget.priceFilter.join(",");
+    }
+
+    final endpointVote = isFirst 
+      ? "/v2/global-search?time=$filterTime&price=$filterPrice&limit=9999" 
+      : filterTime == ""
+        ? "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999"
+        : "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999";
 
     final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode);
+    if (responses == null || responses['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = responses?['message'];
+      });
+      return;
+    }
 
     if (!mounted) return;
 
-    final resultVote = responses;
+    List<dynamic> allData = responses!['data'] ?? [];
+    currentPage = 1;
+    hasMore = true;
 
     setState(() {
-      votes = resultVote!['data'] ?? [];
-      isLoadingContent = false;
+      votes = allData
+        .where((item) => item['type'] == 'vote')
+        .toList();
+      pageVotes = getPaginatedVotes(votes, currentPage, limit);
+      isFirstLoad = false;
+      showErrorBar = false;
     });
   }
 
@@ -77,14 +116,71 @@ class _ExploreVoteState extends State<ExploreVote> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
-      await _loadContent(isFirst, null);
+      await _loadContent(isFirstLoad, null);
     });
+    
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !isLoadingMore &&
+          hasMore) {
+        _loadMoreKonten();
+      }
+    });
+  }
+
+  Future<void> _fetchKonten({bool loadMore = false}) async {
+    if (loadMore) {
+      if (isLoadingMore || !hasMore) return;
+      isLoadingMore = true;
+    } else {
+      if (!mounted) return;
+      setState(() => isFirstLoad = true);
+      hasMore = true;
+    }
+    
+    List newData = getPaginatedVotes(votes, currentPage, limit);
+
+    setState(() {
+      if (loadMore) {
+        pageVotes.addAll(newData);
+        isLoadingMore = false;
+      } else {
+        pageVotes = newData;
+        isFirstLoad = false;
+      }
+      hasMore = newData.length == limit;
+    });
+  }
+
+  List<dynamic> getPaginatedVotes(List<dynamic> votes, int page, int limit) {
+    int start = (page - 1) * limit;
+    int end = start + limit;
+
+    if (start >= votes.length) return [];
+
+    if (end > votes.length) end = votes.length;
+
+    return votes.sublist(start, end);
+  }
+
+  Future<void> _loadMoreKonten() async {
+    setState(() {
+      currentPage++;
+    });
+    await _fetchKonten(loadMore: true);
+  }
+
+  Future<void> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
   }
 
   @override
   void didUpdateWidget(covariant ExploreVote oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.keyword != widget.keyword) {
+    if (oldWidget.timeFilter != widget.timeFilter ||
+      oldWidget.priceFilter != widget.priceFilter ||
+      oldWidget.keyword != widget.keyword) {
       _loadContent(false, widget.keyword);
     }
   }
@@ -92,12 +188,24 @@ class _ExploreVoteState extends State<ExploreVote> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Container(
-          color: Colors.white,
-          child: isLoadingContent
-            ? buildSkeleton()
-            : buildKonten()
+      child: Container(
+        color: Colors.white,
+        child: Stack(
+          children: [
+            isFirstLoad
+              ? buildSkeleton()
+              : buildKonten(),
+
+            GlobalErrorBar(
+              visible: showErrorBar, 
+              message: errorMessage, 
+              onRetry: () {
+                _loadContent(false, widget.keyword);
+              }
+            )
+          ],
         ),
+      ),
     );
   }
 
@@ -187,22 +295,30 @@ class _ExploreVoteState extends State<ExploreVote> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-
-        // konten
-        Expanded(
-          child: MasonryGridView.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 12,
-            itemCount: votes.length,
-            itemBuilder: (context, index) {
-              final item = votes[index];
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (scrollInfo) {
+          if (!isLoadingMore &&
+              hasMore &&
+              scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+            _loadMoreKonten();
+          }
+          return false;
+        },
+        child: MasonryGridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 12,
+          controller: _scrollController,
+          physics: AlwaysScrollableScrollPhysics(),
+          itemCount: pageVotes.length,
+          itemBuilder: (context, index) {
+            if (index < pageVotes.length) {
+              final item = pageVotes[index];
               final title = item['title']?.toString() ?? 'Tanpa Judul';
-              final dateStr = item['date_event']?.toString() ?? '-';
-              final img = item['img']?.toString() ?? '';
+              final dateStr = item['start_date']?.toString() ?? '-';
+              final img = item['banner'].toString();
 
               String formattedDate = '-';
               if (dateStr.isNotEmpty) {
@@ -240,7 +356,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => DetailVotePage(
-                          id_event: item['id_event'].toString(),
+                          id_event: item['id'].toString(),
                         ),
                       ),
                     );
@@ -260,17 +376,22 @@ class _ExploreVoteState extends State<ExploreVote> {
                           child: AspectRatio(
                             aspectRatio: 4 / 5,
                             child: img.isNotEmpty
-                              ? FadeInImage.assetNetwork(
-                                  placeholder: 'assets/images/img_placeholder.jpg',
-                                  image: img,
+                              ? Image.network(
+                                  img,
                                   fit: BoxFit.cover,
-                                  imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                    aspectRatio: 4 / 5,
-                                    child: Image.asset(
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Image.asset(
+                                      'assets/images/img_placeholder.jpg',
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
                                       'assets/images/img_broken.jpg',
                                       fit: BoxFit.cover,
-                                    ),
-                                  ),
+                                    );
+                                  },
                                 )
                               : Image.asset(
                                   'assets/images/img_broken.jpg',
@@ -301,7 +422,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                               //penyelenggara
                               const SizedBox(height: 4),
                               Text(
-                                item['nama_penyelenggara'],
+                                item['merchant_name'],
                                 style: TextStyle(fontSize: 12, color: Colors.grey),
                               ),
 
@@ -341,10 +462,36 @@ class _ExploreVoteState extends State<ExploreVote> {
                   ),
                 ),
               );
+            } else {
+              if (isLoadingMore) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator(color: Colors.red,)),
+                );
+              } else if (!hasMore) {
+                return Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      //"Tidak ada data lagi",
+                      bahasa['no_more'] ?? "",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                );
+              } else {
+                return const SizedBox.shrink();
+              }
             }
-          ),
+          }
         ),
-      ],
+      ),
     );
+  }
+  
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }

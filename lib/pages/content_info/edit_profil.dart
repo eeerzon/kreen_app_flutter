@@ -7,7 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -53,6 +54,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Map<String, dynamic> bahasa = {};
   String? emailHint, phoneLabel, phoneHint, phoneError;
   String? verifEmail;
+
+  bool showErrorBar = false;
+  String errorMessageBar = "";
+  bool isImage = false;
 
   @override
   void initState() {
@@ -208,7 +213,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<String?> uploadImage(File file) async {
-    final result = await ApiService.postImage('/uploads/tmp', file: file);
+    final result = await ApiService.postImage('/uploads/tmp', file: file, xLanguage: langCode);
+    if (result == null || result['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = result?['message'];
+
+        isImage = true;
+      });
+      return null;
+    }
 
     final List<dynamic> tempData = result?['data'] ?? [];
     if (tempData.isEmpty) return null;
@@ -216,10 +230,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final url = tempData[0]['url'] as String?;
     final storedAs = tempData[0]['stored_as'] as String?;
 
+    if (!mounted) return null;
     setState(() {
       linkAvatar = url;
       strAvatar = storedAs;
       isuploaded = true;
+
+      showErrorBar = false;
+      isImage = false;
     });
 
     return url;
@@ -256,7 +274,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       "link_twitter": twitterController.text.isNotEmpty ? twitterController.text : null,
     };
     
-    final resultSimpan = await ApiService.postSetProfil('$baseapiUrl/setting/update-profile',token: token, body: body);
+    final resultSimpan = await ApiService.postSetProfil('$baseapiUrl/setting/update-profile',token: token, body: body, xLanguage: langCode);
 
     if (resultSimpan?['rc'] == 200) {
       await StorageService.setUser(
@@ -278,11 +296,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
         SnackBar(content: Text(bahasa['sukses_info_profil'])), //"Profil berhasil diubah"
       );
 
+      showErrorBar = false;
+      isImage = false;
+
       Navigator.pop(context, true);
     } else {
       setState(() {
+        showErrorBar = true;
         errorCode = resultSimpan?['rc'] ?? 0;
         errorMessage = resultSimpan?['data'] ?? {};
+        errorMessageBar = resultSimpan?['message'];
+
+        isImage = false;
       });
 
       if (resultSimpan?['data'].containsKey('first_name')) {
@@ -399,7 +424,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     selectedGender = gender;
     
-    return isLoading ? Center(child: CircularProgressIndicator(color: Colors.red,)) : Scaffold(
+    return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
@@ -415,507 +440,529 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ),
 
-      body: SingleChildScrollView(
-        child: Container(
-          // height: MediaQuery.of(context).size.height,
-          color: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 60,
-                      child: ClipOval(
-                        child: pickedImage != null
-                          ? Image.file(
-                              pickedImage!,
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                            )
-                          : _buildNetworkAvatar(),
-                      ),
-                    ),
-
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: InkWell(
-                        onTap: () {
-                          showPickSourceDialog();
-                        },
-                        borderRadius: BorderRadius.circular(30),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.grey.shade300,),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 20,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['informasi_utama'] , //'Informasi Utama',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                SizedBox(height: 10,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['nama_depan_label']
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  focusNode: firstNameFocusNode,
-                  controller: firstNameController,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r"[a-zA-Z\s]"),
-                    ),
-                    NameInputFormatter(),
-                  ],
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: bahasa['nama_depan_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                if (errorCode == 422 && errorMessage.containsKey('first_name')) ... [
-                  SizedBox(height: 4,),
-                  Align(
-                    alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      errorMessage['first_name'][0],
-                      style: TextStyle(color: Colors.red),
-                    )
-                  )
-                ],
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['nama_belakang_label']
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  controller: lastNameController,
-                  onChanged: (_) => setState(() {}),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r"[a-zA-Z\s]"),
-                    ),
-                    NameInputFormatter(),
-                  ],
-                  decoration: InputDecoration(
-                    hintText: bahasa['nama_belakang_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['dob_label'],
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  focusNode: dobFocusNode,
-                  controller: dobController,
-                  readOnly: true,
-                  onTap: () => _selectDate(context),
-                  decoration: InputDecoration(
-                    hintText: bahasa['pilih_dob'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    suffixIcon: const Icon(Icons.calendar_today),
-                  ),
-                ),
-                if (errorCode == 422 && errorMessage.containsKey('date_of_birth')) ... [
-                  SizedBox(height: 4,),
-                  Align(
-                    alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      errorMessage['date_of_birth'][0],
-                      style: TextStyle(color: Colors.red),
-                    )
-                  )
-                ],
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['gender_label'], //'Jenis Kelamin'
-                  ),
-                ),
-                SizedBox(height: 8,),
-                Row(
-                  children: List.generate(genders.length, (index) {
-                    final item = genders[index];
-                    final isSelectedGender = selectedGender.toString().toLowerCase() == item['label'].toString().toLowerCase();
-
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedGender = item['label'];
-                            gender = item['label'];
-                          });
-                        },
-                        child: Container(
-                          height: 120,
-                          margin: EdgeInsets.only(
-                            right: index == 0 ? 8 : 0,
-                            left: index == 1 ? 8 : 0,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade300),
-                            color: isSelectedGender ? Colors.green.withOpacity(0.1) : Colors.white,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.network(
-                                item['icon'] as String,
-                                width: 50,
-                                height: 50,
-                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                item['label']!,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-
-                SizedBox(height: 10,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['company_label'], //'Perusahaan'
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  controller: companyController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: bahasa['company_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['job_label'], //'Jabatan'
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  controller: jobTitleController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: bahasa['job_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['informasi_akun'], //']'Informasi Akun',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                SizedBox(height: 10,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    'Email'
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  focusNode: emailFocusNode,
-                  controller: emailController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: emailHint,
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                if (verifEmail == "0") ... [
-                  SizedBox(height: 4,),
-                  Align(
-                    alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      bahasa['verified_email'], //"Email kamu belum diverifikasi. 
-                      style: TextStyle(color: Colors.red),
-                    )
-                  )
-                ],
-                if (errorCode == 422 && errorMessage.containsKey('email')) ... [
-                  SizedBox(height: 4,),
-                  Align(
-                    alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      errorMessage['email'][0],
-                      style: TextStyle(color: Colors.red),
-                    )
-                  )
-                ],
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    phoneLabel!
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  focusNode: phoneFocusNode,
-                  controller: phoneController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: phoneHint,
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    errorText: phoneController.text.isEmpty
-                        ? null
-                        : (!isValidPhone(phoneController.text)
-                            ? phoneError //"Nomor HP harus 10-13 digit dan dimulai dengan 08",
-                            : null),
-                  ),
-                ),
-                if (errorCode == 422 && errorMessage.containsKey('phone')) ... [
-                  SizedBox(height: 4,),
-                  Align(
-                    alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      errorMessage['phone'][0],
-                      style: TextStyle(color: Colors.red),
-                    )
-                  )
-                ],
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['media_sosial'], //'Media Sosial',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                SizedBox(height: 10,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['uname_linkedin_label'],
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  controller: linkedinController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: bahasa['uname_linkedin_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-
-                    prefixIcon: !linkedinController.text.contains("https")
-                      ? Container(
-                          width: 125,
-                          padding: EdgeInsets.only(left: 16, right: 0),
-                          alignment: Alignment.centerLeft,
-                          child: const Text(
-                            "linkedin.com/in/",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
-                      : null,
-
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 0,
-                      minHeight: 0,
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['uname_instagram_label'],
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  controller: igController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: bahasa['uname_instagram_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-
-                    prefixIcon: !igController.text.contains("https")
-                      ? Container(
-                          width: 125,
-                          padding: EdgeInsets.only(left: 16, right: 0),
-                          alignment: Alignment.centerLeft,
-                          child: const Text(
-                            "instagram.com/",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
-                      : null,
-
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 0,
-                      minHeight: 0,
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 20,),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    bahasa['uname_twitter_label'],
-                  ),
-                ),
-                SizedBox(height: 8,),
-                TextField(
-                  controller: twitterController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: bahasa['uname_twitter_hint'],
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-
-                    prefixIcon: !twitterController.text.contains("https")
-                      ? Container(
-                          width: 100,
-                          padding: EdgeInsets.only(left: 16, right: 0),
-                          alignment: Alignment.centerLeft,
-                          child: const Text(
-                            "twitter.com/",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
-                      : null,
-
-                    prefixIconConstraints: const BoxConstraints(
-                      minWidth: 0,
-                      minHeight: 0,
-                    ),
-                  ),
-                ),
-                
-                SizedBox(height: 30,),
-                InkWell(
-                  onTap: () async {
-                    await saveProfile();
-                    // Navigator.pop(context, true);
-                  },
+      body: Stack(
+        children: [
+          isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.red,))
+            : SingleChildScrollView(
+                child: Container(
+                  // height: MediaQuery.of(context).size.height,
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
                   child: Container(
-                    height: 48,
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      bahasa['simpan'],
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    color: Colors.white,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              child: ClipOval(
+                                child: pickedImage != null
+                                  ? Image.file(
+                                      pickedImage!,
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : _buildNetworkAvatar(),
+                              ),
+                            ),
+
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: InkWell(
+                                onTap: () {
+                                  showPickSourceDialog();
+                                },
+                                borderRadius: BorderRadius.circular(30),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.grey.shade300,),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 20,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['informasi_utama'] , //'Informasi Utama',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+
+                        SizedBox(height: 10,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['nama_depan_label']
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          focusNode: firstNameFocusNode,
+                          controller: firstNameController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[a-zA-Z\s]"),
+                            ),
+                            NameInputFormatter(),
+                          ],
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: bahasa['nama_depan_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        if (errorCode == 422 && errorMessage.containsKey('first_name')) ... [
+                          SizedBox(height: 4,),
+                          Align(
+                            alignment: AlignmentGeometry.centerLeft,
+                            child: Text(
+                              errorMessage['first_name'][0],
+                              style: TextStyle(color: Colors.red),
+                            )
+                          )
+                        ],
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['nama_belakang_label']
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          controller: lastNameController,
+                          onChanged: (_) => setState(() {}),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[a-zA-Z\s]"),
+                            ),
+                            NameInputFormatter(),
+                          ],
+                          decoration: InputDecoration(
+                            hintText: bahasa['nama_belakang_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['dob_label'],
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          focusNode: dobFocusNode,
+                          controller: dobController,
+                          readOnly: true,
+                          onTap: () => _selectDate(context),
+                          decoration: InputDecoration(
+                            hintText: bahasa['pilih_dob'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            suffixIcon: const Icon(Icons.calendar_today),
+                          ),
+                        ),
+                        if (errorCode == 422 && errorMessage.containsKey('date_of_birth')) ... [
+                          SizedBox(height: 4,),
+                          Align(
+                            alignment: AlignmentGeometry.centerLeft,
+                            child: Text(
+                              errorMessage['date_of_birth'][0],
+                              style: TextStyle(color: Colors.red),
+                            )
+                          )
+                        ],
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['gender_label'], //'Jenis Kelamin'
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        Row(
+                          children: List.generate(genders.length, (index) {
+                            final item = genders[index];
+                            final isSelectedGender = selectedGender.toString().toLowerCase() == item['label'].toString().toLowerCase();
+
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedGender = item['label'];
+                                    gender = item['label'];
+                                  });
+                                },
+                                child: Container(
+                                  height: 120,
+                                  margin: EdgeInsets.only(
+                                    right: index == 0 ? 8 : 0,
+                                    left: index == 1 ? 8 : 0,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    color: isSelectedGender ? Colors.green.withOpacity(0.1) : Colors.white,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.network(
+                                        item['icon'] as String,
+                                        width: 50,
+                                        height: 50,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            width: 50,
+                                            height: 50,
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        item['label']!,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        SizedBox(height: 10,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['company_label'], //'Perusahaan'
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          controller: companyController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: bahasa['company_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['job_label'], //'Jabatan'
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          controller: jobTitleController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: bahasa['job_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['informasi_akun'], //']'Informasi Akun',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        SizedBox(height: 10,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            'Email'
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          focusNode: emailFocusNode,
+                          controller: emailController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: emailHint,
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        if (verifEmail == "0") ... [
+                          SizedBox(height: 4,),
+                          Align(
+                            alignment: AlignmentGeometry.centerLeft,
+                            child: Text(
+                              bahasa['verified_email'], //"Email kamu belum diverifikasi. 
+                              style: TextStyle(color: Colors.red),
+                            )
+                          )
+                        ],
+                        if (errorCode == 422 && errorMessage.containsKey('email')) ... [
+                          SizedBox(height: 4,),
+                          Align(
+                            alignment: AlignmentGeometry.centerLeft,
+                            child: Text(
+                              errorMessage['email'][0],
+                              style: TextStyle(color: Colors.red),
+                            )
+                          )
+                        ],
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            phoneLabel!
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          focusNode: phoneFocusNode,
+                          controller: phoneController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: phoneHint,
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            errorText: phoneController.text.isEmpty
+                                ? null
+                                : (!isValidPhone(phoneController.text)
+                                    ? phoneError //"Nomor HP harus 10-13 digit dan dimulai dengan 08",
+                                    : null),
+                          ),
+                        ),
+                        if (errorCode == 422 && errorMessage.containsKey('phone')) ... [
+                          SizedBox(height: 4,),
+                          Align(
+                            alignment: AlignmentGeometry.centerLeft,
+                            child: Text(
+                              errorMessage['phone'][0],
+                              style: TextStyle(color: Colors.red),
+                            )
+                          )
+                        ],
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['media_sosial'], //'Media Sosial',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        SizedBox(height: 10,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['uname_linkedin_label'],
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          controller: linkedinController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: bahasa['uname_linkedin_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+
+                            prefixIcon: !linkedinController.text.contains("https")
+                              ? Container(
+                                  width: 125,
+                                  padding: EdgeInsets.only(left: 16, right: 0),
+                                  alignment: Alignment.centerLeft,
+                                  child: const Text(
+                                    "linkedin.com/in/",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                )
+                              : null,
+
+                            prefixIconConstraints: const BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['uname_instagram_label'],
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          controller: igController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: bahasa['uname_instagram_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+
+                            prefixIcon: !igController.text.contains("https")
+                              ? Container(
+                                  width: 125,
+                                  padding: EdgeInsets.only(left: 16, right: 0),
+                                  alignment: Alignment.centerLeft,
+                                  child: const Text(
+                                    "instagram.com/",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                )
+                              : null,
+
+                            prefixIconConstraints: const BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 20,),
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            bahasa['uname_twitter_label'],
+                          ),
+                        ),
+                        SizedBox(height: 8,),
+                        TextField(
+                          controller: twitterController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: bahasa['uname_twitter_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+
+                            prefixIcon: !twitterController.text.contains("https")
+                              ? Container(
+                                  width: 100,
+                                  padding: EdgeInsets.only(left: 16, right: 0),
+                                  alignment: Alignment.centerLeft,
+                                  child: const Text(
+                                    "twitter.com/",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                )
+                              : null,
+
+                            prefixIconConstraints: const BoxConstraints(
+                              minWidth: 0,
+                              minHeight: 0,
+                            ),
+                          ),
+                        ),
+                        
+                        SizedBox(height: 30,),
+                        InkWell(
+                          onTap: () async {
+                            await saveProfile();
+                            // Navigator.pop(context, true);
+                          },
+                          child: Container(
+                            height: 48,
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              bahasa['simpan'],
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 40,),
+                      ],
                     ),
                   ),
-                ),
+                )
+              ),
 
-                SizedBox(height: 40,),
-              ],
-            ),
+          GlobalErrorBar(
+            visible: showErrorBar, 
+            message: errorMessageBar, 
+            onRetry: () {
+              isImage
+                ? uploadImage(pickedImage!)
+                : saveProfile();
+            }
           ),
-        )
-      )
+        ],
+      ),
     );
   }
 
@@ -951,6 +998,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       width: 120,
       height: 120,
       fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          'assets/images/img_broken.jpg',
+          fit: BoxFit.cover,
+          width: 120,
+          height: 120,
+        );
+      },
     );
   }
 }

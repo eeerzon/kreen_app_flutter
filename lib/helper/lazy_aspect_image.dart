@@ -26,6 +26,13 @@ class _LazyAspectImageState extends State<LazyAspectImage> {
           }
           return child;
         },
+        errorBuilder: (context, child, loading) {
+          return Container(
+            color: Colors.grey[200],
+            alignment: Alignment.center,
+            child: const Icon(Icons.broken_image),
+          );
+        },
       ),
     );
   }

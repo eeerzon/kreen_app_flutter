@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -285,20 +285,23 @@ class _AddSupportPageState extends State<AddSupportPage> {
                       height: 120,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: FadeInImage.assetNetwork(
-                          placeholder: 'assets/images/img_placeholder.jpg',
-                          image: vote['banner'],
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 300),
-                          imageErrorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/img_broken.jpg',
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        ),
+                        child: AspectRatio(
+                          aspectRatio: 4 / 5,
+                          child: FadeInImage.assetNetwork(
+                            placeholder: 'assets/images/img_placeholder.jpg',
+                            image: vote['banner'],
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 200),
+                            imageErrorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/img_broken.jpg',
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
+                        ), 
                       ),
                     ),
             

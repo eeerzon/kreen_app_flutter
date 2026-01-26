@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 
 class TutorModal {
 
@@ -28,7 +28,7 @@ class TutorModal {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Voting Tutorial on Kreen Vote',
+                          tutorialVoteText,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,

@@ -3,7 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -35,9 +36,20 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
   Map<String, dynamic> bahasa = {};
 
+  bool showErrorBar = false;
+  String errorMessage = '';
+
   Future<void> _loadOrder() async {
 
-    final resultOrder = await ApiService.get("/order/event/${widget.idOrder}");
+    final resultOrder = await ApiService.get("/order/event/${widget.idOrder}", xLanguage: langCode);
+    if (resultOrder == null || resultOrder['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultOrder?['message'] ?? '';
+      });
+      return;
+    }
+
     final tempOrder = resultOrder?['data'] ?? {};
 
     final temp_event_order = tempOrder['event_order'] ?? {};
@@ -56,6 +68,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
     final resultEvent = await ApiService.post('/event/detail', body: body);
     final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         detailOrder = tempOrder;
@@ -111,6 +124,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
         }
 
         _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -142,9 +156,21 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeleton()
-          : buildKonten()
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeleton()
+            : buildKonten(),
+
+          GlobalErrorBar(
+            visible: showErrorBar, 
+            message: errorMessage, 
+            onRetry: () {
+              _loadOrder();
+            }
+          )
+        ],
+      ), 
     );
   }
 
@@ -576,6 +602,14 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                             width: 70,
                                             height: 70,
                                             fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 70,
+                                                width: 70,
+                                                fit: BoxFit.contain,
+                                              );
+                                            },
                                           ),
                                           const SizedBox(height: 4),
                                           Text(

@@ -1,9 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
-import 'package:kreen_app_flutter/pages/event/detail_event/order_event_paid.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/pages/order/order_event_paid.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -29,32 +30,104 @@ class CheckPaymentModal {
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/vote/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      if (resultOrder != null) {
+        if (resultOrder['rc'] == 200) {
+          final tempOrder = resultOrder['data'] ?? {};
 
-      voteOrder = tempOrder['vote_order'] ?? {};
-      voteOrderDetail = tempOrder['vote_order_detail'] ?? [];
-      voteFinalis = tempOrder['vote_finalis'] ?? [];
-      vote = tempOrder['vote'] ?? {};
+          voteOrder = tempOrder['vote_order'] ?? {};
+          voteOrderDetail = tempOrder['vote_order_detail'] ?? [];
+          voteFinalis = tempOrder['vote_finalis'] ?? [];
+          vote = tempOrder['vote'] ?? {};
 
-      if (voteOrder['order_status'] == '0'){
-        statusOrder = bahasa['status_order_0'];
-      } else if (voteOrder['order_status'] == '1'){
-        statusOrder = bahasa['status_order_1'];
-      } else if (voteOrder['order_status'] == '2'){
-        statusOrder = bahasa['status_order_2'];
-      } else if (voteOrder['order_status'] == '3'){
-        statusOrder = bahasa['status_order_3'];
-      } else if (voteOrder['order_status'] == '4'){
-        statusOrder = bahasa['status_order_4'];
-      } else if (voteOrder['order_status'] == '20'){
-        statusOrder = bahasa['status_order_20'];
-      } else if (voteOrder['order_status'] == '404'){
-        statusOrder = bahasa['status_order_404'];
+          if (voteOrder['order_status'] == '0'){
+            statusOrder = bahasa['status_order_0'];
+          } else if (voteOrder['order_status'] == '1'){
+            statusOrder = bahasa['status_order_1'];
+          } else if (voteOrder['order_status'] == '2'){
+            statusOrder = bahasa['status_order_2'];
+          } else if (voteOrder['order_status'] == '3'){
+            statusOrder = bahasa['status_order_3'];
+          } else if (voteOrder['order_status'] == '4'){
+            statusOrder = bahasa['status_order_4'];
+          } else if (voteOrder['order_status'] == '20'){
+            statusOrder = bahasa['status_order_20'];
+          } else if (voteOrder['order_status'] == '404'){
+            statusOrder = bahasa['status_order_404'];
+          }
+        } else if (resultOrder['rc'] == 422) {
+          final data = resultOrder['data'];
+          String desc = '';
+          if (data is Map) {
+            final errorMessages = data.values
+              .whereType<List>()
+              .expand((e) => e)
+              .whereType<String>()
+              .toList();
+
+          desc = errorMessages.join('\n');
+          } else {
+            desc = data?.toString() ?? '';
+          }
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.error,
+            animType: AnimType.topSlide,
+            title: 'Oops!',
+            desc: desc,
+            btnOkOnPress: () {},
+            btnOkColor: Colors.red,
+            buttonsTextStyle: TextStyle(color: Colors.white),
+            headerAnimationLoop: false,
+            dismissOnTouchOutside: true,
+            showCloseIcon: true,
+          ).show();
+        } else if (resultOrder['rc'] == 500) {
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.error,
+            animType: AnimType.topSlide,
+            title: 'Oops!',
+            desc: "${resultOrder['message']}",
+            btnOkOnPress: () {},
+            btnOkColor: Colors.red,
+            buttonsTextStyle: TextStyle(color: Colors.white),
+            headerAnimationLoop: false,
+            dismissOnTouchOutside: true,
+            showCloseIcon: true,
+          ).show();
+        }
       }
     }
 
     await getBahasa();
     await loadOrder();
+
+    String? currencyRegion;
+    if (voteOrder['order_region'] == "EU"){
+      currencyRegion = 'EUR';
+    } else if (voteOrder['order_region'] == "ID"){
+      currencyRegion = 'IDR';
+    } else if (voteOrder['order_region'] == "PH"){
+      currencyRegion = 'PHP';
+    } else if (voteOrder['order_region'] == "SG"){
+      currencyRegion = 'SGD';
+    } else if (voteOrder['order_region'] == "US"){
+      currencyRegion = 'USD';
+    } else if (voteOrder['order_region'] == "TH"){
+      currencyRegion = 'THB';
+    } else if (voteOrder['order_region'] == "MY"){
+      currencyRegion = 'MYR';
+    } else if (voteOrder['order_region'] == "VN"){
+      currencyRegion = 'VND';
+    }
+
+    num sumAmount = voteOrder['total_amount'] * voteOrder['currency_value_region'];
+    num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      totalAmountPg = totalAmountPg.ceil();
+    } else {
+      totalAmountPg = (totalAmountPg * 100).ceil() / 100;
+    }
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
@@ -153,7 +226,7 @@ class CheckPaymentModal {
                           const Text(' :  '),
                           Text(
                             voteOrder.isNotEmpty
-                                ? "${voteOrder['currency_vote']} ${formatter.format(voteOrder['total_amount'] ?? 0)}"
+                                ? "$currencyRegion ${formatter.format(totalAmountPg)}"
                                 : '-',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -251,11 +324,11 @@ class CheckPaymentModal {
     String? statusOrder;
 
     String? langCode;
-    Map<String, dynamic> paymentlang = {};
+    Map<String, dynamic> bahasa = {};
     Future<void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
-      paymentlang = await LangService.getJsonData(langCode!, "payment");
+      bahasa = await LangService.getJsonData(langCode!, "bahasa");
     }
 
     Future<void> loadOrder() async {
@@ -268,24 +341,51 @@ class CheckPaymentModal {
       event = tempOrder['event'] ?? {};
 
       if (eventOrder['order_status'] == '0'){
-        statusOrder = paymentlang['status_order_0'];
+        statusOrder = bahasa['status_order_0'];
       } else if (eventOrder['order_status'] == '1'){
-        statusOrder = paymentlang['status_order_1'];
+        statusOrder = bahasa['status_order_1'];
       } else if (eventOrder['order_status'] == '2'){
-        statusOrder = paymentlang['status_order_2'];
+        statusOrder = bahasa['status_order_2'];
       } else if (eventOrder['order_status'] == '3'){
-        statusOrder = paymentlang['status_order_3'];
+        statusOrder = bahasa['status_order_3'];
       } else if (eventOrder['order_status'] == '4'){
-        statusOrder = paymentlang['status_order_4'];
+        statusOrder = bahasa['status_order_4'];
       } else if (eventOrder['order_status'] == '20'){
-        statusOrder = paymentlang['status_order_20'];
+        statusOrder = bahasa['status_order_20'];
       } else if (eventOrder['order_status'] == '404'){
-        statusOrder = paymentlang['status_order_404'];
+        statusOrder = bahasa['status_order_404'];
       }
     }
 
     await getBahasa();
     await loadOrder();
+
+    String? currencyRegion;
+    if (eventOrder['order_region'] == "EU"){
+      currencyRegion = 'EUR';
+    } else if (eventOrder['order_region'] == "ID"){
+      currencyRegion = 'IDR';
+    } else if (eventOrder['order_region'] == "PH"){
+      currencyRegion = 'PHP';
+    } else if (eventOrder['order_region'] == "SG"){
+      currencyRegion = 'SGD';
+    } else if (eventOrder['order_region'] == "US"){
+      currencyRegion = 'USD';
+    } else if (eventOrder['order_region'] == "TH"){
+      currencyRegion = 'THB';
+    } else if (eventOrder['order_region'] == "MY"){
+      currencyRegion = 'MYR';
+    } else if (eventOrder['order_region'] == "VN"){
+      currencyRegion = 'VND';
+    }
+
+    num sumAmount = (eventOrder['amount'] + eventOrder['fees']) * eventOrder['currency_value_region'];
+    num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5)); // konversi ke double (num())
+    if (currencyRegion == "IDR") {
+      totalAmountPg = totalAmountPg.ceil();
+    } else {
+      totalAmountPg = (totalAmountPg * 100).ceil() / 100;
+    }
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
@@ -328,7 +428,7 @@ class CheckPaymentModal {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          paymentlang['info_pesanan'],
+                          bahasa['info_pesanan'],
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -393,11 +493,11 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          Text(paymentlang['total_bayar']),
+                          Text(bahasa['total_bayar']),
                           const Text(' :  '),
                           Text(
                             eventOrder.isNotEmpty
-                                ? "${eventOrder['currency_event']} ${formatter.format(eventOrder['amount'] + eventOrder['fees'])}"
+                                ? "$currencyRegion ${formatter.format(totalAmountPg)}"
                                 : '-',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -408,7 +508,7 @@ class CheckPaymentModal {
                           SizedBox(height: 8),
                         ]),
                         TableRow(children: [
-                          Text(paymentlang['status_pembayaran']),
+                          Text(bahasa['status_pembayaran']),
                           const Text(' :  '),
                           Text(
                             statusOrder ?? '-',
@@ -439,7 +539,7 @@ class CheckPaymentModal {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh, color: Colors.white),
                       label: Text(
-                        paymentlang['check_status'],
+                        bahasa['check_status'],
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white),
                       ),

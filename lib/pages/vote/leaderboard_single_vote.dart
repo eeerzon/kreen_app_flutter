@@ -7,7 +7,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
@@ -19,6 +21,7 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.da
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_5_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_6_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
+import 'package:kreen_app_flutter/helper/download_qr.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -43,7 +46,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   num harga = 0;
   num hargaAsli = 0;
   bool isTutup = false;
-  bool canDownload = false;
+  bool canDownload = true;
 
   final prefs = FlutterSecureStorage();
   String? langCode, currencyCode;
@@ -76,6 +79,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   int totalQty = 0;
   int countData = 1;
+
+  bool showErrorBar = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -138,13 +144,16 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   Future<void> _loadFinalis() async {
     final idFinalis = widget.id_finalis;
-    if (idFinalis.isEmpty) {
-      setState(() => _isLoading = false);
-      return;
-    }
     
     final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode);
-    final tempFinalis = resultFinalis?['data'] ?? {};
+    if (resultFinalis == null || resultFinalis['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFinalis?['message'];
+      });
+      return;
+    }
+    final tempFinalis = resultFinalis['data'] ?? {};
 
     idVote = tempFinalis['id_vote']?.toString();
     Map<String, dynamic> tempDetailVote = {};
@@ -160,10 +169,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
     await _precacheAllImages(context, tempFinalis, tempRanking);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
-        _isLoading = false;
 
         controllers = TextEditingController(
           text: widget.count.toString(),
@@ -202,6 +211,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         if (remaining.inSeconds == 0) {
           isTutup = true;
         }
+
+        _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -307,9 +319,21 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenDetail()
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenDetail(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadFinalis();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -863,7 +887,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
                       if (detailFinalis['usia'] != 0 ||
                           (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
+                          (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
                         const SizedBox(height: 12,),
                         Container(
                           width: double.infinity,
@@ -905,7 +929,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   ),
                                 ],
                     
-                                if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
+                                if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
                                   SizedBox(height: 12,),
                                   Text(
                                     biographyText!,
@@ -949,6 +973,14 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   width: 100,
                                   height: 100,
                                   fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/images/img_broken.jpg',
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.contain,
+                                    );
+                                  },
                                 ),
                   
                                 const SizedBox(height: 12,),
@@ -958,33 +990,43 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                 ),
                   
                                 const SizedBox(height: 12,),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: canDownload ? color : Colors.grey,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                                Material(
+                                  color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: canDownload ? () {
-                                      
-                                    }
-                                    : null,
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          downloadQrText!,
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        const SizedBox(width: 10,),
-                                        Icon(
-                                          Icons.download, color: Colors.white, size: 15,
-                                        )
-                                      ],
-                                    )
-                                  )
+                                    onTap: canDownload 
+                                      ? () async {
+                                          await downloadQrImage(
+                                            context, 
+                                            detailFinalis['id_qrcode'],
+                                            bahasa!['download_scan_gagal'],
+                                            bahasa!['download_scan_berhasil'],
+                                            bahasa!['kesalahan_simpan_scan'],
+                                          );
+                                        }
+                                      : null,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: canDownload ? color : Colors.grey,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            downloadQrText!,
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.download, color: Colors.white, size: 15,
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                   
                                 const SizedBox(height: 12,),
@@ -1134,6 +1176,14 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                             width: 80,   // atur sesuai kebutuhan
                                             height: 80,
                                             fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 80,
+                                                width: 80,
+                                                fit: BoxFit.contain,
+                                              );
+                                            },
                                           ),
 
                                           const SizedBox(width: 12),
@@ -1445,10 +1495,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         ],
       ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
+      bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsetsGeometry.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1457,7 +1506,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
                 children: [
-                  Text(hargaText!),
+                  Text(totalHargaText!),
                   Text(
                     harga == 0
                     ? hargaDetail!
@@ -1468,6 +1517,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
+                  ),
+                  Text(
+                    "Qty $totalQty ${bahasa!['text_vote']}(s)\n$countData ${bahasa!['finalis']}(s)",
+                    style: TextStyle(fontSize: 12),
                   ),
                 ],
               ),

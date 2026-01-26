@@ -11,5 +11,5 @@ const EdgeInsets kPaddingVertical = EdgeInsets.symmetric(vertical: 8);
 const String baseUrl = "https://dev.kreenconnect.com"; //dev
 // const String baseUrl = "https://kreenconnect.com";
 
-const String baseapiUrl = "$baseUrl/kreenapi"; //dev
+const String baseapiUrl = "$baseUrl/kreenapi";
 // const String baseapiUrl = "$baseUrl/kreenapi";

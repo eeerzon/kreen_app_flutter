@@ -7,14 +7,14 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
 import 'package:kreen_app_flutter/pages/content_info/edit_profil.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
-import 'package:kreen_app_flutter/services/session_manager.dart';
+import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -753,7 +753,7 @@ class _ProfileState extends State<Profile> {
 
                                   if (confirm != true) return;
                                   
-                                  final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null);
+                                  final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null, xLanguage: langCode);
 
                                   if (resultVerifEmail?['rc'] == 200) {
                                     AwesomeDialog(

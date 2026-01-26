@@ -4,10 +4,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
-import 'package:kreen_app_flutter/pages/event/waiting_order_event.dart';
+import 'package:kreen_app_flutter/pages/order/waiting_order_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -27,6 +28,9 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
 
   Map<String, dynamic> bahasa = {};
   String? orderMenunggu, orderGagal;
+
+  bool showErrorBar = false;
+  String errorMessage = "";
 
   @override
   void initState() {
@@ -82,9 +86,32 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
     var getUser = await StorageService.getUser();
     var idUser = getUser['id'];
 
-    var resultSuccess = await ApiService.get('/order/event?id_user=$idUser&status=success&sort_by=terbaru');
-    var resultPending = await ApiService.get('/order/event?id_user=$idUser&status=pending&sort_by=terbaru');
-    var resultFail = await ApiService.get('/order/event?id_user=$idUser&status=fail&sort_by=terbaru');
+    var resultSuccess = await ApiService.get('/order/event?id_user=$idUser&status=success&sort_by=terbaru', xLanguage: langCode);
+    if (resultSuccess == null || resultSuccess['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultSuccess?['message'];
+      });
+      return;
+    }
+
+    var resultPending = await ApiService.get('/order/event?id_user=$idUser&status=pending&sort_by=terbaru', xLanguage: langCode);
+    if (resultPending == null || resultPending['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultPending?['message'];
+      });
+      return;
+    }
+
+    var resultFail = await ApiService.get('/order/event?id_user=$idUser&status=fail&sort_by=terbaru', xLanguage: langCode);
+    if (resultFail == null || resultFail['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFail?['message'];
+      });
+      return;
+    }
 
     var tempSuccess = resultSuccess?['data'];
     var tempPending = resultPending?['data'];
@@ -151,6 +178,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       });
     }
 
+    if (!mounted) return;
     setState(() {
       orderSuccess = tempSuccess;
       eventSukses = tempEventSukses;
@@ -162,55 +190,68 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       eventGagal = tempEventGagal;
 
       isLoading = false;
+      showErrorBar = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        
-        Material(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.red,
-            labelColor: Colors.red,
-            unselectedLabelColor: Colors.grey,
-            tabs: [
-              Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
-              Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
-              Tab(icon: Icon(Icons.close_rounded), text: orderGagal), //gagal
-            ],
-          ),
+        GlobalErrorBar(
+          visible: showErrorBar, 
+          message: errorMessage, 
+          onRetry: () {
+            _loadContent();
+          }
         ),
-        
-        Expanded(
-          child: Container(
-            color: Colors.white,
-            child: isLoading
-                ? _buildSkeletonLoader()
-                : TabBarView(
-              controller: _tabController,
-              physics: NeverScrollableScrollPhysics(),
-              children: [
 
-                orderSuccess.isNotEmpty
-                  ? EventSuccess(orderSuccess: orderSuccess, events: eventSukses,)
-                  : NoOrder(),
-
-                orderPending.isNotEmpty
-                  ? EventPending(orderPending: orderPending, events: eventPending)
-                  : NoOrder(),
-
-                orderFail.isNotEmpty
-                  ? EventFail(orderFail: orderFail, events: eventGagal)
-                  : NoOrder(),
-
-              ],
+        Column(
+          children: [
+            
+            Material(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.red,
+                labelColor: Colors.red,
+                unselectedLabelColor: Colors.grey,
+                tabs: [
+                  Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
+                  Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
+                  Tab(icon: Icon(Icons.close_rounded), text: orderGagal), //gagal
+                ],
+              ),
             ),
-          ) 
-        ),
+            
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: isLoading
+                    ? _buildSkeletonLoader()
+                    : TabBarView(
+                  controller: _tabController,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: [
+
+                    orderSuccess.isNotEmpty
+                      ? EventSuccess(orderSuccess: orderSuccess, events: eventSukses,)
+                      : NoOrder(),
+
+                    orderPending.isNotEmpty
+                      ? EventPending(orderPending: orderPending, events: eventPending)
+                      : NoOrder(),
+
+                    orderFail.isNotEmpty
+                      ? EventFail(orderFail: orderFail, events: eventGagal)
+                      : NoOrder(),
+
+                  ],
+                ),
+              ) 
+            ),
+          ],
+        )
       ],
     );
   }
@@ -218,7 +259,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
   Widget _buildSkeletonLoader() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: 5,
+      itemCount: 8,
       itemBuilder: (context, index) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -580,20 +621,20 @@ class _EventSuccessState extends State<EventSuccess> {
                           children: [
                             SizedBox(
                               width: 70,
-                              height: 70,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  itemEvents['banner'],
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    itemEvents['banner'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -612,7 +653,7 @@ class _EventSuccessState extends State<EventSuccess> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['text_vote']}"
+                                    "$qty ${bahasa['tiket']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -765,9 +806,8 @@ class _EventPendingState extends State<EventPending> {
       }
     });
   }
-
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> voteLang = {};
+  
+  Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -775,12 +815,10 @@ class _EventPendingState extends State<EventPending> {
       langCode = code;
     });
 
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = temppaymentLang;
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
 
       isLoading = false;
     });
@@ -911,19 +949,19 @@ class _EventPendingState extends State<EventPending> {
               var qty = item['qty'].toString();
               
               if (itemEvents['order_status'] == '0'){
-                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
+                statusOrder = bahasa['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemEvents['order_status'] == '1'){
-                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
+                statusOrder = bahasa['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemEvents['order_status'] == '2'){
-                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
+                statusOrder = bahasa['status_order_2'] ?? '-'; // 'batal';
               } else if (itemEvents['order_status'] == '3'){
-                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
+                statusOrder = bahasa['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemEvents['order_status'] == '4'){
-                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
+                statusOrder = bahasa['status_order_4'] ?? '-'; // 'refund';
               } else if (itemEvents['order_status'] == '20'){
-                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
+                statusOrder = bahasa['status_order_20'] ?? '-'; // 'expired';
               } else if (itemEvents['order_status'] == '404'){
-                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
+                statusOrder = bahasa['status_order_404'] ?? '-'; // 'hidden';
               }
 
               String? currencyRegion;
@@ -1038,20 +1076,20 @@ class _EventPendingState extends State<EventPending> {
                           children: [
                             SizedBox(
                               width: 70,
-                              height: 70,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  itemEvents['banner'],
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    itemEvents['banner'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -1070,12 +1108,12 @@ class _EventPendingState extends State<EventPending> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${voteLang['text_vote']}"
+                                    "$qty ${bahasa['tiket']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? voteLang['harga_detail'] ?? "" //'Gratis'
+                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
                                     : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1108,7 +1146,7 @@ class _EventPendingState extends State<EventPending> {
                                   alignment: Alignment.center,
                                   child: Text(
                                       //"Kembali ke Pembayaran",
-                                      voteLang['back_payment'] ?? "",
+                                      bahasa['back_payment'] ?? "",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: Colors.white,
@@ -1158,7 +1196,7 @@ class _EventPendingState extends State<EventPending> {
                   child: Center(
                     child: Text(
                       //"Tidak ada data lagi",
-                      voteLang['no_more'] ?? "",
+                      bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -1224,9 +1262,8 @@ class _EventFailState extends State<EventFail> {
       }
     });
   }
-
-  Map<String, dynamic> paymentLang = {};
-  Map<String, dynamic> voteLang = {};
+  
+  Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -1234,12 +1271,10 @@ class _EventFailState extends State<EventFail> {
       langCode = code;
     });
 
-    final temppaymentLang = await LangService.getJsonData(langCode!, "payment");
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
-      paymentLang = temppaymentLang;
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
 
       isLoading = false;
     });
@@ -1370,19 +1405,19 @@ class _EventFailState extends State<EventFail> {
               var qty = item['qty'].toString();
               
               if (itemEvents['order_status'] == '0'){
-                statusOrder = paymentLang['status_order_0'] ?? '-'; // 'gagal';
+                statusOrder = bahasa['status_order_0'] ?? '-'; // 'gagal';
               } else if (itemEvents['order_status'] == '1'){
-                statusOrder = paymentLang['status_order_1'] ?? '-'; // 'selesai';
+                statusOrder = bahasa['status_order_1'] ?? '-'; // 'selesai';
               } else if (itemEvents['order_status'] == '2'){
-                statusOrder = paymentLang['status_order_2'] ?? '-'; // 'batal';
+                statusOrder = bahasa['status_order_2'] ?? '-'; // 'batal';
               } else if (itemEvents['order_status'] == '3'){
-                statusOrder = paymentLang['status_order_3'] ?? '-'; // 'menunggu';
+                statusOrder = bahasa['status_order_3'] ?? '-'; // 'menunggu';
               } else if (itemEvents['order_status'] == '4'){
-                statusOrder = paymentLang['status_order_4'] ?? '-'; // 'refund';
+                statusOrder = bahasa['status_order_4'] ?? '-'; // 'refund';
               } else if (itemEvents['order_status'] == '20'){
-                statusOrder = paymentLang['status_order_20'] ?? '-'; // 'expired';
+                statusOrder = bahasa['status_order_20'] ?? '-'; // 'expired';
               } else if (itemEvents['order_status'] == '404'){
-                statusOrder = paymentLang['status_order_404'] ?? '-'; // 'hidden';
+                statusOrder = bahasa['status_order_404'] ?? '-'; // 'hidden';
               }
 
               var eventPrice = item['price'] ?? 0;
@@ -1446,7 +1481,7 @@ class _EventFailState extends State<EventFail> {
                                                       ? Colors.red.shade50
                                                       : (itemEvents['order_status'] == '20')
                                                         ? Colors.red.shade50
-                                                        : Colors.black,
+                                                        : Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: (itemEvents['order_status'] == '0')
@@ -1461,7 +1496,7 @@ class _EventFailState extends State<EventFail> {
                                                       ? Colors.red
                                                       : (itemEvents['order_status'] == '20')
                                                         ? Colors.red
-                                                        : Colors.black,
+                                                        : Colors.white,
                                   width: 1,
                                 ),
                               ),
@@ -1482,7 +1517,7 @@ class _EventFailState extends State<EventFail> {
                                                       ? Colors.red
                                                       : (itemEvents['order_status'] == '20')
                                                         ? Colors.red
-                                                        : Colors.black,),
+                                                        : Colors.white,),
                                   ),
                                 ],
                               ),
@@ -1499,20 +1534,20 @@ class _EventFailState extends State<EventFail> {
                           children: [
                             SizedBox(
                               width: 70,
-                              height: 70,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  itemEvents['banner'],
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    itemEvents['banner'] ?? '',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -1531,12 +1566,12 @@ class _EventFailState extends State<EventFail> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${voteLang['text_vote']}"
+                                    "$qty ${bahasa['tiket']}"
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     item['price'] == 0
-                                    ? voteLang['harga_detail'] ?? "" //'Gratis'
+                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
                                     : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
                                     style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
@@ -1572,7 +1607,7 @@ class _EventFailState extends State<EventFail> {
                                   alignment: Alignment.center,
                                   child: Text(
                                     // "Ulangi Pembelian",
-                                    voteLang['retry_payment'] ?? "",
+                                    bahasa['retry_payment'] ?? "",
                                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -1618,7 +1653,7 @@ class _EventFailState extends State<EventFail> {
                   child: Center(
                     child: Text(
                       //"Tidak ada data lagi",
-                      voteLang['no_more'] ?? "",
+                      bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),

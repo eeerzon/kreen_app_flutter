@@ -4,7 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis_paket.dart';
@@ -66,19 +67,37 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
   List<Map<String, dynamic>> paketTerbaik = [];
   List<Map<String, dynamic>> paketLainnya = [];
+  
+  bool showErrorBar = false;
+  String errorMessage = ''; 
 
   Future<void> _loadVotes() async {
 
     final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
+    if (resultVote == null || resultVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultVote?['message'];
+      });
+      return;
+    }
     final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode);
+    if (resultFinalis == null || resultFinalis['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFinalis?['message'];
+      });
+      return;
+    }
 
-    final tempVote = resultVote?['data'] ?? {};
-    final tempFinalis = resultFinalis?['data'] ?? [];
+    final tempVote = resultVote['data'] ?? {};
+    final tempFinalis = resultFinalis['data'] ?? [];
 
     final tempPaket = tempVote['vote_paket'];
     
     await _precacheAllImages(context, tempFinalis);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         vote = tempVote;
@@ -114,6 +133,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
               .toList();
         }
         _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -238,9 +258,19 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
   Future<void> _searchFinalis(String keyword) async {
     final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode);
+    if (result == null || result['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = result?['message'];
+      });
+      return;
+    }
+
+    if (!mounted) return;
     if (mounted) {
       setState(() {
-        finalis = result?['data'] ?? [];
+        finalis = result['data'] ?? [];
+        showErrorBar = false;
       });
     }
   }
@@ -252,10 +282,22 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenFinalis()
-    );
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenFinalis(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadVotes();
+            },
+          ),
+        ],
+      ),
+    ); 
   }
 
   Widget buildSkeletonHome() {
@@ -649,7 +691,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                           image: item['poster_finalis'],
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 300),
+                          fadeInDuration: const Duration(milliseconds: 200),
                           imageErrorBuilder: (context, error, stackTrace) {
                             return Image.network(
                               "$baseUrl/noimage_finalis.png",
@@ -663,7 +705,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                           image: "$baseUrl/noimage_finalis.png",
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 300),
+                          fadeInDuration: const Duration(milliseconds: 200),
                           imageErrorBuilder: (context, error, stackTrace) {
                             return Image.asset(
                               'assets/images/img_broken.jpg',

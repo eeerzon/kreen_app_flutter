@@ -46,6 +46,7 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
 
   late List<String> paramTime;
   late List<String> paramPrice;
+  late int paramPage = 1;
   
   @override
   void initState() {
@@ -95,12 +96,14 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
                   langCode!,
                   paramTime,
                   paramPrice,
+                  paramPage
                 );
 
                 if (result != null) {
                   setState(() {
                     paramTime = result['time']!;
                     paramPrice = result['price']!;
+                    paramPage = 1;
                   });
                   widget.onFilterApply(paramTime, paramPrice);
                 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_all.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_event.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_filter.dart';
@@ -23,8 +23,9 @@ class _ExplorePageState extends State<ExplorePage> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  List<String> timeFilter = ['this_week','this_month','next_month'];
-  List<String> priceFilter = ['free','paid'];
+  List<String> timeFilter = [];
+  List<String> priceFilter = [];
+  int pageFilter = 1;
 
 
   @override
@@ -60,16 +61,19 @@ class _ExplorePageState extends State<ExplorePage> {
         keyword: _keyword,
         timeFilter: timeFilter,
         priceFilter: priceFilter,
+        pageFilter: pageFilter,
       ),
       ExploreVote(
         keyword: _keyword,
         timeFilter: timeFilter,
         priceFilter: priceFilter,
+        pageFilter: pageFilter,
       ),
       ExploreEvent(
         keyword: _keyword,
         timeFilter: timeFilter,
         priceFilter: priceFilter,
+        pageFilter: pageFilter,
       ),
     ];
 

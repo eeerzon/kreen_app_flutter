@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -68,7 +68,7 @@ class _TentangPageState extends State<TentangPage> {
   
   @override
   Widget build(BuildContext context) {
-    return isLoading ? const Center(child: CircularProgressIndicator(color: Colors.red,),) : Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -85,7 +85,7 @@ class _TentangPageState extends State<TentangPage> {
         ),
       ),
 
-      body: SingleChildScrollView(
+      body: isLoading ? const Center(child: CircularProgressIndicator(color: Colors.red,),) : SingleChildScrollView(
         child: Padding(
           padding: kGlobalPadding,
           child: Column(

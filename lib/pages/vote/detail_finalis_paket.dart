@@ -5,12 +5,14 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
-import 'package:kreen_app_flutter/pages/vote/download_qr.dart';
+import 'package:kreen_app_flutter/helper/download_qr.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -64,6 +66,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   int countData = 0;
   num totalHargaPaket = 0;
+  
+  bool showErrorBar = false;
+  String errorMessage = ''; 
 
   @override
   void initState() {
@@ -84,15 +89,32 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   Future<void> _loadFinalis() async {
     
     final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode,);
-    final tempFinalis = resultFinalis?['data'] ?? {};
+    if (resultFinalis == null || resultFinalis['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFinalis?['message'];
+      });
+      return;
+    }
+
+    final tempFinalis = resultFinalis['data'] ?? {};
 
     final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
-    final tempDetailVote = resultDetailVote?['data'] ?? {};
+    if (resultDetailVote == null || resultDetailVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultDetailVote?['message'];
+      });
+      return;
+    }
+
+    final tempDetailVote = resultDetailVote['data'] ?? {};
 
     final tempPaket = tempDetailVote['vote_paket'];
 
     await _precacheAllImages(context, tempFinalis);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
@@ -157,6 +179,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         }
 
         _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -250,10 +273,22 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenDetail()
-    );
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenDetail(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadFinalis();
+            },
+          ),
+        ],
+      ),
+    ); 
   }
 
   Widget buildSkeletonHome() {
@@ -543,71 +578,72 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                             ),
                   
                             SizedBox(height: 30,),
-                            Container(
-                              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
-                              decoration: BoxDecoration(
-                                color: isTutup || widget.close_payment == '1'  ? Colors.grey : color,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                            Material(
+                              color: Colors.transparent,
                               child: InkWell(
                                 onTap: (isTutup || widget.close_payment == '1')
-                                ? null
-                                : () async {
-                  
-                                  final selectedQty = await PaketVoteModal.show(
-                                    context,
-                                    detailIndex,
-                                    paketTerbaik,
-                                    paketLainnya,
-                                    color,
-                                    bgColor,
-                                    id_paket!,
-                                    currencyCode ?? detailvote['currency']
-                                  );
-                  
-                                  if (selectedQty != null) {
-                                    setState(() {
-                                      counts = selectedQty['counts'];
-                                      harga_akhir = selectedQty['harga_akhir'];
-                                      if (currencyCode != null) {
-                                        harga_akhir_asli = selectedQty['harga_akhir_asli'];
-                                      } else {
-                                        harga_akhir_asli = selectedQty['harga_akhir'];
+                                  ? null
+                                  : () async {
+                                      final selectedQty = await PaketVoteModal.show(
+                                        context,
+                                        detailIndex,
+                                        paketTerbaik,
+                                        paketLainnya,
+                                        color,
+                                        bgColor,
+                                        id_paket,
+                                        currencyCode ?? detailvote['currency']
+                                      );
+                      
+                                      if (selectedQty != null) {
+                                        setState(() {
+                                          counts = selectedQty['counts'];
+                                          harga_akhir = selectedQty['harga_akhir'];
+                                          if (currencyCode != null) {
+                                            harga_akhir_asli = selectedQty['harga_akhir_asli'];
+                                          } else {
+                                            harga_akhir_asli = selectedQty['harga_akhir'];
+                                          }
+                                          id_paket = selectedQty['id_paket'];
+                                          totalHargaPaket = harga_akhir as num;
+                                          countData = selectedQty['count_data'];
+                                        });
                                       }
-                                      id_paket = selectedQty['id_paket'];
-                                      totalHargaPaket = harga_akhir as num;
-                                      countData = selectedQty['count_data'];
-                                    });
-                                  }
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        buttonText,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.white),
+                                    },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
+                                  decoration: BoxDecoration(
+                                    color: isTutup || widget.close_payment == '1'  ? Colors.grey : color,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          buttonText,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
                                       ),
-                                    ),
-                                    if (widget.close_payment != '1') ...[
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: Colors.white,
-                                        size: 15,
-                                      ),
+                                      if (widget.close_payment != '1') ...[
+                                        // SizedBox(width: 10),
+                                        Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: Colors.white,
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              )
+                              ),
                             ),
                           ],
                         ),
                       ),
                       if (detailFinalis['usia'] != 0 ||
                           (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
+                          (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
                   
                         SizedBox(height: 12,),
                         Container(
@@ -650,7 +686,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   ),
                                 ],
                     
-                                if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '') ... [
+                                if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
                                   SizedBox(height: 12,),
                                   Text(
                                     biographyText!,
@@ -694,6 +730,14 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   width: 100,
                                   height: 100,
                                   fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/images/img_broken.jpg',
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.contain,
+                                    );
+                                  },
                                 ),
                   
                                 SizedBox(height: 12,),
@@ -894,7 +938,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                     ),
                   ),
                   Text(
-                    "${bahasa['paket']} $counts\n$countData ${bahasa['finalis']}(s)",
+                    "${bahasa['paket']} $counts ${bahasa['text_vote']}(s)\n$countData ${bahasa['finalis']}(s)",
                     style: TextStyle(fontSize: 12),
                   ),
                 ],

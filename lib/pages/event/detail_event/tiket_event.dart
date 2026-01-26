@@ -9,12 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_form.dart';
 import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/snk_page.dart';
-import 'package:kreen_app_flutter/pages/event/detail_event/order_event_paid.dart';
+import 'package:kreen_app_flutter/pages/order/order_event_paid.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -73,6 +74,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
   String? nohpLabel, nohpHint, nohpError;
   String? cobaLagi;
   Map<String, dynamic> bahasa = {};
+
+  bool showErrorBar = false;
+  String errorMessage = '';
 
   bool isValidEmail(String email) {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
@@ -235,36 +239,50 @@ class _TiketEventPageState extends State<TiketEventPage> {
       "id_event": widget.id_event,
     };
 
-    final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body);
-    final List<dynamic> tempTiket = resultTiket?['data'] ?? [];
+    final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode);
+    if (resultTiket == null || resultTiket['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultTiket?['message'];
+      });
+      return;
+    }
+    final List<dynamic> tempTiket = resultTiket['data'] ?? [];
 
 
-    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode);
-    final Map<String, dynamic> tempEvent = resultEvent?['data'] ?? {};
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
+    if (resultEvent == null || resultEvent['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultEvent?['message'];
+      });
+      return;
+    }
+    final Map<String, dynamic> tempEvent = resultEvent['data'] ?? {};
 
     await _precacheAllImages(context, tempEvent);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         formTiket = tempTiket;
-        _isLoading = false;
 
         event = tempEvent;
         detailEvent = event['event'];
         eventTiket = event['event_ticket'];
-        
-      });
 
-      if (formTiket.isNotEmpty) {
-        setState(() {
+        if (formTiket.isNotEmpty) {
           ids_order_form_detail = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => ''),);
           ids_order_form_master = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => ''),);
           answers = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => ''),);
           answerControllers = List.generate(totalQty, (_) => List.generate(formTiket.length, (_) => TextEditingController()),);
 
           indikatorFocus = List.generate(formTiket.length, (_) => FocusNode());
-        });
-      }
+        }
+        
+        _isLoading = false;
+        showErrorBar = false;
+      });
     }
   }
 
@@ -296,9 +314,21 @@ class _TiketEventPageState extends State<TiketEventPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeleton()
-          : buildKonten()
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeleton()
+            : buildKonten(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadTiket();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -833,7 +863,18 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Image.network(item['icon'], width: 50, height: 50),
+                                          Image.network(
+                                            item['icon'], 
+                                            width: 50, 
+                                            height: 50,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 50,
+                                                width: 50,
+                                              );
+                                            },
+                                          ),
                                           const SizedBox(height: 8),
                                           Text(item['label']),
                                         ],
@@ -1009,7 +1050,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                           if (result != null && result.files.single.path != null) {
                                             final file = File(result.files.single.path!);
                                             final fileName = path.basename(file.path);
-                                            final resultUpload = await ApiService.postImage('/uploads/tmp', file: file);
+                                            final resultUpload = await ApiService.postImage('/uploads/tmp', file: file, xLanguage: langCode);
                                             final List<dynamic> tempData = resultUpload?['data'] ?? [];
                                             final storedFileName = tempData[0]['stored_as'];
 
@@ -1463,7 +1504,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
       // form tiket
       for (int j = 0; j < formTiket.length; j++) {
         if (formTiket[j]['required'] == 1 &&
-            answers[j].toString().trim().isEmpty) {
+            answers[i][j].toString().trim().isEmpty) {
           isValid = false;
           firstErrorFocus ??= indikatorFocus[j];
         }

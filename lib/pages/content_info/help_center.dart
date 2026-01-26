@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center_sub_category.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -27,6 +28,9 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   List<dynamic> popularFAQ = [];
   List<bool> openQuestion = [];
 
+  bool showErrorBar = false;
+  String errorMessage = '';
+
   @override
   void initState() {
     super.initState();
@@ -48,27 +52,56 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   }
 
   Future<void> _loadKonten() async {
-    final resultKategori = await ApiService.get("/helpcenter/categories");
-    final resultPopular = await ApiService.get("/helpcenter/popular-faqs");
+    final resultKategori = await ApiService.get("/helpcenter/categories", xLanguage: langCode);
+    if (resultKategori == null || resultKategori['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultKategori?['message'] ?? '';
+      });
+      return;
+    }
+
+    final resultPopular = await ApiService.get("/helpcenter/popular-faqs", xLanguage: langCode);
+    if (resultPopular == null || resultPopular['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultPopular?['message'] ?? '';
+      });
+      return;
+    }
     
     final tempKategori = resultKategori?['data'] ?? {};
     final tempPopular = resultPopular?['data'] ?? [];
 
+    if (!mounted) return;
     setState(() {
       kategori = tempKategori;
       popularFAQ = tempPopular;
 
       openQuestion = List<bool>.filled(popularFAQ.length, false);
       isLoading = false;
+      showErrorBar = false;
     });
   }
   
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: isLoading
-        ? _buildSkeleton()
-        : _buildKonten(),
+      body: Stack(
+        children: [
+          isLoading
+            ? _buildSkeleton()
+            : _buildKonten(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadKonten();
+            },
+          ),
+        ],
+      ), 
 
     );
   }

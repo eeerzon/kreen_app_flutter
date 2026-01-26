@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/services/session_manager.dart';
+import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'login_page.dart';
 import 'home_page.dart';

@@ -7,14 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
-import 'package:kreen_app_flutter/modal/payment/get_fee_new.dart';
+import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/snk_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
-import 'package:kreen_app_flutter/pages/vote/waiting_order_page.dart';
+import 'package:kreen_app_flutter/pages/order/waiting_order_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -103,8 +103,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   String? langCode, currencyCode, token;
   Map<String, dynamic> bahasa = {};
-  Map<String, dynamic> detailVoteLang = {};
-  Map<String, dynamic> eventLang = {};
   String? namaLengkapLabel, namaLengkapHint;
   String? phoneLabel, phoneHint;
   String? cobaLagi, emailHint;
@@ -132,6 +130,19 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   late List<FocusNode> indikatorFocus;
   double _genderOffset = 0;
 
+  bool isConfirmLoading = false;
+  List<dynamic> creditCard = [];
+  List<dynamic> virtualAkun = [];
+  List<dynamic> paymentBank = [];
+  List<dynamic> eWallet = [];
+  List<dynamic> retail = [];
+  List<dynamic> konter = [];
+  List<dynamic> qrCode = [];
+  List<dynamic> debit = [];
+
+  bool showErrorBar = false;
+  String errorMessage = '';
+
   bool isValidEmail(String email) {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return regex.hasMatch(email);
@@ -150,8 +161,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       await _getBahasa();
       await _getCurrency();
       await _checkToken();
-      await getData(widget.id_vote);
       await loadData();
+      await getData(widget.id_vote);
 
       user_id = widget.idUser;
     });
@@ -161,20 +172,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     _emailController = TextEditingController();
 
     indikatorFocus = List.generate(indikator.length, (_) => FocusNode());
-  }
-
-  Future<void> loadData() async {
-
-    answers = List.filled(indikator.length, '');
-    ids_indikator = List.filled(indikator.length, '');
-    answerControllers = List.generate(
-      indikator.length,
-      (index) => TextEditingController(),
-    );
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
   Future<void> _getBahasa() async {
@@ -200,6 +197,25 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     setState(() => currencyCode = currency);
   }
 
+  Future<void> _checkToken() async {
+    final storedToken = await StorageService.getToken();
+    if (mounted) {
+      setState(() {
+        token = storedToken;
+      });
+    }
+  }
+
+  Future<void> loadData() async {
+
+    answers = List.filled(indikator.length, '');
+    ids_indikator = List.filled(indikator.length, '');
+    answerControllers = List.generate(
+      indikator.length,
+      (index) => TextEditingController(),
+    );
+  }
+
   Future<void> getData(String idVote) async {
     final getUser = await StorageService.getUser();
 
@@ -219,23 +235,62 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     }
 
     final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
-    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods");
-
-    detailVote = detailResp?['data'] ?? {};
-    voteCurrency = detailVote['currency'];
-
-    payment = paymentResp?['data'] ?? {};
-
-    indikator = detailVote['indikator_vote'] ?? [];
-  }
-
-  Future<void> _checkToken() async {
-    final storedToken = await StorageService.getToken();
-    if (mounted) {
+    if (detailResp == null || detailResp['rc'] != 200) {
       setState(() {
-        token = storedToken;
+        showErrorBar = true;
+        errorMessage = detailResp?['message'];
       });
+      return;
     }
+
+    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods", xLanguage: langCode, xCurrency: currencyCode);
+    if (paymentResp == null || paymentResp['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = paymentResp?['message'];
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      detailVote = detailResp?['data'] ?? {};
+      voteCurrency = detailVote['currency'];
+
+      payment = paymentResp?['data'] ?? {};
+
+      indikator = detailVote['indikator_vote'] ?? [];
+      
+      creditCard = payment['Credit Card'] ?? [];
+      virtualAkun = payment['Virtual Account'] ?? [];
+      paymentBank = payment['Payment Bank'] ?? [];
+      eWallet = payment['E-Wallet'] ?? [];
+      retail = payment['Retail'] ?? [];
+      konter = payment['Counter'] ?? [];
+      qrCode = payment['QR Codes'] ?? [];
+      debit = payment['Direct Debit'] ?? [];
+
+      if (creditCard.isNotEmpty) {
+        creditCardClicked = true;
+      } else if (virtualAkun.isNotEmpty) {
+        virtualAkunClicked = true;
+      } else if (paymentBank.isNotEmpty) {
+        paymentBankClicked = true;
+      } else if (eWallet.isNotEmpty) {
+        eWalletClicked = true;
+      } else if (retail.isNotEmpty) {
+        retailClicked = true;
+      } else if (konter.isNotEmpty) {
+        konterClicked = true;
+      } else if (qrCode.isNotEmpty) {
+        qrCodeClicked = true;
+      } else if (debit.isNotEmpty) {
+        debitClicked = true;
+      }
+
+      isLoading = false;
+      showErrorBar = false;
+    });
   }
   
   @override
@@ -243,25 +298,32 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: isLoading 
-      ? const Center(child: CircularProgressIndicator(color: Colors.red,)) 
-      : AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: widget.flag_login == '1' 
-            ? token == null 
-              ? KeyedSubtree(
-                  key: const ValueKey('not-login'),
-                  child: getLoginUser(),
+      body: Stack(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: isLoading
+              ? const Center(
+                  key: ValueKey('loading'),
+                  child: CircularProgressIndicator(color: Colors.red),
                 )
-              : KeyedSubtree(
+              : widget.flag_login == '1' 
+                ? token == null 
+                  ? KeyedSubtree(
+                      key: const ValueKey('not-login'),
+                      child: getLoginUser(),
+                    )
+                  : KeyedSubtree(
+                      key: const ValueKey('logged-in'),
+                      child: kontenSection(),
+                    )
+                : KeyedSubtree(
                   key: const ValueKey('logged-in'),
                   child: kontenSection(),
-                )
-            : KeyedSubtree(
-                key: const ValueKey('logged-in'),
-                child: kontenSection(),
-              ),
-      ), 
+                ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -384,22 +446,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       _isEditing = false;
     });
 
-    void handleConfirm() async {
-      setState(() {
-        _showError = true;
-      });
-
-      final isValid = _validateAllForm();
-
-      for (var i = 0; i < indikator.length; i++) {
-        if (indikator[i]['type_form'] != 'file') {
-          answers[i] = answerControllers[i].text.trim();
-        }
-      }
-
-      if (!isValid) {
-        return;
-      }
+    Future<void> doConfirmProcess() async {
       
       final position = await getCurrentLocationWithValidation(context);
 
@@ -478,7 +525,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body);
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
+        if (resultVoteOrder == null || resultVoteOrder['rc'] != 200) {
+          setState(() {
+            showErrorBar = true;
+            errorMessage = resultVoteOrder?['message'];
+          });
+        }
 
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
@@ -589,7 +642,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body);
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
+        if (resultVoteOrder == null || resultVoteOrder['rc'] != 200) {
+          setState(() {
+            showErrorBar = true;
+            errorMessage = resultVoteOrder?['message'];
+          });
+        }
 
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
@@ -666,19 +725,44 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       } 
     }
 
+    void handleConfirm() async {
+      if (isConfirmLoading) return;
+
+      setState(() {
+        _showError = true;
+      });
+
+      final isValid = _validateAllForm();
+
+      for (var i = 0; i < indikator.length; i++) {
+        if (indikator[i]['type_form'] != 'file') {
+          answers[i] = answerControllers[i].text.trim();
+        }
+      }
+
+      if (!isValid) {
+        return;
+      }
+
+      setState(() {
+        isConfirmLoading = true;
+      });
+
+      try {
+        await doConfirmProcess(); 
+      } finally {
+        if (mounted) {
+          setState(() {
+            isConfirmLoading = false;
+          });
+        }
+      }
+    }
+
     final genders = [
       {'label': bahasa['gender_1'], 'icon': '$baseUrl/image/male.png'},
       {'label': bahasa['gender_2'], 'icon': '$baseUrl/image/female.png'},
     ];
-    
-    final creditCard = payment['Credit Card'] ?? [];
-    final virtualAkun = payment['Virtual Account'] ?? [];
-    final paymentBank = payment['Payment Bank'] ?? [];
-    final eWallet = payment['E-Wallet'] ?? [];
-    final retail = payment['Retail'] ?? [];
-    final konter = payment['Counter'] ?? [];
-    final qrCode = payment['QR Codes'] ?? [];
-    final debit = payment['Direct Debit'] ?? [];
 
     return Scaffold(
       bottomNavigationBar: BottomAppBar(
@@ -713,19 +797,31 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: InkWell(
-                    onTap: handleConfirm,
+                    onTap: isConfirmLoading ? null : handleConfirm,
                     child: Container(
                       height: 48,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: isConfirmLoading ? Colors.red.shade300 : Colors.red,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        bahasa['konfirmasi'],
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
+                      child: isConfirmLoading
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            bahasa['konfirmasi'],
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                     ),
                   ),
                 ),
@@ -875,7 +971,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             item['icon'] as String,
                                             width: 50,
                                             height: 50,
-                                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                width: 50,
+                                                height: 50,
+                                              );
+                                            },
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
@@ -935,7 +1037,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             enabledBorder: _border(_emailController.text.isNotEmpty),
                             focusedBorder: _border(true),
                             errorText: _emailTouched && !isValidEmail(_emailController.text)
-                              ? eventLang['error_email_1']
+                              ? bahasa['error_email_1']
                               : null,
                           ),
                         ),
@@ -944,7 +1046,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           Padding(
                             padding: EdgeInsets.only(top: 4),
                             child: Text(
-                              eventLang['error_email_3'],
+                              bahasa['error_email_3'],
                               style: TextStyle(color: Colors.red),
                             ),
                           ),
@@ -1035,7 +1137,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                   Padding(
                                     padding: EdgeInsets.only(top: 4),
                                     child: Text(
-                                      eventLang['error_email_3'],
+                                      bahasa['error_email_3'],
                                       style: TextStyle(color: Colors.red),
                                     ),
                                 )                    
@@ -1043,7 +1145,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(
-                                    eventLang['tiket_template_answer_error'],
+                                    bahasa['tiket_template_answer_error'],
                                     style: const TextStyle(color: Colors.red),
                                   ),
                                 )
@@ -3250,7 +3352,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         style: TextStyle(color: Colors.black),
                                         children: [
                                           TextSpan(text: bahasa['kebijakan_privasi_7']),
-                                          TextSpan(text: "$totalVotes ${detailVoteLang['text_vote']}", style: TextStyle(fontWeight: FontWeight.bold)),
+                                          TextSpan(text: "$totalVotes ${bahasa['text_vote']}", style: TextStyle(fontWeight: FontWeight.bold)),
                                           TextSpan(text: bahasa['kebijakan_privasi_8']),
                                           TextSpan(
                                               text: currencyCode == null

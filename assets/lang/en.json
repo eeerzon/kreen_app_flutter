@@ -340,6 +340,11 @@
     "time" : "Time",
     "this_week" : "This week",
     "this_month" : "This month",
-    "next_month" : "Next month"
+    "next_month" : "Next month",
+    "kembali" : "Back",
+
+    "timeout" : "Connection lost. Please try again later.",
+    "no_internet" : "No internet connection. Please try again later.",
+    "error" : "An error occurred. Please try again later."
   }
 }

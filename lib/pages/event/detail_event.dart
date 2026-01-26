@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/tiket_event.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/tiket_global.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
@@ -46,6 +47,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
   var customSection;
   List<dynamic> sections = [];
 
+  bool showErrorBar = false;
+  String errorMessage = '';
+
   @override
   void initState() {
     super.initState();
@@ -65,17 +69,27 @@ class _DetailEventPageState extends State<DetailEventPage> {
     };
 
     final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode);
-    final Map<String, dynamic> tempEvent = resultEvent?['data'] ?? {};
+    if (resultEvent == null || resultEvent['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultEvent?['message'];
+      });
+      return;
+    }
+    final Map<String, dynamic> tempEvent = resultEvent['data'] ?? {};
 
     await _precacheAllImages(context, tempEvent);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         event = tempEvent;
-        _isLoading = false;
 
         counts = List<int>.filled(event['event_ticket'].length, 0);
         selected_tiket = List.filled(event['event_ticket'].length, null);
+
+        _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -133,9 +147,21 @@ class _DetailEventPageState extends State<DetailEventPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: _isLoading
-          ? buildSkeleton()
-          : buildKontenEvent()
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeleton()
+            : buildKontenEvent(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadEvent();
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -581,7 +607,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                           image: detailEvent['img_organizer'],
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          fadeInDuration: const Duration(milliseconds: 300),
+                          fadeInDuration: const Duration(milliseconds: 200),
                           imageErrorBuilder: (context, error, stackTrace) {
                             return Image.asset(
                               'assets/images/img_broken.jpg',
@@ -1046,11 +1072,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1135,11 +1161,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1224,11 +1250,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1311,11 +1337,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1394,11 +1420,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1477,11 +1503,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1559,11 +1585,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1649,11 +1675,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 height: 50,
                                                 fit: BoxFit.contain,
                                                 errorBuilder: (context, error, stackTrace) {
-                                                  return Image.network(
-                                                    "$baseUrl/image/null.png",
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
                                                     width: 50,
                                                     height: 50,
-                                                    fit: BoxFit.fill,
                                                   );
                                                 },
                                               ),
@@ -1737,13 +1763,13 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                   item['img'],
                                                   width: 50,
                                                   height: 50,
-                                                  fit: BoxFit.cover,
+                                                  fit: BoxFit.contain,
                                                   errorBuilder: (context, error, stackTrace) {
-                                                    return Image.network(
-                                                      "$baseUrl/image/null.png",
+                                                    return Image.asset(
+                                                      'assets/images/img_broken.jpg',
+                                                      fit: BoxFit.contain,
                                                       width: 50,
                                                       height: 50,
-                                                      fit: BoxFit.cover,
                                                     );
                                                   },
                                                 ),
@@ -1833,7 +1859,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         final bool belumBuka = DateTime.now().isBefore(dateOpenTiket);
 
                         final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
-                        final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0;
+                        final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0 || item['sisa_stok'] < 0;
 
                         return Padding(
                           padding: EdgeInsets.only(bottom: 25),
@@ -2003,9 +2029,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         Text(
-                                          detailEvent['show_tickets_available'] == 1 ?
-                                          '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
-                                          : '',
+                                          detailEvent['show_tickets_available'] == 1 
+                                            ? '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
+                                            : '',
                                           style: TextStyle(color: Colors.grey),
                                         )
                                       ],

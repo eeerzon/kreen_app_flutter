@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 
 class ModalFilter {
@@ -10,6 +10,7 @@ class ModalFilter {
     String langCode,
     List<String> initialTime,
     List<String> initialPrice,
+    int ititialPage,
   ) async {
 
     // copy agar tidak langsung mutate parent sebelum OK
@@ -76,7 +77,10 @@ class ModalFilter {
 
                     Divider(),
 
-                    Text(bahasa['time'], style: TextStyle(fontWeight: FontWeight.bold)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(bahasa['time'], style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
                     Column(
                       children: timeLabels.keys.map((key) {
                         return InkWell(
@@ -88,6 +92,7 @@ class ModalFilter {
                               Checkbox(
                                 value: paramTime.contains(key),
                                 onChanged: (_) => toggleTime(key, setState),
+                                activeColor: Colors.red,
                               ),
                             ],
                           ),
@@ -97,7 +102,10 @@ class ModalFilter {
 
                     Divider(),
 
-                    Text(bahasa['harga'], style: TextStyle(fontWeight: FontWeight.bold)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(bahasa['harga'], style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
                     Column(
                       children: priceLabels.keys.map((key) {
                         return InkWell(
@@ -109,6 +117,7 @@ class ModalFilter {
                               Checkbox(
                                 value: paramPrice.contains(key),
                                 onChanged: (_) => togglePrice(key, setState),
+                                activeColor: Colors.red,
                               ),
                             ],
                           ),

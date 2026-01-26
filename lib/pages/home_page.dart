@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/modal/checking_user_modal.dart';
 import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
@@ -10,7 +11,7 @@ import 'package:kreen_app_flutter/pages/content_home/info_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/order_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/scan_page.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
-import 'package:kreen_app_flutter/services/session_manager.dart';
+import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class HomePage extends StatefulWidget {
@@ -58,6 +59,7 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _checkToken();
+      await getCurrentLocationWithValidation(context);();
     });
   }
 

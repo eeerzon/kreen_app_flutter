@@ -146,8 +146,12 @@ class _SponsorRow extends StatelessWidget {
               child: Image.network(
                 item['src'],
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.broken_image),
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/images/img_broken.jpg',
+                    fit: BoxFit.contain,
+                  );
+                },
               ),
             ),
           );

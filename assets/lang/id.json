@@ -340,6 +340,11 @@
     "time" : "Waktu",
     "this_week" : "Minggu ini",
     "this_month" : "Bulan ini",
-    "next_month" : "Bulan depan"
+    "next_month" : "Bulan depan",
+    "kembali" : "Kembali",
+
+    "timeout" : "Koneksi terputus. Silakan coba lagi nanti.",
+    "no_internet" : "Tidak ada koneksi internet. Silakan coba lagi nanti.",
+    "error" : "Terjadi kesalahan. Silakan coba lagi nanti."
   }
 }

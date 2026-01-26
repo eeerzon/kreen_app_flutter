@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -26,6 +27,9 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
   List<bool> openSubKategori = [];
   Map<int, List<bool>> openQuestion = {};
 
+  bool showErrorBar = false;
+  String errorMessage = '';
+
   @override
   void initState() {
     super.initState();
@@ -46,21 +50,30 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
   }
 
   Future<void> _loadKonten() async {
-    final resultSubKategori = await ApiService.get("/helpcenter/sub-categories/${widget.idKategori}");
+    final resultSubKategori = await ApiService.get("/helpcenter/sub-categories/${widget.idKategori}", xLanguage: langCode);
+    if (resultSubKategori == null || resultSubKategori['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultSubKategori?['message'];
+      });
+      return;
+    }
     
     final tempSubKategori = resultSubKategori?['data'] ?? {};
 
+    if (!mounted) return;
     setState(() {
       subKategori = tempSubKategori;
 
       openSubKategori = List<bool>.filled(subKategori.length, false);
       isLoading = false;
+      showErrorBar = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return isLoading ? const Center(child: CircularProgressIndicator(color: Colors.red,),) : Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -77,146 +90,160 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
         ),
       ),
 
-      body: SingleChildScrollView(
-        child: Container(
-          color: Colors.white,
-          padding: kGlobalPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.nameKategori,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              SizedBox(height: 16),
-              ...subKategori.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-
-                return Container(
-                  padding: EdgeInsets.all(16),
-                  margin: EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
+      body: Stack(
+        children: [
+          isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.red,),)
+            : SingleChildScrollView(
+                child: Container(
+                  color: Colors.white,
+                  padding: kGlobalPadding,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              langCode == 'en'
-                                ? item['en_name']
-                                : item['name'],
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(width: 10,),
-                          GestureDetector(
-                            onTap: () async {
-                              final idSubKategori = item['id'];
-                              // openSubKategori[index] = !openSubKategori[index];
-                              for (int i = 0; i < openSubKategori.length; i++) {
-                                openSubKategori[i] = i == index
-                                    ? !openSubKategori[i] // toggle yang diklik
-                                    : false; // lainnya ditutup
-                              }
-
-                              if (!questionsBySub.containsKey(index)) {
-                                final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori");
-
-                                questionsBySub[index] = resultQuestion?['data'] ?? [];
-                              }
-                              setState(() {
-                                openQuestion[index] = List<bool>.filled(questionsBySub[index]!.length, false);
-                              });
-                            },
-                            child: !openSubKategori[index]
-                            ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
-                            : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
-                          )
-                        ],
+                      Text(
+                        widget.nameKategori,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
 
-                      if (openSubKategori[index]) ...[
-                        SizedBox(height: 16),
-                        ...questionsBySub[index]!.map((q) {
-                          final indexx = questionsBySub[index]!.indexOf(q);
-                          final title = (langCode == 'en' ? q['en_title'] : q['title'])
-                            ?.toString()
-                            .replaceAll('\n', ' ')
-                            .trim() ?? '';
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        title,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        )
-                                      ),
-                                    ),
+                      SizedBox(height: 16),
+                      ...subKategori.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
 
-                                    SizedBox(width: 10,),
-                                    GestureDetector(
-                                      onTap: () {
-                                        openQuestion[index]![indexx] = !openQuestion[index]![indexx];
-                                        setState(() {});
-                                      },
-                                      child: !openQuestion[index]![indexx]
-                                        ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
-                                        : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                        return Container(
+                          padding: EdgeInsets.all(16),
+                          margin: EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300,),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      langCode == 'en'
+                                        ? item['en_name']
+                                        : item['name'],
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                
-                                if (openQuestion[index]![indexx]) ...[
-                                  SizedBox(height: 6),
-                                  Html(
-                                    data: langCode == 'en'
-                                      ? q['en_content']
-                                      : q['content'],
-                                    style: {
-                                      "p": Style(
-                                        margin: Margins.zero,
-                                      ),
-                                      "body": Style(
-                                        margin: Margins.zero,
-                                      ),
-                                    },
                                   ),
+
+                                  SizedBox(width: 10,),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final idSubKategori = item['id'];
+                                      // openSubKategori[index] = !openSubKategori[index];
+                                      for (int i = 0; i < openSubKategori.length; i++) {
+                                        openSubKategori[i] = i == index
+                                            ? !openSubKategori[i] // toggle yang diklik
+                                            : false; // lainnya ditutup
+                                      }
+
+                                      if (!questionsBySub.containsKey(index)) {
+                                        final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori");
+
+                                        questionsBySub[index] = resultQuestion?['data'] ?? [];
+                                      }
+                                      setState(() {
+                                        openQuestion[index] = List<bool>.filled(questionsBySub[index]!.length, false);
+                                      });
+                                    },
+                                    child: !openSubKategori[index]
+                                    ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
+                                    : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                                  )
                                 ],
-                              ],
-                            ),
-                          );
-                        })
-                      ]
+                              ),
+
+                              if (openSubKategori[index]) ...[
+                                SizedBox(height: 16),
+                                ...questionsBySub[index]!.map((q) {
+                                  final indexx = questionsBySub[index]!.indexOf(q);
+                                  final title = (langCode == 'en' ? q['en_title'] : q['title'])
+                                    ?.toString()
+                                    .replaceAll('\n', ' ')
+                                    .trim() ?? '';
+                                  return Padding(
+                                    padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                title,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                )
+                                              ),
+                                            ),
+
+                                            SizedBox(width: 10,),
+                                            GestureDetector(
+                                              onTap: () {
+                                                openQuestion[index]![indexx] = !openQuestion[index]![indexx];
+                                                setState(() {});
+                                              },
+                                              child: !openQuestion[index]![indexx]
+                                                ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
+                                                : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                                            ),
+                                          ],
+                                        ),
+                                        
+                                        if (openQuestion[index]![indexx]) ...[
+                                          SizedBox(height: 6),
+                                          Html(
+                                            data: langCode == 'en'
+                                              ? q['en_content']
+                                              : q['content'],
+                                            style: {
+                                              "p": Style(
+                                                margin: Margins.zero,
+                                              ),
+                                              "body": Style(
+                                                margin: Margins.zero,
+                                              ),
+                                            },
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  );
+                                })
+                              ]
+                            ],
+                          ),
+                        );
+                      })
                     ],
                   ),
-                );
-              })
-            ],
+                ),
+              ),
+
+          GlobalErrorBar(
+            visible: showErrorBar, 
+            message: errorMessage, 
+            onRetry: () {
+              _loadKonten();
+            }
           ),
-        ),
-      ),
+        ],
+      ), 
     );
   }
 }

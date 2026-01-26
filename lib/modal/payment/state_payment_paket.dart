@@ -8,14 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
-import 'package:kreen_app_flutter/modal/payment/get_fee_new.dart';
+import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/snk_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
-import 'package:kreen_app_flutter/pages/vote/waiting_order_page.dart';
+import 'package:kreen_app_flutter/pages/order/waiting_order_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -130,6 +130,19 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   late List<FocusNode> indikatorFocus;
   double _genderOffset = 0;
 
+  bool isConfirmLoading = false;
+  List<dynamic> creditCard = [];
+  List<dynamic> virtualAkun = [];
+  List<dynamic> paymentBank = [];
+  List<dynamic> eWallet = [];
+  List<dynamic> retail = [];
+  List<dynamic> konter = [];
+  List<dynamic> qrCode = [];
+  List<dynamic> debit = [];
+
+  bool showErrorBar = false;
+  String errorMessage = '';
+
   bool isValidEmail(String email) {
     final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return regex.hasMatch(email);
@@ -148,8 +161,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       await _getBahasa();
       await _getCurrency();
       await _checkToken();
-      await getData(widget.id_vote);
       await loadData();
+      await getData(widget.id_vote);
 
       user_id = widget.idUser;
     });
@@ -159,20 +172,6 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     _emailController = TextEditingController();
 
     indikatorFocus = List.generate(indikator.length, (_) => FocusNode());
-  }
-
-  Future<void> loadData() async {
-
-    answers = List.filled(indikator.length, '');
-    ids_indikator = List.filled(indikator.length, '');
-    answerControllers = List.generate(
-      indikator.length,
-      (index) => TextEditingController(),
-    );
-
-    setState(() {
-      isLoading = false;
-    });
   }
 
   Future<void> _getBahasa() async {
@@ -198,6 +197,25 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     setState(() => currencyCode = currency);
   }
 
+  Future<void> _checkToken() async {
+    final storedToken = await StorageService.getToken();
+    if (mounted) {
+      setState(() {
+        token = storedToken;
+      });
+    }
+  }
+
+  Future<void> loadData() async {
+
+    answers = List.filled(indikator.length, '');
+    ids_indikator = List.filled(indikator.length, '');
+    answerControllers = List.generate(
+      indikator.length,
+      (index) => TextEditingController(),
+    );
+  }
+
   Future<void> getData(String idVote) async {
     final getUser = await StorageService.getUser();
 
@@ -216,53 +234,100 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       selectedGender = gender.toLowerCase() == 'male' ? bahasa['gender_1'] : bahasa['gender_2'];
     }
 
-    final detailResp = await ApiService.get("/vote/$idVote");
-    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods");
+    final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
+    if (detailResp == null || detailResp['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = detailResp?['message'];
+      });
+      return;
+    }
 
-    detailVote = detailResp?['data'] ?? {};
-    voteCurrency = detailVote['currency'];
+    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods", xLanguage: langCode, xCurrency: currencyCode);
+    if (paymentResp == null || paymentResp['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = paymentResp?['message'];
+      });
+      return;
+    }
 
-    payment = paymentResp?['data'] ?? {};
+    if (!mounted) return;
+    setState(() {
+      detailVote = detailResp?['data'] ?? {};
+      voteCurrency = detailVote['currency'];
 
-    indikator = detailVote['indikator_vote'] ?? [];
+      payment = paymentResp?['data'] ?? {};
+
+      indikator = detailVote['indikator_vote'] ?? [];
+      
+      creditCard = payment['Credit Card'] ?? [];
+      virtualAkun = payment['Virtual Account'] ?? [];
+      paymentBank = payment['Payment Bank'] ?? [];
+      eWallet = payment['E-Wallet'] ?? [];
+      retail = payment['Retail'] ?? [];
+      konter = payment['Counter'] ?? [];
+      qrCode = payment['QR Codes'] ?? [];
+      debit = payment['Direct Debit'] ?? [];
+
+      if (creditCard.isNotEmpty) {
+        creditCardClicked = true;
+      } else if (virtualAkun.isNotEmpty) {
+        virtualAkunClicked = true;
+      } else if (paymentBank.isNotEmpty) {
+        paymentBankClicked = true;
+      } else if (eWallet.isNotEmpty) {
+        eWalletClicked = true;
+      } else if (retail.isNotEmpty) {
+        retailClicked = true;
+      } else if (konter.isNotEmpty) {
+        konterClicked = true;
+      } else if (qrCode.isNotEmpty) {
+        qrCodeClicked = true;
+      } else if (debit.isNotEmpty) {
+        debitClicked = true;
+      }
+
+      isLoading = false;
+      showErrorBar = false;
+    });
   }
 
   double ceil2(num value) {
     return (value * 100).ceil() / 100;
-  }
-
-  Future<void> _checkToken() async {
-    final storedToken = await StorageService.getToken();
-    if (mounted) {
-      setState(() {
-        token = storedToken;
-      });
-    }
   }
   
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: isLoading 
-      ? const Center(child: CircularProgressIndicator(color: Colors.red,)) 
-      : AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: widget.flag_login == '1' 
-            ? token == null 
-              ? KeyedSubtree(
-                  key: const ValueKey('not-login'),
-                  child: getLoginUser(),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: isLoading
+              ? const Center(
+                  key: ValueKey('loading'),
+                  child: CircularProgressIndicator(color: Colors.red),
                 )
-              : KeyedSubtree(
+              : widget.flag_login == '1' 
+                ? token == null 
+                  ? KeyedSubtree(
+                      key: const ValueKey('not-login'),
+                      child: getLoginUser(),
+                    )
+                  : KeyedSubtree(
+                      key: const ValueKey('logged-in'),
+                      child: kontenSection(),
+                    )
+                : KeyedSubtree(
                   key: const ValueKey('logged-in'),
                   child: kontenSection(),
-                )
-            : KeyedSubtree(
-                key: const ValueKey('logged-in'),
-                child: kontenSection(),
-              ),
-      ), 
+                ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -385,22 +450,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       _isEditing = false;
     });
 
-    void handleConfirm() async {
-      setState(() {
-        _showError = true;
-      });
-
-      final isValid = _validateAllForm();
-
-      for (var i = 0; i < indikator.length; i++) {
-        if (indikator[i]['type_form'] != 'file') {
-          answers[i] = answerControllers[i].text.trim();
-        }
-      }
-
-      if (!isValid) {
-        return;
-      }
+    Future<void> doConfirmProcess() async {
 
       final position = await getCurrentLocationWithValidation(context);
 
@@ -479,7 +529,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body);
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
+        if (resultVoteOrder == null || resultVoteOrder['rc'] != 200) {
+          setState(() {
+            showErrorBar = true;
+            errorMessage = resultVoteOrder?['message'];
+          });
+        }
 
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
@@ -590,8 +646,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body);
-
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
+        if (resultVoteOrder == null || resultVoteOrder['rc'] != 200) {
+          setState(() {
+            showErrorBar = true;
+            errorMessage = resultVoteOrder?['message'];
+          });
+        }
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
             final tempOrder = resultVoteOrder['data'];
@@ -667,19 +728,44 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       }
     }
 
+    void handleConfirm() async {
+      if (isConfirmLoading) return;
+
+      setState(() {
+        _showError = true;
+      });
+
+      final isValid = _validateAllForm();
+
+      for (var i = 0; i < indikator.length; i++) {
+        if (indikator[i]['type_form'] != 'file') {
+          answers[i] = answerControllers[i].text.trim();
+        }
+      }
+
+      if (!isValid) {
+        return;
+      }
+
+      setState(() {
+        isConfirmLoading = true;
+      });
+
+      try {
+        await doConfirmProcess(); 
+      } finally {
+        if (mounted) {
+          setState(() {
+            isConfirmLoading = false;
+          });
+        }
+      }
+    }
+
     final genders = [
       {'label': bahasa['gender_1'], 'icon': '$baseUrl/image/male.png'},
       {'label': bahasa['gender_2'], 'icon': '$baseUrl/image/female.png'},
     ];
-    
-    final creditCard = payment['Credit Card'] ?? [];
-    final virtualAkun = payment['Virtual Account'] ?? [];
-    final paymentBank = payment['Payment Bank'] ?? [];
-    final eWallet = payment['E-Wallet'] ?? [];
-    final retail = payment['Retail'] ?? [];
-    final konter = payment['Counter'] ?? [];
-    final qrCode = payment['QR Codes'] ?? [];
-    final debit = payment['Direct Debit'] ?? [];
 
     return Scaffold(
       bottomNavigationBar: BottomAppBar(
@@ -714,19 +800,31 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: InkWell(
-                    onTap: handleConfirm,
+                    onTap: isConfirmLoading ? null : handleConfirm,
                     child: Container(
                       height: 48,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: isConfirmLoading ? Colors.red.shade300 : Colors.red,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        bahasa['konfirmasi'],
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
+                      child: isConfirmLoading
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            bahasa['konfirmasi'],
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                     ),
                   ),
                 ),
@@ -876,7 +974,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             item['icon'] as String,
                                             width: 50,
                                             height: 50,
-                                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                width: 50,
+                                                height: 50,
+                                              );
+                                            },
                                           ),
                                           const SizedBox(height: 8),
                                           Text(

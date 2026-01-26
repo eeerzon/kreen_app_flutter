@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -18,6 +19,9 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
   Map<String, dynamic> bahasa = {};
   List<dynamic> infoKonten = [];
+
+  bool showErrorBar = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -39,10 +43,20 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   }
 
   Future<void> _loadKonten() async {
-    final resultInformasi = await ApiService.get("/information?code=pp");
+    final resultInformasi = await ApiService.get("/information?code=pp", xLanguage: langCode);
+    if (resultInformasi == null || resultInformasi['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultInformasi?['message'];
+      });
+      return;
+    }
+
+    if (!mounted) return;
     setState(() {
       infoKonten = resultInformasi?['data'] ?? [];
       isLoading = false;
+      showErrorBar = false;
     });
   }
 
@@ -65,16 +79,30 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         ),
       ),
 
-      body: isLoading ? const Center(child: CircularProgressIndicator(color: Colors.red,),) :  SingleChildScrollView(
-        child: Container(
-          color: Colors.white,
-          padding: kGlobalPadding,
-          child: Html(
-            data: langCode == 'en'
-              ? infoKonten[0]['en_content']
-              : infoKonten[0]['content'],
-          ),
-        ),
+      body: Stack(
+        children: [
+          isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.red,))
+            : SingleChildScrollView(
+                child: Container(
+                  color: Colors.white,
+                  padding: kGlobalPadding,
+                  child: Html(
+                    data: langCode == 'en'
+                      ? infoKonten[0]['en_content']
+                      : infoKonten[0]['content'],
+                  ),
+                ),
+              ),
+
+          GlobalErrorBar(
+            visible: showErrorBar, 
+            message: errorMessage, 
+            onRetry: () {
+              _loadKonten();
+            }
+          )
+        ],
       ),
     );
   }

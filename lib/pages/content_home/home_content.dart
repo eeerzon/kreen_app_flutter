@@ -1,11 +1,12 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote.dart';
@@ -15,8 +16,8 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
-import 'package:kreen_app_flutter/widgets/article_webview.dart';
-import 'package:kreen_app_flutter/widgets/auto_play_carousel.dart';
+import 'package:kreen_app_flutter/helper/article_webview.dart';
+import 'package:kreen_app_flutter/helper/auto_play_carousel.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeContent extends StatefulWidget {
@@ -52,6 +53,9 @@ class _HomeContentState extends State<HomeContent> {
   String? seeMore;
 
   bool isLoadingContent = true;
+  
+  bool showErrorBar = false;
+  String errorMessage = ''; 
 
   @override
   void initState() {
@@ -66,11 +70,11 @@ class _HomeContentState extends State<HomeContent> {
 
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
-    if (mounted) {
-      setState(() {
-        token = storedToken;
-      });
-    }
+
+    if (!mounted) return;
+    setState(() {
+      token = storedToken;
+    });
   }
 
   Future<void> _getBahasa() async {
@@ -131,23 +135,76 @@ class _HomeContentState extends State<HomeContent> {
 
   Future<void> _loadContent() async {
 
-    _checkToken();
+    await _checkToken();
 
     var get_user = await StorageService.getUser();
     first_name = get_user['first_name'];
 
-    final resultbanner = await ApiService.get("/setting-banner/active");
-    final resultVote = await ApiService.get("/vote/popular", xCurrency: currencyCode);
-    final resultJuara = await ApiService.get("/vote/juara");
-    final resulthitEvent = await ApiService.get("/event/hits", xCurrency: currencyCode);
-    final resultlatestVote = await ApiService.get("/vote/latest", xCurrency: currencyCode);
-    final resultrecomenEvent = await ApiService.get("/event/recommended", xCurrency: currencyCode);
-    final resultArtikel = await ApiService.get("/articles?limit=8");
+    final resultbanner = await ApiService.get("/setting-banner/active", xLanguage: langCode);
+    if (resultbanner == null || resultbanner['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultbanner?['message'];
+      });
+      return;
+    }
 
-    if (!mounted) return;
+    final resultVote = await ApiService.get("/vote/popular", xCurrency: currencyCode, xLanguage: langCode);
+    if (resultVote == null || resultVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultVote?['message'];
+      });
+      return;
+    }
+
+    final resultJuara = await ApiService.get("/vote/juara", xLanguage: langCode);
+    if (resultJuara == null || resultJuara['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultJuara?['message'];
+      });
+      return;
+    }
+
+    final resulthitEvent = await ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode);
+    if (resulthitEvent == null || resulthitEvent['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resulthitEvent?['message'];
+      });
+      return;
+    }
+
+    final resultlatestVote = await ApiService.get("/vote/latest", xCurrency: currencyCode, xLanguage: langCode);
+    if (resultlatestVote == null || resultlatestVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultlatestVote?['message'];
+      });
+      return;
+    }
+
+    final resultrecomenEvent = await ApiService.get("/event/recommended", xCurrency: currencyCode, xLanguage: langCode);
+    if (resultrecomenEvent == null || resultrecomenEvent['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultrecomenEvent?['message'];
+      });
+      return;
+    }
+
+    final resultArtikel = await ApiService.get("/articles?limit=8", xLanguage: langCode);
+    if (resultArtikel == null || resultArtikel['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultArtikel?['message'];
+      });
+      return;
+    }
 
     final now = DateTime.now();
-    final allBanners = resultbanner?['data'] as List<dynamic>? ?? [];
+    final allBanners = resultbanner['data'] as List<dynamic>? ?? [];
 
     final filtered = allBanners.where((banner) {
       final takedownDateStr = banner['takedown_date']?.toString();
@@ -160,9 +217,9 @@ class _HomeContentState extends State<HomeContent> {
     }).toList();
 
     final tempActiveBanners = filtered;
-    final tempVotes = resultVote?['data'] ?? [];
+    final tempVotes = resultVote['data'] ?? [];
     
-    final rawData = resultJuara?['data'];
+    final rawData = resultJuara['data'];
 
     List<dynamic> tempJuara = [];
 
@@ -172,13 +229,14 @@ class _HomeContentState extends State<HomeContent> {
       tempJuara = rawData;
     }
 
-    final tempHitsevent = resulthitEvent?['data'] ?? [];
-    final tempLatestVotes = resultlatestVote?['data'] ?? [];
-    final tempRecomenEvent = resultrecomenEvent?['data'] ?? [];
-    final tempListArtikel = resultArtikel?['data'] ?? [];
+    final tempHitsevent = resulthitEvent['data'] ?? [];
+    final tempLatestVotes = resultlatestVote['data'] ?? [];
+    final tempRecomenEvent = resultrecomenEvent['data'] ?? [];
+    final tempListArtikel = resultArtikel['data'] ?? [];
     
     await _precacheAllImages(context, tempActiveBanners, tempVotes);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
 
@@ -194,6 +252,7 @@ class _HomeContentState extends State<HomeContent> {
 
         preloadImageSizes();
         isLoadingContent = false;
+        showErrorBar = false;
       });
     }
   }
@@ -245,9 +304,21 @@ class _HomeContentState extends State<HomeContent> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: isLoadingContent
-          ? buildSkeletonHome()
-          : buildKontenHome()
+      body: Stack(
+        children: [
+          isLoadingContent
+            ? buildSkeletonHome()
+            : buildKontenHome(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadContent();
+            },
+          ),
+        ],
+      ),
     ); 
   }
 
@@ -665,6 +736,14 @@ class _HomeContentState extends State<HomeContent> {
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.contain,
+                                  width: 30,
+                                  height: 30,
+                                );
+                              },
                             ),
 
                             const SizedBox(width: 12),
@@ -792,19 +871,22 @@ class _HomeContentState extends State<HomeContent> {
                                             child: AspectRatio(
                                               aspectRatio: 4 / 5,
                                               child: img.isNotEmpty
-                                                ? FadeInImage.assetNetwork(
-                                                    placeholder: 'assets/images/img_placeholder.jpg',
-                                                    image: img,
-                                                    width: double.infinity,
+                                                ? Image.network(
+                                                    img,
                                                     fit: BoxFit.cover,
-                                                    fadeInDuration: const Duration(milliseconds: 300),
-                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                                      aspectRatio: 4 / 5,
-                                                      child: Image.asset(
+                                                    loadingBuilder: (context, child, loadingProgress) {
+                                                      if (loadingProgress == null) return child;
+                                                      return Image.asset(
+                                                        'assets/images/img_placeholder.jpg',
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    },
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Image.asset(
                                                         'assets/images/img_broken.jpg',
                                                         fit: BoxFit.cover,
-                                                      ),
-                                                    ),
+                                                      );
+                                                    },
                                                   )
                                                 : Image.asset(
                                                     'assets/images/img_broken.jpg',
@@ -892,6 +974,14 @@ class _HomeContentState extends State<HomeContent> {
                               width: 30,   // atur sesuai kebutuhan
                               height: 30,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.contain,
+                                  width: 30,
+                                  height: 30,
+                                );
+                              },
                             ),
 
                             // SvgPicture.network(
@@ -1017,19 +1107,22 @@ class _HomeContentState extends State<HomeContent> {
                                             child: AspectRatio(
                                               aspectRatio: 4 / 5,
                                               child: img.isNotEmpty
-                                                ? FadeInImage.assetNetwork(
-                                                    placeholder: 'assets/images/img_placeholder.jpg',
-                                                    image: img,
-                                                    width: double.infinity,
+                                                ? Image.network(
+                                                    img,
                                                     fit: BoxFit.cover,
-                                                    fadeInDuration: const Duration(milliseconds: 300),
-                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                                      aspectRatio: 4 / 5,
-                                                      child: Image.asset(
+                                                    loadingBuilder: (context, child, loadingProgress) {
+                                                      if (loadingProgress == null) return child;
+                                                      return Image.asset(
+                                                        'assets/images/img_placeholder.jpg',
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    },
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Image.asset(
                                                         'assets/images/img_broken.jpg',
                                                         fit: BoxFit.cover,
-                                                      ),
-                                                    ),
+                                                      );
+                                                    },
                                                   )
                                                 : Image.asset(
                                                     'assets/images/img_broken.jpg',
@@ -1132,6 +1225,14 @@ class _HomeContentState extends State<HomeContent> {
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.contain,
+                                  width: 30,
+                                  height: 30,
+                                );
+                              },
                             ),
 
                             const SizedBox(width: 12),
@@ -1270,19 +1371,22 @@ class _HomeContentState extends State<HomeContent> {
                                                 child: AspectRatio(
                                                   aspectRatio: 4 / 5,
                                                   child: img.isNotEmpty
-                                                    ? FadeInImage.assetNetwork(
-                                                        placeholder: 'assets/images/img_placeholder.jpg',
-                                                        image: img,
-                                                        width: double.infinity,
+                                                    ? Image.network(
+                                                        img,
                                                         fit: BoxFit.cover,
-                                                        fadeInDuration: const Duration(milliseconds: 300),
-                                                        imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                                          aspectRatio: 4 / 5,
-                                                          child: Image.asset(
+                                                        loadingBuilder: (context, child, loadingProgress) {
+                                                          if (loadingProgress == null) return child;
+                                                          return Image.asset(
+                                                            'assets/images/img_placeholder.jpg',
+                                                            fit: BoxFit.cover,
+                                                          );
+                                                        },
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Image.asset(
                                                             'assets/images/img_broken.jpg',
                                                             fit: BoxFit.cover,
-                                                          ),
-                                                        ),
+                                                          );
+                                                        },
                                                       )
                                                     : Image.asset(
                                                         'assets/images/img_broken.jpg',
@@ -1401,6 +1505,14 @@ class _HomeContentState extends State<HomeContent> {
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.contain,
+                                  width: 30,
+                                  height: 30,
+                                );
+                              },
                             ),
 
                             const SizedBox(width: 12),
@@ -1530,19 +1642,22 @@ class _HomeContentState extends State<HomeContent> {
                                             child: AspectRatio(
                                               aspectRatio: 4 / 5,
                                               child: img.isNotEmpty
-                                                ? FadeInImage.assetNetwork(
-                                                    placeholder: 'assets/images/img_placeholder.jpg',
-                                                    image: img,
-                                                    width: double.infinity,
+                                                ? Image.network(
+                                                    img,
                                                     fit: BoxFit.cover,
-                                                    fadeInDuration: const Duration(milliseconds: 300),
-                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                                      aspectRatio: 4 / 5,
-                                                      child: Image.asset(
+                                                    loadingBuilder: (context, child, loadingProgress) {
+                                                      if (loadingProgress == null) return child;
+                                                      return Image.asset(
+                                                        'assets/images/img_placeholder.jpg',
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    },
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Image.asset(
                                                         'assets/images/img_broken.jpg',
                                                         fit: BoxFit.cover,
-                                                      ),
-                                                    ),
+                                                      );
+                                                    },
                                                   )
                                                 : Image.asset(
                                                     'assets/images/img_broken.jpg',
@@ -1637,6 +1752,14 @@ class _HomeContentState extends State<HomeContent> {
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.contain,
+                                  width: 30,
+                                  height: 30,
+                                );
+                              },
                             ),
 
                             const SizedBox(width: 12),
@@ -1775,19 +1898,22 @@ class _HomeContentState extends State<HomeContent> {
                                                 child: AspectRatio(
                                                   aspectRatio: 4 / 5,
                                                   child: img.isNotEmpty
-                                                    ? FadeInImage.assetNetwork(
-                                                        placeholder: 'assets/images/img_placeholder.jpg',
-                                                        image: img,
-                                                        width: double.infinity,
+                                                    ? Image.network(
+                                                        img,
                                                         fit: BoxFit.cover,
-                                                        fadeInDuration: const Duration(milliseconds: 300),
-                                                        imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                                          aspectRatio: 4 / 5,
-                                                          child: Image.asset(
+                                                        loadingBuilder: (context, child, loadingProgress) {
+                                                          if (loadingProgress == null) return child;
+                                                          return Image.asset(
+                                                            'assets/images/img_placeholder.jpg',
+                                                            fit: BoxFit.cover,
+                                                          );
+                                                        },
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Image.asset(
                                                             'assets/images/img_broken.jpg',
                                                             fit: BoxFit.cover,
-                                                          ),
-                                                        ),
+                                                          );
+                                                        },
                                                       )
                                                     : Image.asset(
                                                         'assets/images/img_broken.jpg',
@@ -1906,6 +2032,14 @@ class _HomeContentState extends State<HomeContent> {
                               width: 30,
                               height: 30,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/img_broken.jpg',
+                                  fit: BoxFit.contain,
+                                  width: 30,
+                                  height: 30,
+                                );
+                              },
                             ),
 
                             const SizedBox(width: 12),
@@ -2019,19 +2153,22 @@ class _HomeContentState extends State<HomeContent> {
                                             child: AspectRatio(
                                               aspectRatio: 4 / 5,
                                               child: img.isNotEmpty
-                                                ? FadeInImage.assetNetwork(
-                                                    placeholder: 'assets/images/img_placeholder.jpg',
-                                                    image: img,
-                                                    width: double.infinity,
+                                                ? Image.network(
+                                                    img,
                                                     fit: BoxFit.cover,
-                                                    fadeInDuration: const Duration(milliseconds: 300),
-                                                    imageErrorBuilder: (context, error, stack) => AspectRatio(
-                                                      aspectRatio: 4 / 5,
-                                                      child: Image.asset(
+                                                    loadingBuilder: (context, child, loadingProgress) {
+                                                      if (loadingProgress == null) return child;
+                                                      return Image.asset(
+                                                        'assets/images/img_placeholder.jpg',
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    },
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Image.asset(
                                                         'assets/images/img_broken.jpg',
                                                         fit: BoxFit.cover,
-                                                      ),
-                                                    ),
+                                                      );
+                                                    },
                                                   )
                                                 : Image.asset(
                                                     'assets/images/img_broken.jpg',

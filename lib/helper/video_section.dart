@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class VideoSection extends StatelessWidget {

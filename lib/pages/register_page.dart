@@ -11,8 +11,8 @@ import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
-import 'package:kreen_app_flutter/widgets/google_login.dart';
-import 'package:kreen_app_flutter/widgets/loading_page.dart';
+import 'package:kreen_app_flutter/helper/google_login.dart';
+import 'package:kreen_app_flutter/helper/loading_page.dart';
 
 class RegisPage extends StatefulWidget {
   final bool fromProfil;

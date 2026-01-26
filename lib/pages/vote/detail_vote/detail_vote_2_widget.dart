@@ -8,7 +8,8 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
@@ -153,7 +154,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
             image: widget.data['banner'],
             width: double.infinity,
             fit: BoxFit.cover,
-            fadeInDuration: const Duration(milliseconds: 300),
+            fadeInDuration: const Duration(milliseconds: 200),
             imageErrorBuilder: (context, error, stackTrace) {
               return Image.asset(
                 'assets/images/img_broken.jpg',
@@ -278,33 +279,35 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                       ),
                     ),
 
-                    const SizedBox(width: 5),
-                    InkWell(
-                      onTap: () async {
-                        await SKModal.show(context, widget.data['snk'], lang['s_n_k_vote']);
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: color, // outline merah
-                            width: 1,
+                    if (!isHtmlEmpty(widget.data['snk'])) ... [
+                      const SizedBox(width: 5),
+                      InkWell(
+                        onTap: () async {
+                          await SKModal.show(context, widget.data['snk'], lang['s_n_k_vote']);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: color, // outline merah
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                lang['syarat_ket_vote'],
+                                style: TextStyle(color: color),
+                              ),
+                              const SizedBox(width: 5),
+                              Icon(Icons.open_in_new, color: color, size: 14),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Text(
-                              lang['syarat_ket_vote'],
-                              style: TextStyle(color: color),
-                            ),
-                            const SizedBox(width: 5),
-                            Icon(Icons.open_in_new, color: color, size: 14),
-                          ],
-                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -326,6 +329,14 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                             width: 80,   // atur sesuai kebutuhan
                             height: 80,
                             fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/img_broken.jpg',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.contain,
+                              );
+                            },
                           ),
 
                           const SizedBox(width: 12),
@@ -342,7 +353,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  widget.data['nama_penyelenggara'],
+                                  widget.data['nama_penyelenggara'] ?? '-',
                                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                   softWrap: true,          // biar teks bisa kebungkus
                                   overflow: TextOverflow.visible, 
@@ -355,72 +366,74 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
 
                       if (sponsors.isNotEmpty) ... [
                         const SizedBox(height: 20,),
-                          Text(
-                            'Sponsor',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                        Text(
+                          'Sponsor',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
 
-                          const SizedBox(height: 12,),
-                          InfiniteSponsorMarquee(
-                            sponsors: sponsors,
-                            height: 48,
-                            speed: 35, // atur kecepatan
-                            showFade: false,
-                          ),
+                        const SizedBox(height: 12,),
+                        InfiniteSponsorMarquee(
+                          sponsors: sponsors,
+                          height: 48,
+                          speed: 35, // atur kecepatan
+                          showFade: false,
+                        ),
                       ],
 
-                      const SizedBox(height: 20,),
-                      Text(
-                        lang['deskripsi'],
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      if (!isHtmlEmpty(widget.data['deskripsi'])) ... [
+                        const SizedBox(height: 20,),
+                        Text(
+                          lang['deskripsi'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
 
-                      const SizedBox(height: 12,),
-                      Container(
-                        color: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                          child: Column(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // if (widget.data['merchant_description'] != null) ... [
-                                  //   Html(
-                                  //     data: widget.data['merchant_description'],
-                                  //     style: {
-                                  //       "p": Style(
-                                  //         margin: Margins.zero,
-                                  //         padding: HtmlPaddings.zero,
-                                  //       ),
-                                  //       "body": Style(
-                                  //         margin: Margins.zero,
-                                  //         padding: HtmlPaddings.zero,
-                                  //       ),
-                                  //     },
-                                  //   ),
-                                  //   SizedBox(height: 12,)
-                                  // ],
-                                  Html(
-                                    data: widget.data['deskripsi'],
-                                      style: {
-                                        "p": Style(
-                                          margin: Margins.zero,
-                                          padding: HtmlPaddings.zero,
-                                        ),
-                                        "body": Style(
-                                          margin: Margins.zero,
-                                          padding: HtmlPaddings.zero,
-                                        ),
-                                      },
-                                  )
-                                ],
-                              ),
-                            ],
-                          ),
-                        ) 
-                      ),
+                        const SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // if (widget.data['merchant_description'] != null) ... [
+                                    //   Html(
+                                    //     data: widget.data['merchant_description'],
+                                    //     style: {
+                                    //       "p": Style(
+                                    //         margin: Margins.zero,
+                                    //         padding: HtmlPaddings.zero,
+                                    //       ),
+                                    //       "body": Style(
+                                    //         margin: Margins.zero,
+                                    //         padding: HtmlPaddings.zero,
+                                    //       ),
+                                    //     },
+                                    //   ),
+                                    //   SizedBox(height: 12,)
+                                    // ],
+                                    Html(
+                                      data: widget.data['deskripsi'],
+                                        style: {
+                                          "p": Style(
+                                            margin: Margins.zero,
+                                            padding: HtmlPaddings.zero,
+                                          ),
+                                          "body": Style(
+                                            margin: Margins.zero,
+                                            padding: HtmlPaddings.zero,
+                                          ),
+                                        },
+                                    )
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ) 
+                        ),
+                      ],
 
                       const SizedBox(height: 20,),
                       Text(
@@ -514,99 +527,105 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                         ) 
                       ),
 
-                      const SizedBox(height: 20,),
-                      Text(
-                        lang['lokasi'],
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      if (widget.data['lokasi_alamat'] != null && widget.data['lokasi_alamat'] != '')...[
+                        const SizedBox(height: 20,),
+                        Text(
+                          lang['lokasi'],
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
 
-                      const SizedBox(height: 12,),
-                      Container(
-                        color: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                          child: Column(
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  SvgPicture.network(
-                                    "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
-
-                                  const SizedBox(width: 12),
-                                  //text
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          widget.data['lokasi_alamat'] ?? '-',
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ],
+                        const SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    SvgPicture.network(
+                                      "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                                      width: 30,
+                                      height: 30,
+                                      fit: BoxFit.contain,
                                     ),
-                                  ),
-                                ],
-                              ),
 
-                            ],
-                          ),
-                        ) 
-                      ),
-
-                      const SizedBox(height: 20,),
-                      Text(
-                        "Venue",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-
-                      const SizedBox(height: 12,),
-                      Container(
-                        color: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                          child: Column(
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  SvgPicture.network(
-                                    "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
-
-                                  const SizedBox(width: 12),
-                                  //text
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          widget.data['lokasi_nama_tempat'],
-                                          style: TextStyle(
-                                            color: Colors.black,
+                                    const SizedBox(width: 12),
+                                    //text
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            widget.data['lokasi_alamat'] ?? '-',
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
 
-                            ],
-                          ),
-                        ) 
-                      ),
+                              ],
+                            ),
+                          ) 
+                        ),
+                      ],
+
+                      if (widget.data['lokasi_nama_tempat'] != null && widget.data['lokasi_nama_tempat'] != '') ... [
+                        const SizedBox(height: 20,),
+                        Text(
+                          "Venue",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+
+                        const SizedBox(height: 12,),
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
+                            child: Column(
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    SvgPicture.network(
+                                      "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                                      width: 30,
+                                      height: 30,
+                                      fit: BoxFit.contain,
+                                    ),
+
+                                    const SizedBox(width: 12),
+                                    //text
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            widget.data['lokasi_nama_tempat'] != null && widget.data['lokasi_nama_tempat'] != ''
+                                              ? widget.data['lokasi_nama_tempat']
+                                              : '-',
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                              ],
+                            ),
+                          ) 
+                        ),
+                      ],
 
                       const SizedBox(height: 20,),
                       Text(
@@ -1081,6 +1100,14 @@ Widget buildTopCard({
             width: isBig ? 75 : 55,
             height: isBig ? 75 : 55,
             fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                'assets/images/img_broken.jpg',
+                width: isBig ? 75 : 55,
+                height: isBig ? 75 : 55,
+                fit: BoxFit.contain,
+              );
+            },
           ),
         ),
     ],

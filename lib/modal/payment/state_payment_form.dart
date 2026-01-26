@@ -8,11 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
-import 'package:kreen_app_flutter/modal/payment/get_fee_new.dart';
-import 'package:kreen_app_flutter/pages/event/waiting_order_event.dart';
-import 'package:kreen_app_flutter/pages/login_page.dart';
+import 'package:kreen_app_flutter/helper/get_fee_new.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/pages/order/waiting_order_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -122,22 +122,18 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
   bool qrCodeClicked = false;
   bool debitClicked = false;
 
-  Future<void> getPaymentEvent(String id_event) async {
+  bool isConfirmLoading = false;
+  List<dynamic> creditCard = [];
+  List<dynamic> virtualAkun = [];
+  List<dynamic> paymentBank = [];
+  List<dynamic> eWallet = [];
+  List<dynamic> retail = [];
+  List<dynamic> konter = [];
+  List<dynamic> qrCode = [];
+  List<dynamic> debit = [];
 
-    final body = {
-      "id_event": id_event,
-    };
-
-    final resultEvent = await ApiService.post('/event/detail', body: body);
-    final resultPayment = await ApiService.get("/event/$id_event/payment-methods");
-
-    setState(() {
-      detailEvent = resultEvent?['data'] ?? {};
-      eventCurrency = detailEvent['event']['currency'];
-      payment = resultPayment?['data'] ?? {};
-      isLoading = false;
-    });
-  }
+  bool showErrorBar = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -187,106 +183,84 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Future<void> getPaymentEvent(String id_event) async {
 
-    return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: widget.jenis_participant == "Umum"
-          ? token == null 
-            ? KeyedSubtree(
-                key: const ValueKey('not-login'),
-                child: getLoginUser(),
-              )
-            : KeyedSubtree(
-                key: const ValueKey('logged-in'),
-                child: kontenSection(),
-              )
-          : KeyedSubtree(
-              key: const ValueKey('logged-in'),
-              child: kontenSection(),
-            ),
-      ),
-    );
+    final body = {
+      "id_event": id_event,
+    };
+
+    final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode, xCurrency: currencyCode);
+    if (resultEvent == null || resultEvent['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultEvent?['message'];
+      });
+      return;
+    }
+
+    final resultPayment = await ApiService.get("/event/$id_event/payment-methods", xLanguage: langCode, xCurrency: currencyCode);
+    if (resultPayment == null || resultPayment['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultPayment?['message'];
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      detailEvent = resultEvent?['data'] ?? {};
+      eventCurrency = detailEvent['event']['currency'];
+      payment = resultPayment?['data'] ?? {};
+    
+      creditCard = payment['Credit Card'] ?? [];
+      virtualAkun = payment['Virtual Account'] ?? [];
+      paymentBank = payment['Payment Bank'] ?? [];
+      eWallet = payment['E-Wallet'] ?? [];
+      retail = payment['Retail'] ?? [];
+      konter = payment['Counter'] ?? [];
+      qrCode = payment['QR Codes'] ?? [];
+      debit = payment['Direct Debit'] ?? [];
+
+      if (creditCard.isNotEmpty) {
+        creditCardClicked = true;
+      } else if (virtualAkun.isNotEmpty) {
+        virtualAkunClicked = true;
+      } else if (paymentBank.isNotEmpty) {
+        paymentBankClicked = true;
+      } else if (eWallet.isNotEmpty) {
+        eWalletClicked = true;
+      } else if (retail.isNotEmpty) {
+        retailClicked = true;
+      } else if (konter.isNotEmpty) {
+        konterClicked = true;
+      } else if (qrCode.isNotEmpty) {
+        qrCodeClicked = true;
+      } else if (debit.isNotEmpty) {
+        debitClicked = true;
+      }
+      
+      isLoading = false;
+      showErrorBar = false;
+    });
   }
 
-  Widget getLoginUser() {
-    return Container(
-      padding: kGlobalPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFE5E5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Image.asset(
-              "assets/images/img_ovo30d.png",
-              height: 60,
-              width: 60,
-            )
+          isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.red,)) 
+            : kontenSection(),
+
+          GlobalErrorBar(
+            visible: showErrorBar, 
+            message: errorMessage, 
+            onRetry: () {
+              getPaymentEvent(widget.id_event);
+            }
           ),
-
-          const SizedBox(height: 24),
-          Text(
-            notLoginText!,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 12),
-          Text(
-            notLoginDesc!,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black54, fontSize: 14),
-          ),
-
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () async {
-              
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LoginPage(notLog: true),
-                ),
-              );
-
-              if (result == true) {
-                await _checkToken();
-
-                final newToken = await StorageService.getToken();
-                final getUser = await StorageService.getUser();
-                if (mounted) {
-                  setState(() {
-                    token = newToken;
-                    user_id = getUser['id'];
-                  });
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-              elevation: 2,
-            ),
-            child: Text(
-              login!,
-              style: TextStyle(fontSize: 16, color: Colors.white),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
         ],
       ),
     );
@@ -333,7 +307,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       _isEditing = false;
     });
 
-    void handleConfirm() async {
+    Future<void> doConfirmProcess() async {
       final position = await getCurrentLocationWithValidation(context);
 
       if (position == null) {
@@ -404,7 +378,13 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
         },
       };
 
-      var resultEventOrder = await ApiService.post("/order/event/checkout", body: body);
+      var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
+      if (resultEventOrder == null || resultEventOrder['rc'] != 200) {
+        setState(() {
+          showErrorBar = true;
+          errorMessage = resultEventOrder?['message'];
+        });
+      }
 
       if (resultEventOrder != null) {
         if (resultEventOrder['rc'] == 200) {
@@ -461,18 +441,34 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
         }
       } else {
         AwesomeDialog(
-            context: context,
-            dialogType: DialogType.error,
-            animType: AnimType.topSlide,
-            title: 'Oops!',
-            desc: cobaLagi, //"Terjadi kesalahan. Silakan coba lagi.",
-            btnOkOnPress: () {},
-            btnOkColor: Colors.red,
-            buttonsTextStyle: TextStyle(color: Colors.white),
-            headerAnimationLoop: false,
-            dismissOnTouchOutside: true,
-            showCloseIcon: true,
-          ).show();
+          context: context,
+          dialogType: DialogType.error,
+          animType: AnimType.topSlide,
+          title: 'Oops!',
+          desc: cobaLagi, //"Terjadi kesalahan. Silakan coba lagi.",
+          btnOkOnPress: () {},
+          btnOkColor: Colors.red,
+          buttonsTextStyle: TextStyle(color: Colors.white),
+          headerAnimationLoop: false,
+          dismissOnTouchOutside: true,
+          showCloseIcon: true,
+        ).show();
+      }
+    }
+
+    void handleConfirm() async {
+      if (isConfirmLoading) return;
+
+      setState(() => isConfirmLoading = true);
+
+      try {
+        await doConfirmProcess(); 
+      } finally {
+        if (mounted) {
+          setState(() {
+            isConfirmLoading = false;
+          });
+        }
       }
     }
 
@@ -482,15 +478,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
         body: Center(child: CircularProgressIndicator(color: Colors.red,)),
       );
     }
-
-    final creditCard = payment['Credit Card'] ?? [];
-    final virtualAkun = payment['Virtual Account'] ?? [];
-    final paymentBank = payment['Payment Bank'] ?? [];
-    final eWallet = payment['E-Wallet'] ?? [];
-    final retail = payment['Retail'] ?? [];
-    final konter = payment['Counter'] ?? [];
-    final qrCode = payment['QR Codes'] ?? [];
-    final debit = payment['Direct Debit'] ?? [];
 
     return Container(
       color: Colors.white,
@@ -2559,19 +2546,31 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: InkWell(
-                                    onTap: handleConfirm,
+                                    onTap: isConfirmLoading ? null : handleConfirm,
                                     child: Container(
                                       height: 48,
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Colors.red,
+                                        color: isConfirmLoading ? Colors.red.shade300 : Colors.red,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       alignment: Alignment.center,
-                                      child: Text(
-                                        bahasa['konfirmasi'],
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                      ),
+                                      child: isConfirmLoading
+                                        ? SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            bahasa['konfirmasi'],
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                 ),

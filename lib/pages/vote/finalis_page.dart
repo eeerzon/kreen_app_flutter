@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -53,6 +54,11 @@ class _FinalisPageState extends State<FinalisPage> {
   int totalQty = 0;
   int countData = 0;
 
+  Map<String, dynamic> vote = {};
+  List<dynamic> finalis = [];
+  bool showErrorBar = false;
+  String errorMessage = ''; 
+
   @override
   void initState() {
     super.initState();
@@ -64,19 +70,32 @@ class _FinalisPageState extends State<FinalisPage> {
       _startCountdown();
     });
   }
-
-  Map<String, dynamic> vote = {};
-  List<dynamic> finalis = [];
   Future<void> _loadVotes() async {
 
     final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
-    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode, xCurrency: currencyCode);
+    if (resultVote == null || resultVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultVote?['message'];
+      });
+      return;
+    }
 
-    final tempVote = resultVote?['data'] ?? {};
-    final tempFinalis = resultFinalis?['data'] ?? [];
+    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode, xCurrency: currencyCode);
+    if (resultFinalis == null || resultFinalis['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFinalis?['message'];
+      });
+      return;
+    }
+
+    final tempVote = resultVote['data'] ?? {};
+    final tempFinalis = resultFinalis['data'] ?? [];
     
     await _precacheAllImages(context, tempFinalis);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         vote = tempVote;
@@ -92,6 +111,7 @@ class _FinalisPageState extends State<FinalisPage> {
         });
 
         _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -283,9 +303,19 @@ class _FinalisPageState extends State<FinalisPage> {
 
   Future<void> _searchFinalis(String keyword) async {
     final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode);
+    if (result == null || result['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = result?['message'];
+      });
+      return;
+    }
+
+    if (!mounted) return;
     if (mounted) {
       setState(() {
-        finalis = result?['data'] ?? [];
+        finalis = result['data'] ?? [];
+        showErrorBar = false;
       });
     }
   }
@@ -297,10 +327,22 @@ class _FinalisPageState extends State<FinalisPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenFinalis()
-    );
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenFinalis(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadVotes();
+            },
+          ),
+        ],
+      ),
+    ); 
   }
 
   Widget buildSkeletonHome() {
@@ -718,7 +760,7 @@ class _FinalisPageState extends State<FinalisPage> {
                             image: item['poster_finalis'],
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 300),
+                            fadeInDuration: const Duration(milliseconds: 200),
                             imageErrorBuilder: (context, error, stackTrace) {
                               return Image.network(
                                 "$baseUrl/noimage_finalis.png",
@@ -732,7 +774,7 @@ class _FinalisPageState extends State<FinalisPage> {
                             image: "$baseUrl/noimage_finalis.png",
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 300),
+                            fadeInDuration: const Duration(milliseconds: 200),
                             imageErrorBuilder: (context, error, stackTrace) {
                               return Image.asset(
                                 'assets/images/img_broken.jpg',
@@ -1032,7 +1074,7 @@ class _FinalisPageState extends State<FinalisPage> {
                   ],
                   
                   if (vote['batas_qty'] == 0)...[
-                    if (counts[index] > 10) ... [
+                    if (counts[index] >= 1) ... [
                       const SizedBox(height: 15,),
                       Wrap(
                         spacing: 5,
@@ -1041,8 +1083,8 @@ class _FinalisPageState extends State<FinalisPage> {
                         children: voteOptions.asMap().entries.map((entry) {
                           final optionIndex = entry.key;
                           final voteCount = entry.value;
-
-                          final isSelected = selectedVotes[index] == voteCount && counts[index] > 0;
+                          
+                          final isSelected = counts[index] == voteCount;
 
                           return IgnorePointer(
                             ignoring: counts[index] == 0,
@@ -1078,6 +1120,7 @@ class _FinalisPageState extends State<FinalisPage> {
                                     }
 
                                     slctedIdVote = item['id_vote'];
+                                    totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
                                   });
                                 },
                                 child: Container(

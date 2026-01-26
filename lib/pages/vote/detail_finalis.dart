@@ -5,11 +5,13 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
-import 'package:kreen_app_flutter/pages/vote/download_qr.dart';
+import 'package:kreen_app_flutter/helper/download_qr.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -63,6 +65,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
   int totalQty = 0;
   int countData = 1;
+  
+  bool showErrorBar = false;
+  String errorMessage = ''; 
 
   @override
   void initState() {
@@ -77,13 +82,17 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
   Future<void> _loadFinalis() async {
     final idFinalis = widget.id_finalis;
-    if (idFinalis.isEmpty) {
-      setState(() => _isLoading = false);
-      return;
-    }
     
     final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode);
-    final tempFinalis = resultFinalis?['data'] ?? {};
+    if (resultFinalis == null || resultFinalis['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFinalis?['message'];
+      });
+      return;
+    }
+
+    final tempFinalis = resultFinalis['data'] ?? {};
 
     idVote = tempFinalis['id_vote']?.toString();
     Map<String, dynamic> tempDetailVote = {};
@@ -95,6 +104,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     
     await _precacheAllImages(context, tempFinalis);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
@@ -148,6 +158,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         }
 
         _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -160,9 +171,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     });
 
     final tempbahasa = await LangService.getJsonData(langCode!, 'bahasa');
-    final tempnotLoginText = await LangService.getText(langCode!, "notLogin");
-    final tempnotLoginDesc = await LangService.getText(langCode!, "notLoginDesc");
-    final templogin = await LangService.getText(langCode!, "login");
 
     setState(() {
       totalHargaText = tempbahasa['total_harga'];
@@ -174,9 +182,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       voteOpen = tempbahasa['vote_open'];
       voteOpenAgain = tempbahasa['vote_open_again'];
       
-      notLogin = tempnotLoginText;
-      notLoginDesc = tempnotLoginDesc;
-      loginText = templogin;
+      notLogin = tempbahasa['notLogin'];
+      notLoginDesc = tempbahasa['notLoginDesc'];
+      loginText = tempbahasa['login'];
       
       detailfinalisText = tempbahasa['detail_finalis'];
 
@@ -296,10 +304,22 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenDetail()
-    );
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenDetail(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadFinalis();
+            },
+          ),
+        ],
+      ),
+    ); 
   }
 
   Widget buildSkeletonHome() {
@@ -751,7 +771,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                             ],
 
                             if (detailvote['batas_qty'] == 0) ...[
-                              if (counts > 10) ...[
+                              if (counts >= 1) ...[
                                 const SizedBox(height: 15,),
                                 Wrap(
                                   spacing: 5,
@@ -759,7 +779,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   alignment: WrapAlignment.center,
                                   children: voteOptions.asMap().entries.map((entry) {
                                     final voteCount = entry.value;
-                                    final isSelected = selectedVotes == voteCount && counts > 0;
+                                    final isSelected = counts == voteCount;
                     
                                     return InkWell(
                                       onTap: () {
@@ -824,7 +844,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
                       if (detailFinalis['usia'] != 0 ||
                           (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
+                          (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
                         const SizedBox(height: 12,),
                         Container(
                           width: double.infinity,
@@ -866,7 +886,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   ),
                                 ],
                     
-                                if (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'].toString().isNotEmpty) ... [
+                                if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
                                   SizedBox(height: 12,),
                                   Text(
                                     biographyText!,
@@ -909,6 +929,14 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.contain,
+                                      );
+                                    },
                                   ),
                     
                                   const SizedBox(height: 12,),
@@ -918,39 +946,43 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   ),
                     
                                   const SizedBox(height: 12,),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: canDownload ? color : Colors.grey,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                                  Material(
+                                    color: Colors.transparent,
                                     child: InkWell(
-                                      onTap: canDownload ? () async {
-                                        await downloadQrImage(
-                                          context, 
-                                          detailFinalis['id_qrcode'],
-                                          bahasa['download_scan_gagal'],
-                                          bahasa['download_scan_berhasil'],
-                                          bahasa['kesalahan_simpan_scan'],
-                                        );
-                                      }
-                                      : null,
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            downloadQrText!,
-                                            style: TextStyle(color: Colors.white),
-                                          ),
-                                          const SizedBox(width: 10,),
-                                          Icon(
-                                            Icons.download, color: Colors.white, size: 15,
-                                          )
-                                        ],
-                                      )
-                                    )
+                                      onTap: canDownload 
+                                        ? () async {
+                                            await downloadQrImage(
+                                              context, 
+                                              detailFinalis['id_qrcode'],
+                                              bahasa['download_scan_gagal'],
+                                              bahasa['download_scan_berhasil'],
+                                              bahasa['kesalahan_simpan_scan'],
+                                            );
+                                          }
+                                        : null,
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: canDownload ? color : Colors.grey,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              downloadQrText!,
+                                              style: TextStyle(color: Colors.white),
+                                            ),
+                                            SizedBox(width: 10,),
+                                            Icon(
+                                              Icons.download, color: Colors.white, size: 15,
+                                            )
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                     
                                   const SizedBox(height: 12,),

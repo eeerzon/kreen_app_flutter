@@ -5,25 +5,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
+import 'package:kreen_app_flutter/pages/event/detail_event.dart';
+import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 
-class WaitingOrderPage extends StatefulWidget {
+class WaitingOrderEvent extends StatefulWidget {
   final String id_order;
   final bool formHistory;
   final String? currency_session;
-  const WaitingOrderPage({super.key, required this.id_order, this.formHistory = false, required this.currency_session});
+  const WaitingOrderEvent({super.key, required this.id_order, this.formHistory = false, required this.currency_session});
 
   @override
-  State<WaitingOrderPage> createState() => _WaitingOrderPageState();
+  State<WaitingOrderEvent> createState() => _WaitingOrderEventState();
 }
 
-class _WaitingOrderPageState extends State<WaitingOrderPage> {
+class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   String? langCode, currencyCode;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
@@ -36,6 +38,9 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   bool tapinstruksi = false;
 
   bool isExpired = false;
+
+  bool showErrorBar = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -95,49 +100,51 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   Map<String, dynamic> detailOrder = {};
-  Map<String, dynamic> voteOder = {};
-  List<dynamic> voteOrderDetail = [];
-  List<dynamic> finalis = [];
+  Map<String, dynamic> eventOder = {};
+  List<dynamic> eventOrderDetail = [];
+  List<dynamic> eventTiket = [];
   Map<String, dynamic> paymentDetail = {};
   List<dynamic> instruction = [];
-  Map<String, dynamic> vote = {};
-  List<dynamic> indikator = [];
+  Map<String, dynamic> event = {};
 
   var expiresAt;
 
   Future<void> _loadOrder() async {
 
-    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode);
+    final resultOrder = await ApiService.get("/order/event/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode);
+    if (resultOrder == null || resultOrder['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultOrder?['message'];
+      });
+      return;
+    }
 
     final tempOrder = resultOrder?['data'] ?? {};
 
-    final temp_vote_order = tempOrder['vote_order'] ?? {};
-    final temp_vote_order_detail = tempOrder['vote_order_detail'] ?? [];
-    final tempFinalis = tempOrder['vote_finalis'] ?? [];
+    final temp_event_order = tempOrder['event_order'] ?? {};
+    final temp_event_order_detail = tempOrder['event_order_detail'] ?? [];
+    final temp_event_tiket = tempOrder['event_ticket'] ?? [];
 
     final temp_payment_detail = tempOrder['payment_detail'] ?? {};
     final temp_instruction = temp_payment_detail['instruction'] ?? [];
 
-    final temp_vote = tempOrder['vote'] ?? {};
-    final temp_indikator_answer = tempOrder['indikator_answer'] ?? [];
+    final temp_event = tempOrder['event'] ?? {};
 
-    await _precacheAllImages(context, tempFinalis);
-
+    if (!mounted) return;
     if (mounted) {
-      setState(() {
         detailOrder = tempOrder;
 
-        voteOder = temp_vote_order;
-        voteOrderDetail = temp_vote_order_detail;
-        finalis = tempFinalis;
+        eventOder = temp_event_order;
+        eventOrderDetail = temp_event_order_detail;
+        eventTiket = temp_event_tiket;
 
         paymentDetail = temp_payment_detail;
         instruction = temp_instruction;
 
-        vote = temp_vote;
-        indikator = temp_indikator_answer;
+        event = temp_event;
 
-        final rawExpires = voteOder['order_created_at'];
+        final rawExpires = eventOder['order_created_at'];
         if (rawExpires != null && rawExpires.toString().isNotEmpty) {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
 
@@ -151,30 +158,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
         deadline = DateTime.parse(expiresAt).toLocal();
         _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _precacheAllImages(
-    BuildContext context,
-    List<dynamic> finalis
-  ) async {
-    List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
-    for (var item in finalis) {
-      final url = item['poster_finalis']?.toString();
-      if (url != null && url.isNotEmpty) {
-        allImageUrls.add(url);
-      }
-    }
-
-    // Hilangkan duplikat supaya efisien
-    allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
-    for (String url in allImageUrls) {
-      await precacheImage(NetworkImage(url), context);
+        showErrorBar = false;
     }
   }
 
@@ -188,15 +172,26 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(body: buildSkeletonHome());
-    }
-
-    if (isExpired) {
-      return buildLinkKadaluarsa();
-    }
-
-    return buildKontenOrder();
+    return Scaffold(
+      body: Stack(
+        children: [
+          if (_isLoading)
+            buildSkeletonHome()
+          else if (isExpired)
+            buildLinkKadaluarsa()
+          else
+            buildKontenOrder(),
+            
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadOrder();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildSkeletonHome() {
@@ -300,6 +295,16 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   Widget buildKontenOrder() {
+    // Cek waktu kadaluarsa
+    if (expiresAt.isNotEmpty) {
+      final expiredDate = DateTime.parse(expiresAt);
+      final now = DateTime.now();
+
+      if (now.isAfter(expiredDate)) {
+        // waktu sudah lewat, tampilkan halaman kadaluarsa
+        return buildLinkKadaluarsa();
+      }
+    }
     
     final hours = remaining.inHours % 24;
     final minutes = remaining.inMinutes % 60;
@@ -308,25 +313,25 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     String formattedDate = '-';
 
     String? currencyRegion;
-    if (voteOder['order_region'] == "EU"){
+    if (eventOder['order_region'] == "EU"){
       currencyRegion = "EUR";
-    } else if (voteOder['order_region'] == "ID"){
+    } else if (eventOder['order_region'] == "ID"){
       currencyRegion = "IDR";
-    } else if (voteOder['order_region'] == "MY"){
+    } else if (eventOder['order_region'] == "MY"){
       currencyRegion = "MYR";
-    } else if (voteOder['order_region'] == "PH"){
+    } else if (eventOder['order_region'] == "PH"){
       currencyRegion = "PHP";
-    } else if (voteOder['order_region'] == "SG"){
+    } else if (eventOder['order_region'] == "SG"){
       currencyRegion = "SGD";
-    } else if (voteOder['order_region'] == "TH"){
+    } else if (eventOder['order_region'] == "TH"){
       currencyRegion = "THB";
-    } else if (voteOder['order_region'] == "US"){
+    } else if (eventOder['order_region'] == "US"){
       currencyRegion = "USD";
-    } else if (voteOder['order_region'] == "VN"){
+    } else if (eventOder['order_region'] == "VN"){
       currencyRegion = "VND";
     }
-    
-    num sum_amount = voteOder['total_amount'] * voteOder['currency_value_region'];
+
+    num sum_amount = (eventOder['amount'] + eventOder['fees']) * eventOder['currency_value_region'];
     num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
     if (currencyRegion == "IDR") {
       total_amount_pg = total_amount_pg.ceil();
@@ -334,14 +339,14 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       total_amount_pg = (total_amount_pg * 100).ceil() / 100;
     }
 
-    num user_currency_amount = num.parse(voteOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
+    num user_currency_amount = num.parse(eventOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
     if (currencyRegion == "IDR") {
       user_currency_amount = user_currency_amount.ceil();
     } else {
       user_currency_amount = (user_currency_amount * 100).ceil() / 100;
     }
 
-    num user_currency_total_payment = num.parse(voteOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
+    num user_currency_total_payment = num.parse(eventOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
     if (currencyRegion == "IDR") {
       user_currency_total_payment = user_currency_total_payment.ceil();
     } else {
@@ -384,13 +389,15 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
         title: Text(bahasa['header']),
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        centerTitle: widget.formHistory ? false : true,
+        leading: widget.formHistory
+          ? IconButton(
+              icon: Icon(Icons.arrow_back_ios),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            )
+          : SizedBox.shrink(),
       ),
 
       body: SingleChildScrollView(
@@ -411,7 +418,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Text(
-                          bahasa['dont_close'],
+                          bahasa['dont_close'], //'Jangan tutup halaman ini sebelum Anda menyelesaikan pembayaran',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           softWrap: true,
@@ -442,7 +449,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                   child: Column(
                     children: [
 
-                      Text(bahasa['sisa_waktu']),
+                      Text(bahasa['sisa_waktu']), //const Text("Sisa Waktu Pembayaran"),
 
                       const SizedBox(height: 10),
                       Container(
@@ -458,15 +465,15 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _timeBox("$hours".padLeft(2, "0"), bahasa['hour']),
+                                  _timeBox("$hours".padLeft(2, "0"), bahasa['hour']), //"Jam"
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$minutes".padLeft(2, "0"), bahasa['minute']),
+                                  _timeBox("$minutes".padLeft(2, "0"), bahasa['minute']), //"Menit"
                                   const SizedBox(width: 10),
                                   _separator(),
                                   const SizedBox(width: 10),
-                                  _timeBox("$seconds".padLeft(2, "0"), bahasa['second']),
+                                  _timeBox("$seconds".padLeft(2, "0"), bahasa['second']), //"Detik"
                                 ],
                               ),
                             ],
@@ -475,7 +482,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       ),
 
                       const SizedBox(height: 16),
-                      Text(bahasa['selesaikan_pembayaran']),
+                      Text(bahasa['selesaikan_pembayaran']), //const Text("Selesaikan pembayaranmu sebelum"),
                       Text(
                         formattedDate,
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -491,12 +498,11 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: paymentDetail['qr_url'] != null
-                                  ? MainAxisAlignment.start
-                                  : MainAxisAlignment.spaceAround,
+                                // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Image.network(
-                                    "$baseUrl/image/payment-method/${voteOder['payment_method_image']}",
+                                    "$baseUrl/image/payment-method/${eventOder['payment_method_image']}",
                                     height: 70,
                                     width: 70,
                                     errorBuilder: (context, error, stackTrace) {
@@ -508,10 +514,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     },
                                   ),
 
-                                  if (paymentDetail['qr_url'] != null) ...[
+                                  if (paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null) ...[
                                     const SizedBox(width: 10,),
                                     Text(
-                                      voteOder['bank_code'],
+                                      eventOder['payment_method_name'],
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
                                   ] else ...[
@@ -582,50 +588,76 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 color: Color.fromARGB(255, 224, 224, 224),
                               ),
 
-                              if (paymentDetail['qr_url'] != null) ...[
+                              if (paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null) ...[
                                 SizedBox(height: 16,),
                                 SizedBox(
                                   width: double.infinity,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.network(
-                                        paymentDetail['qr_url'],
-                                        height: 200,
-                                        width: 200,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'assets/images/img_broken.jpg',
+                                  child: Center(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final qrUrl = paymentDetail['qr_url'];
+                                        final qrString = paymentDetail['qr_string'];
+                                        
+                                        if (qrUrl != null && qrUrl.toString().isNotEmpty) {
+                                          return Image.network(
+                                            qrUrl,
                                             height: 200,
                                             width: 200,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 200,
+                                                width: 200,
+                                              );
+                                            },
                                           );
-                                        },
-                                      )
-                                    ],
+                                        }
+                                        
+                                        if (qrString != null && qrString.toString().isNotEmpty) {
+                                          final generatedUrl =
+                                            'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+
+                                          return Image.network(
+                                            generatedUrl,
+                                            height: 200,
+                                            width: 200,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 200,
+                                                width: 200,
+                                              );
+                                            },
+                                          );
+                                        }
+                                        
+                                        return const SizedBox.shrink();
+                                      },
+                                    ),
                                   ),
-                                )
+                                ),
                               ],
 
                               const SizedBox(height: 16,),
                               Text(
-                                bahasa['kode_pesanan'],
+                                bahasa['kode_pesanan'], //'Kode Pesanan',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
                               const SizedBox(height: 10,),
                               Text(
-                                voteOder['invoice_number'],
+                                eventOder['invoice_number'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
-                              if (paymentDetail['va_number'] != null) ...[
+                              if (paymentDetail['va_number'] != null) ... [
 
                                 const SizedBox(height: 25,),
                                 Text(
-                                  bahasa['nomor_pembayaran'],
+                                  bahasa['nomor_pembayaran'], //'Nomor Pembayaran',
                                   style: TextStyle(color: Colors.grey,),
                                 ),
-                              
+                                
                                 const SizedBox(height: 10,),
                                 InkWell(
                                   onTap: () async {
@@ -638,7 +670,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                       // Tampilkan snackbar konfirmasi
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: Text(bahasa['copyVA']),
+                                          content: Text(bahasa['copyVA']), //content: Text('Nomor VA berhasil disalin'),
                                           backgroundColor: Colors.green,
                                           duration: const Duration(seconds: 2),
                                           behavior: SnackBarBehavior.floating,
@@ -667,12 +699,13 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                '${bahasa['total_pembayaran']} ($currencyRegion)',
+                                '${bahasa['total_pembayaran']} ($currencyRegion)', //'Total Pembayaran ${event['currency_event']}',
                                 style: TextStyle(color: Colors.grey),
                               ),
 
                               const SizedBox(height: 10,),
                               Text(
+                                // '$currencyRegion ${formatter.format(paymentDetail['amount'])}',
                                 '$currencyRegion ${formatter.format(total_amount_pg)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               )
@@ -696,48 +729,41 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                   ClipRRect(
                                     borderRadius: const BorderRadius.all(Radius.circular(100)),
                                     child: Image.network(
-                                      vote['banner_vote'],
+                                      event['event_banner'],
                                       width: 80,
                                       height: 80,
                                       errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        height: 80,
-                                        width: 80,
-                                      );
-                                    }, // tambahin ini biar proporsional
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          height: 80,
+                                          width: 80,
+                                        );
+                                      },
                                     ),
                                   ),
 
                                   const SizedBox(width: 10,),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          vote['judul_vote'],
-                                          style: TextStyle(fontWeight: FontWeight.bold),
-                                        ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        event['event_title'],
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
 
-                                        const SizedBox(height: 8,),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: List.generate(finalis.length, (i) {
-                                            return Text(
-                                              '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote(s)',
-                                              style: const TextStyle(color: Colors.grey),
-                                            );
-                                          }),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                      const SizedBox(height: 8,),
+                                      Text(
+                                        '${eventTiket[0]['ticket_name']} (${eventOrderDetail[0]['qty']}x)',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  )
                                 ],
                               ),
                               
                               const SizedBox(height: 20,),
                               Text(
-                                bahasa['ringkasan_pembayaran'],
+                                bahasa['ringkasan_pembayaran'], //'Ringkasan Pembayaran',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
@@ -746,7 +772,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    bahasa['total_harga'],
+                                    bahasa['total_harga'], //'Total Harga'
                                   ),
 
                                   Text(
@@ -760,7 +786,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    bahasa['biaya_layanan'],
+                                    bahasa['biaya_layanan'], //'Biaya Layanan'
                                   ),
 
                                   Text(
@@ -774,7 +800,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    bahasa['total_pembayaran'],
+                                    bahasa['total_pembayaran'], //'Total Pembayaran',
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
 
@@ -802,7 +828,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             ),
                           ),
                           onPressed: () async {
-                            await CheckPaymentModal.show(
+                            await CheckPaymentModal.showEvent(
                               context,
                               widget.id_order
                             );
@@ -810,6 +836,31 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                           child: Text(
                             bahasa['check_status'],
                             style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20,),
+                      SizedBox(
+                        height: 48,
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () async {
+                            Navigator.pushReplacement(
+                              context, 
+                              MaterialPageRoute(builder: (context) => HomePage()),
+                            );
+                          },
+                          child: Text(
+                            bahasa['kembali'],
+                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
                           ),
                         ),
                       ),
@@ -833,111 +884,122 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
         title: Text(bahasa['header']),
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        centerTitle: widget.formHistory ? false : true,
+        leading: widget.formHistory
+          ? IconButton(
+              icon: Icon(Icons.arrow_back_ios),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            )
+          : SizedBox.shrink(),
       ),
-
+ 
       body: Container(
         width: double.infinity,
-        padding: kGlobalPadding,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300,),
-          ),
-          child: Padding(
-            padding: kGlobalPadding,
-            child: Column(
-              mainAxisSize: MainAxisSize.min, 
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  child: Image.network(
-                    '$baseUrl/image/expired_order.png',
-                    width: 220,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/images/img_broken.jpg',
-                        height: 180,
-                      );
-                    },
-                  ),
-                ),
-        
-                const SizedBox(height: 20),
-                Text(
-                  bahasa['link_kadaluarsa'],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-        
-                const SizedBox(height: 10),
-                Text(
-                  bahasa['link_kadaluarsa_desc'],
-                  textAlign: TextAlign.center,
-                ),
-        
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+        height: MediaQuery.of(context).size.height,
+        color: Colors.grey.shade200,
+        child: Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300,),
+            ),
+            child: Padding(
+              padding: kGlobalPadding,
+              child: Column(
+                mainAxisSize: MainAxisSize.min, 
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    child: Image.network(
+                      '$baseUrl/image/expired_order.png',
+                      width: 220,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/images/img_broken.jpg',
+                          width: 220,
+                          fit: BoxFit.contain,
+                        );
+                      },
                     ),
                   ),
-                  onPressed: () {
-                    if (widget.formHistory) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                            DetailVotePage(id_event: vote['id_vote'].toString()),
-                        ),
-                      );
-                    } else {
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(
-                    bahasa['transaksi_lagi'],
+
+                  const SizedBox(height: 20),
+                  Text(
+                    bahasa['link_kadaluarsa'], //'Link Pembayaran Kadaluwarsa',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontSize: 18,
                     ),
                   ),
-                ),
-        
-                const SizedBox(height: 20),
-                RichText(
-                  text: TextSpan(
-                    text: bahasa['kendala'],
-                    style: TextStyle(color: Colors.black),
-                    children: [
-                      TextSpan(
-                        text: bahasa['kontak'],
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
+
+                  const SizedBox(height: 10),
+                  Text(
+                    bahasa['link_kadaluarsa_desc'], //'Maaf... Tautan ini memiliki batas waktu akses demi keamanan dan pengelolaan akses yang lebih baik.',
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
-                  )
-                ),
-              ],
+                    ),
+                    onPressed: () {
+                      if (widget.formHistory) {
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (context) => 
+                            DetailEventPage(
+                              id_event: event['id_event'], price: 0,
+                            ),
+                          ),
+                        );
+                        
+                      } else {
+                        Navigator.pushReplacement(
+                          context, 
+                          MaterialPageRoute(builder: (context) => HomePage()),
+                        );
+                      }
+                    },
+                    child: Text(
+                      bahasa['transaksi_lagi'], //"Ayo, lakukan transaksi kembali",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  RichText(
+                    text: TextSpan(
+                      text: bahasa['kendala'], // 'Jika kendala berlanjut, hubungi ',
+                      style: TextStyle(color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: bahasa['kontak'], // "Kontak Kami",
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    )
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -975,7 +1037,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 20), // biar sejajar dengan label bawah
+        SizedBox(height: 20),
       ],
     );
   }

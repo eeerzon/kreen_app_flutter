@@ -1,22 +1,74 @@
 // ignore_for_file: deprecated_member_use, non_constant_identifier_names
 
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_finalis_paket.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote/infinite_sponsor.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:share_plus/share_plus.dart';
 
-class DeskripsiSection extends StatelessWidget {
+class DeskripsiSection extends StatefulWidget {
   final Map<String, dynamic> data;
   final String langCode;
-  const DeskripsiSection({super.key, required this.data, required this.langCode});
+  final String? currencyCode;
+  const DeskripsiSection({super.key, required this.data, required this.langCode, this.currencyCode});
 
+  @override
+  State<DeskripsiSection> createState() => _DeskripsiSectionState();
+}
+
+class _DeskripsiSectionState extends State<DeskripsiSection> {
+
+  final ScrollController sponsorController = ScrollController();
+  Timer? _timer;
+  
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    if (widget.data['logo'] != null) {
+      const speed = 0.5;
+
+      _timer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+        if (!sponsorController.hasClients) return;
+
+        final position = sponsorController.position;
+        final offset = sponsorController.offset;
+
+        // PANJANG SATU SET DATA ASLI
+        final singleSetWidth = position.maxScrollExtent / 2;
+
+        // PUTAR OFFSET TANPA LOMPAT
+        if (offset >= singleSetWidth) {
+          sponsorController.jumpTo(offset - singleSetWidth);
+        } else {
+          sponsorController.jumpTo(offset + speed);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    sponsorController.dispose();
+    super.dispose();
+  }
+  
   @override
   Widget build(BuildContext context) {
     final lang = DetailVoteLang.of(context).values;
@@ -34,8 +86,8 @@ class DeskripsiSection extends StatelessWidget {
     };
 
     String themeName = 'default';
-    if (data['theme_name'] != null) {
-      themeName = data['theme_name'];
+    if (widget.data['theme_name'] != null) {
+      themeName = widget.data['theme_name'];
     }
 
     Color color = colorMap[themeName] ?? Colors.red;
@@ -47,6 +99,12 @@ class DeskripsiSection extends StatelessWidget {
       bgColor = color.withOpacity(0.1);
     }
 
+    String strSponsor = widget.data['logo'] ?? '';
+    List<dynamic> sponsors = [];
+    if (strSponsor.isNotEmpty) {
+      sponsors = json.decode(strSponsor);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,10 +112,10 @@ class DeskripsiSection extends StatelessWidget {
           aspectRatio: 4 / 5,
           child: FadeInImage.assetNetwork(
             placeholder: 'assets/images/img_placeholder.jpg',
-            image: data['banner'],
+            image: widget.data['banner'],
             width: double.infinity,
             fit: BoxFit.cover,
-            fadeInDuration: const Duration(milliseconds: 300),
+            fadeInDuration: const Duration(milliseconds: 200),
             imageErrorBuilder: (context, error, stackTrace) {
               return Image.asset(
                 'assets/images/img_broken.jpg',
@@ -83,7 +141,7 @@ class DeskripsiSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        data['judul_vote'] ?? '-',
+                        widget.data['judul_vote'] ?? '-',
                         style: TextStyle(fontWeight: FontWeight.bold),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -98,7 +156,7 @@ class DeskripsiSection extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          data['nama_kategori'] ?? '-',
+                          widget.data['nama_kategori'] ?? '-',
                           style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -108,8 +166,8 @@ class DeskripsiSection extends StatelessWidget {
                   InkWell(
                     onTap: () {
                       Share.share(
-                        "$baseUrl/voting/${data['vote_slug']}",
-                        subject: data['judul_vote'],
+                        "$baseUrl/voting/${widget.data['vote_slug']}",
+                        subject: widget.data['judul_vote'],
                       );
                     },
                     child: SvgPicture.network(
@@ -129,7 +187,7 @@ class DeskripsiSection extends StatelessWidget {
                   children: [
                     InkWell(
                       onTap: () async {
-                        await FaqModal.show(context, data['faq']);
+                        await FaqModal.show(context, widget.data['faq']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -157,7 +215,7 @@ class DeskripsiSection extends StatelessWidget {
                     const SizedBox(width: 5),
                     InkWell(
                       onTap: () async {
-                        await TutorModal.show(context, data['tutorial_vote'], lang['tutorial_vote_text']);
+                        await TutorModal.show(context, widget.data['tutorial_vote'], lang['tutorial_vote_text']);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -182,33 +240,35 @@ class DeskripsiSection extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(width: 5),
-                    InkWell(
-                      onTap: () async {
-                        await SKModal.show(context, data['snk'], lang['s_n_k_vote']);
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: color, // outline merah
-                            width: 1,
+                    if (!isHtmlEmpty(widget.data['snk'])) ... [
+                      const SizedBox(width: 5),
+                      InkWell(
+                        onTap: () async {
+                          await SKModal.show(context, widget.data['snk'], lang['s_n_k_vote']);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: color, // outline merah
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                lang['syarat_ket_vote'],
+                                style: TextStyle(color: color),
+                              ),
+                              const SizedBox(width: 5),
+                              Icon(Icons.open_in_new, color: color, size: 14),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Text(
-                              lang['syarat_ket_vote'],
-                              style: TextStyle(color: color),
-                            ),
-                            const SizedBox(width: 5),
-                            Icon(Icons.open_in_new, color: color, size: 14),
-                          ],
-                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -225,10 +285,18 @@ class DeskripsiSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Image.network(
-                            data['icon_penyelenggara'],
+                            widget.data['icon_penyelenggara'],
                             width: 80,   // atur sesuai kebutuhan
                             height: 80,
                             fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/img_broken.jpg',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.contain,
+                              );
+                            },
                           ),
 
                           const SizedBox(width: 12),
@@ -245,7 +313,7 @@ class DeskripsiSection extends StatelessWidget {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  data['nama_penyelenggara'],
+                                  widget.data['nama_penyelenggara'],
                                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                   softWrap: true,          // biar teks bisa kebungkus
                                   overflow: TextOverflow.visible, 
@@ -259,6 +327,23 @@ class DeskripsiSection extends StatelessWidget {
                   ),
                 ) 
               ),
+
+
+              if (sponsors.isNotEmpty) ... [
+                const SizedBox(height: 20,),
+                Text(
+                  'Sponsor',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 12,),
+                InfiniteSponsorMarquee(
+                  sponsors: sponsors,
+                  height: 48,
+                  speed: 35, // atur kecepatan
+                  showFade: false,
+                ),
+              ],
             ],
           ),
         ),
@@ -387,20 +472,25 @@ class LeaderboardSection extends StatelessWidget {
                 colors = Colors.brown;
               }
 
-              return buildTopCard(
-                context: context, 
-                rank: item['rank'], 
-                name: item['nama_finalis'], 
-                votes: item['total_voters'] ?? 0, 
-                color: colors, 
-                isBig: big, 
-                image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
-                tema: color, 
-                idFinalis: item['id_finalis'].toString(),
-                remaining: remaining,
-                lang: lang,
-                flag_hide_no_urut: data['flag_hide_nomor_urut'],
-              );
+              if (item['total_voters'] > 0){
+                return buildTopCard(
+                  context: context, 
+                  rank: item['rank'], 
+                  name: item['nama_finalis'], 
+                  votes: item['total_voters'] ?? 0, 
+                  color: colors, 
+                  isBig: big, 
+                  image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                  tema: color, 
+                  idFinalis: item['id_finalis'].toString(),
+                  remaining: remaining,
+                  lang: lang,
+                  flag_hide_no_urut: data['flag_hide_nomor_urut'],
+                  flag_paket : data['flag_paket']
+                );
+              } else {
+                return SizedBox.shrink();
+              }
 
             }).toList(),
           ),
@@ -409,18 +499,22 @@ class LeaderboardSection extends StatelessWidget {
             const SizedBox(height: 20),
             Column(
               children: others.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 20), // jarak antar item
-                  child: buildListCard(
-                    rank: item['rank'],
-                    name: item['nama_finalis'],
-                    votes: item['total_voters'] ?? 0,
-                    progress: 0,
-                    image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
-                    tema: color,
-                    lang: lang,
-                  ),
-                );
+                if ((item['total_voters'] ?? 0) > 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20), // jarak antar item
+                    child: buildListCard(
+                      rank: item['rank'],
+                      name: item['nama_finalis'],
+                      votes: item['total_voters'] ?? 0,
+                      progress: 0,
+                      image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                      tema: color,
+                      lang: lang,
+                    ),
+                  );
+                } else {
+                  return SizedBox.shrink();
+                }
               }).toList(),
             ),
           ]
@@ -605,99 +699,105 @@ class InfoSection extends StatelessWidget {
           ) 
         ),
 
-        const SizedBox(height: 15,),
-        Text(
-          lang['lokasi'],
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        if (data['lokasi_alamat'] == null && data['lokasi_alamat'] == '') ...[
+          const SizedBox(height: 15,),
+          Text(
+            lang['lokasi'],
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
 
-        const SizedBox(height: 12,),
-        Container(
-          color: Colors.white,
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    SvgPicture.network(
-                      "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                      width: 30,
-                      height: 30,
-                      fit: BoxFit.contain,
-                    ),
-
-                    const SizedBox(width: 12),
-                    //text
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            data['lokasi_alamat'] ?? '-',
-                            style: TextStyle(
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
+          const SizedBox(height: 12,),
+          Container(
+            color: Colors.white,
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      SvgPicture.network(
+                        "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                        width: 30,
+                        height: 30,
+                        fit: BoxFit.contain,
                       ),
-                    ),
-                  ],
-                ),
 
-              ],
-            ),
-          ) 
-        ),
-
-        const SizedBox(height: 15,),
-        Text(
-          "Venue",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-
-        const SizedBox(height: 12,),
-        Container(
-          color: Colors.white,
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    SvgPicture.network(
-                      "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                      width: 30,
-                      height: 30,
-                      fit: BoxFit.contain,
-                    ),
-
-                    const SizedBox(width: 12),
-                    //text
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            data['lokasi_nama_tempat'],
-                            style: TextStyle(
-                              color: Colors.black,
+                      const SizedBox(width: 12),
+                      //text
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              data['lokasi_alamat'] ?? '-',
+                              style: TextStyle(
+                                color: Colors.black,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-              ],
-            ),
-          ) 
-        ),
+                ],
+              ),
+            ) 
+          ),
+        ],
+
+        if (data['lokasi_nama_tempat'] != null && data['lokasi_nama_tempat'] != '') ...[
+          const SizedBox(height: 15,),
+          Text(
+            "Venue",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: 12,),
+          Container(
+            color: Colors.white,
+            child: Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      SvgPicture.network(
+                        "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                        width: 30,
+                        height: 30,
+                        fit: BoxFit.contain,
+                      ),
+
+                      const SizedBox(width: 12),
+                      //text
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              data['lokasi_nama_tempat'] != null && data['lokasi_nama_tempat'] != ''
+                                ? data['lokasi_nama_tempat']
+                                : '-',
+                              style: TextStyle(
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                ],
+              ),
+            ) 
+          ),
+        ],
 
         const SizedBox(height: 15,),
         Text(
@@ -861,7 +961,8 @@ Widget buildTopCard({
   required String idFinalis,
   required Duration remaining,
   required Map<String, dynamic> lang,
-  required String flag_hide_no_urut
+  required String flag_hide_no_urut,
+  required String flag_paket,
 }) {
   String crownImage = '';
   switch (rank) {
@@ -925,17 +1026,33 @@ Widget buildTopCard({
             const SizedBox(height: 6),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailFinalisPage(
-                      id_finalis: idFinalis,
-                      count: 0,
-                      indexWrap: null,
-                      flag_hide_no_urut: flag_hide_no_urut,
+                if (flag_paket == '0') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailFinalisPage(
+                        id_finalis: idFinalis,
+                        count: 0,
+                        indexWrap: null,
+                        flag_hide_no_urut: flag_hide_no_urut,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailFinalisPaketPage(
+                        id_finalis: idFinalis,
+                        vote: 0,
+                        index: 0,
+                        total_detail: 0,
+                        id_paket_bw: null,
+                        flag_hide_no_urut: flag_hide_no_urut,
+                      ),
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 13),
@@ -961,6 +1078,14 @@ Widget buildTopCard({
             width: isBig ? 75 : 55,
             height: isBig ? 75 : 55,
             fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/images/img_broken.jpg',
+                  width: isBig ? 75 : 55,
+                  height: isBig ? 75 : 55,
+                  fit: BoxFit.contain,
+                );
+              },
           ),
         ),
     ],

@@ -4,10 +4,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
-import 'package:kreen_app_flutter/pages/vote/waiting_order_page.dart';
+import 'package:kreen_app_flutter/pages/order/waiting_order_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -27,6 +28,9 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
 
   Map<String, dynamic> bahasa = {};
   String? orderMenunggu, orderGagal;
+
+  bool showErrorBar = false;
+  String errorMessage = "";
 
   @override
   void initState() {
@@ -82,9 +86,32 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
     var getUser = await StorageService.getUser();
     var email = getUser['email'];
 
-    var resultSuccess = await ApiService.get('/order/vote?email_voter=$email&status=success&sort_by=terbaru&type_data=new');
-    var resultPending = await ApiService.get('/order/vote?email_voter=$email&status=pending&sort_by=terbaru&type_data=new');
-    var resultFail = await ApiService.get('/order/vote?email_voter=$email&status=fail&sort_by=terbaru&type_data=new');
+    var resultSuccess = await ApiService.get('/order/vote?email_voter=$email&status=success&sort_by=terbaru&type_data=new', xLanguage: langCode);
+    if (resultSuccess == null || resultSuccess['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultSuccess?['message'];
+      });
+      return;
+    }
+
+    var resultPending = await ApiService.get('/order/vote?email_voter=$email&status=pending&sort_by=terbaru&type_data=new', xLanguage: langCode);
+    if (resultPending == null || resultPending['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultPending?['message'];
+      });
+      return;
+    }
+
+    var resultFail = await ApiService.get('/order/vote?email_voter=$email&status=fail&sort_by=terbaru&type_data=new', xLanguage: langCode);
+    if (resultFail == null || resultFail['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFail?['message'];
+      });
+      return;
+    }
 
     var tempSuccess = resultSuccess?['data'];
     var tempPending = resultPending?['data'];
@@ -151,6 +178,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       });
     }
 
+    if (!mounted) return;
     setState(() {
       orderSuccess = tempSuccess;
       votesSukses = tempVotesSukses;
@@ -162,52 +190,65 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       votesGagal = tempVotesGagal;
 
       isLoading = false;
+      showErrorBar = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        
-        Material(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.red,
-            labelColor: Colors.red,
-            unselectedLabelColor: Colors.grey,
-            tabs: [
-              Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
-              Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
-              Tab(icon: Icon(Icons.close_rounded), text: orderGagal), //gagal
-            ],
-          ),
+        GlobalErrorBar(
+          visible: showErrorBar, 
+          message: errorMessage, 
+          onRetry: () {
+            _loadContent();
+          }
         ),
-        
-        Expanded(
-          child: isLoading
-                ? _buildSkeletonLoader()
-                : TabBarView(
-              controller: _tabController,
-              physics: NeverScrollableScrollPhysics(),
-              children: [
 
-                orderSuccess.isNotEmpty
-                  ? VoteSuccess(orderSuccess: orderSuccess, votes: votesSukses,)
-                  : NoOrder(),
-
-                orderPending.isNotEmpty
-                  ? VotePending(orderPending: orderPending, votes: votesPending)
-                  : NoOrder(),
-
-                orderFail.isNotEmpty
-                  ? VoteFail(orderFail: orderFail, votes: votesGagal)
-                  : NoOrder(),
-
-              ],
+        Column(
+          children: [
+            
+            Material(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.red,
+                labelColor: Colors.red,
+                unselectedLabelColor: Colors.grey,
+                tabs: [
+                  Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
+                  Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
+                  Tab(icon: Icon(Icons.close_rounded), text: orderGagal), //gagal
+                ],
+              ),
             ),
-        ),
+            
+            Expanded(
+              child: isLoading
+                    ? _buildSkeletonLoader()
+                    : TabBarView(
+                  controller: _tabController,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: [
+
+                    orderSuccess.isNotEmpty
+                      ? VoteSuccess(orderSuccess: orderSuccess, votes: votesSukses,)
+                      : NoOrder(),
+
+                    orderPending.isNotEmpty
+                      ? VotePending(orderPending: orderPending, votes: votesPending)
+                      : NoOrder(),
+
+                    orderFail.isNotEmpty
+                      ? VoteFail(orderFail: orderFail, votes: votesGagal)
+                      : NoOrder(),
+
+                  ],
+                ),
+            ),
+          ],
+        )
       ],
     );
   }
@@ -215,7 +256,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
   Widget _buildSkeletonLoader() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: 5,
+      itemCount: 8,
       itemBuilder: (context, index) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -575,20 +616,20 @@ class _VoteSuccessState extends State<VoteSuccess> {
                           children: [
                             SizedBox(
                               width: 70,
-                              height: 70,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  itemVotes['banner'],
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    itemVotes['banner'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -922,21 +963,21 @@ class _VotePendingState extends State<VotePending> {
               }
 
               String? currencyRegion;
-              if (item['order_region'] == "EU"){
+              if (item['region'] == "EU"){
                 currencyRegion = "EUR";
-              } else if (item['order_region'] == "ID"){
+              } else if (item['region'] == "ID"){
                 currencyRegion = "IDR";
-              } else if (item['order_region'] == "MY"){
+              } else if (item['region'] == "MY"){
                 currencyRegion = "MYR";
-              } else if (item['order_region'] == "PH"){
+              } else if (item['region'] == "PH"){
                 currencyRegion = "PHP";
-              } else if (item['order_region'] == "SG"){
+              } else if (item['region'] == "SG"){
                 currencyRegion = "SGD";
-              } else if (item['order_region'] == "TH"){
+              } else if (item['region'] == "TH"){
                 currencyRegion = "THB";
-              } else if (item['order_region'] == "US"){
+              } else if (item['region'] == "US"){
                 currencyRegion = "USD";
-              } else if (item['order_region'] == "VN"){
+              } else if (item['region'] == "VN"){
                 currencyRegion = "VND";
               }
 
@@ -1033,20 +1074,20 @@ class _VotePendingState extends State<VotePending> {
                           children: [
                             SizedBox(
                               width: 70,
-                              height: 70,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  itemVotes['banner'],
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    itemVotes['banner'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -1379,21 +1420,21 @@ class _VoteFailState extends State<VoteFail> {
               }
 
               String? currencyRegion;
-              if (item['order_region'] == "EU"){
+              if (item['region'] == "EU"){
                 currencyRegion = "EUR";
-              } else if (item['order_region'] == "ID"){
+              } else if (item['region'] == "ID"){
                 currencyRegion = "IDR";
-              } else if (item['order_region'] == "MY"){
+              } else if (item['region'] == "MY"){
                 currencyRegion = "MYR";
-              } else if (item['order_region'] == "PH"){
+              } else if (item['region'] == "PH"){
                 currencyRegion = "PHP";
-              } else if (item['order_region'] == "SG"){
+              } else if (item['region'] == "SG"){
                 currencyRegion = "SGD";
-              } else if (item['order_region'] == "TH"){
+              } else if (item['region'] == "TH"){
                 currencyRegion = "THB";
-              } else if (item['order_region'] == "US"){
+              } else if (item['region'] == "US"){
                 currencyRegion = "USD";
-              } else if (item['order_region'] == "VN"){
+              } else if (item['region'] == "VN"){
                 currencyRegion = "VND";
               }
 
@@ -1490,20 +1531,20 @@ class _VoteFailState extends State<VoteFail> {
                           children: [
                             SizedBox(
                               width: 70,
-                              height: 70,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  itemVotes['banner'],
-                                  height: 70,
-                                  width: 70,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 70,
-                                      width: 70,
-                                    );
-                                  },
+                              child: AspectRatio(
+                                aspectRatio: 4 / 5,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    itemVotes['banner'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),

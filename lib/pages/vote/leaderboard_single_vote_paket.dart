@@ -7,7 +7,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
@@ -20,6 +22,7 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.da
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_5_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_6_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
+import 'package:kreen_app_flutter/helper/download_qr.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -47,7 +50,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   num? harga;
   num? hargaAsli;
   bool isTutup = false;
-  bool canDownload = false;
+  bool canDownload = true;
 
   final prefs = FlutterSecureStorage();
   String? langCode, currencyCode;
@@ -73,6 +76,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   String? detailfinalisText;
   String? noDataText;
   String? ageText, activityText, biographyText, scanQrText, downloadQrText, tataCaraText, videoProfilText, noValidVideo, socialMediaText;
+
+  int totalQty = 0;
+  int countData = 1;
+
+  bool showErrorBar = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -138,18 +147,40 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   Future<void> _loadFinalis() async {
     final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode);
-    Map<String, dynamic> tempFinalis = resultFinalis?['data'] ?? {};
+    if (resultFinalis == null || resultFinalis['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFinalis?['message'];
+      });
+      return;
+    }
+    Map<String, dynamic> tempFinalis = resultFinalis['data'] ?? {};
 
     final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
-    final tempDetailVote = resultDetailVote?['data'] ?? {};
+    if (resultDetailVote == null || resultDetailVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultDetailVote?['message'];
+      });
+      return;
+    }
+    final tempDetailVote = resultDetailVote['data'] ?? {};
 
     final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard", xLanguage: langCode);
-    final  tempRanking = resultLeaderboard?['data'] ?? [];
+    if (resultLeaderboard == null || resultLeaderboard['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultLeaderboard?['message'];
+      });
+      return;
+    }
+    final  tempRanking = resultLeaderboard['data'] ?? [];
 
     final tempPaket = tempDetailVote['vote_paket'];
 
     await _precacheAllImages(context, tempFinalis, tempRanking);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         detailFinalis = tempFinalis;
@@ -202,6 +233,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         }
 
         _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -250,10 +282,22 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenDetail()
-    );
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenDetail(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadFinalis();
+            },
+          ),
+        ],
+      ),
+    ); 
   }
 
   Widget buildSkeletonHome() {
@@ -658,7 +702,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
                       if (detailFinalis['usia'] != 0 ||
                           (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                          (detailFinalis['deskripsi'] != null && detailFinalis['deskripsi'] != '')) ... [
+                          (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
                         SizedBox(height: 12,),
                         Container(
                           width: double.infinity,
@@ -700,7 +744,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                   ),
                                 ],
                     
-                                if (detailFinalis['deskripsi'] != null) ... [
+                                if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
                                   SizedBox(height: 12,),
                                   Text(
                                     biographyText!,
@@ -744,6 +788,14 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                   width: 100,
                                   height: 100,
                                   fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/images/img_broken.jpg',
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.contain,
+                                    );
+                                  },
                                 ),
                   
                                 SizedBox(height: 12,),
@@ -753,33 +805,43 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                 ),
                   
                                 SizedBox(height: 12,),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: canDownload ? color : Colors.grey,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                                Material(
+                                  color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: canDownload ? () {
-                                      
-                                    }
-                                    : null,
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          downloadQrText!,
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        SizedBox(width: 10,),
-                                        Icon(
-                                          Icons.download, color: Colors.white, size: 15,
-                                        )
-                                      ],
-                                    )
-                                  )
+                                    onTap: canDownload 
+                                      ? () async {
+                                          await downloadQrImage(
+                                            context, 
+                                            detailFinalis['id_qrcode'],
+                                            bahasa!['download_scan_gagal'],
+                                            bahasa!['download_scan_berhasil'],
+                                            bahasa!['kesalahan_simpan_scan'],
+                                          );
+                                        }
+                                      : null,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: canDownload ? color : Colors.grey,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            downloadQrText!,
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.download, color: Colors.white, size: 15,
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                   
                                 SizedBox(height: 12,),
@@ -930,6 +992,14 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                             width: 80,   // atur sesuai kebutuhan
                                             height: 80,
                                             fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 80,
+                                                width: 80,
+                                                fit: BoxFit.contain,
+                                              );
+                                            },
                                           ),
 
                                           const SizedBox(width: 12),
@@ -1243,10 +1313,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         ],
       ),
 
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
+      bottomNavigationBar: SafeArea(
         child: Padding(
-          padding:  EdgeInsets.all(8),
+          padding:  EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1267,10 +1336,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                       color: color,
                     ),
                   ),
+                  Text(
+                    "${bahasa!['paket']} $counts ${bahasa!['text_vote']}(s)\n$countData ${bahasa!['finalis']}(s)",
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ],
               ),
 
-              // kanan
               ElevatedButton(
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.resolveWith<Color>(
@@ -1433,11 +1505,10 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
-            ],
+            ]
           ),
         ),
       ),
-
     );
   }
 

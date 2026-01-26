@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_2_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.dart';
@@ -46,6 +47,12 @@ class _DetailVotePageState extends State<DetailVotePage> {
   Map<String, dynamic>? bahasa;
   String? detailVoteLangText;
 
+  Map<String, dynamic> vote = {};
+  List<dynamic> ranking = [];
+  List<dynamic> support = [];
+  bool showErrorBar = false;
+  String errorMessage = ''; 
+
   @override
   void initState() {
     super.initState();
@@ -62,29 +69,50 @@ class _DetailVotePageState extends State<DetailVotePage> {
     });
   }
 
-  Map<String, dynamic> vote = {};
-  List<dynamic> ranking = [];
-  List<dynamic> support = [];
-
   Future<void> _loadVotes() async {
 
     final resultVote = await ApiService.get("/vote/${widget.id_event}", xLanguage: langCode, xCurrency: currencyCode);
-    final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode);
-    final resultSupport = await ApiService.get("/vote/${widget.id_event}/support", xLanguage: langCode);
+    if (resultVote == null || resultVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultVote?['message'];
+      });
+      return;
+    }
 
-    final Map<String, dynamic> tempVote = resultVote?['data'] ?? {};
-    final tempRanking = resultLeaderboard?['data'] ?? [];
+    final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode);
+    if (resultLeaderboard == null || resultLeaderboard['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultLeaderboard?['message'];
+      });
+      return;
+    }
+
+    final resultSupport = await ApiService.get("/vote/${widget.id_event}/support", xLanguage: langCode);
+    if (resultSupport == null || resultSupport['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultSupport?['message'];
+      });
+      return;
+    }
+
+    final Map<String, dynamic> tempVote = resultVote['data'] ?? {};
+    final tempRanking = resultLeaderboard['data'] ?? [];
 
     await _precacheAllImages(context, tempVote, tempRanking);
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         vote = tempVote;
         ranking = tempRanking;
-        support = resultSupport?['data'] ?? [];
-        _isLoading = false;
-
+        support = resultSupport['data'] ?? [];
         flag_paket = vote['flag_paket'];
+
+        _isLoading = false;
+        showErrorBar = false;
       });
     }
   }
@@ -222,10 +250,22 @@ class _DetailVotePageState extends State<DetailVotePage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: _isLoading
-          ? buildSkeletonHome()
-          : buildKontenVote()
-    );
+      body: Stack(
+        children: [
+          _isLoading
+            ? buildSkeletonHome()
+            : buildKontenVote(),
+
+          GlobalErrorBar(
+            visible: showErrorBar,
+            message: errorMessage,
+            onRetry: () {
+              _loadVotes();
+            },
+          ),
+        ],
+      ),
+    ); 
   }
 
   Widget buildSkeletonHome() {

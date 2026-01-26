@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/constants.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -32,8 +32,6 @@ class DetailOrderModal {
       langCode = await StorageService.getLanguage();
 
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
-
-      isLoading = false;
     }
 
     Future<void> loadOrder() async {
@@ -89,6 +87,8 @@ class DetailOrderModal {
       totalPriceRegion = voteOder['total_amount'] * voteOder['currency_value_region'];
       totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
       totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+
+      isLoading = false;
     }
 
     Widget buildSkeleton() {
@@ -644,18 +644,14 @@ class DetailOrderModal {
 
     String? langCode, currencyRegion;
 
-    Map<String, dynamic> paymentLang = {};
-    Map<String, dynamic> voteLang = {};
-    Map<String, dynamic> eventLang = {};
+    Map<String, dynamic> bahasa = {};
 
     num totalPriceRegion = 0;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
-      paymentLang = await LangService.getJsonData(langCode!, "payment");
-      voteLang = await LangService.getJsonData(langCode!, "detail_vote");
-      eventLang = await LangService.getJsonData(langCode!, "event");
+      bahasa = await LangService.getJsonData(langCode!, "bahasa");
 
       isLoading = false;
     }
@@ -713,19 +709,19 @@ class DetailOrderModal {
       }
       
       if (eventOder['order_status'] == '0'){
-        statusOrder = paymentLang['status_order_0'] ?? ""; // 'gagal';
+        statusOrder = bahasa['status_order_0'] ?? ""; // 'gagal';
       } else if (eventOder['order_status'] == '1'){
-        statusOrder = paymentLang['status_order_1'] ?? ""; // 'selesai';
+        statusOrder = bahasa['status_order_1'] ?? ""; // 'selesai';
       } else if (eventOder['order_status'] == '2'){
-        statusOrder = paymentLang['status_order_2'] ?? ""; // 'batal';
+        statusOrder = bahasa['status_order_2'] ?? ""; // 'batal';
       } else if (eventOder['order_status'] == '3'){
-        statusOrder = paymentLang['status_order_3'] ?? ""; // 'menunggu';
+        statusOrder = bahasa['status_order_3'] ?? ""; // 'menunggu';
       } else if (eventOder['order_status'] == '4'){
-        statusOrder = paymentLang['status_order_4'] ?? ""; // 'refund';
+        statusOrder = bahasa['status_order_4'] ?? ""; // 'refund';
       } else if (eventOder['order_status'] == '20'){
-        statusOrder = paymentLang['status_order_20'] ?? ""; // 'expired';
+        statusOrder = bahasa['status_order_20'] ?? ""; // 'expired';
       } else if (eventOder['order_status'] == '404'){
-        statusOrder = paymentLang['status_order_404'] ?? ""; // 'hidden';
+        statusOrder = bahasa['status_order_404'] ?? ""; // 'hidden';
       }
       
       if (eventOder['order_region'] == "EU"){
@@ -1135,7 +1131,7 @@ class DetailOrderModal {
                                       const SizedBox(height: 4),
                                       Text(
                                         eventOder['amount'] == 0
-                                        ? voteLang['harga_detail'] ?? "" //'Gratis'
+                                        ? bahasa['harga_detail'] ?? "" //'Gratis'
                                         : "$currencyRegion ${formatter.format(totalPriceRegion)}",
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
@@ -1151,7 +1147,7 @@ class DetailOrderModal {
 
                     const SizedBox(height: 16),
                     Text(
-                      paymentLang['informasi_tiket'] ?? "", // 'Informasi Tiket',
+                      bahasa['informasi_tiket'] ?? "", // 'Informasi Tiket',
                     ),
 
                     SizedBox(height: 8,),
@@ -1190,7 +1186,7 @@ class DetailOrderModal {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  '${paymentLang['tiket']} ${index + 1} ${item['ticket_name']}',
+                                                  '${bahasa['tiket']} ${index + 1} ${item['ticket_name']}',
                                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                                 ),
                                                 const SizedBox(height: 8),
@@ -1206,7 +1202,7 @@ class DetailOrderModal {
                                                 const SizedBox(height: 8),
                                                 Text(
                                                   // berlaku hingga
-                                                  '${eventLang['expired_at']} \n$formattedDate $dateshow \n$maxend',
+                                                  '${bahasa['expired_at']} \n$formattedDate $dateshow \n$maxend',
                                                   softWrap: true,
                                                 ),
                                               ],
@@ -1235,6 +1231,14 @@ class DetailOrderModal {
                                                 width: 70,
                                                 height: 70,
                                                 fit: BoxFit.contain,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Image.asset(
+                                                    'assets/images/img_broken.jpg',
+                                                    fit: BoxFit.contain,
+                                                    width: 70,
+                                                    height: 70,
+                                                  );
+                                                },
                                               ),
                                             ),
                                             
@@ -1275,7 +1279,7 @@ class DetailOrderModal {
                                                 launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                                               },
                                               child: Text(
-                                                eventLang['lihat_file'] ?? "", //"Lihat File",
+                                                bahasa['lihat_file'] ?? "", //"Lihat File",
                                                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                                               ),
                                             )
@@ -1293,7 +1297,7 @@ class DetailOrderModal {
                     if (eventOder['order_status'] == '3') ... [
                       const SizedBox(height: 16),
                       Text(
-                        paymentLang['detail_pembayaran'] ?? "", //'Detail Pembayaran',
+                        bahasa['detail_pembayaran'] ?? "", //'Detail Pembayaran',
                       ),
 
                       SizedBox(height: 8,),
@@ -1326,7 +1330,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              Text(voteLang['harga'] ?? "", style: TextStyle(color: Colors.grey),),
+                              Text(bahasa['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 "$currencyRegion ${formatter.format(totalPriceRegion)}",
@@ -1338,7 +1342,7 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              Text(paymentLang['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
+                              Text(bahasa['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
                                 eventOder['payment_method_name'],
@@ -1383,6 +1387,12 @@ class DetailOrderModal {
                   url,
                   width: MediaQuery.of(context).size.width * 0.8,
                   fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'assets/images/img_broken.jpg',
+                      fit: BoxFit.contain,
+                    );
+                  },
                 ),
               ),
             ),
