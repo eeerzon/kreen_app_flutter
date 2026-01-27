@@ -200,7 +200,11 @@ class _FinalisPageState extends State<FinalisPage> {
       }
       totalHargaAsli = total;
       total = total * (vote['rate_currency_user'] / vote['rate_currency_vote']);
-      total = (total * 100).ceil() / 100;
+      if (currencyCode == "IDR") {
+        total = total.ceil();
+      } else {
+        total = (total * 100).ceil() / 100;
+      }
     } else {
       for (int i = 0; i < counts.length; i++) {
         final hargaItem = num.tryParse(vote['harga'].toString()) ?? 0;

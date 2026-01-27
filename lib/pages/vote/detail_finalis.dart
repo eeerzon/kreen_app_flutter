@@ -245,7 +245,11 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       hargaItem = hargaAsli * counts;
       totalHargaAsli = hargaItem;
       hargaItem = hargaItem * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
-      hargaItem = (hargaItem * 100).ceil() / 100;
+      if (currencyCode == "IDR") {
+        hargaItem = hargaItem.ceil();
+      } else {
+        hargaItem = (hargaItem * 100).ceil() / 100;
+      }
     } else {
       hargaItem = harga * counts;
     }
@@ -1138,7 +1142,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                     ),
                   ),
                   Text(
-                    "Qty $totalQty ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
+                    "Qty $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
                     style: TextStyle(fontSize: 12,),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

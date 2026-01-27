@@ -54,7 +54,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
 
     if (!mounted) return;
     setState(() {
-      infoKonten = resultInformasi?['data'] ?? [];
+      infoKonten = resultInformasi['data'] ?? [];
       isLoading = false;
       showErrorBar = false;
     });

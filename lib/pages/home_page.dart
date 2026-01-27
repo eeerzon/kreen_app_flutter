@@ -51,6 +51,8 @@ class _HomePageState extends State<HomePage> {
   ];
 
   final prefs = FlutterSecureStorage();
+  Map<String, dynamic> bahasa = {};
+  bool scanFitur = false;
 
   @override
   void initState() {
@@ -75,6 +77,7 @@ class _HomePageState extends State<HomePage> {
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
+      bahasa = tempbahasa;
       home = tempbahasa['bot_nav_1'];
       explore = tempbahasa['bot_nav_2'];
       order = tempbahasa['bot_nav_3'];
@@ -138,12 +141,23 @@ class _HomePageState extends State<HomePage> {
 
         // --- Floating Action Button (scan) ---
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.red,
+          backgroundColor: scanFitur ? Colors.red : Colors.grey,
           onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ScannerPage()),
-            );
+            scanFitur
+              ? await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ScannerPage()),
+                )
+              : ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(bahasa['upcoming']),
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                    ),
+                  ),
+                );
           },
           child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
         ),

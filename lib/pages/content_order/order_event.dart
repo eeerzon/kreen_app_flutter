@@ -113,9 +113,9 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       return;
     }
 
-    var tempSuccess = resultSuccess?['data'];
-    var tempPending = resultPending?['data'];
-    var tempFail = resultFail?['data'];
+    var tempSuccess = resultSuccess['data'];
+    var tempPending = resultPending['data'];
+    var tempFail = resultFail['data'];
 
     List<Map<String, dynamic>> tempEventSukses = [];
     List<Map<String, dynamic>> tempEventPending = [];
@@ -125,8 +125,9 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       final idOrder = ordersukses['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/event/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+      final data = resultOrder?['data'];
+      final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVoteSukses = tempOrder['event'] ?? {};
       final tempVoteOrder = tempOrder['event_order'] ?? {};
 
@@ -144,8 +145,9 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       final idOrder = orderpending['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/event/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+      final data = resultOrder?['data'];
+      final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVotePending = tempOrder['event'] ?? {};
       final tempVoteOrder = tempOrder['event_order'] ?? {};
 
@@ -163,8 +165,9 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       final idOrder = ordergagal['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/event/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+      final data = resultOrder?['data'];
+      final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVoteGagal = tempOrder['event'] ?? {};
       final tempVoteOrder = tempOrder['event_order'] ?? {};
 
@@ -400,8 +403,9 @@ class _EventSuccessState extends State<EventSuccess> {
         final idOrder = ordersuccess['id_order'];
         if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-        final resultOrder = await ApiService.get("/order/event/$idOrder");
-        final tempOrder = resultOrder?['data'] ?? {};
+        final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+        final data = resultOrder?['data'];
+        final tempOrder = data is Map<String, dynamic> ? data : {};
         final tempEventSukses = tempOrder['event'] ?? {};
         final tempEventOrder = tempOrder['event_order'] ?? {};
 
@@ -677,13 +681,18 @@ class _EventSuccessState extends State<EventSuccess> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
-                                    ),
-                                  );
+                                  if (itemEvents['id_event'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -704,7 +713,12 @@ class _EventSuccessState extends State<EventSuccess> {
                             Expanded(
                               child: InkWell(
                                 onTap: () async {
-                                  await DetailOrderModal.showEvent(context, itemEvents['id_order'], true);
+                                  if (itemEvents['id_order'] != null) {
+                                    await DetailOrderModal.showEvent(context, itemEvents['id_order'], true);
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -857,8 +871,9 @@ class _EventPendingState extends State<EventPending> {
         final idOrder = orderpending['id_order'];
         if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-        final resultOrder = await ApiService.get("/order/event/$idOrder");
-        final tempOrder = resultOrder?['data'] ?? {};
+        final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+        final data = resultOrder?['data'];
+        final tempOrder = data is Map<String, dynamic> ? data : {};
         final tempEventPending = tempOrder['event'] ?? {};
         final tempEventOrder = tempOrder['event_order'] ?? {};
 
@@ -1132,10 +1147,15 @@ class _EventPendingState extends State<EventPending> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency_pg'],)),
-                                  );
+                                  if (itemEvents['id_order'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency'],)),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1160,7 +1180,12 @@ class _EventPendingState extends State<EventPending> {
                             Expanded(
                               child: InkWell(
                                 onTap: () async {
-                                  await DetailOrderModal.showEvent(context, itemEvents['id_order'], false);
+                                  if (itemEvents['id_order'] != null) {
+                                    await DetailOrderModal.showEvent(context, itemEvents['id_order'], false);
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1313,8 +1338,9 @@ class _EventFailState extends State<EventFail> {
         final idOrder = ordergagal['id_order'];
         if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-        final resultOrder = await ApiService.get("/order/event/$idOrder");
-        final tempOrder = resultOrder?['data'] ?? {};
+        final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+        final data = resultOrder?['data'];
+        final tempOrder = data is Map<String, dynamic> ? data : {};
         final tempEventFail = tempOrder['event'] ?? {};
         final tempEventOrder = tempOrder['event_order'] ?? {};
 
@@ -1590,13 +1616,18 @@ class _EventFailState extends State<EventFail> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
-                                    ),
-                                  );
+                                  if (itemEvents['id_event'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
+                                      ),
+                                    );
+                                  }  else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1617,7 +1648,12 @@ class _EventFailState extends State<EventFail> {
                             Expanded(
                               child: InkWell(
                                 onTap: () async {
-                                  await DetailOrderModal.showEvent(context, itemEvents['id_order'], false);
+                                  if (itemEvents['id_order'] != null) {
+                                    await DetailOrderModal.showEvent(context, itemEvents['id_order'], false);
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1685,7 +1721,7 @@ class NoOrder extends StatefulWidget {
 
 class _NoOrderState extends State<NoOrder> {
   String? langCode;
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   @override
   void initState() {
@@ -1702,9 +1738,9 @@ class _NoOrderState extends State<NoOrder> {
       langCode = code;
     });
 
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
     setState(() {
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -1733,17 +1769,27 @@ class _NoOrderState extends State<NoOrder> {
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
                     child: Image.asset(
                       'assets/images/no_order.png',
-                      height: 220,
+                      height: 170,
                     )
                   ),
 
                   const SizedBox(height: 20),
                   Text(
-                    // 'Belum ada Transaksi',
-                    voteLang['belum_ada_transaksi'] ?? "",
+                    // 'maaaf...',
+                    bahasa['maaf'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Text(
+                    // 'Belum ada Transaksi',
+                    bahasa['belum_ada_transaksi'] ?? "",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
                       fontSize: 18,
                     ),
                   ),

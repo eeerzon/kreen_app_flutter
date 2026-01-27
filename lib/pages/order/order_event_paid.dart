@@ -50,7 +50,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
       return;
     }
 
-    final tempOrder = resultOrder?['data'] ?? {};
+    final tempOrder = resultOrder['data'] ?? {};
 
     final temp_event_order = tempOrder['event_order'] ?? {};
     final temp_event_order_detail = tempOrder['event_order_detail'] ?? [];
@@ -65,7 +65,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
       "id_event": temp_event['id_event'],
     };
 
-    final resultEvent = await ApiService.post('/event/detail', body: body);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode);
     final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
 
     if (!mounted) return;

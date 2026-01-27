@@ -35,7 +35,7 @@ class DetailOrderModal {
     }
 
     Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/vote/$idOrder");
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
       final tempOrder = resultOrder?['data'] ?? {};
 
       final tempVoteOrder = tempOrder['vote_order'] ?? {};
@@ -663,7 +663,7 @@ class DetailOrderModal {
     
 
     Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/event/$idOrder");
+      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
       final tempOrder = resultOrder?['data'] ?? {};
 
       final tempEventOrder = tempOrder['event_order'] ?? {};
@@ -674,6 +674,7 @@ class DetailOrderModal {
 
       eventOder = tempEventOrder;
       eventOrderDetail = tempEventOrderDetail;
+      eventOrderDetail = eventOrderDetail.reversed.toList();
       eventTiket = tempEventTiket;
 
       event = tempEvent;
@@ -682,7 +683,7 @@ class DetailOrderModal {
         "id_event": event['id_event'],
       };
 
-      final resultEvent = await ApiService.post('/event/detail', body: body);
+      final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode);
       final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
 
       dateshow = tempEventDetail['eventdate'][0]['dateshow'];

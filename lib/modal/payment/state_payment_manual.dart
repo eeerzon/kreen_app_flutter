@@ -161,8 +161,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       await _getBahasa();
       await _getCurrency();
       await _checkToken();
-      await loadData();
       await getData(widget.id_vote);
+      await loadData();
 
       user_id = widget.idUser;
     });
@@ -254,10 +254,10 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
     if (!mounted) return;
     setState(() {
-      detailVote = detailResp?['data'] ?? {};
+      detailVote = detailResp['data'] ?? {};
       voteCurrency = detailVote['currency'];
 
-      payment = paymentResp?['data'] ?? {};
+      payment = paymentResp['data'] ?? {};
 
       indikator = detailVote['indikator_vote'] ?? [];
       
@@ -3125,7 +3125,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 final int count = widget.counts_finalis[index];
                                 num hargaVote = count * widget.price;
                                 hargaVote = hargaVote * (widget.rateCurrencyUser / widget.rateCurrency);
-                                hargaVote = (100 * hargaVote).ceil() / 100;
+                                if (currencyCode == "IDR") {
+                                  hargaVote = hargaVote.ceil();
+                                } else {
+                                  hargaVote = (100 * hargaVote).ceil() / 100;
+                                }
           
                                 return Padding(
                                   padding: EdgeInsets.only(

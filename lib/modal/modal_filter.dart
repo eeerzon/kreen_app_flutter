@@ -48,6 +48,8 @@ class ModalFilter {
 
     return await showModalBottomSheet<Map<String, List<String>>>(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -68,9 +70,25 @@ class ModalFilter {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Filter', style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold)),
-                        IconButton(
-                          icon: Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
+                        // IconButton(
+                        //   icon: Icon(Icons.close),
+                        //   onPressed: () => Navigator.pop(context),
+                        // ),
+
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              paramTime.clear();
+                              paramPrice.clear();
+                            });
+                          },
+                          child: Text(
+                            'Reset',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),

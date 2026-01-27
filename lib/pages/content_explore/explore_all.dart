@@ -99,7 +99,7 @@ class _ExploreAllState extends State<ExploreAll> {
 
     if (!mounted) return;
 
-    final resultAll = responses!['data'] ?? [];
+    final resultAll = responses['data'] ?? [];
 
     setState(() {
       allDataCombained = resultAll;

@@ -264,16 +264,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
+
                             const SizedBox(height: 12),
-                            GestureDetector(
-                              onTap: _goToHome,
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                backgroundColor: Colors.white,
+                              ),
+                              onPressed: _goToHome,
                               child: Text(
                                 guest ?? "-",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
                               ),
                             ),
                           ],

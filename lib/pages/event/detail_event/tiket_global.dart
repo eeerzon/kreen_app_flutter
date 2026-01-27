@@ -1419,7 +1419,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ),
                         };
 
-                        var resultEventOrder = await ApiService.post("/order/event/checkout", body: body);
+                        var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
 
                         if (resultEventOrder != null) {
                           if (resultEventOrder['rc'] == 200) {

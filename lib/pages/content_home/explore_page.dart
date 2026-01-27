@@ -51,6 +51,8 @@ class _ExplorePageState extends State<ExplorePage> {
       _selectedIndex = index;
       _keyword = '';
       _searchController.clear();
+      timeFilter = [];
+      priceFilter = [];
     });
   }
 
@@ -135,6 +137,7 @@ class _ExplorePageState extends State<ExplorePage> {
             // ),
             
             ExploreSearchBar(
+              key: ValueKey(_selectedIndex),
               controller: _searchController, 
               onChanged: onSearch,
               initialTime: timeFilter,

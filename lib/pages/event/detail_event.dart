@@ -68,7 +68,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
       "id_event": widget.id_event,
     };
 
-    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;

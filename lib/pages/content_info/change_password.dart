@@ -314,19 +314,19 @@ class _ChangePasswordState extends State<ChangePassword> {
 
     if (!mounted) return;
 
-    if (response != null && response['success'] == true && response['rc'] == 200) {
+    if (response['rc'] == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(bahasa['sukses_info'])), //'Kata sandi berhasil diubah'
       );
       Navigator.pop(context);
-    } else if (response != null && response['rc'] == 500) {
+    } else if (response['rc'] == 500) {
       setState(() {
         showErrorBar = true;
         errorCode = 500;
         errorMessage500 = response['message'] ?? bahasa['gagal_info']; //'Terjadi kesalahan server. Silakan coba lagi nanti.';
       });
       return;
-    } else if (response != null && response['rc'] == 422) {
+    } else if (response['rc'] == 422) {
       setState(() {
         showErrorBar = true;
         errorCode = 422;

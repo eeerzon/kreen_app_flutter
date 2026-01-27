@@ -29,7 +29,7 @@ class CheckPaymentModal {
     }
 
     Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/vote/$idOrder");
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
       if (resultOrder != null) {
         if (resultOrder['rc'] == 200) {
           final tempOrder = resultOrder['data'] ?? {};
@@ -332,7 +332,7 @@ class CheckPaymentModal {
     }
 
     Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/event/$idOrder");
+      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
       final tempOrder = resultOrder?['data'] ?? {};
 
       eventOrder = tempOrder['event_order'] ?? {};

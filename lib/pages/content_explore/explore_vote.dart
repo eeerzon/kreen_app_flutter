@@ -75,7 +75,7 @@ class _ExploreVoteState extends State<ExploreVote> {
 
     if (!mounted) return;
 
-    List<dynamic> allData = responses!['data'] ?? [];
+    List<dynamic> allData = responses['data'] ?? [];
     currentPage = 1;
     hasMore = true;
 

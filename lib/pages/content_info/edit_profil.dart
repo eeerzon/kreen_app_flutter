@@ -224,7 +224,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return null;
     }
 
-    final List<dynamic> tempData = result?['data'] ?? [];
+    final List<dynamic> tempData = result['data'] ?? [];
     if (tempData.isEmpty) return null;
 
     final url = tempData[0]['url'] as String?;
@@ -300,7 +300,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       isImage = false;
 
       Navigator.pop(context, true);
-    } else {
+    } else if (resultSimpan?['rc'] == 422) {
       setState(() {
         showErrorBar = true;
         errorCode = resultSimpan?['rc'] ?? 0;
@@ -333,6 +333,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           phoneFocusNode.requestFocus();
         });
       }
+    } else {
+      setState(() {
+        showErrorBar = true;
+        errorCode = resultSimpan?['rc'] ?? 0;
+        errorMessageBar = resultSimpan?['message'];
+
+        isImage = false;
+      });
     }
   }
 

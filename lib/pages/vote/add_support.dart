@@ -65,9 +65,9 @@ class _AddSupportPageState extends State<AddSupportPage> {
   }
 
   Future<void> _loadkonten() async {
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}");
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode);
 
-    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}");
+    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode);
     final tempOrder = resultOrder?['data'] ?? {};
     final temp_vote_order = tempOrder['vote_order'] ?? {};
     final temp_vote_order_detail = tempOrder['vote_order_detail'] ?? [];
@@ -529,7 +529,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                             "support_text": dukungan,
                             "anonymous": isAnonymous.toString()
                           };
-                        result = await ApiService.post('/vote/send-support', body: body_anonim);
+                        result = await ApiService.post('/vote/send-support', body: body_anonim, xLanguage: langCode);
                       } else {
                         final body = {
                           "id_vote": widget.id_vote,
@@ -539,7 +539,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                           "anonymous": isAnonymous.toString()
                         };
                         
-                        result = await ApiService.post('/vote/send-support', body: body);
+                        result = await ApiService.post('/vote/send-support', body: body, xLanguage: langCode);
                       }
             
                       if (result != null) {

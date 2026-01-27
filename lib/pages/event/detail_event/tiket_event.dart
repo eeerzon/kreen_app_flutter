@@ -1338,7 +1338,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           "payment_method": '',
                         };
 
-                        var resultEventOrder = await ApiService.post("/order/event/checkout", body: body);
+                        var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
 
                         if (resultEventOrder != null) {
                           if (resultEventOrder['rc'] == 200) {

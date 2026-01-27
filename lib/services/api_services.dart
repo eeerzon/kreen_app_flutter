@@ -43,11 +43,13 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       } else {
+        final body = json.decode(response.body);
+
         return {
           "rc": response.statusCode,
-          "status": false,
-          "message": "Server error (${response.statusCode})",
-          "data": []
+          "success": false,
+          "message": body['message'] ?? "Server error (${response.statusCode})",
+          "data": body['data'] ?? []
         };
       }
     } on TimeoutException {
@@ -154,17 +156,19 @@ class ApiService {
 
     try {
       final response = await http
-        .get(url, headers: headers)
+        .post(url, headers: headers, body: json.encode(body))
         .timeout(Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       } else {
+        final body = json.decode(response.body);
+
         return {
           "rc": response.statusCode,
-          "status": false,
-          "message": "Server error (${response.statusCode})",
-          "data": []
+          "success": false,
+          "message": body['message'] ?? "Server error (${response.statusCode})",
+          "data": body['data'] ?? []
         };
       }
     } on TimeoutException {
@@ -226,11 +230,13 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       } else {
+        final body = json.decode(response.body);
+
         return {
           "rc": response.statusCode,
-          "status": false,
-          "message": "Server error (${response.statusCode})",
-          "data": []
+          "success": false,
+          "message": body['message'] ?? "Server error (${response.statusCode})",
+          "data": body['data'] ?? []
         };
       }
     } on TimeoutException {

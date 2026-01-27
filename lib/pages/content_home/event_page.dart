@@ -45,6 +45,7 @@ class _EventPageState extends State<EventPage> {
     final result = await ApiService.post(
       "/event/list",
       body: {"id_merchant": "ITWXLBFDRCKNTTWTK448"},
+      xLanguage: langCode
     );
 
     if (result != null && mounted) {

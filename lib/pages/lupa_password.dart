@@ -164,7 +164,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
       "email": _emailController.text
     };
 
-    final result = await ApiService.post('/forgot-password', body: body);
+    final result = await ApiService.post('/forgot-password', body: body, xLanguage: langCode);
     if(result?['rc'] == 200) {
       AwesomeDialog(
         context: context,

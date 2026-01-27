@@ -70,8 +70,8 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       return;
     }
     
-    final tempKategori = resultKategori?['data'] ?? {};
-    final tempPopular = resultPopular?['data'] ?? [];
+    final tempKategori = resultKategori['data'] ?? {};
+    final tempPopular = resultPopular['data'] ?? [];
 
     if (!mounted) return;
     setState(() {

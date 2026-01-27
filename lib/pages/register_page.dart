@@ -72,7 +72,7 @@ class _RegisPageState extends State<RegisPage> {
       "password_confirmation": _confirmpasswordController.text
     };
     
-    final result = await ApiService.post("/register", body: body);
+    final result = await ApiService.post("/register", body: body, xLanguage: langCode);
     if (result!['rc'] == 200) {
       AwesomeDialog(
         context: context,
@@ -129,7 +129,7 @@ class _RegisPageState extends State<RegisPage> {
         "email": user.email,
         "photo": user.photoURL,
         "google_id_token": idToken,
-      });
+      }, xLanguage: langCode);
 
       if (result != null && result['success'] == true && result['rc'] == 200) {
         final user = result['data']['user'];

@@ -1337,7 +1337,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                     ),
                   ),
                   Text(
-                    "${bahasa!['paket']} $counts ${bahasa!['text_vote']}(s)\n$countData ${bahasa!['finalis']}(s)",
+                    "${bahasa!['paket']} $counts ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
                     style: TextStyle(fontSize: 12),
                   ),
                 ],

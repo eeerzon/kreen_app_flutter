@@ -345,6 +345,9 @@
 
     "timeout" : "Koneksi terputus. Silakan coba lagi nanti.",
     "no_internet" : "Tidak ada koneksi internet. Silakan coba lagi nanti.",
-    "error" : "Terjadi kesalahan. Silakan coba lagi nanti."
+    "error" : "Terjadi kesalahan. Silakan coba lagi nanti.",
+
+    "upcoming" : "Fitur ini segera hadir di update berikutnya.",
+    "maaf" : "Maaf..."
   }
 }

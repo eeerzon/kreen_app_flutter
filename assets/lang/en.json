@@ -345,6 +345,9 @@
 
     "timeout" : "Connection lost. Please try again later.",
     "no_internet" : "No internet connection. Please try again later.",
-    "error" : "An error occurred. Please try again later."
+    "error" : "An error occurred. Please try again later.",
+
+    "upcoming" : "Upcoming feature — available in the next update.",
+    "maaf" : "Sorry..."
   }
 }

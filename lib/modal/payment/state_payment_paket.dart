@@ -161,8 +161,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       await _getBahasa();
       await _getCurrency();
       await _checkToken();
-      await loadData();
       await getData(widget.id_vote);
+      await loadData();
 
       user_id = widget.idUser;
     });
@@ -254,10 +254,10 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
     if (!mounted) return;
     setState(() {
-      detailVote = detailResp?['data'] ?? {};
+      detailVote = detailResp['data'] ?? {};
       voteCurrency = detailVote['currency'];
 
-      payment = paymentResp?['data'] ?? {};
+      payment = paymentResp['data'] ?? {};
 
       indikator = detailVote['indikator_vote'] ?? [];
       

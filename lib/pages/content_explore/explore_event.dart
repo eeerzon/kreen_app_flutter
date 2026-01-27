@@ -75,7 +75,7 @@ class _ExploreEventState extends State<ExploreEvent> {
 
     if (!mounted) return;
 
-    List<dynamic> allData = responses!['data'] ?? [];
+    List<dynamic> allData = responses['data'] ?? [];
     currentPage = 1;
     hasMore = true;
 

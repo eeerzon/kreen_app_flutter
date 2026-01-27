@@ -59,7 +59,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
       return;
     }
     
-    final tempSubKategori = resultSubKategori?['data'] ?? {};
+    final tempSubKategori = resultSubKategori['data'] ?? {};
 
     if (!mounted) return;
     setState(() {
@@ -151,7 +151,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                                       }
 
                                       if (!questionsBySub.containsKey(index)) {
-                                        final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori");
+                                        final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori", xLanguage: langCode);
 
                                         questionsBySub[index] = resultQuestion?['data'] ?? [];
                                       }

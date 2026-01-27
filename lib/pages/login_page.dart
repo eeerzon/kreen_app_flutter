@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
       "password": _passwordController.text.trim(),
     };
 
-    final result = await ApiService.post("/login", body: body);
+    final result = await ApiService.post("/login", body: body, xLanguage: langCode);
 
     if (!mounted) return;
 
@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
         "email": user.email,
         "photo": user.photoURL,
         "google_id_token": idToken,
-      });
+      }, xLanguage: langCode);
 
       if (result != null && result['success'] == true && result['rc'] == 200) {
         final user = result['data']['user'];

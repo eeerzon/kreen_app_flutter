@@ -209,9 +209,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
     if (!mounted) return;
     setState(() {
-      detailEvent = resultEvent?['data'] ?? {};
+      detailEvent = resultEvent['data'] ?? {};
       eventCurrency = detailEvent['event']['currency'];
-      payment = resultPayment?['data'] ?? {};
+      payment = resultPayment['data'] ?? {};
     
       creditCard = payment['Credit Card'] ?? [];
       virtualAkun = payment['Virtual Account'] ?? [];
@@ -259,7 +259,12 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             message: errorMessage, 
             onRetry: () {
               getPaymentEvent(widget.id_event);
-            }
+            },
+            onDismiss: () {
+              setState(() {
+                showErrorBar = false;
+              });
+            },
           ),
         ],
       ),

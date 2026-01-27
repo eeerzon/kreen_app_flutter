@@ -113,9 +113,9 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       return;
     }
 
-    var tempSuccess = resultSuccess?['data'];
-    var tempPending = resultPending?['data'];
-    var tempFail = resultFail?['data'];
+    var tempSuccess = resultSuccess['data'];
+    var tempPending = resultPending['data'];
+    var tempFail = resultFail['data'];
 
     List<Map<String, dynamic>> tempVotesSukses = [];
     List<Map<String, dynamic>> tempVotesPending = [];
@@ -125,8 +125,9 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       final idOrder = ordersukses['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/vote/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+      final data = resultOrder?['data'];
+      final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVoteSukses = tempOrder['vote'] ?? {};
       final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
@@ -144,8 +145,9 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       final idOrder = orderpending['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/vote/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+      final data = resultOrder?['data'];
+      final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVotePending = tempOrder['vote'] ?? {};
       final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
@@ -163,8 +165,9 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       final idOrder = ordergagal['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/vote/$idOrder");
-      final tempOrder = resultOrder?['data'] ?? {};
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+      final data = resultOrder?['data'];
+      final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVoteGagal = tempOrder['vote'] ?? {};
       final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
@@ -397,8 +400,9 @@ class _VoteSuccessState extends State<VoteSuccess> {
         final idOrder = ordersuccess['id_order'];
         if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-        final resultOrder = await ApiService.get("/order/vote/$idOrder");
-        final tempOrder = resultOrder?['data'] ?? {};
+        final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+        final data = resultOrder?['data'];
+        final tempOrder = data is Map<String, dynamic> ? data : {};
         final tempVoteSuccess = tempOrder['vote'] ?? {};
         final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
@@ -672,13 +676,18 @@ class _VoteSuccessState extends State<VoteSuccess> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          DetailVotePage(id_event: itemVotes['id_vote'].toString()),
-                                    ),
-                                  );
+                                  if (itemVotes['id_vote'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DetailVotePage(id_event: itemVotes['id_vote'].toString()),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -703,7 +712,12 @@ class _VoteSuccessState extends State<VoteSuccess> {
                             Expanded(
                               child: InkWell(
                                 onTap: () async {
-                                  await DetailOrderModal.show(context, itemVotes['id_order']);
+                                  if (itemVotes['id_order'] != null) {
+                                    await DetailOrderModal.show(context, itemVotes['id_order']);
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -855,8 +869,9 @@ class _VotePendingState extends State<VotePending> {
         final idOrder = orderpending['id_order'];
         if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-        final resultOrder = await ApiService.get("/order/vote/$idOrder");
-        final tempOrder = resultOrder?['data'] ?? {};
+        final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+        final data = resultOrder?['data'];
+        final tempOrder = data is Map<String, dynamic> ? data : {};
         final tempVotePending = tempOrder['vote'] ?? {};
         final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
@@ -1130,10 +1145,15 @@ class _VotePendingState extends State<VotePending> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: item['currency_pg'],)),
-                                  );
+                                  if (itemVotes['id_order'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: item['currency'],)),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1158,7 +1178,12 @@ class _VotePendingState extends State<VotePending> {
                             Expanded(
                               child: InkWell(
                                 onTap: () async {
-                                  await DetailOrderModal.show(context, itemVotes['id_order']);
+                                  if (itemVotes['id_order'] != null) {
+                                    await DetailOrderModal.show(context, itemVotes['id_order']);
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1312,8 +1337,9 @@ class _VoteFailState extends State<VoteFail> {
         final idOrder = ordergagal['id_order'];
         if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-        final resultOrder = await ApiService.get("/order/vote/$idOrder");
-        final tempOrder = resultOrder?['data'] ?? {};
+        final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+        final data = resultOrder?['data'];
+        final tempOrder = data is Map<String, dynamic> ? data : {};
         final tempVoteGagal = tempOrder['vote'] ?? {};
         final tempVoteOrder = tempOrder['vote_order'] ?? {};
 
@@ -1587,13 +1613,18 @@ class _VoteFailState extends State<VoteFail> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          DetailVotePage(id_event: itemVotes['id_vote'].toString()),
-                                    ),
-                                  );
+                                  if (itemVotes['id_v0rder'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DetailVotePage(id_event: itemVotes['id_vote'].toString()),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1614,7 +1645,12 @@ class _VoteFailState extends State<VoteFail> {
                             Expanded(
                               child: InkWell(
                                 onTap: () async {
-                                  await DetailOrderModal.show(context, itemVotes['id_order']);
+                                  if (itemVotes['id_order'] != null) {
+                                    await DetailOrderModal.show(context, itemVotes['id_order']);
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                  }
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
@@ -1681,7 +1717,7 @@ class NoOrder extends StatefulWidget {
 
 class _NoOrderState extends State<NoOrder> {
   String? langCode;
-  Map<String, dynamic> voteLang = {};
+  Map<String, dynamic> bahasa = {};
 
   @override
   void initState() {
@@ -1698,9 +1734,9 @@ class _NoOrderState extends State<NoOrder> {
       langCode = code;
     });
 
-    final tempvoteLang = await LangService.getJsonData(langCode!, "detail_vote");
+    final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
     setState(() {
-      voteLang = tempvoteLang;
+      bahasa = tempbahasa;
     });
   }
 
@@ -1717,7 +1753,6 @@ class _NoOrderState extends State<NoOrder> {
             decoration: BoxDecoration(
               color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300,),
             ),
             child: Padding(
               padding: kGlobalPadding,
@@ -1730,17 +1765,27 @@ class _NoOrderState extends State<NoOrder> {
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
                     child: Image.asset(
                       'assets/images/no_order.png',
-                      height: 220,
+                      height: 170,
                     )
                   ),
 
                   const SizedBox(height: 20),
                   Text(
-                    // 'Belum ada Transaksi',
-                    voteLang['belum_ada_transaksi'] ?? "",
+                    // 'maaaf...',
+                    bahasa['maaf'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Text(
+                    // 'Belum ada Transaksi',
+                    bahasa['belum_ada_transaksi'] ?? "",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
                       fontSize: 18,
                     ),
                   ),

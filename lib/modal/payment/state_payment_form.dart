@@ -209,9 +209,9 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
 
     if (!mounted) return;
     setState(() {
-      detailEvent = resultEvent?['data'] ?? {};
+      detailEvent = resultEvent['data'] ?? {};
       eventCurrency = detailEvent['event']['currency'];
-      payment = resultPayment?['data'] ?? {};
+      payment = resultPayment['data'] ?? {};
     
       creditCard = payment['Credit Card'] ?? [];
       virtualAkun = payment['Virtual Account'] ?? [];
@@ -259,7 +259,12 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
             message: errorMessage, 
             onRetry: () {
               getPaymentEvent(widget.id_event);
-            }
+            },
+            onDismiss: () {
+              setState(() {
+                showErrorBar = false;
+              });
+            },
           ),
         ],
       ),
@@ -475,7 +480,10 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
     if (isLoading) {
       return Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator(color: Colors.red,)),
+        body: Container(
+          color: Colors.white,
+          child: Center(child: CircularProgressIndicator(color: Colors.red,)),
+        )
       );
     }
 

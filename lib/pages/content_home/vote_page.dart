@@ -45,6 +45,7 @@ class _VotePageState extends State<VotePage> {
   Future<void> _loadVotes() async {
     final result = await ApiService.get(
       "/vote/latest",
+      xLanguage: langCode
     );
 
     if (result != null && mounted) {

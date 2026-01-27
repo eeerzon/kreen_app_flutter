@@ -121,7 +121,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       return;
     }
 
-    final tempOrder = resultOrder?['data'] ?? {};
+    final tempOrder = resultOrder['data'] ?? {};
 
     final temp_vote_order = tempOrder['vote_order'] ?? {};
     final temp_vote_order_detail = tempOrder['vote_order_detail'] ?? [];
@@ -868,30 +868,32 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 20,),
-                      SizedBox(
-                        height: 48,
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                      if (!widget.formHistory) ... [
+                        const SizedBox(height: 20,),
+                        SizedBox(
+                          height: 48,
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () async {
+                              Navigator.pushReplacement(
+                                context, 
+                                MaterialPageRoute(builder: (context) => HomePage()),
+                              );
+                            },
+                            child: Text(
+                              bahasa['kembali'],
+                              style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
                             ),
                           ),
-                          onPressed: () async {
-                            Navigator.pushReplacement(
-                              context, 
-                              MaterialPageRoute(builder: (context) => HomePage()),
-                            );
-                          },
-                          child: Text(
-                            bahasa['kembali'],
-                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
-                          ),
                         ),
-                      ),
+                      ],
                     ],
                   )
                 )
