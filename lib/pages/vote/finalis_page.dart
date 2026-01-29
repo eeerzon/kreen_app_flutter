@@ -498,7 +498,8 @@ class _FinalisPageState extends State<FinalisPage> {
       ),
 
       bottomNavigationBar: SafeArea(
-        child: Padding(
+        child: Container(
+          color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -693,6 +694,10 @@ class _FinalisPageState extends State<FinalisPage> {
 
     final voteOptions = [10, 50, 100, 250, 500, 1000];
 
+    final filteredOptions = vote['batas_qty'] > 0
+      ? voteOptions.where((v) => v <= vote['batas_qty']).toList()
+      : voteOptions;
+
     final dateStr = vote['tanggal_buka_payment']?.toString() ?? '-';
     String formattedDate = '-';
 
@@ -748,7 +753,8 @@ class _FinalisPageState extends State<FinalisPage> {
         return Card(
           color: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: Padding(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
             child: SizedBox(
               width: double.infinity,
@@ -821,7 +827,7 @@ class _FinalisPageState extends State<FinalisPage> {
 
                               const SizedBox(width: 4),
                               //text
-                              Text("Harga"),
+                              Text(bahasa['harga']),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -1076,15 +1082,26 @@ class _FinalisPageState extends State<FinalisPage> {
                       ],
                     ),
                   ],
+
+                  if (counts[index] == vote['batas_qty'] && vote['batas_qty'] > 0) ...[
+                    SizedBox(height: 8,),
+
+                    Text(
+                      "* ${bahasa['batas']} ${vote['batas_qty']}",
+                      style: TextStyle(
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
                   
-                  if (vote['batas_qty'] == 0)...[
-                    if (counts[index] >= 1) ... [
+                  if (counts[index] >= 1) ... [
+                    if (filteredOptions.isNotEmpty) ...[
                       const SizedBox(height: 15,),
                       Wrap(
                         spacing: 5,
                         runSpacing: 5,
                         alignment: WrapAlignment.center,
-                        children: voteOptions.asMap().entries.map((entry) {
+                        children: filteredOptions.asMap().entries.map((entry) {
                           final optionIndex = entry.key;
                           final voteCount = entry.value;
                           
@@ -1159,7 +1176,7 @@ class _FinalisPageState extends State<FinalisPage> {
                           );
                         }).toList(),
                       ),
-                    ]
+                    ],
                   ],
                 ],
               ),

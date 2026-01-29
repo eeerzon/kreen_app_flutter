@@ -3,7 +3,7 @@
     {
       "image": "assets/images/img_onboarding1.png",
       "title": "Dukung Finalis Favoritmu",
-      "desc": "Jadilah Bagian dari Perjalanan para finalis favoritmu Menuju Kemenangan"
+      "desc": "Jadilah Bagian dari Perjalanan para Finalis Favoritmu Menuju Kemenangan"
     },
     {
       "image": "assets/images/img_onboarding2.png",
@@ -348,6 +348,9 @@
     "error" : "Terjadi kesalahan. Silakan coba lagi nanti.",
 
     "upcoming" : "Fitur ini segera hadir di update berikutnya.",
-    "maaf" : "Maaf..."
+    "maaf" : "Maaf...",
+    "redirect" : "Redirect dalam",
+    "batas" : "Batas maksimal vote adalah",
+    "batas_event" : "Batas maksimal tiket adalah"
   }
 }

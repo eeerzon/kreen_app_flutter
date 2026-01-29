@@ -1972,59 +1972,64 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
                                                   ),
                                                 )
-                                              : Row(
-                                                  mainAxisAlignment: MainAxisAlignment.end,
-                                                  children: [
-                                                    InkWell(
-                                                      onTap: () {
-                                                        if (counts[index] > 0) {
-                                                          setState(() {
-                                                            counts[index]--;
-                                                            _syncSelectedTickets();
-                                                          });
-                                                        }
-                                                      },
-                                                      child: Container(
-                                                        padding: const EdgeInsets.all(8),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red,
-                                                          borderRadius: BorderRadius.circular(100),
-                                                        ),
-                                                        child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
-                                                      ),
-                                                    ),
-
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      counts[index].toString(),
-                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                                    ),
-
-                                                    const SizedBox(width: 8),
-                                                    InkWell(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          final maxQty = item['max_qty'];
-                                                          final sisaStok = item['sisa_stok'];
-
-                                                          final limit = sisaStok < maxQty ? sisaStok : maxQty;
-                                                          if (counts[index] < limit) {
-                                                            counts[index]++;
-                                                            _syncSelectedTickets();
+                                              : Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Row(
+                                                    mainAxisAlignment: MainAxisAlignment.end,
+                                                    children: [
+                                                      InkWell(
+                                                        onTap: () {
+                                                          if (counts[index] > 0) {
+                                                            setState(() {
+                                                              counts[index]--;
+                                                              _syncSelectedTickets();
+                                                            });
                                                           }
-                                                        });
-                                                      },
-                                                      child: Container(
-                                                        padding: const EdgeInsets.all(8),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red,
-                                                          borderRadius: BorderRadius.circular(100),
+                                                        },
+                                                        child: Container(
+                                                          padding: const EdgeInsets.all(8),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.red,
+                                                            borderRadius: BorderRadius.circular(100),
+                                                          ),
+                                                          child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
                                                         ),
-                                                        child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
+
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        counts[index].toString(),
+                                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                      ),
+
+                                                      const SizedBox(width: 8),
+                                                      InkWell(
+                                                        onTap: () {
+                                                          setState(() {
+                                                            final maxQty = item['max_qty'];
+                                                            final sisaStok = item['sisa_stok'];
+
+                                                            final limit = sisaStok < maxQty ? sisaStok : maxQty;
+                                                            if (counts[index] < limit) {
+                                                              counts[index]++;
+                                                              _syncSelectedTickets();
+                                                            }
+                                                          });
+                                                        },
+                                                        child: Container(
+                                                          padding: const EdgeInsets.all(8),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.red,
+                                                            borderRadius: BorderRadius.circular(100),
+                                                          ),
+                                                          child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              )
                                           ],
                                         ),
 
@@ -2033,7 +2038,22 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                             ? '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
                                             : '',
                                           style: TextStyle(color: Colors.grey),
-                                        )
+                                        ),
+
+                                        if (counts[index] == item['max_qty']) ... [
+
+                                          SizedBox(height: 4,),
+
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              "* ${bahasa['batas_event']} ${item['max_qty']}",
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),

@@ -897,110 +897,112 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
           : SizedBox.shrink(),
       ),
  
-      body: Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height,
-        color: Colors.grey.shade200,
-        child: Center(
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300,),
-            ),
-            child: Padding(
-              padding: kGlobalPadding,
-              child: Column(
-                mainAxisSize: MainAxisSize.min, 
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: Image.network(
-                      '$baseUrl/image/expired_order.png',
-                      width: 220,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
-                          'assets/images/img_broken.jpg',
-                          width: 220,
-                          fit: BoxFit.contain,
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-                  Text(
-                    bahasa['link_kadaluarsa'], //'Link Pembayaran Kadaluwarsa',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-                  Text(
-                    bahasa['link_kadaluarsa_desc'], //'Maaf... Tautan ini memiliki batas waktu akses demi keamanan dan pengelolaan akses yang lebih baik.',
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+      body: Center(
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height,
+          color: Colors.grey.shade200,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300,),
+              ),
+              child: Padding(
+                padding: kGlobalPadding,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, 
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(8)),
+                      child: Image.network(
+                        '$baseUrl/image/expired_order.png',
+                        width: 220,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/images/img_broken.jpg',
+                            width: 220,
+                            fit: BoxFit.contain,
+                          );
+                        },
                       ),
                     ),
-                    onPressed: () {
-                      if (widget.formHistory) {
-                        Navigator.push(
-                          context, 
-                          MaterialPageRoute(builder: (context) => 
-                            DetailEventPage(
-                              id_event: event['id_event'], price: 0,
-                            ),
-                          ),
-                        );
-                        
-                      } else {
-                        Navigator.pushReplacement(
-                          context, 
-                          MaterialPageRoute(builder: (context) => HomePage()),
-                        );
-                      }
-                    },
-                    child: Text(
-                      bahasa['transaksi_lagi'], //"Ayo, lakukan transaksi kembali",
+
+                    const SizedBox(height: 20),
+                    Text(
+                      bahasa['link_kadaluarsa'], //'Link Pembayaran Kadaluwarsa',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        fontSize: 18,
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
-                  RichText(
-                    text: TextSpan(
-                      text: bahasa['kendala'], // 'Jika kendala berlanjut, hubungi ',
-                      style: TextStyle(color: Colors.black),
-                      children: [
-                        TextSpan(
-                          text: bahasa['kontak'], // "Kontak Kami",
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    const SizedBox(height: 10),
+                    Text(
+                      bahasa['link_kadaluarsa_desc'], //'Maaf... Tautan ini memiliki batas waktu akses demi keamanan dan pengelolaan akses yang lebih baik.',
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
-                    )
-                  ),
-                ],
+                      ),
+                      onPressed: () {
+                        if (widget.formHistory) {
+                          Navigator.push(
+                            context, 
+                            MaterialPageRoute(builder: (context) => 
+                              DetailEventPage(
+                                id_event: event['id_event'], price: 0,
+                              ),
+                            ),
+                          );
+                          
+                        } else {
+                          Navigator.pushReplacement(
+                            context, 
+                            MaterialPageRoute(builder: (context) => HomePage()),
+                          );
+                        }
+                      },
+                      child: Text(
+                        bahasa['transaksi_lagi'], //"Ayo, lakukan transaksi kembali",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    RichText(
+                      text: TextSpan(
+                        text: bahasa['kendala'], // 'Jika kendala berlanjut, hubungi ',
+                        style: TextStyle(color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: bahasa['kontak'], // "Kontak Kami",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      )
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

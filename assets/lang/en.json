@@ -348,6 +348,9 @@
     "error" : "An error occurred. Please try again later.",
 
     "upcoming" : "Upcoming feature — available in the next update.",
-    "maaf" : "Sorry..."
+    "maaf" : "Sorry...",
+    "redirect" : "Redirect in ",
+    "batas" : "Maximum voting limit is",
+    "batas_event" : "Maximum ticket limit is"
   }
 }

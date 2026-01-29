@@ -512,6 +512,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     String jamMulai = "${mulai.hour.toString().padLeft(2, '0')}:${mulai.minute.toString().padLeft(2, '0')}";
     String jamSelesai = "${selesai.hour.toString().padLeft(2, '0')}:${selesai.minute.toString().padLeft(2, '0')}";
 
+    final filteredOptions = detailvote['batas_qty'] > 0
+      ? voteOptions.where((v) => v <= detailvote['batas_qty']).toList()
+      : voteOptions;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
@@ -819,72 +823,87 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                 ],
                               ),
                             ],
-                  
-                            const SizedBox(height: 15,),
-                            if (counts > 0)
-                              Wrap(
-                                spacing: 5,
-                                runSpacing: 5,
-                                alignment: WrapAlignment.center,
-                                children: voteOptions.asMap().entries.map((entry) {
-                                  final voteCount = entry.value;
-                                  final isSelected = selectedVotes == voteCount && counts > 0;
-                  
-                                  return InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedVotes = voteCount;
-                                        counts = voteCount;
-                                        controllers!.text = counts.toString();
-                                        
-                                        final namaFinalis = detailFinalis['nama_finalis'];
-                                        final existingIndex = ids_finalis.indexOf(widget.id_finalis);
-                  
-                  
-                                        if (counts > 0) {
-                                          if (existingIndex == -1) {
-                                            ids_finalis.add(widget.id_finalis);
-                                            names_finalis.add(namaFinalis);
-                                            counts_finalis.add(counts);
-                                          } else {
-                                            counts_finalis[existingIndex] = counts;
-                                            names_finalis[existingIndex] = namaFinalis;
-                                          }
-                                        } else if (counts == 0 && existingIndex != -1) {
-                                          ids_finalis.removeAt(existingIndex);
-                                          names_finalis.removeAt(existingIndex);
-                                          counts_finalis.removeAt(existingIndex);
-                                        }
-                                      });
-                                    },
-                  
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? color : Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: color),
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            NumberFormat.decimalPattern("en_US").format(voteCount),
-                                            style: TextStyle(
-                                              color: isSelected ? Colors.white : Colors.black,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text("vote", 
-                                            style: TextStyle(fontSize: 12,
-                                            color: isSelected ? Colors.white : Colors.black,)
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
+
+                            if (counts == detailvote['batas_qty'] && detailvote['batas_qty'] > 0) ...[
+                              SizedBox(height: 8,),
+
+                              Text(
+                                "* ${bahasa!['batas']} ${detailvote['batas_qty']}",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
                               ),
+                            ],
+
+                            if (counts > 0) ... [
+                              if (filteredOptions.isNotEmpty) ...[
+                  
+                                const SizedBox(height: 15,),
+                                Wrap(
+                                  spacing: 5,
+                                  runSpacing: 5,
+                                  alignment: WrapAlignment.center,
+                                  children: filteredOptions.asMap().entries.map((entry) {
+                                    final voteCount = entry.value;
+                                    final isSelected = selectedVotes == voteCount && counts > 0;
+                    
+                                    return InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedVotes = voteCount;
+                                          counts = voteCount;
+                                          controllers!.text = counts.toString();
+                                          
+                                          final namaFinalis = detailFinalis['nama_finalis'];
+                                          final existingIndex = ids_finalis.indexOf(widget.id_finalis);
+                    
+                    
+                                          if (counts > 0) {
+                                            if (existingIndex == -1) {
+                                              ids_finalis.add(widget.id_finalis);
+                                              names_finalis.add(namaFinalis);
+                                              counts_finalis.add(counts);
+                                            } else {
+                                              counts_finalis[existingIndex] = counts;
+                                              names_finalis[existingIndex] = namaFinalis;
+                                            }
+                                          } else if (counts == 0 && existingIndex != -1) {
+                                            ids_finalis.removeAt(existingIndex);
+                                            names_finalis.removeAt(existingIndex);
+                                            counts_finalis.removeAt(existingIndex);
+                                          }
+                                        });
+                                      },
+                    
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? color : Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: color),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              NumberFormat.decimalPattern("en_US").format(voteCount),
+                                              style: TextStyle(
+                                                color: isSelected ? Colors.white : Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text("vote", 
+                                              style: TextStyle(fontSize: 12,
+                                              color: isSelected ? Colors.white : Colors.black,)
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ],
                           ],
                         ),
                       ),
@@ -1500,7 +1519,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       ),
 
       bottomNavigationBar: SafeArea(
-        child: Padding(
+        child: Container(
+          color: Colors.white,
           padding: EdgeInsetsGeometry.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

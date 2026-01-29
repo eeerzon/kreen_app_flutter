@@ -215,6 +215,7 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
 
   Widget getLoginUser() {
     return Container(
+      width: double.infinity,
       padding: kGlobalPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,

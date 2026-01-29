@@ -80,7 +80,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(bahasa['pusat_bantuan']),
+        title: Text(bahasa['pusat_bantuan'] ?? ""),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -131,7 +131,9 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                                   Expanded(
                                     child: Text(
                                       langCode == 'en'
-                                        ? item['en_name']
+                                        ? item['name'] == "vote"
+                                          ? item['name']
+                                          : item['name']
                                         : item['name'],
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,

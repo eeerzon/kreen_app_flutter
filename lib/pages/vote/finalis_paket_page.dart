@@ -457,7 +457,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       ),
 
       bottomNavigationBar: SafeArea(
-        child: Padding(
+        child: Container(
+          color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -676,7 +677,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
         return Card(
           color: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: Padding(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,

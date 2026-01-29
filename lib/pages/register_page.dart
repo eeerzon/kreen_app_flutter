@@ -438,7 +438,7 @@ class _RegisPageState extends State<RegisPage> {
                           _confirmpasswordFocus.canRequestFocus = false;
                         },
                         child: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
                         ),
                       ),
                     ),

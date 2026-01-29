@@ -175,7 +175,7 @@ class CheckPaymentModal {
                         TableRow(children: [
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text('Nama Event'),
+                            child: Text('Event'),
                           ),
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
@@ -194,7 +194,7 @@ class CheckPaymentModal {
                         TableRow(children: [
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text('Nama Finalis'),
+                            child: Text(bahasa['finalis']),
                           ),
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
@@ -210,7 +210,7 @@ class CheckPaymentModal {
                               );
 
                               return Text(
-                                "- ${finalis['nama_finalis']} (${detail['qty']} vote(s))",
+                                "- ${finalis['nama_finalis']} (${detail['qty']} ${bahasa['text_vote']})",
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               );
                             }).toList(),
@@ -288,7 +288,7 @@ class CheckPaymentModal {
                           for (int i = 3; i > 0; i--) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Redirect dalam $i detik..."),
+                                content: Text("${bahasa['redirect']} $i ${bahasa['second']}..."),
                                 duration: const Duration(seconds: 1),
                               ),
                             );
@@ -452,7 +452,7 @@ class CheckPaymentModal {
                         TableRow(children: [
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text('Nama Event'),
+                            child: Text('Event'),
                           ),
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
@@ -471,7 +471,7 @@ class CheckPaymentModal {
                         TableRow(children: [
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text('Tiket'),
+                            child: Text(bahasa['tiket']),
                           ),
                           TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
@@ -559,7 +559,7 @@ class CheckPaymentModal {
                           for (int i = 3; i > 0; i--) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Redirect dalam $i detik..."),
+                                content: Text("${bahasa['redirect']} $i ${bahasa['second']}..."),
                                 duration: const Duration(seconds: 1),
                               ),
                             );

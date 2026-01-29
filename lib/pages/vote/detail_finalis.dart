@@ -444,9 +444,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     if (detailvote.containsKey('theme_name') && detailvote['theme_name'] != null) {
       themeName = detailvote['theme_name'].toString();
     }
-
     
     Color color = colorMap[themeName] ?? Colors.red;
+
+    final filteredOptions = detailvote['batas_qty'] > 0
+      ? voteOptions.where((v) => v <= detailvote['batas_qty']).toList()
+      : voteOptions;
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -774,14 +777,25 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               ),
                             ],
 
-                            if (detailvote['batas_qty'] == 0) ...[
-                              if (counts >= 1) ...[
+                            if (counts == detailvote['batas_qty'] && detailvote['batas_qty'] > 0) ...[
+                              SizedBox(height: 8,),
+
+                              Text(
+                                "* ${bahasa['batas']} ${detailvote['batas_qty']}",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
+                            
+                            if (counts >= 1) ...[
+                              if (filteredOptions.isNotEmpty) ...[
                                 const SizedBox(height: 15,),
                                 Wrap(
                                   spacing: 5,
                                   runSpacing: 5,
                                   alignment: WrapAlignment.center,
-                                  children: voteOptions.asMap().entries.map((entry) {
+                                  children: filteredOptions.asMap().entries.map((entry) {
                                     final voteCount = entry.value;
                                     final isSelected = counts == voteCount;
                     
@@ -840,7 +854,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     );
                                   }).toList(),
                                 ),
-                              ]
+                              ],
                             ]
                           ],
                         ),
@@ -1132,7 +1146,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                   Text("Total Harga"),
                   Text(
                     harga == 0
-                    ? 'Gratis'
+                    ? bahasa['harga_detail']
                     : currencyCode == null 
                       ? "${detailvote['currency']} ${formatter.format(totalHarga)}"
                       : "$currencyCode ${formatter.format(totalHarga)}",

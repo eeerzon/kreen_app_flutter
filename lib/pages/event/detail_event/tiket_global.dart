@@ -237,14 +237,14 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     };
 
     final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode);
-    if (resultTiket == null || resultTiket['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultTiket?['message'];
-      });
-      return;
-    }
-    final List<dynamic> tempTiket = resultTiket['data'] ?? [];
+    // if (resultTiket == null || resultTiket['rc'] != 200) {
+    //   setState(() {
+    //     showErrorBar = true;
+    //     errorMessage = resultTiket?['message'];
+    //   });
+    //   return;
+    // }
+    final List<dynamic> tempTiket = resultTiket!['data'] ?? [];
 
     final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
     if (resultEvent == null || resultEvent['rc'] != 200) {

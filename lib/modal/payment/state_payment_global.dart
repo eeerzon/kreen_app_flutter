@@ -5,13 +5,14 @@ import 'dart:io';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
+import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
 import 'package:kreen_app_flutter/pages/order/waiting_order_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -107,7 +108,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   String? phoneLabel, phoneHint;
   String? cobaLagi;
 
-  Timer? _phoneDebounce;
+  Timer? _cvvDebounce, _phoneDebounce;
 
   String? currencySession;
 
@@ -131,6 +132,15 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   List<dynamic> konter = [];
   List<dynamic> qrCode = [];
   List<dynamic> debit = [];
+
+  final creditCardKey = GlobalKey();
+  final virtualAkunKey = GlobalKey();
+  final paymentBankKey = GlobalKey();
+  final eWalletKey = GlobalKey();
+  final retailKey = GlobalKey();
+  final konterKey = GlobalKey();
+  final qrCodeKey = GlobalKey();
+  final debitKey = GlobalKey();
 
   bool showErrorBar = false;
   String errorMessage = '';
@@ -380,12 +390,6 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       };
 
       var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
-      if (resultEventOrder == null || resultEventOrder['rc'] != 200) {
-        setState(() {
-          showErrorBar = true;
-          errorMessage = resultEventOrder?['message'];
-        });
-      }
 
       if (resultEventOrder != null) {
         if (resultEventOrder['rc'] == 200) {
@@ -418,6 +422,20 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             animType: AnimType.topSlide,
             title: 'Oops!',
             desc: desc, //error message dari api
+            btnOkOnPress: () {},
+            btnOkColor: Colors.red,
+            buttonsTextStyle: TextStyle(color: Colors.white),
+            headerAnimationLoop: false,
+            dismissOnTouchOutside: true,
+            showCloseIcon: true,
+          ).show();
+        } else if (resultEventOrder['rc'] == 400) {
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.error,
+            animType: AnimType.topSlide,
+            title: 'Oops!',
+            desc: "${resultEventOrder['message']}",
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -542,389 +560,188 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+
                         if (creditCard.isNotEmpty) ... [
-                          InkWell(
+                          PaymentList(
+                            sectionKey: creditCardKey, 
+                            title: "International Payments",
+                            isOpen: creditCardClicked, 
                             onTap: () {
                               setState(() {
+                                bool willOpen = !creditCardClicked;
+
                                 creditCardClicked = !creditCardClicked;
 
-                                // if (!creditCardClicked) {
-                                //   selectedIndex = -1;
-                                //   id_payment_method = null;
-                                //   currencySession = null;
-                                //   totalPayment = 0;
-                                //   feeLayanan = 0;
-                                //   totalVotes = 0;
-                                // }
+                                virtualAkunClicked = false;
+                                paymentBankClicked = false;
+                                eWalletClicked = false;
+                                retailClicked = false;
+                                konterClicked = false;
+                                qrCodeClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) scrollTo(creditCardKey);
                               });
                             },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "International Payments",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  const Spacer(),
-                                  Icon(
-                                    creditCardClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          if (creditCardClicked) ... [
-                            const SizedBox(height: 8),
-                            ...creditCard.asMap().entries.map((entry) {
+                            children: creditCard.asMap().entries.map((entry) {
                               final idx = entry.key;
                               final item = entry.value;
-
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
+                              
                               final exchange_rate = item['exchange_rate_new'];
                               final limit_min = item['limit_min']; 
                               final limit_max = item['limit_max'];
-
+    
                               final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
+    
                               final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
+                              final currentcy_max = (limit_max == 0 ? limit_min + 100 : limit_max) * exchange_rate;
+    
                               num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
                               num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
                               num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
                               num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
+    
                               final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (convertedHarga > roundedValueMax);
 
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+                              return PaymentItem(
+                                paymentTipe: "credit_card",
+                                item: item,
+                                idx: idx,
 
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
+                                isSelected: isSelected,
+                                isDisabled: isDisabled,
+
+                                currencyCode: currencyCode,
+                                voteCurrency: eventCurrency,
+
+                                bahasa: bahasa,
+                                formatter: formatter,
+
+                                convertedHarga: convertedHarga,
+                                roundedValueMin: roundedValueMin,
+                                roundedValueMax: roundedValueMax,
+                                limit_max: limit_max,
+
+                                expDateController: expDateController,
+
+                                onCardChanged: (val) => card_number = val,
+                                onCvvChanged: (val) {
+                                  cvv = val;
+
+                                  _cvvDebounce?.cancel();
+                                  _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                    if (val.length == 3 && _scrollController.hasClients) {
+                                      _scrollController.animateTo(
+                                        _scrollController.position.maxScrollExtent,
+                                        duration: const Duration(milliseconds: 600),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                  });
+                                },
+
+                                onTap: () async {
                                   setState(() {
                                     selectedIndex = idx;
                                     id_payment_method = creditCard[idx]['id_metod'];
                                     currencySession = creditCard[idx]['currency_pg'];
                                   });
-                                  
+
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
-                                    eventCurrency!, 
-                                    item['currency_pg'], 
-                                    widget.totalHargaAsli, 
-                                    item['fee_percent'], 
-                                    item['ppn'], 
-                                    item['fee'], 
+                                    eventCurrency!,
+                                    item['currency_pg'],
+                                    widget.totalHargaAsli,
+                                    item['fee_percent'],
+                                    item['ppn'],
+                                    item['fee'],
                                     item['exchange_rate_new'],
                                     null,
-                                    item['rate'], 
-                                    widget.rateCurrency, 
-                                    widget.rateCurrencyUser);
-                                  
+                                    item['rate'],
+                                    widget.rateCurrency,
+                                    widget.rateCurrencyUser,
+                                  );
+
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-
-                                              if (isSelected) ... [
-                                                const SizedBox(height: 20,),
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Kartu Kredit',
-                                                    ),
-                                                    Container(
-                                                      color: Colors.white,
-                                                      width: double.infinity,
-                                                      child: TextField(
-                                                        autofocus: false,
-                                                        onChanged: (value) {
-                                                          card_number = value;
-                                                        },
-                                                        keyboardType: TextInputType.number,
-                                                        decoration: InputDecoration(
-                                                          hintText: "xxxx xxxx xxxx xxxx",
-                                                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius: const BorderRadius.only(
-                                                              topLeft: Radius.circular(8),
-                                                              topRight: Radius.circular(8),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        inputFormatters: [
-                                                          LengthLimitingTextInputFormatter(16),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: Container(
-                                                            color: Colors.white,
-                                                            child: TextField(
-                                                              controller: expDateController,
-                                                              autofocus: false,
-                                                              decoration: InputDecoration(
-                                                                hintText: "MM/YY",
-                                                                hintStyle: TextStyle(color: Colors.grey.shade400),
-                                                                border: OutlineInputBorder(
-                                                                  borderRadius: const BorderRadius.only(
-                                                                    bottomLeft: Radius.circular(8),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              inputFormatters: [
-                                                                LengthLimitingTextInputFormatter(5),
-                                                              ],
-                                                            ),
-                                                          )
-                                                        ),
-
-                                                        Expanded(
-                                                          child: Container(
-                                                            color: Colors.white,
-                                                            child: TextField(
-                                                              autofocus: false,
-                                                              onChanged: (value) {
-                                                                cvv = value;
-
-                                                                if (value.length == 3) {
-                                                                  FocusManager.instance.primaryFocus?.unfocus();
-                                                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                                                    if (!_scrollController.hasClients) return;
-
-                                                                    _scrollController.animateTo(
-                                                                      _scrollController.position.maxScrollExtent,
-                                                                      duration: const Duration(milliseconds: 600),
-                                                                      curve: Curves.easeOut,
-                                                                    );
-                                                                  });
-                                                                }
-                                                              },
-                                                              decoration: InputDecoration(
-                                                                hintText: "CVV",
-                                                                hintStyle: TextStyle(color: Colors.grey.shade400),
-                                                                border: OutlineInputBorder(
-                                                                  borderRadius: const BorderRadius.only(
-                                                                    bottomRight: Radius.circular(8),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              inputFormatters: [
-                                                                LengthLimitingTextInputFormatter(3),
-                                                              ],
-                                                              obscureText: true,
-                                                            ),
-                                                          )
-                                                        )
-                                                      ],
-                                                    )
-                                                  ],
-                                                )
-                                              ]
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
                               );
-                            }),
-                          ],
+                            }).toList(),
+                          ),
                         ],
-
+    
                         if (virtualAkun.isNotEmpty) ... [
                           const SizedBox(height: 20),
-
-                          InkWell(
+    
+                          PaymentList(
+                            sectionKey: virtualAkunKey, 
+                            title: "Virtual Account", 
+                            isOpen: virtualAkunClicked, 
                             onTap: () {
                               setState(() {
+                                bool willOpen = !virtualAkunClicked;
+
                                 virtualAkunClicked = !virtualAkunClicked;
+
+                                creditCardClicked = false;
+                                paymentBankClicked = false;
+                                eWalletClicked = false;
+                                retailClicked = false;
+                                konterClicked = false;
+                                qrCodeClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) scrollTo(virtualAkunKey);
                               });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    "Virtual Account",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  const Spacer(),
-                                  Icon(
-                                    virtualAkunClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down,
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          if (virtualAkunClicked) ... [
-                            const SizedBox(height: 8),
-                            ...virtualAkun.asMap().entries.map((entry) {
+                            }, 
+                            children: virtualAkun.asMap().entries.map((entry) {
                               final index = entry.key;
-                              final idx = creditCard.length + entry.key;
+                              final idx = creditCard.length 
+                                + entry.key;
                               final item = entry.value;
                               
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
                               final exchange_rate = item['exchange_rate_new'];
                               final limit_min = item['limit_min']; 
                               final limit_max = item['limit_max'];
-
+    
                               final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
+    
                               final currentcy_min = limit_min * exchange_rate;
                               final currentcy_max = (limit_max == 0 ? limit_min + 100 : limit_max) * exchange_rate;
-
+    
                               num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
                               num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
                               num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
                               num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
+    
                               final isSelected = selectedIndex == idx;
-
+    
                               final isDisabled = convertedHarga < roundedValueMin || (convertedHarga > roundedValueMax);
 
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
+                              return PaymentItem(
+                                paymentTipe: "virtual_akun",
+                                item: item,
+                                idx: idx,
+
+                                isSelected: isSelected,
+                                isDisabled: isDisabled,
+
+                                currencyCode: currencyCode,
+                                voteCurrency: eventCurrency,
+
+                                bahasa: bahasa,
+                                formatter: formatter,
+
+                                convertedHarga: convertedHarga,
+                                roundedValueMin: roundedValueMin,
+                                roundedValueMax: roundedValueMax,
+                                limit_max: limit_max,
+
+                                onTap: () async {
                                   setState(() {
                                     selectedIndex = idx;
                                     id_payment_method = virtualAkun[index]['id_metod'];
@@ -932,1332 +749,14 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    });
-
-                                    var resultFee = await getFeeNew(
-                                      currencyCode!,
-                                      eventCurrency!, 
-                                      item['currency_pg'], 
-                                      widget.totalHargaAsli, 
-                                      item['fee_percent'], 
-                                      item['ppn'], 
-                                      item['fee'], 
-                                      item['exchange_rate_new'],
-                                      null,
-                                      item['rate'], 
-                                      widget.rateCurrency, 
-                                      widget.rateCurrencyUser);
-                                    
-                                    setState(() {
-                                      totalPayment = resultFee!['total_payment'];
-                                      feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
-                                    });
-                                },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-
-                        if (paymentBank.isNotEmpty) ... [
-                          const SizedBox(height: 20),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                paymentBankClicked = !paymentBankClicked;
-                              });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Payment Bank",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    paymentBankClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down,
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          if (paymentBankClicked) ... [
-                            const SizedBox(height: 8),
-                            ...paymentBank.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final idx = creditCard.length + virtualAkun.length + entry.key;
-                              final item = entry.value;
-                              
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
-                              final exchange_rate = item['exchange_rate_new'];
-                              final limit_min = item['limit_min']; 
-                              final limit_max = item['limit_max'];
-
-                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
-                              final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
-                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
-                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
-                              final isSelected = selectedIndex == idx;
-
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
-
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
-                                  setState(() {
-                                    selectedIndex = idx;
-                                    id_payment_method = paymentBank[index]['id_metod'];
-                                    currencySession = paymentBank[index]['currency_pg'];
+                                    _scrollController.animateTo(
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 600),
+                                      curve: Curves.easeOut,
+                                    );
                                   });
-                                  
-                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    });
-
-                                    var resultFee = await getFeeNew(
-                                      currencyCode!,
-                                      eventCurrency!, 
-                                      item['currency_pg'], 
-                                      widget.totalHargaAsli, 
-                                      item['fee_percent'], 
-                                      item['ppn'], 
-                                      item['fee'], 
-                                      item['exchange_rate_new'],
-                                      null,
-                                      item['rate'], 
-                                      widget.rateCurrency, 
-                                      widget.rateCurrencyUser);
-                                    
-                                    setState(() {
-                                      totalPayment = resultFee!['total_payment'];
-                                      feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
-                                    });
-                                },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-
-                        if (eWallet.isNotEmpty) ... [
-                          const SizedBox(height: 20),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                eWalletClicked = !eWalletClicked;
-                              });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "E-Wallet",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    eWalletClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down,
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          if (eWalletClicked) ... [
-                            const SizedBox(height: 8),
-                            ...eWallet.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final idx = creditCard.length + virtualAkun.length + paymentBank.length + entry.key;
-                              final item = entry.value;
-                              
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
-                              final exchange_rate = item['exchange_rate_new'];
-                              final limit_min = item['limit_min']; 
-                              final limit_max = item['limit_max'];
-
-                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
-                              final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
-                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
-                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
-                              final isSelected = selectedIndex == idx;
-
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
-
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
-                                  setState(() {
-                                    selectedIndex = idx;
-                                    id_payment_method = eWallet[index]['id_metod'];
-                                    currencySession = eWallet[index]['currency_pg'];
-                                  });
-                                  
-                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    });
-
-                                    var resultFee = await getFeeNew(
-                                      currencyCode!,
-                                      eventCurrency!, 
-                                      item['currency_pg'], 
-                                      widget.totalHargaAsli, 
-                                      item['fee_percent'], 
-                                      item['ppn'], 
-                                      item['fee'], 
-                                      item['exchange_rate_new'],
-                                      null,
-                                      item['rate'], 
-                                      widget.rateCurrency, 
-                                      widget.rateCurrencyUser);
-                                    
-                                    setState(() {
-                                      totalPayment = resultFee!['total_payment'];
-                                      feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
-                                    });
-                                },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-
-                        if (retail.isNotEmpty) ... [
-                          const SizedBox(height: 20),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                retailClicked = !retailClicked;
-                              });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "Retail",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    retailClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down,
-                                  )
-                                ],
-                              )
-                            ),
-                          ),
-                          
-                          if (retailClicked) ... [
-                            const SizedBox(height: 8),
-                            ...retail.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final idx = creditCard.length + virtualAkun.length + paymentBank.length + eWallet.length + entry.key;
-                              final item = entry.value;
-                              
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
-                              final exchange_rate = item['exchange_rate_new'];
-                              final limit_min = item['limit_min']; 
-                              final limit_max = item['limit_max'];
-
-                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
-                              final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
-                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
-                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
-                              final isSelected = selectedIndex == idx;
-
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
-
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
-                                  setState(() {
-                                    selectedIndex = idx;
-                                    id_payment_method = retail[index]['id_metod'];
-                                    currencySession = retail[index]['currency_pg'];
-                                  });
-                                  
-                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    });
-
-                                    var resultFee = await getFeeNew(
-                                      currencyCode!,
-                                      eventCurrency!, 
-                                      item['currency_pg'], 
-                                      widget.totalHargaAsli, 
-                                      item['fee_percent'], 
-                                      item['ppn'], 
-                                      item['fee'], 
-                                      item['exchange_rate_new'],
-                                      null,
-                                      item['rate'], 
-                                      widget.rateCurrency, 
-                                      widget.rateCurrencyUser);
-                                    
-                                    setState(() {
-                                      totalPayment = resultFee!['total_payment'];
-                                      feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
-                                    });
-                                },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-
-                        if (konter.isNotEmpty) ... [
-                          const SizedBox(height: 20),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                konterClicked = !konterClicked;
-                              });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "Counter",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    konterClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down,
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          if (konterClicked) ... [
-                            const SizedBox(height: 8),
-                            ...konter.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final idx = creditCard.length + virtualAkun.length + paymentBank.length + eWallet.length + retail.length + entry.key;
-                              final item = entry.value;
-                              
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
-                              final exchange_rate = item['exchange_rate_new'];
-                              final limit_min = item['limit_min']; 
-                              final limit_max = item['limit_max'];
-
-                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
-                              final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
-                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
-                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
-                              final isSelected = selectedIndex == idx;
-
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
-
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
-                                  setState(() {
-                                    selectedIndex = idx;
-                                    id_payment_method = konter[index]['id_metod'];
-                                    currencySession = konter[index]['currency_pg'];
-                                  });
-                                  
-                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    });
-
-                                    var resultFee = await getFeeNew(
-                                      currencyCode!,
-                                      eventCurrency!, 
-                                      item['currency_pg'], 
-                                      widget.totalHargaAsli, 
-                                      item['fee_percent'], 
-                                      item['ppn'], 
-                                      item['fee'], 
-                                      item['exchange_rate_new'],
-                                      null,
-                                      item['rate'], 
-                                      widget.rateCurrency, 
-                                      widget.rateCurrencyUser);
-                                    
-                                    setState(() {
-                                      totalPayment = resultFee!['total_payment'];
-                                      feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
-                                    });
-                                },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-
-                        if (qrCode.isNotEmpty) ... [
-                          const SizedBox(height: 20),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                qrCodeClicked = !qrCodeClicked;
-                              });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "QR Codes",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    qrCodeClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          if (qrCodeClicked) ... [
-                            const SizedBox(height: 8),
-                            ...qrCode.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final idx = creditCard.length + virtualAkun.length + paymentBank.length + eWallet.length + retail.length + konter.length + entry.key;
-                              final item = entry.value;
-                              
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
-                              final exchange_rate = item['exchange_rate_new'];
-                              final limit_min = item['limit_min']; 
-                              final limit_max = item['limit_max'];
-
-                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
-                              final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
-                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
-                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
-                              final isSelected = selectedIndex == idx;
-
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
-
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
-                                  setState(() {
-                                    selectedIndex = idx;
-                                    id_payment_method = qrCode[index]['id_metod'];
-                                    currencySession = qrCode[index]['currency_pg'];
-                                  });
-                                  
-                                  Future.delayed(const Duration(milliseconds: 200), () {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    });
-
-                                    var resultFee = await getFeeNew(
-                                      currencyCode!,
-                                      eventCurrency!, 
-                                      item['currency_pg'], 
-                                      widget.totalHargaAsli, 
-                                      item['fee_percent'], 
-                                      item['ppn'], 
-                                      item['fee'], 
-                                      item['exchange_rate_new'],
-                                      null,
-                                      item['rate'], 
-                                      widget.rateCurrency, 
-                                      widget.rateCurrencyUser);
-                                    
-                                    setState(() {
-                                      totalPayment = resultFee!['total_payment'];
-                                      feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
-                                    });
-                                },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ],
-
-                        if (debit.isNotEmpty) ... [
-                          const SizedBox(height: 20),
-
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                debitClicked = !debitClicked;
-                              });
-                            },
-                            child: Container(
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "Direct Debit",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Spacer(),
-                                  Icon(
-                                    debitClicked 
-                                      ? Icons.keyboard_arrow_up 
-                                      : Icons.keyboard_arrow_down
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                          
-                          if (debitClicked) ... [
-                            const SizedBox(height: 8),
-                            ...debit.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final idx = creditCard.length + virtualAkun.length + paymentBank.length + eWallet.length + retail.length + konter.length + qrCode.length + entry.key;
-                              final item = entry.value;
-                              
-                              final payment_name = item['payment_name'];
-                              final id_pg_type = item['id_pg_type'];
-                              final exchange_rate = item['exchange_rate_new'];
-                              final limit_min = item['limit_min']; 
-                              final limit_max = item['limit_max'];
-
-                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
-
-                              final currentcy_min = limit_min * exchange_rate;
-                              final currentcy_max = limit_max * exchange_rate;
-
-                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
-                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
-                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
-
-                              final isSelected = selectedIndex == idx;
-
-                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
-
-                              return GestureDetector(
-                                onTap: isDisabled
-                                ? null 
-                                : () async {
-                                  setState(() {
-                                    selectedIndex = idx;
-                                    id_payment_method = debit[index]['id_metod'];
-                                    currencySession = debit[index]['currency_pg'];
-                                  });
-                                  
+  
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -2266,7 +765,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     item['fee_percent'], 
                                     item['ppn'], 
                                     item['fee'], 
-                                    item['exchange_rate_new'],
+                                    item['exchange_rate_new'], 
                                     null,
                                     item['rate'], 
                                     widget.rateCurrency, 
@@ -2277,173 +776,686 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
-                                child: Card(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Opacity(
-                                      opacity: isDisabled ? 0.6 : 1.0,
-                                      child: ColorFiltered(
-                                        colorFilter: isDisabled
-                                          ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
-                                          : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green.shade50 : Colors.white,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  Image.network(
-                                                    "$baseUrl/image/payment-method/${item['img_web']}",
-                                                    height: 70,
-                                                    width: 70,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        height: 70,
-                                                        width: 70,
-                                                      );
-                                                    },
-                                                  ),
-
-                                                  const SizedBox(width: 8,),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            // Teks akan menyesuaikan ruang sisa
-                                                            Expanded(
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.only(top: 8.0),
-                                                                child: Text(
-                                                                  "$payment_name $id_pg_type",
-                                                                  maxLines: 2,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                  softWrap: true,
-                                                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                                                ),
-                                                              ),
-                                                            ),
-
-                                                            const SizedBox(width: 6),
-                                                            // Badge region
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.red.shade50,
-                                                                borderRadius: BorderRadius.circular(8),
-                                                              ),
-                                                              child: Text(
-                                                                item['region'] ?? '',
-                                                                style: TextStyle(
-                                                                  color: Colors.red.shade700,
-                                                                  fontSize: 12,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-
-                                                        const SizedBox(height: 6),
-                                                        if (convertedHarga < roundedValueMin)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text(
-                                                              currencyCode == null
-                                                                ? "${bahasa['limit_min']} $eventCurrency ${formatter.format((roundedValueMin + 1000))}"
-                                                                : "${bahasa['limit_min']} $currencyCode ${formatter.format((roundedValueMin))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-                                                        
-                                                        if (convertedHarga > roundedValueMax)
-                                                          Padding(
-                                                            padding: const EdgeInsets.only(top: 4.0),
-                                                            child: Text( limit_max == 0
-                                                              ? currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax + 1000))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}"
-                                                              : currencyCode == null
-                                                                ? "${bahasa['limit_max']} $eventCurrency ${formatter.format((roundedValueMax))}"
-                                                                : "${bahasa['limit_max']} $currencyCode ${formatter.format((roundedValueMax))}",
-                                                              softWrap: true,
-                                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                                            ),
-                                                          ),
-
-                                                      ],
-                                                    ),
-                                                  )
-
-                                                ],
-                                              ),
-
-                                              if (isSelected) ... [
-                                                const SizedBox(height: 20,),
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Container(
-                                                      color: Colors.white,
-                                                      width: double.infinity,
-                                                      child: TextField(
-                                                        autofocus: false,
-                                                        onChanged: (value) {
-                                                          mobile_number = value;
-
-                                                          _phoneDebounce?.cancel();
-                                                          _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
-                                                            if (value.length >= 12 && _scrollController.hasClients) {
-                                                              _scrollController.animateTo(
-                                                                _scrollController.position.maxScrollExtent,
-                                                                duration: const Duration(milliseconds: 600),
-                                                                curve: Curves.easeOut,
-                                                              );
-                                                            }
-                                                          });
-                                                        },
-                                                        keyboardType: TextInputType.number,
-                                                        decoration: InputDecoration(
-                                                          hintText: phoneHint!, //"Nomor Telepon"
-                                                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius: const BorderRadius.only(
-                                                              topLeft: Radius.circular(8),
-                                                              topRight: Radius.circular(8),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        inputFormatters: [
-                                                          LengthLimitingTextInputFormatter(16),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                              ]
-                                            ],
-                                          )
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
                               );
-                            }),
-                          ],
-                        ]
+                            }).toList(),
+                          ),
+                        ],
+
+                        if (paymentBank.isNotEmpty) ... [
+                          const SizedBox(height: 20),
+
+                          PaymentList(
+                            sectionKey: paymentBankKey, 
+                            title: "Payment Bank",
+                            isOpen: paymentBankClicked, 
+                            onTap: () {
+                              setState(() {
+                                bool willOpen = !paymentBankClicked;
+
+                                paymentBankClicked = !paymentBankClicked;
+
+                                creditCardClicked = false;
+                                virtualAkunClicked = false;
+                                eWalletClicked = false;
+                                retailClicked = false;
+                                konterClicked = false;
+                                qrCodeClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) {
+                                  scrollTo(paymentBankKey);
+                                }
+                              });
+                            },
+                            children: paymentBank.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final idx = creditCard.length 
+                                + virtualAkun.length 
+                                + entry.key;
+                              final item = entry.value;
+
+                              final exchange_rate = item['exchange_rate_new'];
+                              final limit_min = item['limit_min']; 
+                              final limit_max = item['limit_max'];
+    
+                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
+    
+                              final currentcy_min = limit_min * exchange_rate;
+                              final currentcy_max = limit_max * exchange_rate;
+    
+                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
+                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
+    
+                              final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+
+                              return PaymentItem(
+                                paymentTipe: "payment_bank",
+                                item: item, 
+                                idx: idx, 
+
+                                isSelected: isSelected, 
+                                isDisabled: isDisabled, 
+
+                                currencyCode: currencyCode, 
+                                voteCurrency: eventCurrency, 
+                                bahasa: bahasa, 
+                                formatter: formatter, 
+
+                                convertedHarga: convertedHarga, 
+                                roundedValueMin: roundedValueMin, 
+                                roundedValueMax: roundedValueMax, 
+                                limit_max: limit_max, 
+
+                                onTap: () async {
+                                  setState(() {
+                                    selectedIndex = idx;
+                                    id_payment_method = paymentBank[index]['id_metod'];
+                                    currencySession = paymentBank[index]['currency_pg'];
+                                  });
+                                  
+                                  Future.delayed(const Duration(milliseconds: 200), () {
+                                    _scrollController.animateTo(
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 600),
+                                      curve: Curves.easeOut,
+                                    );
+                                  });
+  
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  var resultFee = await getFeeNew(
+                                    currencyCode!,
+                                    eventCurrency!, 
+                                    item['currency_pg'], 
+                                    widget.totalHargaAsli, 
+                                    item['fee_percent'], 
+                                    item['ppn'], 
+                                    item['fee'], 
+                                    item['exchange_rate_new'], 
+                                    null,
+                                    item['rate'], 
+                                    widget.rateCurrency, 
+                                    widget.rateCurrencyUser);
+                                  
+                                  setState(() {
+                                    totalPayment = resultFee!['total_payment'];
+                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+
+                        if (eWallet.isNotEmpty) ... [
+                          const SizedBox(height: 20),
+
+                          PaymentList(
+                            sectionKey: eWalletKey, 
+                            title: "E-Wallet",
+                            isOpen: eWalletClicked, 
+                            onTap: () {
+                              setState(() {
+                                bool willOpen = !eWalletClicked;
+
+                                eWalletClicked = !eWalletClicked;
+
+                                creditCardClicked = false;
+                                virtualAkunClicked = false;
+                                paymentBankClicked = false;
+                                retailClicked = false;
+                                konterClicked = false;
+                                qrCodeClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) {
+                                  scrollTo(eWalletKey);
+                                }
+                              });
+                            },
+                            children: eWallet.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final idx = creditCard.length
+                                + virtualAkun.length 
+                                + paymentBank.length 
+                                + entry.key;
+                              final item = entry.value;
+
+                              final exchange_rate = item['exchange_rate_new'];
+                              final limit_min = item['limit_min']; 
+                              final limit_max = item['limit_max'];
+    
+                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
+    
+                              final currentcy_min = limit_min * exchange_rate;
+                              final currentcy_max = limit_max * exchange_rate;
+    
+                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
+                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
+    
+                              final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+
+                              return PaymentItem(
+                                paymentTipe: "e_wallet",
+                                item: item, 
+                                idx: idx, 
+
+                                isSelected: isSelected, 
+                                isDisabled: isDisabled, 
+
+                                currencyCode: currencyCode, 
+                                voteCurrency: eventCurrency, 
+                                bahasa: bahasa, 
+                                formatter: formatter, 
+
+                                convertedHarga: convertedHarga, 
+                                roundedValueMin: roundedValueMin, 
+                                roundedValueMax: roundedValueMax, 
+                                limit_max: limit_max, 
+
+                                onTap: () async {
+                                  setState(() {
+                                    selectedIndex = idx;
+                                    id_payment_method = eWallet[index]['id_metod'];
+                                    currencySession = eWallet[index]['currency_pg'];
+                                  });
+                                  
+                                  Future.delayed(const Duration(milliseconds: 200), () {
+                                    _scrollController.animateTo(
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 600),
+                                      curve: Curves.easeOut,
+                                    );
+                                  });
+  
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  var resultFee = await getFeeNew(
+                                    currencyCode!,
+                                    eventCurrency!, 
+                                    item['currency_pg'], 
+                                    widget.totalHargaAsli, 
+                                    item['fee_percent'], 
+                                    item['ppn'], 
+                                    item['fee'], 
+                                    item['exchange_rate_new'], 
+                                    null,
+                                    item['rate'], 
+                                    widget.rateCurrency, 
+                                    widget.rateCurrencyUser);
+                                  
+                                  setState(() {
+                                    totalPayment = resultFee!['total_payment'];
+                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+
+                        if (retail.isNotEmpty) ... [
+                          const SizedBox(height: 20),
+
+                          PaymentList(
+                            sectionKey: retailKey, 
+                            title: "Retail",
+                            isOpen: retailClicked, 
+                            onTap: () {
+                              setState(() {
+                                bool willOpen = !retailClicked;
+
+                                retailClicked = !retailClicked;
+
+                                creditCardClicked = false;
+                                virtualAkunClicked = false;
+                                paymentBankClicked = false;
+                                eWalletClicked = false;
+                                konterClicked = false;
+                                qrCodeClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) {
+                                  scrollTo(retailKey);
+                                }
+                              });
+                            },
+                            children: retail.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final idx = creditCard.length 
+                                + virtualAkun.length 
+                                + paymentBank.length 
+                                + eWallet.length 
+                                + entry.key;
+                              final item = entry.value;
+
+                              final exchange_rate = item['exchange_rate_new'];
+                              final limit_min = item['limit_min']; 
+                              final limit_max = item['limit_max'];
+    
+                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
+    
+                              final currentcy_min = limit_min * exchange_rate;
+                              final currentcy_max = limit_max * exchange_rate;
+    
+                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
+                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
+    
+                              final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+
+                              return PaymentItem(
+                                paymentTipe: "retail",
+                                item: item, 
+                                idx: idx, 
+
+                                isSelected: isSelected, 
+                                isDisabled: isDisabled, 
+
+                                currencyCode: currencyCode, 
+                                voteCurrency: eventCurrency, 
+                                bahasa: bahasa, 
+                                formatter: formatter, 
+
+                                convertedHarga: convertedHarga, 
+                                roundedValueMin: roundedValueMin, 
+                                roundedValueMax: roundedValueMax, 
+                                limit_max: limit_max, 
+
+                                onTap: () async {
+                                  setState(() {
+                                    selectedIndex = idx;
+                                    id_payment_method = retail[index]['id_metod'];
+                                    currencySession = retail[index]['currency_pg'];
+                                  });
+                                  
+                                  Future.delayed(const Duration(milliseconds: 200), () {
+                                    _scrollController.animateTo(
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 600),
+                                      curve: Curves.easeOut,
+                                    );
+                                  });
+  
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  var resultFee = await getFeeNew(
+                                    currencyCode!,
+                                    eventCurrency!, 
+                                    item['currency_pg'], 
+                                    widget.totalHargaAsli, 
+                                    item['fee_percent'], 
+                                    item['ppn'], 
+                                    item['fee'], 
+                                    item['exchange_rate_new'], 
+                                    null,
+                                    item['rate'], 
+                                    widget.rateCurrency, 
+                                    widget.rateCurrencyUser);
+                                  
+                                  setState(() {
+                                    totalPayment = resultFee!['total_payment'];
+                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+
+                        if (konter.isNotEmpty) ... [
+                          const SizedBox(height: 20),
+
+                          PaymentList(
+                            sectionKey: konterKey, 
+                            title: "Counter",
+                            isOpen: konterClicked, 
+                            onTap: () {
+                              setState(() {
+                                bool willOpen = !konterClicked;
+
+                                konterClicked = !konterClicked;
+
+                                creditCardClicked = false;
+                                virtualAkunClicked = false;
+                                paymentBankClicked = false;
+                                eWalletClicked = false;
+                                retailClicked = false;
+                                qrCodeClicked = false;
+                                qrCodeClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) {
+                                  scrollTo(konterKey);
+                                }
+                              });
+                            },
+                            children: konter.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final idx = creditCard.length 
+                                + virtualAkun.length 
+                                + paymentBank.length 
+                                + eWallet.length 
+                                + retail.length
+                                + entry.key;
+                              final item = entry.value;
+
+                              final exchange_rate = item['exchange_rate_new'];
+                              final limit_min = item['limit_min']; 
+                              final limit_max = item['limit_max'];
+    
+                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
+    
+                              final currentcy_min = limit_min * exchange_rate;
+                              final currentcy_max = limit_max * exchange_rate;
+    
+                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
+                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
+    
+                              final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+
+                              return PaymentItem(
+                                paymentTipe: "konter",
+                                item: item, 
+                                idx: idx, 
+
+                                isSelected: isSelected, 
+                                isDisabled: isDisabled, 
+
+                                currencyCode: currencyCode, 
+                                voteCurrency: eventCurrency, 
+                                bahasa: bahasa, 
+                                formatter: formatter, 
+
+                                convertedHarga: convertedHarga, 
+                                roundedValueMin: roundedValueMin, 
+                                roundedValueMax: roundedValueMax, 
+                                limit_max: limit_max, 
+
+                                onTap: () async {
+                                  setState(() {
+                                    selectedIndex = idx;
+                                    id_payment_method = konter[index]['id_metod'];
+                                    currencySession = konter[index]['currency_pg'];
+                                  });
+                                  
+                                  Future.delayed(const Duration(milliseconds: 200), () {
+                                    _scrollController.animateTo(
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 600),
+                                      curve: Curves.easeOut,
+                                    );
+                                  });
+  
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  var resultFee = await getFeeNew(
+                                    currencyCode!,
+                                    eventCurrency!, 
+                                    item['currency_pg'], 
+                                    widget.totalHargaAsli, 
+                                    item['fee_percent'], 
+                                    item['ppn'], 
+                                    item['fee'], 
+                                    item['exchange_rate_new'], 
+                                    null,
+                                    item['rate'], 
+                                    widget.rateCurrency, 
+                                    widget.rateCurrencyUser);
+                                  
+                                  setState(() {
+                                    totalPayment = resultFee!['total_payment'];
+                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+
+                        if (qrCode.isNotEmpty) ... [
+                          const SizedBox(height: 20),
+
+                          PaymentList(
+                            sectionKey: qrCodeKey, 
+                            title: "QR Codes",
+                            isOpen: qrCodeClicked, 
+                            onTap: () {
+                              setState(() {
+                                bool willOpen = !qrCodeClicked;
+
+                                qrCodeClicked = !qrCodeClicked;
+
+                                creditCardClicked = false;
+                                virtualAkunClicked = false;
+                                paymentBankClicked = false;
+                                eWalletClicked = false;
+                                retailClicked = false;
+                                konterClicked = false;
+                                debitClicked = false;
+
+                                if (willOpen) {
+                                  scrollTo(qrCodeKey);
+                                }
+                              });
+                            },
+                            children: qrCode.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final idx = creditCard.length 
+                                + virtualAkun.length 
+                                + paymentBank.length 
+                                + eWallet.length 
+                                + retail.length
+                                + konter.length
+                                + entry.key;
+                              final item = entry.value;
+
+                              final exchange_rate = item['exchange_rate_new'];
+                              final limit_min = item['limit_min']; 
+                              final limit_max = item['limit_max'];
+    
+                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
+    
+                              final currentcy_min = limit_min * exchange_rate;
+                              final currentcy_max = limit_max * exchange_rate;
+    
+                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
+                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
+    
+                              final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+
+                              return PaymentItem(
+                                paymentTipe: "qr_code",
+                                item: item, 
+                                idx: idx, 
+
+                                isSelected: isSelected, 
+                                isDisabled: isDisabled, 
+
+                                currencyCode: currencyCode, 
+                                voteCurrency: eventCurrency, 
+                                bahasa: bahasa, 
+                                formatter: formatter, 
+
+                                convertedHarga: convertedHarga, 
+                                roundedValueMin: roundedValueMin, 
+                                roundedValueMax: roundedValueMax, 
+                                limit_max: limit_max, 
+
+                                onTap: () async {
+                                  setState(() {
+                                    selectedIndex = idx;
+                                    id_payment_method = qrCode[index]['id_metod'];
+                                    currencySession = qrCode[index]['currency_pg'];
+                                  });
+                                  
+                                  Future.delayed(const Duration(milliseconds: 200), () {
+                                    _scrollController.animateTo(
+                                      _scrollController.position.maxScrollExtent,
+                                      duration: const Duration(milliseconds: 600),
+                                      curve: Curves.easeOut,
+                                    );
+                                  });
+  
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  var resultFee = await getFeeNew(
+                                    currencyCode!,
+                                    eventCurrency!, 
+                                    item['currency_pg'], 
+                                    widget.totalHargaAsli, 
+                                    item['fee_percent'], 
+                                    item['ppn'], 
+                                    item['fee'], 
+                                    item['exchange_rate_new'], 
+                                    null,
+                                    item['rate'], 
+                                    widget.rateCurrency, 
+                                    widget.rateCurrencyUser);
+                                  
+                                  setState(() {
+                                    totalPayment = resultFee!['total_payment'];
+                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+
+                        if (debit.isNotEmpty) ... [
+                          const SizedBox(height: 20),
+
+                          PaymentList(
+                            sectionKey: debitKey, 
+                            title: "Direct Debit",
+                            isOpen: debitClicked, 
+                            onTap: () {
+                              setState(() {
+                                bool willOpen = !debitClicked;
+
+                                debitClicked = !debitClicked;
+
+                                creditCardClicked = false;
+                                virtualAkunClicked = false;
+                                paymentBankClicked = false;
+                                eWalletClicked = false;
+                                retailClicked = false;
+                                konterClicked = false;
+                                qrCodeClicked = false;
+
+                                if (willOpen) {
+                                  scrollTo(debitKey);
+                                }
+                              });
+                            },
+                            children: debit.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final idx = creditCard.length 
+                                + virtualAkun.length 
+                                + paymentBank.length 
+                                + eWallet.length 
+                                + retail.length
+                                + konter.length
+                                + qrCode.length
+                                + entry.key;
+                              final item = entry.value;
+
+                              final exchange_rate = item['exchange_rate_new'];
+                              final limit_min = item['limit_min']; 
+                              final limit_max = item['limit_max'];
+    
+                              final convertedHarga = widget.totalHargaAsli * (widget.rateCurrencyUser / widget.rateCurrency);
+    
+                              final currentcy_min = limit_min * exchange_rate;
+                              final currentcy_max = limit_max * exchange_rate;
+    
+                              num convertedLimitMin = currentcy_min * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num convertedLimitMax = currentcy_max * (widget.rateCurrencyUser / widget.rateCurrency);
+                              num roundedValueMin = (convertedLimitMin * 100).ceil() / 100;
+                              num roundedValueMax = (convertedLimitMax * 100).ceil() / 100;
+    
+                              final isSelected = selectedIndex == idx;
+    
+                              final isDisabled = convertedHarga < roundedValueMin || (limit_max != 0 && convertedHarga > roundedValueMax);
+
+                              return PaymentItem(
+                                paymentTipe: "debit",
+                                item: item, 
+                                idx: idx, 
+
+                                isSelected: isSelected, 
+                                isDisabled: isDisabled, 
+
+                                currencyCode: currencyCode, 
+                                voteCurrency: eventCurrency, 
+                                bahasa: bahasa, 
+                                formatter: formatter, 
+
+                                convertedHarga: convertedHarga, 
+                                roundedValueMin: roundedValueMin, 
+                                roundedValueMax: roundedValueMax, 
+                                limit_max: limit_max, 
+
+                                onTap: () async {
+                                  setState(() {
+                                    selectedIndex = idx;
+                                    id_payment_method = debit[index]['id_metod'];
+                                    currencySession = debit[index]['currency_pg'];
+                                  });
+    
+                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  var resultFee = await getFeeNew(
+                                    currencyCode!,
+                                    eventCurrency!, 
+                                    item['currency_pg'], 
+                                    widget.totalHargaAsli, 
+                                    item['fee_percent'], 
+                                    item['ppn'], 
+                                    item['fee'], 
+                                    item['exchange_rate_new'], 
+                                    null,
+                                    item['rate'], 
+                                    widget.rateCurrency, 
+                                    widget.rateCurrencyUser);
+                                  
+                                  setState(() {
+                                    totalPayment = resultFee!['total_payment'];
+                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                  });
+                                },
+                                onPhoneChanged: (val){
+                                  mobile_number = val;
+    
+                                  _phoneDebounce?.cancel();
+                                  _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                    if (val.length >= 12 && _scrollController.hasClients) {
+                                      _scrollController.animateTo(
+                                        _scrollController.position.maxScrollExtent,
+                                        duration: const Duration(milliseconds: 600),
+                                        curve: Curves.easeOut,
+                                      );
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
                     ),
 
@@ -2582,5 +1594,19 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         ],
       ),
     );
+  }
+
+  void scrollTo(GlobalKey key) {
+    final context = key.currentContext;
+    if (context == null) return;
+
+    Future.delayed(const Duration(milliseconds: 120), () {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        alignment: 0.1,
+      );
+    });
   }
 }

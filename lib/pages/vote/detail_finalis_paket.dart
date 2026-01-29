@@ -915,7 +915,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       ),
 
       bottomNavigationBar: SafeArea(
-        child: Padding(
+        child: Container(
+          color: Colors.white,
           padding:  EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
