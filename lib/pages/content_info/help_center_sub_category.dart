@@ -113,122 +113,148 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                         final index = entry.key;
                         final item = entry.value;
 
-                        return Container(
-                          padding: EdgeInsets.all(16),
-                          margin: EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300,),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      langCode == 'en'
-                                        ? item['name'] == "vote"
-                                          ? item['name']
-                                          : item['name']
-                                        : item['name'],
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                        return GestureDetector(
+                          onTap: () async {
+                            final idSubKategori = item['id'];
+                            // openSubKategori[index] = !openSubKategori[index];
+                            for (int i = 0; i < openSubKategori.length; i++) {
+                              openSubKategori[i] = i == index
+                                  ? !openSubKategori[i] // toggle yang diklik
+                                  : false; // lainnya ditutup
+                            }
+
+                            if (!questionsBySub.containsKey(index)) {
+                              final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori", xLanguage: langCode);
+
+                              questionsBySub[index] = resultQuestion?['data'] ?? [];
+                            }
+                            setState(() {
+                              openQuestion[index] = List<bool>.filled(questionsBySub[index]!.length, false);
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(16),
+                            margin: EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300,),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        langCode == 'en'
+                                          ? item['name'] == "vote"
+                                            ? item['name']
+                                            : item['en_name']
+                                          : item['name'],
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ),
 
-                                  SizedBox(width: 10,),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final idSubKategori = item['id'];
-                                      // openSubKategori[index] = !openSubKategori[index];
-                                      for (int i = 0; i < openSubKategori.length; i++) {
-                                        openSubKategori[i] = i == index
-                                            ? !openSubKategori[i] // toggle yang diklik
-                                            : false; // lainnya ditutup
-                                      }
+                                    SizedBox(width: 10,),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final idSubKategori = item['id'];
+                                        // openSubKategori[index] = !openSubKategori[index];
+                                        for (int i = 0; i < openSubKategori.length; i++) {
+                                          openSubKategori[i] = i == index
+                                              ? !openSubKategori[i] // toggle yang diklik
+                                              : false; // lainnya ditutup
+                                        }
 
-                                      if (!questionsBySub.containsKey(index)) {
-                                        final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori", xLanguage: langCode);
+                                        if (!questionsBySub.containsKey(index)) {
+                                          final resultQuestion = await ApiService.get("/helpcenter/questions/$idSubKategori", xLanguage: langCode);
 
-                                        questionsBySub[index] = resultQuestion?['data'] ?? [];
-                                      }
-                                      setState(() {
-                                        openQuestion[index] = List<bool>.filled(questionsBySub[index]!.length, false);
-                                      });
-                                    },
-                                    child: !openSubKategori[index]
-                                    ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
-                                    : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
-                                  )
-                                ],
-                              ),
+                                          questionsBySub[index] = resultQuestion?['data'] ?? [];
+                                        }
+                                        setState(() {
+                                          openQuestion[index] = List<bool>.filled(questionsBySub[index]!.length, false);
+                                        });
+                                      },
+                                      child: !openSubKategori[index]
+                                      ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
+                                      : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                                    )
+                                  ],
+                                ),
 
-                              if (openSubKategori[index]) ...[
-                                SizedBox(height: 16),
-                                ...questionsBySub[index]!.map((q) {
-                                  final indexx = questionsBySub[index]!.indexOf(q);
-                                  final title = (langCode == 'en' ? q['en_title'] : q['title'])
-                                    ?.toString()
-                                    .replaceAll('\n', ' ')
-                                    .trim() ?? '';
-                                  return Padding(
-                                    padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                if (openSubKategori[index]) ...[
+                                  SizedBox(height: 16),
+                                  ...questionsBySub[index]!.map((q) {
+                                    final indexx = questionsBySub[index]!.indexOf(q);
+                                    final title = (langCode == 'en' ? q['en_title'] : q['title'])
+                                      ?.toString()
+                                      .replaceAll('\n', ' ')
+                                      .trim() ?? '';
+                                    return GestureDetector(
+                                      onTap: () {
+                                        openQuestion[index]![indexx] = !openQuestion[index]![indexx];
+                                        setState(() {});
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(20, 12, 0, 12),
+                                        child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Expanded(
-                                              child: Text(
-                                                title,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                )
-                                              ),
-                                            ),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    title,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                    )
+                                                  ),
+                                                ),
 
-                                            SizedBox(width: 10,),
-                                            GestureDetector(
-                                              onTap: () {
-                                                openQuestion[index]![indexx] = !openQuestion[index]![indexx];
-                                                setState(() {});
-                                              },
-                                              child: !openQuestion[index]![indexx]
-                                                ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
-                                                : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                                                SizedBox(width: 10,),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    openQuestion[index]![indexx] = !openQuestion[index]![indexx];
+                                                    setState(() {});
+                                                  },
+                                                  child: !openQuestion[index]![indexx]
+                                                    ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
+                                                    : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                                                ),
+                                              ],
                                             ),
+                                            
+                                            if (openQuestion[index]![indexx]) ...[
+                                              SizedBox(height: 6),
+                                              Html(
+                                                data: langCode == 'en'
+                                                  ? q['en_content']
+                                                  : q['content'],
+                                                style: {
+                                                  "p": Style(
+                                                    margin: Margins.zero,
+                                                  ),
+                                                  "body": Style(
+                                                    margin: Margins.zero,
+                                                  ),
+                                                },
+                                              ),
+                                            ],
                                           ],
                                         ),
-                                        
-                                        if (openQuestion[index]![indexx]) ...[
-                                          SizedBox(height: 6),
-                                          Html(
-                                            data: langCode == 'en'
-                                              ? q['en_content']
-                                              : q['content'],
-                                            style: {
-                                              "p": Style(
-                                                margin: Margins.zero,
-                                              ),
-                                              "body": Style(
-                                                margin: Margins.zero,
-                                              ),
-                                            },
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  );
-                                })
-                              ]
-                            ],
+                                      ),
+                                    );
+                                  })
+                                ]
+                              ],
+                            ),
                           ),
                         );
                       })

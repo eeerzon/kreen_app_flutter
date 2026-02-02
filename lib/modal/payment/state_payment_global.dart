@@ -108,7 +108,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   String? phoneLabel, phoneHint;
   String? cobaLagi;
 
-  Timer? _cvvDebounce, _phoneDebounce;
+  Timer? _cvvDebounce, _phoneDebounce, _idCardDebounce;
 
   String? currencySession;
 
@@ -367,7 +367,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       final body = {
         "id_event": widget.id_event,
         "id_user": user_id ?? '',
-        'platform': platform,
+        "platform": platform,
         "latitude": latitude,
         "longitude": longitude,
         "tickets": tickets,
@@ -389,7 +389,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         ),
       };
 
-      var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
+      var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode, token: token);
 
       if (resultEventOrder != null) {
         if (resultEventOrder['rc'] == 200) {
@@ -402,54 +402,13 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             context,
             MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: id_order, formHistory: false, currency_session: currencyCode,)),
           );
-        } else if (resultEventOrder['rc'] == 422) {
-          final data = resultEventOrder['data'];
-          String desc = '';
-          if (data is Map) {
-            final errorMessages = data.values
-              .whereType<List>()
-              .expand((e) => e)
-              .whereType<String>()
-              .toList();
-
-          desc = errorMessages.join('\n');
-          } else {
-            desc = data?.toString() ?? '';
-          }
+        } else {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: desc, //error message dari api
-            btnOkOnPress: () {},
-            btnOkColor: Colors.red,
-            buttonsTextStyle: TextStyle(color: Colors.white),
-            headerAnimationLoop: false,
-            dismissOnTouchOutside: true,
-            showCloseIcon: true,
-          ).show();
-        } else if (resultEventOrder['rc'] == 400) {
-          AwesomeDialog(
-            context: context,
-            dialogType: DialogType.error,
-            animType: AnimType.topSlide,
-            title: 'Oops!',
-            desc: "${resultEventOrder['message']}",
-            btnOkOnPress: () {},
-            btnOkColor: Colors.red,
-            buttonsTextStyle: TextStyle(color: Colors.white),
-            headerAnimationLoop: false,
-            dismissOnTouchOutside: true,
-            showCloseIcon: true,
-          ).show();
-        } else if (resultEventOrder['rc'] == 500) {
-          AwesomeDialog(
-            context: context,
-            dialogType: DialogType.error,
-            animType: AnimType.topSlide,
-            title: 'Oops!',
-            desc: "${resultEventOrder['message']}\n${bahasa['another_payment']}",
+            desc: bahasa['error'], //error message dari api
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -464,7 +423,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
           dialogType: DialogType.error,
           animType: AnimType.topSlide,
           title: 'Oops!',
-          desc: cobaLagi, //"Terjadi kesalahan. Silakan coba lagi.",
+          desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
           btnOkOnPress: () {},
           btnOkColor: Colors.red,
           buttonsTextStyle: TextStyle(color: Colors.white),
@@ -605,6 +564,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     
                               final isDisabled = convertedHarga < roundedValueMin || (convertedHarga > roundedValueMax);
 
+                              final isAMEX = item['note'] != null ? item['note'].toLowerCase().contains('amex') : false;
+
                               return PaymentItem(
                                 paymentTipe: "credit_card",
                                 item: item,
@@ -631,15 +592,27 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   cvv = val;
 
                                   _cvvDebounce?.cancel();
-                                  _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
-                                    if (val.length == 3 && _scrollController.hasClients) {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    }
-                                  });
+                                  if (isAMEX) {
+                                    _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                      if (val.length == 4 && _scrollController.hasClients) {
+                                        _scrollController.animateTo(
+                                          _scrollController.position.maxScrollExtent,
+                                          duration: const Duration(milliseconds: 600),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    });
+                                  } else {
+                                    _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                      if (val.length == 3 && _scrollController.hasClients) {
+                                        _scrollController.animateTo(
+                                          _scrollController.position.maxScrollExtent,
+                                          duration: const Duration(milliseconds: 600),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    });
+                                  }
                                 },
 
                                 onTap: () async {
@@ -648,6 +621,16 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = creditCard[idx]['id_metod'];
                                     currencySession = creditCard[idx]['currency_pg'];
                                   });
+
+                                  if (item['flag_client'] == "1") {
+                                    Future.delayed(const Duration(milliseconds: 200), () {
+                                      _scrollController.animateTo(
+                                        _scrollController.position.maxScrollExtent,
+                                        duration: const Duration(milliseconds: 600),
+                                        curve: Curves.easeOut,
+                                      );
+                                    });
+                                  }
 
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
@@ -1438,19 +1421,39 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+
                                 onPhoneChanged: (val){
                                   mobile_number = val;
-    
-                                  _phoneDebounce?.cancel();
-                                  _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
-                                    if (val.length >= 12 && _scrollController.hasClients) {
-                                      _scrollController.animateTo(
-                                        _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
-                                        curve: Curves.easeOut,
-                                      );
-                                    }
-                                  });
+
+                                  if (item['bank_code'] != "KTB") {
+                                    _phoneDebounce?.cancel();
+                                    _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                      if (val.length >= 12 && _scrollController.hasClients) {
+                                        _scrollController.animateTo(
+                                          _scrollController.position.maxScrollExtent,
+                                          duration: const Duration(milliseconds: 600),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    });
+                                  }
+                                },
+
+                                onIDCardChanged: (val) {
+                                  id_card_number = val;
+
+                                  if (item['bank_code'] == "KTB") {
+                                    _idCardDebounce?.cancel();
+                                    _idCardDebounce = Timer(const Duration(milliseconds: 700), () {
+                                      if (val.length == 13 && _scrollController.hasClients) {
+                                        _scrollController.animateTo(
+                                          _scrollController.position.maxScrollExtent,
+                                          duration: const Duration(milliseconds: 600),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    });
+                                  }
                                 },
                               );
                             }).toList(),

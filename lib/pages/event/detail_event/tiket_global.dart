@@ -1054,11 +1054,26 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                     GestureDetector(
                                       onTap: () async {
                                         final result = await FilePicker.platform.pickFiles(
-                                          type: FileType.any,
+                                          type: FileType.custom,
+                                          allowedExtensions: ['pdf'],
                                         );
 
                                         if (result != null && result.files.single.path != null) {
-                                          final file = File(result.files.single.path!);
+                                          final picked = result.files.single;
+
+                                          final maxFileSize = 1 * 1024 * 1024; // 1 MB
+                                          
+                                          if (picked.size > maxFileSize) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(bahasa['batas_file']),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          final file = File(picked.path!);
                                           final fileName = path.basename(file.path);
                                           final resultUpload = await ApiService.postImage('/uploads/tmp', file: file, xLanguage: langCode);
                                           final List<dynamic> tempData = resultUpload?['data'] ?? [];
@@ -1102,6 +1117,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         ),
                                       ),
                                     ),
+
+                                    SizedBox(height: 4,),
+                                    Text(
+                                      "${bahasa['batas_file']}\n${bahasa['batas_file_2']}",
+                                      style: TextStyle(color: Colors.grey.shade800),
+                                    ),
+
                                     if (formTiket[idx]['required'] == 1 &&
                                         _showError &&
                                         answerControllers[idx].text.trim().isEmpty)
@@ -1348,7 +1370,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       });
 
                       final isValid = _validateAllForm();
-
+                      
                       for (var i = 0; i < formTiket.length; i++) {
                         if (formTiket[i]['type_form'] != 'file') {
                           answers[i] = answerControllers[i].text.trim();
@@ -1434,26 +1456,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               context,
                               MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
                             );
-                          } else if (resultEventOrder['rc'] == 422) {
-                            final data = resultEventOrder['data'];
-                            String desc = '';
-                            if (data is Map) {
-                              final errorMessages = data.values
-                                .whereType<List>()
-                                .expand((e) => e)
-                                .whereType<String>()
-                                .toList();
-
-                            desc = errorMessages.join('\n');
-                            } else {
-                              desc = data?.toString() ?? '';
-                            }
+                          } else {
                             AwesomeDialog(
                               context: context,
                               dialogType: DialogType.error,
                               animType: AnimType.topSlide,
                               title: 'Oops!',
-                              desc: desc,
+                              desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
                               btnOkOnPress: () {},
                               btnOkColor: Colors.red,
                               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -1468,9 +1477,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             dialogType: DialogType.error,
                             animType: AnimType.topSlide,
                             title: 'Oops!',
-                            desc: cobaLagi,
+                            desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
                             btnOkOnPress: () {},
                             btnOkColor: Colors.red,
+                            buttonsTextStyle: TextStyle(color: Colors.white),
                             headerAnimationLoop: false,
                             dismissOnTouchOutside: true,
                             showCloseIcon: true,

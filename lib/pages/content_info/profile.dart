@@ -52,7 +52,6 @@ class _ProfileState extends State<Profile> {
     WidgetsBinding.instance.addPostFrameCallback((_) async{
       await _getBahasa();
       await _checkToken();
-      await _loadContent();
     });
   }
 
@@ -71,12 +70,21 @@ class _ProfileState extends State<Profile> {
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
     final storeUser = await StorageService.getUser();
+    final fullName = storeUser['first_name']?.toString().trim() ?? '';
     if (mounted) {
       setState(() {
         token = storedToken;
 
-        first_name = storeUser['first_name'];
-        last_name = storeUser['last_name'];
+        if (fullName.isNotEmpty) {
+          final parts = fullName.split(' ');
+          first_name = parts.first;
+          last_name = parts.length > 1 
+              ? parts.sublist(1).join(' ') 
+              : '';
+        }
+
+        // first_name = storeUser['first_name'];
+        // last_name = storeUser['last_name'];
         email = storeUser['email'];
         gender = storeUser['gender'];
         phone = storeUser['phone'];
@@ -88,6 +96,8 @@ class _ProfileState extends State<Profile> {
         link_linkedin = storeUser['link_linkedin'];
         link_ig = storeUser['link_ig'];
         link_twitter = storeUser['link_twitter'];
+
+        isLoading = false;
       });
     }
   }
@@ -105,17 +115,6 @@ class _ProfileState extends State<Profile> {
       login = bahasa['login'];
       keluar = bahasa['keluar'];
     });
-  }
-
-  Future<void> _loadContent() async {
-    var get_user = await StorageService.getUser();
-    first_name = get_user['first_name'];
-
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
   }
   
   @override
@@ -775,7 +774,7 @@ class _ProfileState extends State<Profile> {
                                       dialogType: DialogType.error,
                                       animType: AnimType.topSlide,
                                       title: 'Oops!',
-                                      desc: resultVerifEmail?['message'],
+                                      desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
                                       btnOkOnPress: () {},
                                       btnOkColor: Colors.red,
                                       buttonsTextStyle: TextStyle(color: Colors.white),

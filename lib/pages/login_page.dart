@@ -112,9 +112,15 @@ class _LoginPageState extends State<LoginPage> {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
-        title: langCode == 'id' ? 'Gagal' : 'Failed',
-        desc: result?['message'] ?? gagalLogin!,
+        animType: AnimType.topSlide,
+        title: 'Oops!',
+        desc: bahasa!['error'], //"Terjadi kesalahan. Silakan coba lagi.",
         btnOkOnPress: () {},
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
       ).show();
     }
   }

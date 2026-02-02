@@ -2034,7 +2034,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         Text(
-                                          detailEvent['show_tickets_available'] == 1 
+                                          detailEvent['show_tickets_available'] == 1 && !sudahTutup
                                             ? '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
                                             : '',
                                           style: TextStyle(color: Colors.grey),

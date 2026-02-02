@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/widget_webview.dart';
 
 class AutoPlayCarousel extends StatefulWidget {
   final List<String> images;
+  final List<dynamic> data;
   final List<double?> aspectRatios;
+  final Map<String, dynamic> bahasa;
 
   const AutoPlayCarousel({
     super.key,
     required this.images,
+    required this.data,
     required this.aspectRatios,
+    required this.bahasa,
   });
 
   @override
@@ -27,14 +33,27 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
     // viewportFraction bikin before-after peek
     controller = PageController(viewportFraction: 0.88);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoPlay();
+    });
+  }
+
+  void _startAutoPlay() {
+    if (widget.images.length <= 1) return;
+
     timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
+      if (!controller.hasClients) return;
+
       final next = (currentIndex + 1) % widget.images.length;
+
       controller.animateToPage(
         next,
         duration: const Duration(milliseconds: 450),
         curve: Curves.easeOutCubic,
       );
+
+      currentIndex = next;
     });
   }
 
@@ -48,7 +67,9 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final aspect = widget.aspectRatios[currentIndex];
+    final aspect = currentIndex < widget.aspectRatios.length
+      ? widget.aspectRatios[currentIndex]
+      : null;
     final height = aspect == null ? 150.0 : (screenWidth / aspect);
 
     return Column(
@@ -84,17 +105,41 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
                     );
                   }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Image.network(
-                        img,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, st) => Container(
-                          color: Colors.grey[300],
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image),
+                  return InkWell(
+                    onTap: () {
+                      if (widget.data[i]['url_detail'] == null || widget.data[i]['url_detail'] == '') {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(widget.bahasa['error']),
+                            behavior: SnackBarBehavior.floating,
+                            margin: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                            ),
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                WidgetWebView(header: widget.bahasa['artikel'], url: widget.data[i]['url_detail']),
+                          ),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(
+                          img,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, st) => Container(
+                            color: Colors.grey[300],
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.broken_image),
+                          ),
                         ),
                       ),
                     ),
@@ -105,7 +150,7 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
           ),
         ),
 
-        const SizedBox(height: 10),
+        SizedBox(height: 10, child: Container(color: Colors.white,),),
 
         // ==== BULIR INDIKATOR ====
         Container(

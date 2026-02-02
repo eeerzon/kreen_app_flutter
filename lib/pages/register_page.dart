@@ -25,7 +25,8 @@ class RegisPage extends StatefulWidget {
 class _RegisPageState extends State<RegisPage> {
   final prefs = FlutterSecureStorage();
 
-  final _namaController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -38,7 +39,8 @@ class _RegisPageState extends State<RegisPage> {
   final FocusNode _confirmpasswordFocus = FocusNode();
 
   bool get _isFormFilled =>
-      _namaController.text.isNotEmpty &&
+      _firstNameController.text.isNotEmpty &&
+      _lastNameController.text.isNotEmpty &&
       _emailController.text.isNotEmpty &&
       _phoneController.text.isNotEmpty &&
       _passwordController.text.isNotEmpty &&
@@ -66,7 +68,7 @@ class _RegisPageState extends State<RegisPage> {
 
     final body = {
       "email": _emailController.text,
-      "name": _namaController.text,
+      "name": "${_firstNameController.text} ${_lastNameController.text}",
       "phone": _phoneController.text,
       "password": _passwordController.text,
       "password_confirmation": _confirmpasswordController.text
@@ -85,27 +87,13 @@ class _RegisPageState extends State<RegisPage> {
         hideLoadingDialog(context);
         Navigator.pop(context);
       });
-    } else if (result['rc'] == 422) {
-
-      final data = result['data'];
-      String desc = '';
-      if (data is Map) {
-        final errorMessages = data.values
-          .whereType<List>()
-          .expand((e) => e)
-          .whereType<String>()
-          .toList();
-
-        desc = errorMessages.join('\n');
-      } else {
-        desc = data?.toString() ?? '';
-      }
+    } else {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
         animType: AnimType.topSlide,
         title: 'Oops!',
-        desc: desc,
+        desc: bahasa['error'],
         btnOkOnPress: () {},
         btnOkColor: Colors.red,
         buttonsTextStyle: TextStyle(color: Colors.white),
@@ -175,7 +163,8 @@ class _RegisPageState extends State<RegisPage> {
   }
 
   String? langCode;
-  String? fullNameLabel, fullName;
+  String? firstNameLabel, firstName;
+  String? lastNameLabel, lastName;
   String? emailLabel, email;
   String? phoneLabel, phone, phoneError;
   String? passwordLabel, password;
@@ -201,9 +190,11 @@ class _RegisPageState extends State<RegisPage> {
       bahasa = tempbahasa;
 
       googleLogin = tempbahasa['google_login'];
-
-      fullNameLabel = tempbahasa['nama_lengkap_label'];
-      fullName = tempbahasa['nama_lengkap'];
+      
+      firstNameLabel = tempbahasa['nama_depan_label'];
+      firstName = tempbahasa['nama_depan_hint'];
+      lastNameLabel = tempbahasa['nama_belakang_label'];
+      lastName = tempbahasa['nama_belakang_hint'];
       emailLabel = tempbahasa['email_label'];
       email = tempbahasa['input_email'];
       phoneLabel = tempbahasa['nomor_hp_label'];
@@ -272,10 +263,10 @@ class _RegisPageState extends State<RegisPage> {
 
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
-                    child: Text(fullNameLabel ?? "..."),
+                    child: Text(firstNameLabel ?? "..."),
                   ),
                   TextField(
-                    controller: _namaController,
+                    controller: _firstNameController,
                     onChanged: (_) => setState(() {}),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
@@ -284,18 +275,44 @@ class _RegisPageState extends State<RegisPage> {
                       NameInputFormatter(),
                     ],
                     decoration: InputDecoration(
-                      hintText: fullName!,
+                      hintText: firstName!,
                       hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      enabledBorder: _border(_namaController.text.isNotEmpty),
+                      enabledBorder: _border(_firstNameController.text.isNotEmpty),
                       focusedBorder: _border(true),
                     ),
                   ),
 
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Text(lastNameLabel ?? "..."), // nama belakang
+                  ),
+                  TextField(
+                    controller: _lastNameController,
+                    onChanged: (_) => setState(() {}),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r"[a-zA-Z\s]"),
+                      ),
+                      LastNameInputFormatter(),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: lastName!,
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      enabledBorder: _border(_lastNameController.text.isNotEmpty),
+                      focusedBorder: _border(true),
+                    ),
+                  ),
 
                   //email 
                   const SizedBox(height: 16),
@@ -593,6 +610,27 @@ class NameInputFormatter extends TextInputFormatter {
     text = text.trim();
 
     // Ubah multiple space jadi satu
+    text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
+class LastNameInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text;
+
+    // Hilangkan spasi di awal
+    text = text.replaceFirst(RegExp(r'^\s+'), '');
+
+    // Hilangkan spasi ganda
     text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
 
     return TextEditingValue(

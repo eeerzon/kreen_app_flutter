@@ -351,6 +351,11 @@
     "maaf" : "Maaf...",
     "redirect" : "Redirect dalam",
     "batas" : "Batas maksimal vote adalah",
-    "batas_event" : "Batas maksimal tiket adalah"
+    "batas_event" : "Batas maksimal tiket adalah",
+    "batas_file" : "Ukuran file maksimal 1 MB",
+    "batas_file_2" : "Hanya menerima format pdf.",
+    "id_card" : "Masukkan Nomor Identitas",
+
+    "bayar_sekarang" : "Bayar Sekarang"
   }
 }

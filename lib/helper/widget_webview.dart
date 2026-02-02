@@ -2,33 +2,33 @@
 
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
-import 'package:kreen_app_flutter/services/lang_service.dart';
-import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-class ArticleWebView extends StatefulWidget {
+class WidgetWebView extends StatefulWidget {
+  final String header;
   final String url;
 
-  const ArticleWebView({super.key, required this.url});
+  const WidgetWebView({super.key,required this.header, required this.url});
 
   @override
-  State<ArticleWebView> createState() => _ArticleWebViewState();
+  State<WidgetWebView> createState() => _WidgetWebViewState();
 }
 
-class _ArticleWebViewState extends State<ArticleWebView> {
+class _WidgetWebViewState extends State<WidgetWebView> {
   late final String url = widget.url;
   bool isLoading = true;
 
   late final WebViewController controller;
 
-  String? langCode, artikel;
+  // String? langCode, artikel;
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _getBahasa();
+      // await _getBahasa();
+      isLoading = false;
     });
 
     controller = WebViewController.fromPlatformCreationParams(
@@ -37,14 +37,23 @@ class _ArticleWebViewState extends State<ArticleWebView> {
 
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
+      ..setBackgroundColor(Colors.transparent)
+      ..enableZoom(false)
+      ..setUserAgent(
+        "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
             setState(() => isLoading = true);
           },
-          onPageFinished: (_) {
+          onPageFinished: (_) async {
             setState(() => isLoading = false);
+
+            await controller.runJavaScript("""
+              window.localStorage;
+              window.sessionStorage;
+            """);
           },
           onWebResourceError: (_) {
             setState(() => isLoading = false);
@@ -54,16 +63,16 @@ class _ArticleWebViewState extends State<ArticleWebView> {
       ..loadRequest(Uri.parse(url));
   }
 
-  Future<void> _getBahasa() async {
-    final code = await StorageService.getLanguage();
-    setState(() => langCode = code);
+  // Future<void> _getBahasa() async {
+  //   final code = await StorageService.getLanguage();
+  //   setState(() => langCode = code);
 
-    final tempArtikel = await LangService.getJsonData(langCode!, "bahasa");
-    setState(() {
-      artikel = tempArtikel['artikel'];
-      isLoading = false;
-    });
-  }
+  //   final tempArtikel = await LangService.getJsonData(langCode!, "bahasa");
+  //   setState(() {
+  //     artikel = tempArtikel['artikel'];
+  //     isLoading = false;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +91,7 @@ class _ArticleWebViewState extends State<ArticleWebView> {
           surfaceTintColor: Colors.transparent,
           shadowColor: Colors.transparent,
           scrolledUnderElevation: 0,
-          title: Text(artikel ?? ""),
+          title: Text(widget.header),
           centerTitle: false,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios),

@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 class GlobalErrorBar extends StatefulWidget {
   final bool visible;
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
   final VoidCallback? onDismiss;
 
   const GlobalErrorBar({
     super.key,
     required this.visible,
     required this.message,
-    required this.onRetry,
+    this.onRetry,
     this.onDismiss,
   });
 

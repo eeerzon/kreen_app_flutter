@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/pages/content_info/profile.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote.dart';
@@ -16,7 +17,7 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
-import 'package:kreen_app_flutter/helper/article_webview.dart';
+import 'package:kreen_app_flutter/helper/widget_webview.dart';
 import 'package:kreen_app_flutter/helper/auto_play_carousel.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -546,37 +547,47 @@ class _HomeContentState extends State<HomeContent> {
                               //       ),
                               //     ),
                               //   ),
-                    
-                              CircleAvatar(
-                                child: ClipOval(
-                                  child: photo_user != null 
-                                    ?
-                                      isSvg
-                                        ? SvgPicture.network(
-                                            '$baseUrl/user/$photo_user',
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.fill,
-                                          )
-                                        : isHttp
-                                          ? Image.network(
-                                              photo_user!,
-                                              width: 40,
-                                              height: 40,
-                                              fit: BoxFit.fill,
-                                            )
-                                          : Image.network(
+
+                              InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => Profile(),
+                                    ),
+                                  );
+                                },
+                                child: CircleAvatar(
+                                  child: ClipOval(
+                                    child: photo_user != null 
+                                      ?
+                                        isSvg
+                                          ? SvgPicture.network(
                                               '$baseUrl/user/$photo_user',
                                               width: 40,
                                               height: 40,
                                               fit: BoxFit.fill,
                                             )
-                                    : Image.network(
-                                        "$baseUrl/noimage_finalis.png",
-                                        width: 40,
-                                        height: 40,
-                                        fit: BoxFit.fill,
-                                      )
+                                          : isHttp
+                                            ? Image.network(
+                                                photo_user!,
+                                                width: 40,
+                                                height: 40,
+                                                fit: BoxFit.fill,
+                                              )
+                                            : Image.network(
+                                                '$baseUrl/user/$photo_user',
+                                                width: 40,
+                                                height: 40,
+                                                fit: BoxFit.fill,
+                                              )
+                                      : Image.network(
+                                          "$baseUrl/noimage_finalis.png",
+                                          width: 40,
+                                          height: 40,
+                                          fit: BoxFit.fill,
+                                        )
+                                  ),
                                 ),
                               ),
                             
@@ -603,7 +614,9 @@ class _HomeContentState extends State<HomeContent> {
                 // === Image Slider ===
                 AutoPlayCarousel(
                   images: activeBanners.map((e) => e['file_upload'] as String).toList(),
+                  data: activeBanners,
                   aspectRatios: aspectRatios,
+                  bahasa: bahasa,
                 ),
 
                 Container(
@@ -2132,7 +2145,7 @@ class _HomeContentState extends State<HomeContent> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            ArticleWebView(url: item['link']),
+                                            WidgetWebView(header: bahasa['artikel'], url: item['link']),
                                       ),
                                     );
                                   },

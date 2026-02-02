@@ -62,5 +62,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+		<string>Untuk verifikasi pembayaran</string>
+	<key>NSCameraUsageDescription</key>
+		<string>To scan cards</string>
+	<key>WKWebViewConfiguration</key>
+	<dict>
+		<key>allowsInlineMediaPlayback</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

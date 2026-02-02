@@ -44,6 +44,10 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.10")
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-analytics")
+    // Stripe Android SDK
+    implementation("com.stripe:stripe-android:22.6.1")
+    // Include the financial connections SDK to support US bank account as a payment method
+    implementation("com.stripe:financial-connections:22.6.1")
 }
 
 flutter {

@@ -168,11 +168,16 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
     if(result?['rc'] == 200) {
       AwesomeDialog(
         context: context,
-        dialogType: DialogType.success,
-        title: langCode == 'id' ? 'Berhasil' : 'Success',
-        desc: requestSend!,
-        transitionAnimationDuration: const Duration(milliseconds: 400),
-        autoHide: const Duration(seconds: 1),
+        dialogType: DialogType.error,
+        animType: AnimType.topSlide,
+        title: 'Oops!',
+        desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+        btnOkOnPress: () {},
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
       ).show().then((_) {
         Navigator.pop(context);
       });

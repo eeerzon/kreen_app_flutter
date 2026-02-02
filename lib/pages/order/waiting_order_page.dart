@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
+import 'package:kreen_app_flutter/modal/payment/stripe_pay.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -41,6 +42,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+
+  bool isOpen = false;
 
   @override
   void initState() {
@@ -518,9 +521,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null
-                                  ? MainAxisAlignment.start
-                                  : MainAxisAlignment.spaceAround,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Image.network(
                                     "$baseUrl/image/payment-method/${voteOder['payment_method_image']}",
@@ -535,33 +536,35 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     },
                                   ),
 
-                                  if (paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null) ...[
+                                  // if ((paymentDetail['qr_url'] != null && paymentDetail['qr_string'] != null['qr_url'] != null && paymentDetail['qr_url'] != '' ) && (paymentDetail['qr_string'] != null && paymentDetail['qr_string'] != '')) ...[
                                     const SizedBox(width: 10,),
                                     Text(
-                                      voteOder['bank_code'],
+                                      voteOder['payment_method_name'],
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
-                                  ] else ...[
-                                    InkWell(
-                                      onTap: () {
-                                        if (tapinstruksi) {
-                                          tapinstruksi = false;
-                                        } else {
-                                          tapinstruksi = true;
-                                        }
-                                      },
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          Icon(Icons.info_outline, color: Colors.blue,),
-                                          Text(
-                                            bahasa['instruksi_pembayaran'],
-                                            style: TextStyle(color: Colors.blue),
-                                          )
-                                        ],
-                                      ),
-                                    )
-                                  ]
+                                  // ] else ...[
+                                  //   if (instruction.isNotEmpty) ...[
+                                  //     InkWell(
+                                  //       onTap: () {
+                                  //         if (tapinstruksi) {
+                                  //           tapinstruksi = false;
+                                  //         } else {
+                                  //           tapinstruksi = true;
+                                  //         }
+                                  //       },
+                                  //       child: Row(
+                                  //         mainAxisAlignment: MainAxisAlignment.start,
+                                  //         children: [
+                                  //           Icon(Icons.info_outline, color: Colors.blue,),
+                                  //           Text(
+                                  //             bahasa['instruksi_pembayaran'],
+                                  //             style: TextStyle(color: Colors.blue),
+                                  //           )
+                                  //         ],
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ]
                                 ],
                               ),
 
@@ -659,6 +662,32 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 ),
                               ],
 
+                              if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
+                                if (voteOder['bank_code'] != "apple_pay") ...[
+                                  const SizedBox(height: 16,),
+                                  SizedBox(
+                                    height: 48,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        StripePay(paymentDetail['client_secret']!);
+                                      },
+                                      child: Text(
+                                        bahasa['bayar_sekarang'],
+                                        style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+
                               const SizedBox(height: 16,),
                               Text(
                                 bahasa['kode_pesanan'],
@@ -728,11 +757,147 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               Text(
                                 '$currencyRegion ${formatter.format(total_amount_pg)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              )
+                              ),
+
+                              const SizedBox(height: 16,),
+                              SizedBox(
+                                height: 48,
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.shade50,
+                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    await CheckPaymentModal.show(
+                                      context,
+                                      widget.id_order
+                                    );
+                                  },
+                                  child: Text(
+                                    bahasa['check_status'],
+                                    style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
+                                  ),
+                                ),
+                              ),
+
+                              if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
+                                if (voteOder['bank_code'] == "apple_pay") ...[
+                                  const SizedBox(height: 16,),
+                                  SizedBox(
+                                    height: 48,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        StripePay(paymentDetail['client_secret']!);
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.apple, color: Colors.white, size: 22),
+
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Apple Pay',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ]
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ],
                           ),
                         ),
                       ),
+
+                      // if (instruction.isNotEmpty) ...[
+                      //   SizedBox(height: 10,),
+                      //   Card(
+                      //     color: Colors.white,
+                      //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      //     child: Container(
+                      //       width: double.infinity,
+                      //       padding: EdgeInsets.all(16),
+                      //       child: Column(
+                      //         crossAxisAlignment: CrossAxisAlignment.start,
+                      //         children: [
+                      //           Text(
+                      //             bahasa['metode_pembayaran'],
+                      //             style: TextStyle(fontWeight: FontWeight.bold,),
+                      //           ),
+
+                      //           const SizedBox(height: 10,),
+                      //           ...instruction.asMap().entries.map((entry) {
+                      //             final item = entry.value;
+
+                      //             var metod_instruction_payget;
+                      //             var instruction_payget;
+
+                      //             if (langCode == 'id') {
+                      //               metod_instruction_payget = item['metod_instruction_payget'];
+                      //               instruction_payget = item['instruction_payget'];
+                      //             } else if (langCode == 'en') {
+                      //               metod_instruction_payget = item['en_metod_instruction_payget'];
+                      //               instruction_payget = item['en_instruction_payget'];
+                      //             }
+
+                      //             return Column(
+                      //               crossAxisAlignment: CrossAxisAlignment.start,
+                      //               children: [
+                      //                 Row(
+                      //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //                   crossAxisAlignment: CrossAxisAlignment.center,
+                      //                   children: [
+                      //                     GestureDetector(
+                      //                       onTap: () {
+                      //                         print(isOpen);
+                      //                         isOpen = !isOpen;
+                      //                       },
+                      //                       child: Expanded(
+                      //                         child: Text(
+                      //                           metod_instruction_payget,
+                      //                           style: TextStyle(fontWeight: FontWeight.bold,),
+                      //                         ),
+                      //                       ),
+                      //                     ),
+                                  
+                      //                     const Spacer(),
+                      //                     Icon(isOpen
+                      //                         ? Icons.keyboard_arrow_up
+                      //                         : Icons.keyboard_arrow_down),
+                      //                   ],
+                      //                 ),
+                                  
+                      //                 if (isOpen) ...[
+                      //                   const SizedBox(height: 8,),
+                      //                   Html(
+                      //                     data: instruction_payget
+                      //                   )
+                      //                 ],
+                      //               ],
+                      //             );
+                      //           }),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ],
 
                       const SizedBox(height: 10,),
                       Card(
@@ -838,32 +1003,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 ],
                               ),
                             ],
-                          ),
-                        ),
-                      ),
-
-
-                      const SizedBox(height: 30,),
-                      SizedBox(
-                        height: 48,
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () async {
-                            await CheckPaymentModal.show(
-                              context,
-                              widget.id_order
-                            );
-                          },
-                          child: Text(
-                            bahasa['check_status'],
-                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ),
                       ),

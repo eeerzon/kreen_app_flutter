@@ -498,7 +498,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                // mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Image.network(
@@ -514,33 +513,35 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     },
                                   ),
 
-                                  if (paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null) ...[
+                                  // if ((paymentDetail['qr_url'] != null && paymentDetail['qr_url'] != '' ) || paymentDetail['qr_string'] != null) ...[
                                     const SizedBox(width: 10,),
                                     Text(
                                       eventOder['payment_method_name'],
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
-                                  ] else ...[
-                                    InkWell(
-                                      onTap: () {
-                                        if (tapinstruksi) {
-                                          tapinstruksi = false;
-                                        } else {
-                                          tapinstruksi = true;
-                                        }
-                                      },
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          Icon(Icons.info_outline, color: Colors.blue,),
-                                          Text(
-                                            bahasa['instruksi_pembayaran'],
-                                            style: TextStyle(color: Colors.blue),
-                                          )
-                                        ],
-                                      ),
-                                    )
-                                  ]
+                                  // ] else ...[
+                                  //   if (instruction.isNotEmpty) ...[
+                                  //     InkWell(
+                                  //       onTap: () {
+                                  //         if (tapinstruksi) {
+                                  //           tapinstruksi = false;
+                                  //         } else {
+                                  //           tapinstruksi = true;
+                                  //         }
+                                  //       },
+                                  //       child: Row(
+                                  //         mainAxisAlignment: MainAxisAlignment.start,
+                                  //         children: [
+                                  //           Icon(Icons.info_outline, color: Colors.blue,),
+                                  //           Text(
+                                  //             bahasa['instruksi_pembayaran'],
+                                  //             style: TextStyle(color: Colors.blue),
+                                  //           )
+                                  //         ],
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ]
                                 ],
                               ),
 
@@ -708,7 +709,31 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 // '$currencyRegion ${formatter.format(paymentDetail['amount'])}',
                                 '$currencyRegion ${formatter.format(total_amount_pg)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              )
+                              ),
+
+                              const SizedBox(height: 10,),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.shade50,
+                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    await CheckPaymentModal.showEvent(
+                                      context,
+                                      widget.id_order
+                                    );
+                                  },
+                                  child: Text(
+                                    bahasa['check_status'],
+                                    style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),

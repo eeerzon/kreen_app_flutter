@@ -351,6 +351,11 @@
     "maaf" : "Sorry...",
     "redirect" : "Redirect in ",
     "batas" : "Maximum voting limit is",
-    "batas_event" : "Maximum ticket limit is"
+    "batas_event" : "Maximum ticket limit is",
+    "batas_file" : "Maximum file size is 1 MB",
+    "batas_file_2" : "Only accepts pdf format.",
+    "id_card" : "ID Card",
+
+    "bayar_sekarang" : "Pay Now"
   }
 }

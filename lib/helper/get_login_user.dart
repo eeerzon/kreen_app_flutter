@@ -5,7 +5,7 @@ import 'package:kreen_app_flutter/helper/constants.dart';
 
 class LoginPrompt extends StatelessWidget {
   final Map bahasa;
-  final Function(String userId) onLoginSuccess;
+  final Function(Map getUser, String token) onLoginSuccess;
 
   const LoginPrompt({
     super.key,
@@ -20,6 +20,7 @@ class LoginPrompt extends StatelessWidget {
       padding: kGlobalPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(16),
@@ -66,9 +67,10 @@ class LoginPrompt extends StatelessWidget {
               );
 
               if (result == true) {
-                final getUser = await StorageService.getUser();
-                final userId = getUser['id'];
-                onLoginSuccess(userId!);
+                final storedUser = await StorageService.getUser();
+
+                final storedToken = await StorageService.getToken();
+                onLoginSuccess(storedUser, storedToken!);
               }
             },
             style: ElevatedButton.styleFrom(

@@ -1,7 +1,10 @@
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 
@@ -30,6 +33,7 @@ class PaymentItem extends StatelessWidget {
   final TextEditingController? expDateController;
 
   final Function(String)? onPhoneChanged;
+  final Function(String)? onIDCardChanged;
 
   const PaymentItem({
     super.key,
@@ -50,13 +54,24 @@ class PaymentItem extends StatelessWidget {
     this.onCardChanged,
     this.onCvvChanged,
     this.expDateController,
-    this.onPhoneChanged
+    this.onPhoneChanged,
+    this.onIDCardChanged
   });
 
   @override
   Widget build(BuildContext context) {
     final payment_name = item['payment_name'];
     final id_pg_type = item['id_pg_type'];
+    final isSvg = item['img_web'].toLowerCase().endsWith('.svg');
+    final isAMEX = item['note'] != null ? item['note'].toLowerCase().contains('amex') : false;
+
+    final rawAttribute = item['attribute'];
+
+    final List<dynamic> attributes =
+        (rawAttribute != null && rawAttribute is String && rawAttribute.isNotEmpty)
+            ? jsonDecode(rawAttribute) as List
+            : [];
+
 
     return GestureDetector(
       onTap: isDisabled ? null : onTap,
@@ -84,17 +99,32 @@ class PaymentItem extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Image.network(
-                          "$baseUrl/image/payment-method/${item['img_web']}",
-                          height: 70,
+                        SizedBox(
                           width: 70,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/img_broken.jpg',
-                              height: 70,
-                              width: 70,
-                            );
-                          },
+                          height: 70,
+                          child: isSvg
+                            ? SvgPicture.network(
+                                "$baseUrl/image/payment-method/${item['img_web']}",
+                                fit: BoxFit.contain,
+                                placeholderBuilder: (_) => const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              )
+                            : Image.network(
+                                "$baseUrl/image/payment-method/${item['img_web']}",
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/images/img_broken.jpg',
+                                    height: 70,
+                                    width: 70,
+                                  );
+                                },
+                              ),
                         ),
 
                         const SizedBox(width: 8,),
@@ -174,138 +204,190 @@ class PaymentItem extends StatelessWidget {
 
                     if (paymentTipe == 'credit_card') ... [
                       if (isSelected) ...[
-                        const SizedBox(height: 20),
+                        if (item['flag_client'] == "0") ... [
+                          const SizedBox(height: 20),
 
-                        Text(bahasa['kartu_credit']),
+                          Text(bahasa['kartu_credit']),
 
-                        const SizedBox(height: 6),
+                          const SizedBox(height: 6),
 
-                        TextField(
-                          onChanged: onCardChanged,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: "xxxx xxxx xxxx xxxx",
-                            filled: true,
-                            fillColor: Colors.white,
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            border: const OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(8),
-                                topRight: Radius.circular(8),
+                          TextField(
+                            onChanged: onCardChanged,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: "xxxx xxxx xxxx xxxx",
+                              filled: true,
+                              fillColor: Colors.white,
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              border: const OutlineInputBorder(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                              ),
+                              focusedBorder: const OutlineInputBorder(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                                borderSide: BorderSide(color: Colors.red),
                               ),
                             ),
-                            focusedBorder: const OutlineInputBorder(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(8),
-                                topRight: Radius.circular(8),
-                              ),
-                              borderSide: BorderSide(color: Colors.red),
-                            ),
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(16),
+                            ],
                           ),
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(16),
-                          ],
-                        ),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: expDateController,
-                                decoration: InputDecoration(
-                                  hintText: "MM/YY",
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                                  border: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.only(
-                                      bottomLeft: Radius.circular(8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: expDateController,
+                                  decoration: InputDecoration(
+                                    hintText: "MM/YY",
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                                    border: const OutlineInputBorder(
+                                      borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(8),
+                                      ),
+                                    ),
+                                    focusedBorder: const OutlineInputBorder(
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                      borderSide: BorderSide(color: Colors.red),
                                     ),
                                   ),
-                                  focusedBorder: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                    ),
-                                    borderSide: BorderSide(color: Colors.red),
-                                  ),
+                                  inputFormatters: [
+                                    LengthLimitingTextInputFormatter(5),
+                                  ],
                                 ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(5),
-                                ],
                               ),
-                            ),
-                            Expanded(
-                              child: TextField(
-                                onChanged: onCvvChanged,
-                                decoration: InputDecoration(
-                                  hintText: "CVV",
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                                  border: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.only(
-                                      bottomRight: Radius.circular(8),
+                              Expanded(
+                                child: TextField(
+                                  onChanged: onCvvChanged,
+                                  decoration: InputDecoration(
+                                    hintText: "CVV",
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                                    border: const OutlineInputBorder(
+                                      borderRadius: BorderRadius.only(
+                                        bottomRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    focusedBorder: const OutlineInputBorder(
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                      borderSide: BorderSide(color: Colors.red),
                                     ),
                                   ),
-                                  focusedBorder: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                    ),
-                                    borderSide: BorderSide(color: Colors.red),
-                                  ),
+                                  inputFormatters: [ 
+                                    isAMEX 
+                                      ? LengthLimitingTextInputFormatter(4) 
+                                      : LengthLimitingTextInputFormatter(3),
+                                  ],
+                                  obscureText: true,
                                 ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(3),
-                                ],
-                                obscureText: true,
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ]
                     ],
 
                     if (paymentTipe == "debit") ...[
                       if (isSelected) ... [
-                        const SizedBox(height: 20,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              color: Colors.white,
-                              width: double.infinity,
-                              child: TextField(
-                                autofocus: false,
-                                onChanged: onPhoneChanged,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  hintText: bahasa['nomor_hp'],
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                                  border: OutlineInputBorder(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
+                        if (item['flag_client'] == "0") ...[
+                          const SizedBox(height: 20,),
+                          ...List.generate(attributes.length, (idx) {
+                            final itemAtribute = attributes[idx];
+                            final isLast = idx == attributes.length - 1;
+
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    color: Colors.white,
+                                    width: double.infinity,
+                                    child: TextField(
+                                      autofocus: false,
+                                      onChanged: itemAtribute['code'] == 'mobile_number' ? onPhoneChanged : onIDCardChanged,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: itemAtribute['code'] == 'mobile_number' ? bahasa['nomor_hp'] : bahasa['id_card'],
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                                        border: OutlineInputBorder(
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                          ),
+                                        ),
+                                        focusedBorder: const OutlineInputBorder(
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                          ),
+                                          borderSide: BorderSide(color: Colors.red),
+                                        ),
+                                      ),
+                                      inputFormatters: [
+                                        LengthLimitingTextInputFormatter(16),
+                                      ],
                                     ),
                                   ),
-                                  focusedBorder: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                    ),
-                                    borderSide: BorderSide(color: Colors.red),
-                                  ),
-                                ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(16),
                                 ],
                               ),
-                            ),
-                          ],
-                        )
+                            );
+                          }),
+                        ],
+                        // Column(
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        //     if (item['flag_client'] == "0") ...[
+                        //       Container(
+                        //         color: Colors.white,
+                        //         width: double.infinity,
+                        //         child: TextField(
+                        //           autofocus: false,
+                        //           onChanged: onPhoneChanged,
+                        //           keyboardType: TextInputType.number,
+                        //           decoration: InputDecoration(
+                        //             hintText: bahasa['nomor_hp'],
+                        //             filled: true,
+                        //             fillColor: Colors.white,
+                        //             hintStyle: TextStyle(color: Colors.grey.shade400),
+                        //             border: OutlineInputBorder(
+                        //               borderRadius: const BorderRadius.only(
+                        //                 topLeft: Radius.circular(8),
+                        //                 topRight: Radius.circular(8),
+                        //               ),
+                        //             ),
+                        //             focusedBorder: const OutlineInputBorder(
+                        //               borderRadius: BorderRadius.only(
+                        //                 topLeft: Radius.circular(8),
+                        //                 topRight: Radius.circular(8),
+                        //               ),
+                        //               borderSide: BorderSide(color: Colors.red),
+                        //             ),
+                        //           ),
+                        //           inputFormatters: [
+                        //             LengthLimitingTextInputFormatter(16),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ],
+                        // )
                       ]
                     ],
                   ],

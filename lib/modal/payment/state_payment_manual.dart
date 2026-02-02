@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,6 @@ import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
 import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
 import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/snk_page.dart';
-import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
 import 'package:kreen_app_flutter/pages/order/waiting_order_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -109,7 +109,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   String? phoneLabel, phoneHint;
   String? cobaLagi, emailHint;
 
-  Timer? _cvvDebounce, _phoneDebounce;
+  Timer? _cvvDebounce, _phoneDebounce, _idCardDebounce;
 
   String? currencySession;
 
@@ -224,7 +224,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     email = getUser['email'] ?? '';
     user_id = getUser['id'] ?? '';
 
-    _nameController.text = "$firstName $lastName".trim();
+    _nameController.text = firstName;
     _phoneController.text = phone;
     _emailController.text = email;
 
@@ -322,9 +322,15 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       key: const ValueKey('not-login'),
                       child: LoginPrompt(
                         bahasa: bahasa,
-                        onLoginSuccess: (userId) {
+                        onLoginSuccess: (storedUser, storedToken) {
                           setState(() {
-                            user_id = userId;
+                            user_id = storedUser['id'];
+                            token = storedToken;
+
+                            _nameController.text = storedUser['first_name'];
+                            _phoneController.text = storedUser['phone'];
+                            _emailController.text = storedUser['email'];
+                            selectedGender = storedUser['gender'].toLowerCase() == 'male' ? bahasa['gender_1'] : bahasa['gender_2'];
                           });
                         },
                       ),
@@ -430,10 +436,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           genderValue = ''; // handle error
         }
 
+        String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
+
         final body = {
           "id_vote": widget.id_vote, //  free: 65aa23e7eea47 // paid: 65aa22cda9ec2
           "id_user": user_id ?? '',
-          "id_paket": '',
+          "platform": platform,
+          "id_paket": null,
           "nama_voter": _nameController.text.trim(),
           "email_voter": email ?? _emailController.text.trim(),
           "gender": genderValue,
@@ -463,8 +472,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
-
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode, token: token);
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
             final tempOrder = resultVoteOrder['data'];
@@ -480,54 +488,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               context,
               MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: id_order, formHistory: false, currency_session: currencyCode)),
             );
-          } else if (resultVoteOrder['rc'] == 422) {
-            final data = resultVoteOrder['data'];
-            String desc = '';
-            if (data is Map) {
-              final errorMessages = data.values
-                .whereType<List>()
-                .expand((e) => e)
-                .whereType<String>()
-                .toList();
-
-            desc = errorMessages.join('\n');
-            } else {
-              desc = data?.toString() ?? '';
-            }
+          } else {
             AwesomeDialog(
               context: context,
               dialogType: DialogType.error,
               animType: AnimType.topSlide,
               title: 'Oops!',
-              desc: desc,
-              btnOkOnPress: () {},
-              btnOkColor: Colors.red,
-              buttonsTextStyle: TextStyle(color: Colors.white),
-              headerAnimationLoop: false,
-              dismissOnTouchOutside: true,
-              showCloseIcon: true,
-            ).show();
-          } else if (resultVoteOrder['rc'] == 400) {
-            AwesomeDialog(
-              context: context,
-              dialogType: DialogType.error,
-              animType: AnimType.topSlide,
-              title: 'Oops!',
-              desc: "${resultVoteOrder['message']}",
-              btnOkOnPress: () {},
-              btnOkColor: Colors.red,
-              buttonsTextStyle: TextStyle(color: Colors.white),
-              headerAnimationLoop: false,
-              dismissOnTouchOutside: true,
-              showCloseIcon: true,
-            ).show();
-          } else if (resultVoteOrder['rc'] == 500) {
-            AwesomeDialog(
-              context: context,
-              dialogType: DialogType.error,
-              animType: AnimType.topSlide,
-              title: 'Oops!',
-              desc: "${resultVoteOrder['message']}\n${bahasa['another_payment']}",
+              desc: bahasa['error'], //error message dari api
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -542,7 +509,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: cobaLagi,
+            desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -611,40 +578,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               context,
               MaterialPageRoute(builder: (_) => AddSupportPage(id_order: id_order, id_vote: widget.id_vote, nama: _nameController.text,)),
             );
-          } else if (resultVoteOrder['rc'] == 422) {
-            final data = resultVoteOrder['data'];
-            String desc = '';
-            if (data is Map) {
-              final errorMessages = data.values
-                .whereType<List>()
-                .expand((e) => e)
-                .whereType<String>()
-                .toList();
-
-            desc = errorMessages.join('\n');
-            } else {
-              desc = data?.toString() ?? '';
-            }
+          } else {
             AwesomeDialog(
               context: context,
               dialogType: DialogType.error,
               animType: AnimType.topSlide,
               title: 'Oops!',
-              desc: desc,
-              btnOkOnPress: () {},
-              btnOkColor: Colors.red,
-              buttonsTextStyle: TextStyle(color: Colors.white),
-              headerAnimationLoop: false,
-              dismissOnTouchOutside: true,
-              showCloseIcon: true,
-            ).show();
-          }  else if (resultVoteOrder['rc'] == 500) {
-            AwesomeDialog(
-              context: context,
-              dialogType: DialogType.error,
-              animType: AnimType.topSlide,
-              title: 'Oops!',
-              desc: "${resultVoteOrder['message']}\n${bahasa['another_payment']}",
+              desc: bahasa['error'], //error message dari api
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -659,7 +599,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: cobaLagi,
+            desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -1186,6 +1126,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           
                                     final isDisabled = convertedHarga < roundedValueMin || (convertedHarga > roundedValueMax);
 
+                                    final isAMEX = item['note'] != null ? item['note'].toLowerCase().contains('amex') : false;
+
                                     return PaymentItem(
                                       paymentTipe: "credit_card",
                                       item: item,
@@ -1212,15 +1154,27 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         cvv = val;
 
                                         _cvvDebounce?.cancel();
-                                        _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
-                                          if (val.length == 3 && _scrollController.hasClients) {
-                                            _scrollController.animateTo(
-                                              _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
-                                              curve: Curves.easeOut,
-                                            );
-                                          }
-                                        });
+                                        if (isAMEX) {
+                                          _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            if (val.length == 4 && _scrollController.hasClients) {
+                                              _scrollController.animateTo(
+                                                _scrollController.position.maxScrollExtent,
+                                                duration: const Duration(milliseconds: 600),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                          });
+                                        } else {
+                                          _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            if (val.length == 3 && _scrollController.hasClients) {
+                                              _scrollController.animateTo(
+                                                _scrollController.position.maxScrollExtent,
+                                                duration: const Duration(milliseconds: 600),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                          });
+                                        }
                                       },
 
                                       onTap: () async {
@@ -1229,6 +1183,16 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           id_payment_method = creditCard[idx]['id_metod'];
                                           currencySession = creditCard[idx]['currency_pg'];
                                         });
+
+                                        if (item['flag_client'] == "1") {
+                                          Future.delayed(const Duration(milliseconds: 200), () {
+                                            _scrollController.animateTo(
+                                              _scrollController.position.maxScrollExtent,
+                                              duration: const Duration(milliseconds: 600),
+                                              curve: Curves.easeOut,
+                                            );
+                                          });
+                                        }
 
                                         var resultFee = await getFeeNew(
                                           currencyCode!,
@@ -2027,19 +1991,39 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           totalVotes = resultFee['total_votes'];
                                         });
                                       },
+
                                       onPhoneChanged: (val){
                                         mobile_number = val;
-          
-                                        _phoneDebounce?.cancel();
-                                        _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
-                                          if (val.length >= 12 && _scrollController.hasClients) {
-                                            _scrollController.animateTo(
-                                              _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
-                                              curve: Curves.easeOut,
-                                            );
-                                          }
-                                        });
+
+                                        if (item['bank_code'] != "KTB") {
+                                          _phoneDebounce?.cancel();
+                                          _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            if (val.length >= 12 && _scrollController.hasClients) {
+                                              _scrollController.animateTo(
+                                                _scrollController.position.maxScrollExtent,
+                                                duration: const Duration(milliseconds: 600),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                          });
+                                        }
+                                      },
+
+                                      onIDCardChanged: (val) {
+                                        id_card_number = val;
+
+                                        if (item['bank_code'] == "KTB") {
+                                          _idCardDebounce?.cancel();
+                                          _idCardDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            if (val.length == 13 && _scrollController.hasClients) {
+                                              _scrollController.animateTo(
+                                                _scrollController.position.maxScrollExtent,
+                                                duration: const Duration(milliseconds: 600),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                          });
+                                        }
                                       },
                                     );
                                   }).toList(),

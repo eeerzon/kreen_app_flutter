@@ -23,6 +23,8 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   bool showErrorBar = false;
   String errorMessage = '';
 
+  String? rawContent, cleanContent;
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +57,17 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     if (!mounted) return;
     setState(() {
       infoKonten = resultInformasi['data'] ?? [];
+
+      if (langCode == 'en') {
+        rawContent = infoKonten[0]['en_content'];
+      } else {
+        rawContent = infoKonten[0]['content'];
+      }
+
+      cleanContent = rawContent!
+        .replaceAll(RegExp(r'[\r\n]+'), '')
+        .trim();
+
       isLoading = false;
       showErrorBar = false;
     });
@@ -69,7 +82,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(bahasa['kebijakan_privasi']),
+        title: Text(bahasa['kebijakan_privasi'] ?? ""),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -88,9 +101,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                   color: Colors.white,
                   padding: kGlobalPadding,
                   child: Html(
-                    data: langCode == 'en'
-                      ? infoKonten[0]['en_content']
-                      : infoKonten[0]['content'],
+                    data: cleanContent,
                   ),
                 ),
               ),

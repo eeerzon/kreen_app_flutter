@@ -20,6 +20,7 @@ class ApiService {
       Map<String, dynamic>? body,
       String? xLanguage,
       String? xCurrency,
+      String? token
     }
   ) async {
     final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
@@ -28,6 +29,7 @@ class ApiService {
       'API-Secret-Key':
           'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
       'x-language': xLanguage,
       'x-currency': ?xCurrency,
     };

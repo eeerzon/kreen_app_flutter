@@ -260,8 +260,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String? token = await StorageService.getToken();
 
     final body = {
-      "first_name": firstNameController.text,
-      "last_name": lastNameController.text.isNotEmpty ? lastNameController.text : null,
+      "first_name": "${firstNameController.text} ${lastNameController.text.isNotEmpty ? lastNameController.text : ''}",
+      "last_name": null,
       "email": emailController.text,
       "date_of_birth": dob,
       "phone": phoneController.text,

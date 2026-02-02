@@ -54,40 +54,13 @@ class CheckPaymentModal {
           } else if (voteOrder['order_status'] == '404'){
             statusOrder = bahasa['status_order_404'];
           }
-        } else if (resultOrder['rc'] == 422) {
-          final data = resultOrder['data'];
-          String desc = '';
-          if (data is Map) {
-            final errorMessages = data.values
-              .whereType<List>()
-              .expand((e) => e)
-              .whereType<String>()
-              .toList();
-
-          desc = errorMessages.join('\n');
-          } else {
-            desc = data?.toString() ?? '';
-          }
+        } else {
           AwesomeDialog(
             context: context,
             dialogType: DialogType.error,
             animType: AnimType.topSlide,
             title: 'Oops!',
-            desc: desc,
-            btnOkOnPress: () {},
-            btnOkColor: Colors.red,
-            buttonsTextStyle: TextStyle(color: Colors.white),
-            headerAnimationLoop: false,
-            dismissOnTouchOutside: true,
-            showCloseIcon: true,
-          ).show();
-        } else if (resultOrder['rc'] == 500) {
-          AwesomeDialog(
-            context: context,
-            dialogType: DialogType.error,
-            animType: AnimType.topSlide,
-            title: 'Oops!',
-            desc: "${resultOrder['message']}",
+            desc: bahasa['error'],
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),

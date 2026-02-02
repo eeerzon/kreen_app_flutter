@@ -340,66 +340,72 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                 final indexKat = entry.key;
                 final itemKat = entry.value;
 
-                return Container(
-                  margin: EdgeInsets.only(bottom: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${indexKat + 1}. ',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    langCode == 'en'
-                                        ? itemKat['en_title']
-                                        : itemKat['title'],
+                return GestureDetector(
+                  onTap: () {
+                    openQuestion[indexKat] = !openQuestion[indexKat];
+                    setState(() {});
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${indexKat + 1}. ',
                                     style: const TextStyle(fontWeight: FontWeight.bold),
-                                    softWrap: true,
                                   ),
-                                ),
-                              ],
+                                  Expanded(
+                                    child: Text(
+                                      langCode == 'en'
+                                          ? itemKat['en_title']
+                                          : itemKat['title'],
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      softWrap: true,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          SizedBox(width: 10,),
-                          GestureDetector(
-                            onTap: () {
-                              openQuestion[indexKat] = !openQuestion[indexKat];
-                              setState(() {});
-                            },
-                            child: !openQuestion[indexKat]
-                            ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
-                            : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
-                          )
-                        ],
-                      ),
-
-                      if (openQuestion[indexKat]) ... [
-                        Html(
-                          data: 
-                            langCode == 'en'
-                            ? itemKat['en_content']
-                            : itemKat['content'],
-                          style: {
-                            "p": Style(
-                              margin: Margins.only(left: 12),
-                            ),
-                            "body": Style(
-                              margin: Margins.only(left: 12),
-                            ),
-                          },
+                            SizedBox(width: 10,),
+                            GestureDetector(
+                              onTap: () {
+                                openQuestion[indexKat] = !openQuestion[indexKat];
+                                setState(() {});
+                              },
+                              child: !openQuestion[indexKat]
+                              ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
+                              : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                            )
+                          ],
                         ),
-                      ]
-                    ],
+
+                        if (openQuestion[indexKat]) ... [
+                          Html(
+                            data: 
+                              langCode == 'en'
+                              ? itemKat['en_content']
+                              : itemKat['content'],
+                            style: {
+                              "p": Style(
+                                margin: Margins.only(left: 12),
+                              ),
+                              "body": Style(
+                                margin: Margins.only(left: 12),
+                              ),
+                            },
+                          ),
+                        ]
+                      ],
+                    ),
                   ),
                 );
               }),
