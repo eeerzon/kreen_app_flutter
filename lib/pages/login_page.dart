@@ -41,6 +41,7 @@ class _LoginPageState extends State<LoginPage> {
   String daftar = "";
   String? langCode, googleLogin, gagalLogin, cancelLogin;
   bool isLoading = true;
+  bool _isGoogleLoading = false;
 
   bool get _isFormFilled =>
       _emailController.text.isNotEmpty &&
@@ -111,9 +112,9 @@ class _LoginPageState extends State<LoginPage> {
       // gagal login
       AwesomeDialog(
         context: context,
-        dialogType: DialogType.error,
+        dialogType: DialogType.noHeader,
         animType: AnimType.topSlide,
-        title: 'Oops!',
+        title: bahasa!['maaf'],
         desc: bahasa!['error'], //"Terjadi kesalahan. Silakan coba lagi.",
         btnOkOnPress: () {},
         btnOkColor: Colors.red,
@@ -126,70 +127,69 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _loginGoogle() async {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
-    await googleSignIn.signOut();
-    
-    final user = await GoogleAuthService.signInWithGoogle();
-    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-    if (user != null) {
+    if (_isGoogleLoading) return;
 
-      final result = await ApiService.post('/google/callback', body: {
-        "name": user.displayName,
-        "email": user.email,
-        "photo": user.photoURL,
-        "google_id_token": idToken,
-      }, xLanguage: langCode);
+    setState(() => _isGoogleLoading = true);
 
-      if (result != null && result['success'] == true && result['rc'] == 200) {
-        final user = result['data']['user'];
-        final token = result['data']['token'];
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      await googleSignIn.signOut();
 
-        // simpan ke secure storage
-        await StorageService.setToken(token);
-        await StorageService.setLoginMethod('google');
-        await StorageService.setUser(
-          id: user['id'], 
-          first_name: user['first_name'], 
-          last_name: user['last_name'], 
-          phone: user['phone'], 
-          email: user['email'], 
-          gender: user['gender'], 
-          photo: user['photo'],
-          DOB: user['date_of_birth'],
-          verifEmail: user['verified_email'],
-          company: user['company'],
-          jobTitle: user['job_title'],
-          link_linkedin: user['link_linkedin'],
-          link_ig: user['link_ig'],
-          link_twitter: user['link_twitter'],
+      final user = await GoogleAuthService.signInWithGoogle();
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+
+      if (user != null) {
+        final result = await ApiService.post(
+          '/google/callback',
+          body: {
+            "name": user.displayName,
+            "email": user.email,
+            "photo": user.photoURL,
+            "google_id_token": idToken,
+          },
+          xLanguage: langCode,
         );
 
-        SessionManager.isGuest = false;
-        SessionManager.checkingUserModalShown = false;
+        if (result != null && result['success'] == true && result['rc'] == 200) {
+          final user = result['data']['user'];
+          final token = result['data']['token'];
 
-        if (widget.notLog) {
-          // jika login dari halaman lain
-          Navigator.pop(context, true);
-        } else {
-          // jika login dari splashscreen
+          // simpan ke secure storage
+          await StorageService.setToken(token);
+          await StorageService.setUser(
+            id: user['id'], 
+            first_name: user['first_name'], 
+            last_name: user['last_name'], 
+            phone: user['phone'], 
+            email: user['email'], 
+            gender: user['gender'], 
+            photo: user['photo'],
+            DOB: user['date_of_birth'],
+            verifEmail: user['verified_email'],
+            company: user['company'],
+            jobTitle: user['job_title'],
+            link_linkedin: user['link_linkedin'],
+            link_ig: user['link_ig'],
+            link_twitter: user['link_twitter'],
+          );
+
           Navigator.pushReplacement(
             context, 
             MaterialPageRoute(builder: (context) => HomePage()),
           );
+        } else {
+          Fluttertoast.showToast(msg: cancelLogin!);
         }
       } else {
-        Fluttertoast.showToast(
-          msg: cancelLogin!,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-        );
+        Fluttertoast.showToast(msg: cancelLogin!);
       }
-    } else {
-      Fluttertoast.showToast(
-        msg: cancelLogin!,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-      );
+    } catch (e) {
+      debugPrint('Google login error: $e');
+      Fluttertoast.showToast(msg: cancelLogin!);
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
+      }
     }
   }
 
@@ -347,205 +347,222 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
 
-      body: Stack(
-        children: [
-          //konten page
-          SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                children: [
-                  //logo
-                  Column(
-                    children: [
-                      Image.asset(
-                        "assets/images/img_homekreen.png",
-                        width: 200,   // atur sesuai kebutuhan
-                        height: 200,
-                        fit: BoxFit.contain, // biar proporsional tanpa crop
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-
-                  //email
-                  const SizedBox(height: 35),
-                  TextField(
-                    controller: _emailController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: input_email,
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: _border(_emailController.text.isNotEmpty),
-                      focusedBorder: _border(true),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Stack(
+          children: [
+            //konten page
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    //logo
+                    Column(
+                      children: [
+                        Image.asset(
+                          "assets/images/img_homekreen.png",
+                          width: 200,   // atur sesuai kebutuhan
+                          height: 200,
+                          fit: BoxFit.contain, // biar proporsional tanpa crop
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
-                  ),
 
-                  //password
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    onChanged: (_) => setState(() {}),
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      hintText: input_password,
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    //email
+                    const SizedBox(height: 35),
+                    TextField(
+                      controller: _emailController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: input_email,
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: _border(_emailController.text.isNotEmpty),
+                        focusedBorder: _border(true),
                       ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: _border(_emailController.text.isNotEmpty),
-                      focusedBorder: _border(true),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    ),
+
+                    //password
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _passwordController,
+                      onChanged: (_) => setState(() {}),
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        hintText: input_password,
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: _border(_emailController.text.isNotEmpty),
+                        focusedBorder: _border(true),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () {
+                            setState(() => _obscurePassword = !_obscurePassword);
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // lupa Password
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
                         onPressed: () {
-                          setState(() => _obscurePassword = !_obscurePassword);
-                        },
-                      ),
-                    ),
-                  ),
-
-                  // lupa Password
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LupaPasswordPage(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        "$lupa_password ?",
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ),
-
-                  // tombol Login
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                          if (states.contains(WidgetState.disabled)) {
-                            return Colors.grey;
-                          }
-                          return Colors.red;
-                        }),
-                        shape: WidgetStateProperty.all(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      onPressed: _isFormFilled ? _doLogin : null,
-                      child: Text(
-                        login,
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                    ),
-                  ),
-
-                  // masuk dengan
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(child: Divider(thickness: 1)),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(login_as),
-                      ),
-                      Expanded(child: Divider(thickness: 1)),
-                    ],
-                  ),
-
-                  // tombol google dan fb
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                          return Colors.white60;
-                        }),
-                        shape: WidgetStateProperty.all(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      onPressed: () {
-                        _loginGoogle();
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset("assets/images/img_google.png", height: 50, width: 50,),
-                          Text(googleLogin ?? '', style: TextStyle(color: Colors.black),),
-                        ])
-                    ),
-                  ),
-
-                  // Row(
-                    // mainAxisAlignment: MainAxisAlignment.center,
-                    // children: [
-                      // IconButton(
-                      //   onPressed: () {},
-                      //   icon: Image.asset("assets/images/img_facebook.png"),
-                      //   iconSize: 50,
-                      // ),
-                      // const SizedBox(width: 24),
-                      // IconButton(
-                      //   onPressed: () {},
-                      //   icon: Image.asset("assets/images/img_google.png"),
-                      //   iconSize: 50,
-                      // ),
-                    // ],
-                  // ),
-
-                  // regis
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(belum),
-                      GestureDetector(
-                        onTap: () {
-                          // navigasi ke register
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => RegisPage(fromProfil: false,)),
+                            MaterialPageRoute(
+                              builder: (context) => const LupaPasswordPage(),
+                            ),
                           );
                         },
                         child: Text(
-                          daftar,
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                          "$lupa_password ?",
+                          style: TextStyle(color: Colors.red),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
 
-                  SizedBox(height: 20,),
-                ],
+                    // tombol Login
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                            if (states.contains(WidgetState.disabled)) {
+                              return Colors.grey;
+                            }
+                            return Colors.red;
+                          }),
+                          shape: WidgetStateProperty.all(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        onPressed: _isFormFilled ? _doLogin : null,
+                        child: Text(
+                          login,
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+
+                    // masuk dengan
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(thickness: 1)),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(login_as),
+                        ),
+                        Expanded(child: Divider(thickness: 1)),
+                      ],
+                    ),
+
+                    // tombol google dan fb
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: _isGoogleLoading ? null : _loginGoogle,
+                      child: Container(
+                        height: 50,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child: _isGoogleLoading
+                          ? SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.red,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  "assets/images/img_google.png",
+                                  height: 24,
+                                  width: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  googleLogin ?? '',
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                              ],
+                            ),
+                      ),
+                    ),
+
+                    // Row(
+                      // mainAxisAlignment: MainAxisAlignment.center,
+                      // children: [
+                        // IconButton(
+                        //   onPressed: () {},
+                        //   icon: Image.asset("assets/images/img_facebook.png"),
+                        //   iconSize: 50,
+                        // ),
+                        // const SizedBox(width: 24),
+                        // IconButton(
+                        //   onPressed: () {},
+                        //   icon: Image.asset("assets/images/img_google.png"),
+                        //   iconSize: 50,
+                        // ),
+                      // ],
+                    // ),
+
+                    // regis
+                    const SizedBox(height: 30),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(belum),
+                        GestureDetector(
+                          onTap: () {
+                            // navigasi ke register
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => RegisPage(fromProfil: false,)),
+                            );
+                          },
+                          child: Text(
+                            daftar,
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 20,),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      )
+          ],
+        ),
+      ),
     );
   }
 }

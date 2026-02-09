@@ -70,6 +70,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   bool showErrorBar = false;
   String errorMessage = ''; 
 
+  final PageController _pageController = PageController();
+  final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
+
   @override
   void initState() {
     super.initState();
@@ -164,7 +167,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         DateTime bukaVote = DateTime.parse(detailvote['real_tanggal_buka_vote']);
         bool isBeforeOpen = DateTime.now().isBefore(bukaVote);
 
-        String formattedBukaVote = DateFormat("dd MMM yyyy HH:mm").format(bukaVote);
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
         
         if (isBeforeOpen) {
           buttonText = '$voteOpen $formattedBukaVote';
@@ -418,6 +421,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       bgColor = color.withOpacity(0.1);
     }
 
+    final bool hasVideo =
+      detailFinalis['video_profile'] != null &&
+      detailFinalis['video_profile'].toString().isNotEmpty;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
@@ -463,26 +470,109 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                     children: [
                       AspectRatio(
                         aspectRatio: 4 / 5,
-                        child: detailFinalis['poster_finalis'] != null
-                          ? Image.network(
-                              detailFinalis['poster_finalis'],
-                              width: double.infinity,
-                              fit: BoxFit.cover, 
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.network(
-                                  "$baseUrl/noimage_finalis.png",
-                                  width: double.infinity,
-                                  fit: BoxFit.cover, 
-                                );
-                              },
+                        child: hasVideo
+                          ? Stack(
+                              children: [
+                                PageView(
+                                  controller: _pageController,
+                                  physics: const PageScrollPhysics(), // user gesture only
+                                  onPageChanged: (index) {
+                                    _pageIndex.value = index;
+                                  },
+                                  children: [
+                                    // POSTER
+                                    Image.network(
+                                      detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) {
+                                        return Image.network(
+                                          "$baseUrl/noimage_finalis.png",
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+
+                                    // VIDEO
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: SizedBox(
+                                        child: VideoSection(
+                                          link: detailFinalis['video_profile'],
+                                          headerText: videoProfilText!,
+                                          noValidText: bahasa['video_no_valid'],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // // BUTTON PREV
+                                // Positioned(
+                                //   left: 8,
+                                //   top: 0,
+                                //   bottom: 0,
+                                //   child: IconButton(
+                                //     icon: const Icon(Icons.chevron_left, size: 36, color: Colors.grey),
+                                //     onPressed: () {
+                                //       _pageController.previousPage(
+                                //         duration: const Duration(milliseconds: 300),
+                                //         curve: Curves.easeOut,
+                                //       );
+                                //     },
+                                //   ),
+                                // ),
+
+                                // // BUTTON NEXT
+                                // Positioned(
+                                //   right: 8,
+                                //   top: 0,
+                                //   bottom: 0,
+                                //   child: IconButton(
+                                //     icon: const Icon(Icons.chevron_right, size: 36, color: Colors.grey),
+                                //     onPressed: () {
+                                //       _pageController.nextPage(
+                                //         duration: const Duration(milliseconds: 300),
+                                //         curve: Curves.easeOut,
+                                //       );
+                                //     },
+                                //   ),
+                                // ),
+                              ],
                             )
                           : Image.network(
-                              "$baseUrl/noimage_finalis.png",
+                              detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                               width: double.infinity,
-                              fit: BoxFit.cover, 
+                              fit: BoxFit.cover,
                             ),
                       ),
-                      
+
+                      SizedBox(height: 8, child: Container(color: Colors.white,),),
+                      ValueListenableBuilder<int>(
+                        valueListenable: _pageIndex,
+                        builder: (context, index, _) {
+                          return Container(
+                            color: Colors.white,
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                hasVideo ? 2 : 1,
+                                (i) => AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                                  width: index == i ? 14 : 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: index == i ? color.withOpacity(0.5) : color.withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            )
+                          );
+                        },
+                      ),
                   
                       SizedBox(height: 15,),
                       Container(
@@ -830,6 +920,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                           padding: kGlobalPadding,
                           child: Column(
                             children: [
+                            Text(
+                              videoProfilText!,
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+
+                            const SizedBox(height: 12),
                               VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!,),
                             ],
                           ),
@@ -1005,6 +1101,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       ),
 
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _pageIndex.dispose();
+    super.dispose();
   }
 
   Widget _buildSocialButton({

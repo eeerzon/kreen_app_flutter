@@ -110,7 +110,7 @@
     "appBarTitle" : "History Order",
 
     "notLogin": "Please Login First",
-    "notLoginDesc": "Click the button below to go to the login page",
+    "notLoginDesc": "Click the button below to continue",
 
     "google_login" : "Login with Google",
     "nama_lengkap_label": "Full Name",
@@ -265,7 +265,7 @@
     "special_perform": "Special Perform",
     "custom_section": "Custom Section",
 
-    "order_menunggu" : "waiting",
+    "order_menunggu" : "Waiting",
     "order_gagal" : "Failed",
     
     "gps_aktif": "Please enable GPS first.",
@@ -350,8 +350,8 @@
     "upcoming" : "Upcoming feature — available in the next update.",
     "maaf" : "Sorry...",
     "redirect" : "Redirect in ",
-    "batas" : "Maximum voting limit is",
-    "batas_event" : "Maximum ticket limit is",
+    "batas": "Maximum {qty} vote per user",
+    "batas_event" : "Maximum {qty} tickets per user",
     "batas_file" : "Maximum file size is 1 MB",
     "batas_file_2" : "Only accepts pdf format.",
     "id_card" : "ID Card",

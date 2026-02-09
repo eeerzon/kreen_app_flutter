@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/widget_webview.dart';
 
 class AutoPlayCarousel extends StatefulWidget {
@@ -31,7 +30,7 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
     super.initState();
 
     // viewportFraction bikin before-after peek
-    controller = PageController(viewportFraction: 0.88);
+    controller = PageController(viewportFraction: 1.0);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startAutoPlay();
@@ -91,6 +90,7 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
               height: height,
               child: PageView.builder(
                 controller: controller,
+                physics: const BouncingScrollPhysics(),
                 onPageChanged: (i) => setState(() => currentIndex = i),
                 itemCount: widget.images.length,
                 itemBuilder: (context, i) {
@@ -108,16 +108,7 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
                   return InkWell(
                     onTap: () {
                       if (widget.data[i]['url_detail'] == null || widget.data[i]['url_detail'] == '') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(widget.bahasa['error']),
-                            behavior: SnackBarBehavior.floating,
-                            margin: const EdgeInsets.only(
-                              left: 16,
-                              right: 16,
-                            ),
-                          ),
-                        );
+                        
                       } else {
                         Navigator.push(
                           context,
@@ -130,8 +121,9 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                      child: Material(
+                        borderRadius: BorderRadius.circular(8),
+                        clipBehavior: Clip.antiAlias,
                         child: Image.network(
                           img,
                           fit: BoxFit.cover,
@@ -166,7 +158,7 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
                 height: 8,
                 decoration: BoxDecoration(
                   color: isActive ? Colors.red : Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               );
             }),

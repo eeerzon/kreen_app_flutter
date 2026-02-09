@@ -4,10 +4,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
+import 'package:kreen_app_flutter/modal/payment/stripe_pay.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -41,6 +43,8 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+
+  late List<bool> openStates;
 
   @override
   void initState() {
@@ -156,13 +160,19 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
           expiresAt = '';
         }
 
+        openStates = List.generate(instruction.length, (_) => false);
+
         deadline = DateTime.parse(expiresAt).toLocal();
         _isLoading = false;
         showErrorBar = false;
     }
   }
 
-  final formatter = NumberFormat.decimalPattern("en_US");
+  late final formatter = NumberFormat.currency(
+    locale: "en_US",
+    symbol: "",
+    decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
+  );
 
   @override
   void dispose() {
@@ -333,27 +343,42 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
     num sum_amount = (eventOder['amount'] + eventOder['fees']) * eventOder['currency_value_region'];
     num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
+    num displayTotalAmount;
     if (currencyRegion == "IDR") {
       total_amount_pg = total_amount_pg.ceil();
+      displayTotalAmount = num.parse(total_amount_pg.toString());
     } else {
       total_amount_pg = (total_amount_pg * 100).ceil() / 100;
+      displayTotalAmount = num.parse(total_amount_pg.toStringAsFixed(2));
     }
 
     num user_currency_amount = num.parse(eventOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
-    if (currencyRegion == "IDR") {
+    num displayUserCurrencyAmount;
+    if (widget.currency_session == "IDR") {
       user_currency_amount = user_currency_amount.ceil();
+      displayUserCurrencyAmount = num.parse(user_currency_amount.toString());
     } else {
       user_currency_amount = (user_currency_amount * 100).ceil() / 100;
+      displayUserCurrencyAmount = num.parse(user_currency_amount.toStringAsFixed(2));
     }
 
     num user_currency_total_payment = num.parse(eventOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
-    if (currencyRegion == "IDR") {
+    num displayUserCurrencyTotalPayment;
+    if (widget.currency_session == "IDR") {
       user_currency_total_payment = user_currency_total_payment.ceil();
+      displayUserCurrencyTotalPayment = num.parse(user_currency_total_payment.toString());
     } else {
       user_currency_total_payment = (user_currency_total_payment * 100).ceil() / 100;
+      displayUserCurrencyTotalPayment = num.parse(user_currency_total_payment.toStringAsFixed(2));
     }
 
     num fee = user_currency_total_payment - user_currency_amount;
+    num displayFee;
+    if (widget.currency_session == "IDR") {
+      displayFee = num.parse(fee.toString());
+    } else {
+      displayFee = num.parse(fee.toStringAsFixed(2));
+    }
 
     if (expiresAt.isNotEmpty) {
       try {
@@ -512,77 +537,14 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                       );
                                     },
                                   ),
-
-                                  // if ((paymentDetail['qr_url'] != null && paymentDetail['qr_url'] != '' ) || paymentDetail['qr_string'] != null) ...[
-                                    const SizedBox(width: 10,),
-                                    Text(
-                                      eventOder['payment_method_name'],
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    )
-                                  // ] else ...[
-                                  //   if (instruction.isNotEmpty) ...[
-                                  //     InkWell(
-                                  //       onTap: () {
-                                  //         if (tapinstruksi) {
-                                  //           tapinstruksi = false;
-                                  //         } else {
-                                  //           tapinstruksi = true;
-                                  //         }
-                                  //       },
-                                  //       child: Row(
-                                  //         mainAxisAlignment: MainAxisAlignment.start,
-                                  //         children: [
-                                  //           Icon(Icons.info_outline, color: Colors.blue,),
-                                  //           Text(
-                                  //             bahasa['instruksi_pembayaran'],
-                                  //             style: TextStyle(color: Colors.blue),
-                                  //           )
-                                  //         ],
-                                  //       ),
-                                  //     ),
-                                  //   ],
-                                  // ]
+                                  
+                                  const SizedBox(width: 10,),
+                                  Text(
+                                    eventOder['payment_method_name'],
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  )
                                 ],
                               ),
-
-                              if (tapinstruksi) ... [
-                                const SizedBox(height: 10,),
-                                Text(
-                                  bahasa['instruksi_pembayaran'],
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-
-                                const SizedBox(height: 10,),
-                                ...instruction.asMap().entries.map((entry) {
-                                  final item = entry.value;
-
-                                  var metod_instruction_payget;
-                                  var instruction_payget;
-
-                                  if (langCode == 'id') {
-                                    metod_instruction_payget = item['metod_instruction_payget'];
-                                    instruction_payget = item['instruction_payget'];
-                                  } else if (langCode == 'en') {
-                                    metod_instruction_payget = item['en_metod_instruction_payget'];
-                                    instruction_payget = item['en_instruction_payget'];
-                                  }
-
-                                  return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        metod_instruction_payget,
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                  
-                                      const SizedBox(height: 8,),
-                                      Html(
-                                        data: instruction_payget
-                                      )
-                                    ],
-                                  );
-                                }),
-                              ],
                               
                               const Divider(
                                 thickness: 1,
@@ -637,6 +599,40 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     ),
                                   ),
                                 ),
+                              ],
+
+                              if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
+                                if (eventOder['bank_code'] != "apple_pay") ...[
+                                  // const SizedBox(height: 10,),
+                                  SizedBox(
+                                    height: 48,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        StripePay(
+                                          context,
+                                          paymentDetail['client_secret']!,
+                                          "event",
+                                          null,
+                                          null,
+                                          event,
+                                          eventOder
+                                        );
+                                      },
+                                      child: Text(
+                                        bahasa['bayar_sekarang'],
+                                        style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
 
                               const SizedBox(height: 16,),
@@ -707,7 +703,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               const SizedBox(height: 10,),
                               Text(
                                 // '$currencyRegion ${formatter.format(paymentDetail['amount'])}',
-                                '$currencyRegion ${formatter.format(total_amount_pg)}',
+                                '$currencyRegion ${formatter.format(displayTotalAmount)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
 
@@ -734,10 +730,188 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
                                 ),
                               ),
+
+                              if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
+                                if (eventOder['bank_code'] == "apple_pay") ...[
+                                  const SizedBox(height: 16,),
+                                  SizedBox(
+                                    height: 48,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        StripePay(
+                                          context,
+                                          paymentDetail['client_secret']!,
+                                          "event",
+                                          null,
+                                          null,
+                                          event,
+                                          eventOder
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.apple, color: Colors.white, size: 22),
+
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Pay',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ]
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (eventOder['bank_code'] == "google_pay") ...[
+                                  const SizedBox(height: 16,),
+                                  SizedBox(
+                                    height: 48,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () async {
+                                        GooglePay(
+                                          context,
+                                          paymentDetail['client_secret']!,
+                                          "vote",
+                                          null,
+                                          null,
+                                          event,
+                                          eventOder
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(FontAwesomeIcons.google, color: Colors.white, size: 22),
+
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Pay',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ]
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ],
                           ),
                         ),
                       ),
+
+                      if (instruction.isNotEmpty) ...[
+                        SizedBox(height: 10,),
+                        Card(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  bahasa['metode_pembayaran'],
+                                  style: TextStyle(fontWeight: FontWeight.bold,),
+                                ),
+
+                                const SizedBox(height: 10,),
+                                ...instruction.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final item = entry.value;
+
+                                  final metod_instruction_payget = langCode == 'id'
+                                      ? item['metod_instruction_payget']
+                                      : item['en_metod_instruction_payget'];
+
+                                  final instruction_payget = langCode == 'id'
+                                      ? item['instruction_payget']
+                                      : item['en_instruction_payget'];
+
+                                  final isOpen = openStates[index];
+
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: SizedBox(
+                                              height: 48,
+                                              child: InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    openStates[index] = !openStates[index];
+                                                  });
+                                                },
+                                                child: Align(
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text(
+                                                    metod_instruction_payget,
+                                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          Icon(
+                                            isOpen
+                                                ? Icons.keyboard_arrow_up
+                                                : Icons.keyboard_arrow_down,
+                                          ),
+                                        ],
+                                      ),
+
+                                      if (isOpen) ...[
+                                        const SizedBox(height: 8),
+                                        Html(
+                                          data: instruction_payget,
+                                          style: {
+                                          "p": Style(
+                                            margin: Margins.zero,
+                                          ),
+                                          "body": Style(
+                                            margin: Margins.zero,
+                                          ),
+                                        },
+                                        ),
+                                      ],
+
+                                      if (index != instruction.length - 1)
+                                        const SizedBox(height: 12),
+                                    ],
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 10,),
                       Card(
@@ -801,7 +975,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
 
                                   Text(
-                                    '${widget.currency_session} ${formatter.format(user_currency_amount)}'
+                                    '${widget.currency_session} ${formatter.format(displayUserCurrencyAmount)}'
                                   )
                                 ],
                               ),
@@ -815,7 +989,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
 
                                   Text(
-                                    '${widget.currency_session} ${formatter.format(fee)}'
+                                    '${widget.currency_session} ${formatter.format(displayFee)}'
                                   )
                                 ],
                               ),
@@ -830,7 +1004,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                   ),
 
                                   Text(
-                                    '${widget.currency_session} ${formatter.format(user_currency_total_payment)}',
+                                    '${widget.currency_session} ${formatter.format(displayUserCurrencyTotalPayment)}',
                                     style: TextStyle(fontWeight: FontWeight.bold),
                                   )
                                 ],

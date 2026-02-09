@@ -86,7 +86,7 @@ class DeskripsiSection_4 extends StatefulWidget {
       'Turqoise': Colors.teal,
     };
 
-    String themeName = 'Red';
+    String themeName = 'default';
     if (widget.data['theme_name'] != null) {
       themeName = widget.data['theme_name'];
     }
@@ -109,11 +109,11 @@ class DeskripsiSection_4 extends StatefulWidget {
         final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
         if (widget.langCode == 'id') {
           // Bahasa Indonesia
-          final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+          final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
           // Bahasa Inggris
-          final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+          final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -919,11 +919,11 @@ class DukunganSection_4 extends StatelessWidget {
 
                 if (langCode == 'id') {
                   // Bahasa Indonesia
-                  final formatter = DateFormat("dd MMMM yyyy HH:mm", "id_ID");
+                  final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
                   formattedDate = "${formatter.format(date)} WIB";
                 } else {
                   // Bahasa Inggris
-                  final formatter = DateFormat("MMMM d, yyyy h:mm a", "en_US");
+                  final formatter = DateFormat("$formatDateEn h:mm a", "en_US");
                   formattedDate = formatter.format(date);
 
                   // Tambahkan suffix hari
@@ -969,7 +969,7 @@ Widget buildTopCard({
   required BuildContext context,
   required int rank,
   required String name,
-  required int votes,
+  required num votes,
   required Color color,
   required String image,
   bool isBig = false,
@@ -1102,7 +1102,7 @@ Widget buildTopCard({
 Widget buildListCard({
   required int rank,
   required String name,
-  required int votes,
+  required num votes,
   required String image,
 }) {
 

@@ -35,23 +35,38 @@ class VideoSection extends StatelessWidget {
       ),
     );
 
+    // return Container(
+    //   color: Colors.white,
+    //   padding: kGlobalPadding,
+    //   child: Column(
+    //     crossAxisAlignment: CrossAxisAlignment.center,
+    //     children: [
+    //       Text(
+    //         headerText,
+    //         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    //       ),
+    //       const SizedBox(height: 12),
+    //       YoutubePlayer(
+    //         controller: controller,
+    //         showVideoProgressIndicator: true,
+    //       )
+    //     ],
+    //   ),
+    // );
+
     return Container(
       color: Colors.white,
       padding: kGlobalPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            headerText,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 12),
-          YoutubePlayer(
+      child: Center(
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: YoutubePlayer(
             controller: controller,
             showVideoProgressIndicator: true,
-          )
-        ],
+          ),
+        ),
       ),
     );
+
   }
 }

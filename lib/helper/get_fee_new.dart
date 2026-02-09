@@ -116,10 +116,10 @@ Map<String, dynamic> getPriceCurrency ({
 
   num totalAmount;
 
-  if (toCurrency == 'IDR') {
-    amount = amount.ceil();
-    totalAmount = priceRegion.ceil();
-  } else {
+  // if (toCurrency == 'IDR') {
+  //   amount = amount.ceil();
+  //   totalAmount = priceRegion.ceil();
+  // } else {
     if (currencyCode == "IDR"){
       amount = amount.ceil();
       totalAmount = priceRegion.ceil();
@@ -127,11 +127,21 @@ Map<String, dynamic> getPriceCurrency ({
       amount = (amount * 100).ceil() / 100;
       totalAmount = (priceRegion * 100).ceil() / 100;
     }
-  }
+  // }
 
   num calculatedFee = totalAmount - amount;
-  calculatedFee = toCurrency == 'IDR' ? calculatedFee.floor() : calculatedFee;
-
+  // calculatedFee = toCurrency == 'IDR' ? calculatedFee.floor() : calculatedFee;
+  calculatedFee = num.parse(calculatedFee.toStringAsFixed(5));
+  // if (toCurrency == 'IDR') {
+  //   calculatedFee = calculatedFee.ceil();
+  // } else {
+    if (currencyCode == "IDR"){
+      calculatedFee = calculatedFee.ceil();
+    } else {
+      calculatedFee = (calculatedFee * 100).ceil() / 100;
+    }
+  // }
+  
   return {
     'amount': amount,
     'fee': calculatedFee,

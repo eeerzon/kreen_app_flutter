@@ -29,7 +29,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.504337537530-a1h015m7crmmmc2mgdksmsndtpvn0vk4</string>
+				<string>com.googleusercontent.apps.504337537530-nmmbl0cm55vcv2e8gi9obo9apcvajvk4</string>
 			</array>
 		</dict>
 	</array>
@@ -37,12 +37,18 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>To scan cards</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Aplikasi membutuhkan akses lokasi untuk memvalidasi posisi Anda.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Aplikasi membutuhkan akses lokasi untuk memvalidasi posisi Anda.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Aplikasi membutuhkan akses lokasi untuk memvalidasi posisi Anda.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>App membutuhkan izin untuk menyimpan QR ke galeri</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>App membutuhkan akses galeri untuk menyimpan QR</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -62,10 +68,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-		<string>Untuk verifikasi pembayaran</string>
-	<key>NSCameraUsageDescription</key>
-		<string>To scan cards</string>
 	<key>WKWebViewConfiguration</key>
 	<dict>
 		<key>allowsInlineMediaPlayback</key>

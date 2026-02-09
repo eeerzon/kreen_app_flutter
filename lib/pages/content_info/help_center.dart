@@ -224,192 +224,198 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
         ),
       ),
       
-      body: SingleChildScrollView(
-        child: Container(
-          color: Colors.white,
-          padding: kGlobalPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // search bar
-              // TextField(
-              //   decoration: InputDecoration(
-              //     hintText: search,
-              //     hintStyle: TextStyle(color: Colors.grey.shade400),
-              //     prefixIcon: Icon(Icons.search),
-              //     border: OutlineInputBorder(
-              //       borderRadius: BorderRadius.circular(12),
-              //     ),
-              //   ),
-              //   onChanged: (value) {
-              //     // _loadContent(false, value);
-              //     setState(() {
-              //       // buildKonten();
-              //     });
-              //   },
-              // ),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: SingleChildScrollView(
+          child: Container(
+            color: Colors.white,
+            padding: kGlobalPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // search bar
+                // TextField(
+                //   decoration: InputDecoration(
+                //     hintText: search,
+                //     hintStyle: TextStyle(color: Colors.grey.shade400),
+                //     prefixIcon: Icon(Icons.search),
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.circular(12),
+                //     ),
+                //   ),
+                //   onChanged: (value) {
+                //     // _loadContent(false, value);
+                //     setState(() {
+                //       // buildKonten();
+                //     });
+                //   },
+                // ),
 
-              //konten
-              SizedBox(height: 16),
-              Text(
-                bahasa['kategori_informasi'],
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+                //konten
+                SizedBox(height: 16),
+                Text(
+                  bahasa['kategori_informasi'],
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
 
-              SizedBox(height: 16),
-              ...kategori.asMap().entries.map((entry) {
-                final item = entry.value;
+                SizedBox(height: 16),
+                ...kategori.asMap().entries.map((entry) {
+                  final item = entry.value;
 
-                return GestureDetector(
-                  onTap: () {
-                    final idKategori = item['id'];
-                    Navigator.push(context, 
-                      MaterialPageRoute(
-                        builder: (context) => HelpCenterSubCategoryPage(
-                          idKategori: idKategori, 
-                          nameKategori: langCode == 'en' 
-                            ? item['en_name'] 
-                            : item['name'],
-                        ),
-                      )
-                    );
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300,),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        if (item['icon'] == 'search') ... [
-                          SvgPicture.network(
-                            '$baseUrl/image/search-gradient.svg',
-                            width: 24,
-                            height: 24,
+                  return GestureDetector(
+                    onTap: () {
+                      final idKategori = item['id'];
+                      Navigator.push(context, 
+                        MaterialPageRoute(
+                          builder: (context) => HelpCenterSubCategoryPage(
+                            idKategori: idKategori, 
+                            nameKategori: langCode == 'en' 
+                              ? item['en_name'] 
+                              : item['name'],
                           ),
-                        ] else if (item['icon'] == 'customer') ... [
-                          SvgPicture.network(
-                            '$baseUrl/image/customer-gradient.svg',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ] else if(item['icon'] == 'eo') ... [
-                          SvgPicture.network(
-                            '$baseUrl/image/eo-gradient.svg',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ] else if(item['icon'] == 'event') ... [
-                          SvgPicture.network(
-                            '$baseUrl/image/event-gradient.svg',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ] else if(item['icon'] == 'vote') ... [
-                          SvgPicture.network(
-                            '$baseUrl/image/vote-gradient.svg',
-                            width: 24,
-                            height: 24,
-                          ),
-                        ],
-                
-                        SizedBox(width: 16,),
-                        Text(
-                          langCode == 'en'
-                          ? item['en_name']
-                          : item['name']
                         )
-                      ],
-                    ),
-                  )
-                );
-              }),
-              
-              Text(
-                bahasa['pertanyaan_populer'],
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-
-              SizedBox(height: 16,),
-              ...popularFAQ.asMap().entries.map((entry) {
-                final indexKat = entry.key;
-                final itemKat = entry.value;
-
-                return GestureDetector(
-                  onTap: () {
-                    openQuestion[indexKat] = !openQuestion[indexKat];
-                    setState(() {});
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${indexKat + 1}. ',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      langCode == 'en'
-                                          ? itemKat['en_title']
-                                          : itemKat['title'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                      softWrap: true,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(16),
+                      margin: EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300,),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (item['icon'] == 'search') ... [
+                            SvgPicture.network(
+                              '$baseUrl/image/search-gradient.svg',
+                              width: 24,
+                              height: 24,
                             ),
-
-                            SizedBox(width: 10,),
-                            GestureDetector(
-                              onTap: () {
-                                openQuestion[indexKat] = !openQuestion[indexKat];
-                                setState(() {});
-                              },
-                              child: !openQuestion[indexKat]
-                              ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
-                              : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
-                            )
+                          ] else if (item['icon'] == 'customer') ... [
+                            SvgPicture.network(
+                              '$baseUrl/image/customer-gradient.svg',
+                              width: 24,
+                              height: 24,
+                            ),
+                          ] else if(item['icon'] == 'eo') ... [
+                            SvgPicture.network(
+                              '$baseUrl/image/eo-gradient.svg',
+                              width: 24,
+                              height: 24,
+                            ),
+                          ] else if(item['icon'] == 'event') ... [
+                            SvgPicture.network(
+                              '$baseUrl/image/event-gradient.svg',
+                              width: 24,
+                              height: 24,
+                            ),
+                          ] else if(item['icon'] == 'vote') ... [
+                            SvgPicture.network(
+                              '$baseUrl/image/vote-gradient.svg',
+                              width: 24,
+                              height: 24,
+                            ),
                           ],
-                        ),
+                  
+                          SizedBox(width: 16,),
+                          Text(
+                            langCode == 'en'
+                            ? item['en_name']
+                            : item['name']
+                          )
+                        ],
+                      ),
+                    )
+                  );
+                }),
+                
+                Text(
+                  bahasa['pertanyaan_populer'],
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
 
-                        if (openQuestion[indexKat]) ... [
-                          Html(
-                            data: 
-                              langCode == 'en'
-                              ? itemKat['en_content']
-                              : itemKat['content'],
-                            style: {
-                              "p": Style(
-                                margin: Margins.only(left: 12),
+                SizedBox(height: 16,),
+                ...popularFAQ.asMap().entries.map((entry) {
+                  final indexKat = entry.key;
+                  final itemKat = entry.value;
+
+                  return GestureDetector(
+                    onTap: () {
+                      openQuestion[indexKat] = !openQuestion[indexKat];
+                      setState(() {});
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${indexKat + 1}. ',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        langCode == 'en'
+                                            ? itemKat['en_title']
+                                            : itemKat['title'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        softWrap: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              "body": Style(
-                                margin: Margins.only(left: 12),
-                              ),
-                            },
+
+                              SizedBox(width: 10,),
+                              GestureDetector(
+                                onTap: () {
+                                  openQuestion[indexKat] = !openQuestion[indexKat];
+                                  setState(() {});
+                                },
+                                child: !openQuestion[indexKat]
+                                ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
+                                : Icon(FontAwesomeIcons.minus, color: Colors.red, size: 20,)
+                              )
+                            ],
                           ),
-                        ]
-                      ],
+
+                          if (openQuestion[indexKat]) ... [
+                            Html(
+                              data: 
+                                langCode == 'en'
+                                ? itemKat['en_content']
+                                : itemKat['content'],
+                              style: {
+                                "p": Style(
+                                  margin: Margins.only(left: 12),
+                                ),
+                                "body": Style(
+                                  margin: Margins.only(left: 12),
+                                ),
+                              },
+                            ),
+                          ]
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
-            ]  
+                  );
+                }),
+              ]  
+            ),
           ),
         ),
       ),

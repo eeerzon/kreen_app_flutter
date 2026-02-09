@@ -473,11 +473,11 @@ class _EventSuccessState extends State<EventSuccess> {
                   final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
                   if (langCode == 'id') {
                     // Bahasa Indonesia
-                    final formatter = DateFormat("dd MMMM yyyy", "id_ID");
+                    final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
                     // Bahasa Inggris
-                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                    final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
 
                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -941,11 +941,11 @@ class _EventPendingState extends State<EventPending> {
                   final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
                   if (langCode == 'id') {
                     // Bahasa Indonesia
-                    final formatter = DateFormat("dd MMMM yyyy", "id_ID");
+                    final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
                     // Bahasa Inggris
-                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                    final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
 
                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1408,11 +1408,11 @@ class _EventFailState extends State<EventFail> {
                   final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
                   if (langCode == 'id') {
                     // Bahasa Indonesia
-                    final formatter = DateFormat("dd MMMM yyyy", "id_ID");
+                    final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
                     // Bahasa Inggris
-                    final formatter = DateFormat("MMMM d yyyy", "en_US");
+                    final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
 
                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)

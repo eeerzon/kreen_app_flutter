@@ -95,11 +95,11 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
             final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
             if (langCode == 'id') {
               // Bahasa Indonesia
-              final dayName = DateFormat("EEEE", "id_ID").format(date);
+              final dayName = DateFormat(formatDay, "id_ID").format(date);
               formattedDate = dayName;
             } else {
               // Bahasa Inggris
-              final dayName = DateFormat("EEEE", "en_US").format(date);
+              final dayName = DateFormat(formatDay, "en_US").format(date);
               formattedDate = dayName;
             }
           } catch (e) {

@@ -69,7 +69,7 @@ class _SnkPageState extends State<SnkPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(bahasa['syarat_dan_ketentuan']),
+        title: Text(bahasa['syarat_dan_ketentuan'] ?? ""),
         centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),

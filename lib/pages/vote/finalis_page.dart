@@ -307,18 +307,18 @@ class _FinalisPageState extends State<FinalisPage> {
 
   Future<void> _searchFinalis(String keyword) async {
     final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode);
-    if (result == null || result['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = result?['message'];
-      });
-      return;
-    }
+    // if (result == null || result['rc'] != 200) {
+    //   setState(() {
+    //     showErrorBar = true;
+    //     errorMessage = result?['message'];
+    //   });
+    //   return;
+    // }
 
     if (!mounted) return;
     if (mounted) {
       setState(() {
-        finalis = result['data'] ?? [];
+        finalis = result?['data'] ?? [];
         showErrorBar = false;
       });
     }
@@ -588,66 +588,72 @@ class _FinalisPageState extends State<FinalisPage> {
       ),
 
 
-      body: CustomScrollView(
-        slivers: [
-          // konten atas (countdown)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: color, width: 1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Padding(
-                  padding: kGlobalPadding,
-                  child: Column(
-                    children: [
-                      Text(countDownText!),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _timeBox("$days", daysText!, color),
-                          const SizedBox(width: 20),
-                          _timeBox("$hours".padLeft(2, "0"), hoursText!, color),
-                          const SizedBox(width: 10),
-                          _separator(color),
-                          const SizedBox(width: 10),
-                          _timeBox("$minutes".padLeft(2, "0"), minutesText!, color),
-                          const SizedBox(width: 10),
-                          _separator(color),
-                          const SizedBox(width: 10),
-                          _timeBox("$seconds".padLeft(2, "0"), secondsText!, color),
-                        ],
-                      ),
-                    ],
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: CustomScrollView(
+          slivers: [
+            // konten atas (countdown)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: color, width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: kGlobalPadding,
+                    child: Column(
+                      children: [
+                        Text(countDownText!),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _timeBox("$days", daysText!, color),
+                            const SizedBox(width: 20),
+                            _timeBox("$hours".padLeft(2, "0"), hoursText!, color),
+                            const SizedBox(width: 10),
+                            _separator(color),
+                            const SizedBox(width: 10),
+                            _timeBox("$minutes".padLeft(2, "0"), minutesText!, color),
+                            const SizedBox(width: 10),
+                            _separator(color),
+                            const SizedBox(width: 10),
+                            _timeBox("$seconds".padLeft(2, "0"), secondsText!, color),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          //sticky search bar
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _StickySearchBarDelegate(
-              color: color,
-              onSearchChanged: _onSearchChanged,
-              searchHintText: searchHintText!,
+            //sticky search bar
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickySearchBarDelegate(
+                color: color,
+                onSearchChanged: _onSearchChanged,
+                searchHintText: searchHintText!,
+              ),
             ),
-          ),
 
-          // grid view
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-              child: buildGridView(vote, finalis, color, bgColor, themeName),
+            // grid view
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                child: buildGridView(vote, finalis, color, bgColor, themeName),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -707,11 +713,11 @@ class _FinalisPageState extends State<FinalisPage> {
         final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
         if (langCode == 'id') {
           // Bahasa Indonesia
-          final formatter = DateFormat("dd MMM yyyy HH:mm", "id_ID");
+          final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
           formattedDate = formatter.format(date);
         } else {
           // Bahasa Inggris
-          final formatter = DateFormat("MMM d yyyy HH:mm", "en_US");
+          final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
           formattedDate = formatter.format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -730,7 +736,7 @@ class _FinalisPageState extends State<FinalisPage> {
     DateTime bukaVote = DateTime.parse(vote['real_tanggal_buka_vote']);
     bool isBeforeOpen = DateTime.now().isBefore(bukaVote);
 
-    String formattedBukaVote = DateFormat("dd MMM yyyy HH:mm").format(bukaVote);
+    String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
 
     String buttonText = '';
     
@@ -738,6 +744,30 @@ class _FinalisPageState extends State<FinalisPage> {
       buttonText = '$voteOpen $formattedBukaVote';
     } else if (vote['close_payment'] == '1') {
       buttonText = '$voteOpenAgain $formattedDate';
+    }
+
+    final text = bahasa['batas']
+      .replaceAll('{qty}', vote['batas_qty'].toString());
+
+    if (listFinalis.isEmpty) {
+      return Column(
+        children: [
+          Image.asset(
+            'assets/images/placeholder.png',
+            width: 200,
+            height: 200,
+          ),
+
+          SizedBox(height: 12,),
+
+          Text(
+            bahasa['no_data'] ?? 'No Data',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      );
     }
 
     return ListView.builder(
@@ -750,6 +780,18 @@ class _FinalisPageState extends State<FinalisPage> {
         if (item['poster_finalis'] == null) {
           ishas = false;
         }
+        final int currentCount = counts[index];
+
+        final int? resolvedSelectedIndex =
+            filteredOptions.contains(currentCount)
+                ? filteredOptions.indexOf(currentCount)
+                : null;
+
+        // sinkronkan state (opsional tapi direkomendasikan)
+        if (selectedIndexes[index] != resolvedSelectedIndex) {
+          selectedIndexes[index] = resolvedSelectedIndex;
+        }
+
         return Card(
           color: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -1085,13 +1127,10 @@ class _FinalisPageState extends State<FinalisPage> {
 
                   if (counts[index] == vote['batas_qty'] && vote['batas_qty'] > 0) ...[
                     SizedBox(height: 8,),
-
                     Text(
-                      "* ${bahasa['batas']} ${vote['batas_qty']}",
-                      style: TextStyle(
-                        color: Colors.red,
-                      ),
-                    ),
+                      "* $text",
+                      style: const TextStyle(color: Colors.red),
+                    )
                   ],
                   
                   if (counts[index] >= 1) ... [
@@ -1105,7 +1144,7 @@ class _FinalisPageState extends State<FinalisPage> {
                           final optionIndex = entry.key;
                           final voteCount = entry.value;
                           
-                          final isSelected = counts[index] == voteCount;
+                          final isSelected = resolvedSelectedIndex == optionIndex;
 
                           return IgnorePointer(
                             ignoring: counts[index] == 0,

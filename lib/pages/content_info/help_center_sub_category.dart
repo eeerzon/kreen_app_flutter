@@ -150,7 +150,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                                     Expanded(
                                       child: Text(
                                         langCode == 'en'
-                                          ? item['name'] == "vote"
+                                          ? item['name'] == "Vote"
                                             ? item['name']
                                             : item['en_name']
                                           : item['name'],

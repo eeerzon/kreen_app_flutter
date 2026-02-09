@@ -107,10 +107,10 @@
 
     "search" : "Cari",
 
-    "appBarTitle" : "History Order",
+    "appBarTitle" : "Riwayat Pesanan",
 
     "notLogin": "Ayo... Login terlebih Dahulu",
-    "notLoginDesc": "Klik tombol dibawah ini untuk menuju halaman Login",
+    "notLoginDesc": "Klik tombol dibawah ini untuk lanjut",
 
     "google_login" : "Lanjut dengan Google",
     "nama_lengkap_label": "Nama Lengkap",
@@ -350,8 +350,8 @@
     "upcoming" : "Fitur ini segera hadir di update berikutnya.",
     "maaf" : "Maaf...",
     "redirect" : "Redirect dalam",
-    "batas" : "Batas maksimal vote adalah",
-    "batas_event" : "Batas maksimal tiket adalah",
+    "batas": "Maksimum {qty} vote per user",
+    "batas_event" : "Maksimum {qty} tiket per user",
     "batas_file" : "Ukuran file maksimal 1 MB",
     "batas_file_2" : "Hanya menerima format pdf.",
     "id_card" : "Masukkan Nomor Identitas",

@@ -11,6 +11,7 @@ import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
 import 'package:kreen_app_flutter/pages/content_info/edit_profil.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
+import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -269,11 +270,11 @@ class _ProfileState extends State<Profile> {
         final date = DateTime.parse(dob!); // pastikan format ISO (yyyy-MM-dd)
         if (langCode == 'id') {
           // Bahasa Indonesia
-          final formatter = DateFormat("dd MMMM yyyy", "id_ID");
+          final formatter = DateFormat(formatDateId, "id_ID");
           formattedDate = formatter.format(date);
         } else {
           // Bahasa Inggris
-          final formatter = DateFormat("MMMM d, yyyy", "en_US");
+          final formatter = DateFormat(formatDateEn, "en_US");
           formattedDate = formatter.format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -771,9 +772,9 @@ class _ProfileState extends State<Profile> {
                                   } else {
                                     AwesomeDialog(
                                       context: context,
-                                      dialogType: DialogType.error,
+                                      dialogType: DialogType.noHeader,
                                       animType: AnimType.topSlide,
-                                      title: 'Oops!',
+                                      title: bahasa['maaf'],
                                       desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
                                       btnOkOnPress: () {},
                                       btnOkColor: Colors.red,
@@ -835,7 +836,14 @@ class _ProfileState extends State<Profile> {
                           SizedBox(
                             width: double.infinity,
                             child: InkWell(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PrivacyPolicyPage(),
+                                  ),
+                                );
+                              },
                               child: Row(
                                 children: [
                                   Icon(Icons.privacy_tip, color: Colors.red,),

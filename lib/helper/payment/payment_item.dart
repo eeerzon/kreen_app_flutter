@@ -72,9 +72,14 @@ class PaymentItem extends StatelessWidget {
             ? jsonDecode(rawAttribute) as List
             : [];
 
-
     return GestureDetector(
-      onTap: isDisabled ? null : onTap,
+      behavior: HitTestBehavior.opaque,
+      onTap: isDisabled 
+        ? null 
+        : () {
+            FocusManager.instance.primaryFocus?.unfocus();
+            onTap();
+          },
       child: Card(
         color: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -212,29 +217,31 @@ class PaymentItem extends StatelessWidget {
                           const SizedBox(height: 6),
 
                           TextField(
-                            onChanged: onCardChanged,
+                            onChanged: (value) {
+                              final rawValue = value.replaceAll(' ', '');
+                              onCardChanged!(rawValue);
+                            },
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               hintText: "xxxx xxxx xxxx xxxx",
                               filled: true,
                               fillColor: Colors.white,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
-                              border: const OutlineInputBorder(
-                                borderRadius: BorderRadius.only(
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(8),
                                   topRight: Radius.circular(8),
                                 ),
+                                borderSide: BorderSide(color: Colors.grey.shade300,),
                               ),
-                              focusedBorder: const OutlineInputBorder(
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(8),
-                                  topRight: Radius.circular(8),
-                                ),
-                                borderSide: BorderSide(color: Colors.red),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.grey.shade300,),
                               ),
                             ),
                             inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
                               LengthLimitingTextInputFormatter(16),
+                              CardNumberFormatter(),
                             ],
                           ),
 
@@ -248,17 +255,14 @@ class PaymentItem extends StatelessWidget {
                                     filled: true,
                                     fillColor: Colors.white,
                                     hintStyle: TextStyle(color: Colors.grey.shade400),
-                                    border: const OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: const BorderRadius.only(
                                         bottomLeft: Radius.circular(8),
                                       ),
+                                      borderSide: BorderSide(color: Colors.grey.shade300,),
                                     ),
-                                    focusedBorder: const OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        topRight: Radius.circular(8),
-                                      ),
-                                      borderSide: BorderSide(color: Colors.red),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(color: Colors.grey.shade300,),
                                     ),
                                   ),
                                   inputFormatters: [
@@ -274,17 +278,14 @@ class PaymentItem extends StatelessWidget {
                                     filled: true,
                                     fillColor: Colors.white,
                                     hintStyle: TextStyle(color: Colors.grey.shade400),
-                                    border: const OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: const BorderRadius.only(
                                         bottomRight: Radius.circular(8),
                                       ),
+                                      borderSide: BorderSide(color: Colors.grey.shade300,),
                                     ),
-                                    focusedBorder: const OutlineInputBorder(
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        topRight: Radius.circular(8),
-                                      ),
-                                      borderSide: BorderSide(color: Colors.red),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(color: Colors.grey.shade300,),
                                     ),
                                   ),
                                   inputFormatters: [ 
@@ -305,39 +306,74 @@ class PaymentItem extends StatelessWidget {
                       if (isSelected) ... [
                         if (item['flag_client'] == "0") ...[
                           const SizedBox(height: 20,),
-                          ...List.generate(attributes.length, (idx) {
-                            final itemAtribute = attributes[idx];
-                            final isLast = idx == attributes.length - 1;
+                          if (attributes.isNotEmpty) ...[
+                            ...List.generate(attributes.length, (idx) {
+                              final itemAtribute = attributes[idx];
+                              final isLast = idx == attributes.length - 1;
 
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      color: Colors.white,
+                                      width: double.infinity,
+                                      child: TextField(
+                                        autofocus: false,
+                                        onChanged: itemAtribute['code'] == 'mobile_number' ? onPhoneChanged : onIDCardChanged,
+                                        keyboardType: TextInputType.number,
+                                        decoration: InputDecoration(
+                                          hintText: itemAtribute['code'] == 'mobile_number' ? bahasa['nomor_hp'] : bahasa['id_card'],
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          hintStyle: TextStyle(color: Colors.grey.shade400),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(8),
+                                              topRight: Radius.circular(8),
+                                            ),
+                                            borderSide: BorderSide(color: Colors.grey.shade300,),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.grey.shade300,),
+                                          ),
+                                        ),
+                                        inputFormatters: [
+                                          LengthLimitingTextInputFormatter(16),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ] else ...[
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (item['flag_client'] == "0") ...[
                                   Container(
                                     color: Colors.white,
                                     width: double.infinity,
                                     child: TextField(
                                       autofocus: false,
-                                      onChanged: itemAtribute['code'] == 'mobile_number' ? onPhoneChanged : onIDCardChanged,
+                                      onChanged: onPhoneChanged,
                                       keyboardType: TextInputType.number,
                                       decoration: InputDecoration(
-                                        hintText: itemAtribute['code'] == 'mobile_number' ? bahasa['nomor_hp'] : bahasa['id_card'],
+                                        hintText: bahasa['nomor_hp'],
                                         filled: true,
                                         fillColor: Colors.white,
                                         hintStyle: TextStyle(color: Colors.grey.shade400),
-                                        border: OutlineInputBorder(
+                                        enabledBorder: OutlineInputBorder(
                                           borderRadius: const BorderRadius.only(
                                             topLeft: Radius.circular(8),
                                             topRight: Radius.circular(8),
                                           ),
+                                          borderSide: BorderSide(color: Colors.grey.shade300,),
                                         ),
-                                        focusedBorder: const OutlineInputBorder(
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(8),
-                                            topRight: Radius.circular(8),
-                                          ),
-                                          borderSide: BorderSide(color: Colors.red),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.grey.shade300,),
                                         ),
                                       ),
                                       inputFormatters: [
@@ -346,48 +382,10 @@ class PaymentItem extends StatelessWidget {
                                     ),
                                   ),
                                 ],
-                              ),
-                            );
-                          }),
+                              ],
+                            )
+                          ],
                         ],
-                        // Column(
-                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                        //   children: [
-                        //     if (item['flag_client'] == "0") ...[
-                        //       Container(
-                        //         color: Colors.white,
-                        //         width: double.infinity,
-                        //         child: TextField(
-                        //           autofocus: false,
-                        //           onChanged: onPhoneChanged,
-                        //           keyboardType: TextInputType.number,
-                        //           decoration: InputDecoration(
-                        //             hintText: bahasa['nomor_hp'],
-                        //             filled: true,
-                        //             fillColor: Colors.white,
-                        //             hintStyle: TextStyle(color: Colors.grey.shade400),
-                        //             border: OutlineInputBorder(
-                        //               borderRadius: const BorderRadius.only(
-                        //                 topLeft: Radius.circular(8),
-                        //                 topRight: Radius.circular(8),
-                        //               ),
-                        //             ),
-                        //             focusedBorder: const OutlineInputBorder(
-                        //               borderRadius: BorderRadius.only(
-                        //                 topLeft: Radius.circular(8),
-                        //                 topRight: Radius.circular(8),
-                        //               ),
-                        //               borderSide: BorderSide(color: Colors.red),
-                        //             ),
-                        //           ),
-                        //           inputFormatters: [
-                        //             LengthLimitingTextInputFormatter(16),
-                        //           ],
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ],
-                        // )
                       ]
                     ],
                   ],
@@ -397,6 +395,32 @@ class PaymentItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class CardNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // hapus semua spasi
+    final text = newValue.text.replaceAll(' ', '');
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      if ((i + 1) % 4 == 0 && i + 1 != text.length) {
+        buffer.write(' ');
+      }
+    }
+
+    final formatted = buffer.toString();
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

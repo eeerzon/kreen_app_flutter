@@ -156,7 +156,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+      MaterialPageRoute(builder: (_) => const HomePage()),
     );
   }
 
