@@ -19,7 +19,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   int _selectedIndex = 0;
 
-  String _keyword = '';
+  String? _keyword = '';
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -42,14 +42,25 @@ class _ExplorePageState extends State<ExplorePage> {
 
   void onSearch(String value) {
     setState(() {
-      _keyword = value;
+      _keyword = (value.isEmpty ? null : value)!;
     });
   }
+
+  void _resetSearch() {
+    _searchController.clear();
+
+    setState(() {
+      _keyword = "";
+      timeFilter = [];
+      priceFilter = [];
+    });
+  }
+
 
   void onFilterChanged(int index) {
     setState(() {
       _selectedIndex = index;
-      _keyword = '';
+      _keyword = null;
       _searchController.clear();
       timeFilter = [];
       priceFilter = [];
@@ -64,18 +75,21 @@ class _ExplorePageState extends State<ExplorePage> {
         timeFilter: timeFilter,
         priceFilter: priceFilter,
         pageFilter: pageFilter,
+        onResetSearch: _resetSearch,
       ),
       ExploreVote(
         keyword: _keyword,
         timeFilter: timeFilter,
         priceFilter: priceFilter,
         pageFilter: pageFilter,
+        onResetSearch: _resetSearch,
       ),
       ExploreEvent(
         keyword: _keyword,
         timeFilter: timeFilter,
         priceFilter: priceFilter,
         pageFilter: pageFilter,
+        onResetSearch: _resetSearch,
       ),
     ];
 

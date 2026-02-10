@@ -22,14 +22,21 @@ import 'package:url_launcher/url_launcher.dart';
 class DetailEventPage extends StatefulWidget {
   final String id_event;
   final num price;
-  const DetailEventPage({super.key, required this.id_event, required this.price});
+  final String? currencyCode;
+
+  const DetailEventPage({
+    super.key, 
+    required this.id_event, 
+    required this.price,
+    this.currencyCode,
+  });
 
   @override
   State<DetailEventPage> createState() => _DetailEventPageState();
 }
 
 class _DetailEventPageState extends State<DetailEventPage> {
-  String? langCode, currencyCode;
+  String? langCode;
 
   bool _isLoading = true;
 
@@ -354,7 +361,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, currencyCode);
           },
         ),
       ),
@@ -876,11 +883,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                         if (langCode == 'id') {
                                           // Bahasa Indonesia
-                                          final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+                                          final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
                                           formattedDate = formatter.format(date);
                                         } else {
                                           // Bahasa Inggris
-                                          final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+                                          final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                                           formattedDate = formatter.format(date);
 
                                           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1824,13 +1831,13 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                             if (langCode == 'id') {
                               // Bahasa Indonesia
-                              final dayName = DateFormat("EEEE", "id_ID").format(date);
-                              final datePart = DateFormat("dd MMMM yyyy", "id_ID").format(date);
+                              final dayName = DateFormat(formatDay, "id_ID").format(date);
+                              final datePart = DateFormat(formatDateId, "id_ID").format(date);
                               formattedDate = "$dayName,\n$datePart";
                             } else {
                               // Bahasa Inggris
-                              final dayName = DateFormat("EEEE", "en_US").format(date);
-                              final datePart = DateFormat("MMMM d, yyyy", "en_US").format(date);
+                              final dayName = DateFormat(formatDay, "en_US").format(date);
+                              final datePart = DateFormat(formatDateEn, "en_US").format(date);
 
                               // tambahkan suffix (1st, 2nd, 3rd, 4th...)
                               final day = date.day;
@@ -1860,6 +1867,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                         final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
                         final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0 || item['sisa_stok'] < 0;
+
+                        final text = bahasa['batas_event']
+                          .replaceAll('{qty}', item['max_qty'].toString());
 
                         return Padding(
                           padding: EdgeInsets.only(bottom: 25),
@@ -1952,7 +1962,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                             SizedBox(width: 40,),
                                             belumBuka
                                             ? Container(
-                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
                                                 decoration: BoxDecoration(
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
@@ -1963,7 +1973,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                               )
                                             : sudahTutup
                                               ? Container(
-                                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
                                                   decoration: BoxDecoration(
                                                     borderRadius: BorderRadius.circular(8),
                                                   ),
@@ -2047,11 +2057,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                           Align(
                                             alignment: Alignment.centerLeft,
                                             child: Text(
-                                              "* ${bahasa['batas_event']} ${item['max_qty']}",
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
-                                            ),
+                                              "* $text",
+                                              style: const TextStyle(color: Colors.red),
+                                            )
                                           ),
                                         ],
                                       ],

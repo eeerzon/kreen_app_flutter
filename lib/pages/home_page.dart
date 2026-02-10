@@ -140,28 +140,28 @@ class _HomePageState extends State<HomePage> {
         ),
 
         // --- Floating Action Button (scan) ---
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: scanFitur ? Colors.red : Colors.grey,
-          onPressed: () async {
-            scanFitur
-              ? await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ScannerPage()),
-                )
-              : ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(bahasa['upcoming']),
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                    ),
-                  ),
-                );
-          },
-          child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        // floatingActionButton: FloatingActionButton(
+        //   backgroundColor: scanFitur ? Colors.red : Colors.grey,
+        //   onPressed: () async {
+        //     scanFitur
+        //       ? await Navigator.push(
+        //           context,
+        //           MaterialPageRoute(builder: (_) => const ScannerPage()),
+        //         )
+        //       : ScaffoldMessenger.of(context).showSnackBar(
+        //           SnackBar(
+        //             content: Text(bahasa['upcoming']),
+        //             behavior: SnackBarBehavior.floating,
+        //             margin: const EdgeInsets.only(
+        //               left: 16,
+        //               right: 16,
+        //             ),
+        //           ),
+        //         );
+        //   },
+        //   child: const Icon(Icons.qr_code_scanner, size: 40, color: Colors.white),
+        // ),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
         // --- Bottom Navigation Bar ---
         bottomNavigationBar: BottomAppBar(
@@ -175,7 +175,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 _buildNavItem(Icons.home, home ?? "Home", 0),
                 _buildNavItem(Icons.search, explore ?? "Eksplore", 1),
-                const SizedBox(width: 40),
+                // const SizedBox(width: 40), //nyalakan kalau pake FloatingActionButton
                 _buildNavItem(Icons.receipt_long, order ?? "Pesanan", 2),
                 _buildNavItem(Icons.person, info ?? "Info", 3),
               ],

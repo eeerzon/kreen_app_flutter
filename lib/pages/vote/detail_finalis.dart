@@ -55,7 +55,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   final List<int> voteOptions = [10, 50, 100, 250, 500, 1000];
   int? selectedVotes;
 
-  String? langCode, currencyCode;
+  String? langCode;
   String? notLogin, notLoginDesc, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
   String? endVote, voteOpen, voteOpenAgain;
@@ -137,18 +137,18 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         ids_finalis.add(widget.id_finalis);
         names_finalis.add(detailFinalis['nama_finalis']);
         counts_finalis.add(counts);
-
-        DateTime deadline = DateTime.parse(detailvote['tanggal_tutup_vote']);
+        
+        DateTime deadlineUtc = DateTime.parse(detailvote['real_tanggal_tutup_vote']);
         Duration remaining = Duration.zero;
-        final now = DateTime.now();
-        final difference = deadline.difference(now);
+        final nowUtc = DateTime.now().toUtc();
+        final difference = deadlineUtc.difference(nowUtc);
 
         remaining = difference.isNegative ? Duration.zero : difference;
+        
+        final bukaVoteUtc = DateTime.parse(detailvote['real_tanggal_buka_vote']);
+        bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
-        DateTime bukaVote = DateTime.parse(detailvote['real_tanggal_buka_vote']);
-        bool isBeforeOpen = DateTime.now().isBefore(bukaVote);
-
-        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
         
         if (isBeforeOpen) {
           buttonText = '$voteOpen $formattedBukaVote';
@@ -719,27 +719,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     children: [
                                       Text(
                                         '$voteOpenAgain ${widget.tanggal_buka_payment}',
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(color: Colors.white),
-                                        softWrap: true,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ]
-                              else if (isTutup) ... [
-                                SizedBox(height: 30),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
-                                  decoration: BoxDecoration(
-                                    color: isTutup ? Colors.grey : color,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        buttonText,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(color: Colors.white),
                                         softWrap: true,

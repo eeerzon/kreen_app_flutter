@@ -149,4 +149,13 @@ class StorageService {
     final v = await _storage.read(key: 'isGuest');
     return v == '1';
   }
+
+  static Future<void> setIsChoosed(int isChoosed) async {
+    await _storage.write(key: 'isChoosed', value: isChoosed.toString());
+  }
+
+  static Future<int?> getIsChoosed() async {
+    final value = await _storage.read(key: 'isChoosed');
+    return value != null ? int.tryParse(value) : null;
+  }
 }

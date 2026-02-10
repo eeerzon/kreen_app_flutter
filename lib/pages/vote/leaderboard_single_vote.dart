@@ -36,7 +36,18 @@ class LeaderboardSingleVote extends StatefulWidget {
   final String? close_payment;
   final String? tanggal_buka_vote;
   final String? flag_hide_nomor_urut;
-  const LeaderboardSingleVote({super.key, required this.id_finalis, required this.count, this.indexWrap, this.close_payment, this.tanggal_buka_vote, this.flag_hide_nomor_urut});
+  final String? currencyCode;
+
+  const LeaderboardSingleVote({
+    super.key, 
+    required this.id_finalis, 
+    required this.count, 
+    this.indexWrap, 
+    this.close_payment, 
+    this.tanggal_buka_vote, 
+    this.flag_hide_nomor_urut, 
+    this.currencyCode
+  });
 
   @override
   State<LeaderboardSingleVote> createState() => _LeaderboardSingleVoteState();
@@ -48,8 +59,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   bool isTutup = false;
   bool canDownload = true;
 
+  String buttonText = '';
+
   final prefs = FlutterSecureStorage();
-  String? langCode, currencyCode;
+  String? langCode;
   String? flag_paket;
 
   bool _isLoading = true;
@@ -82,6 +95,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+
+  final PageController _pageController = PageController();
+  final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -201,14 +217,57 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         names_finalis.add(detailFinalis['nama_finalis']);
         counts_finalis.add(counts);
 
-        DateTime deadline = DateTime.parse(detailvote['tanggal_tutup_vote']);
+        final dateStr = detailvote['tanggal_buka_payment']?.toString() ?? '-';
+        String formattedDate = '-';
+
+        if (dateStr.isNotEmpty) {
+          try {
+            final wibDate = parseWib(dateStr);
+            // parsing string ke DateTime
+            var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+            date = wibDate.toLocal();
+            if (langCode == 'id') {
+              // Bahasa Indonesia
+              final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+              formattedDate = formatter.format(date);
+            } else {
+              // Bahasa Inggris
+              final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+              formattedDate = formatter.format(date);
+
+              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              final day = date.day;
+              String suffix = 'th';
+              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+              formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+            }
+          } catch (e) {
+            formattedDate = '-';
+          }
+        }
+        
+        DateTime deadlineUtc = parseWib(detailvote['real_tanggal_tutup_vote']);
+        deadlineUtc = deadlineUtc.toLocal();
         Duration remaining = Duration.zero;
-        final now = DateTime.now();
-        final difference = deadline.difference(now);
+        final nowUtc = DateTime.now().toUtc();
+        final difference = deadlineUtc.difference(nowUtc);
 
         remaining = difference.isNegative ? Duration.zero : difference;
+        
+        final bukaVoteUtc = DateTime.parse(detailvote['real_tanggal_buka_vote']);
+        bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
-        if (remaining.inSeconds == 0) {
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
+        
+        if (isBeforeOpen) {
+          buttonText = '$voteOpen $formattedBukaVote';
+        } else if (detailvote['close_payment'] == '1') {
+          buttonText = '$voteOpenAgain $formattedDate';
+        }
+
+        if (remaining.inSeconds == 0 || isBeforeOpen) {
           isTutup = true;
         }
 
@@ -484,11 +543,11 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
         if (langCode == 'id') {
           // Bahasa Indonesia
-          final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+          final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
           // Bahasa Inggris
-          final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+          final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -516,6 +575,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       ? voteOptions.where((v) => v <= detailvote['batas_qty']).toList()
       : voteOptions;
 
+    final text = bahasa!['batas']
+      .replaceAll('{qty}', detailvote['batas_qty'].toString());
+
+    final bool hasVideo =
+      detailFinalis['video_profile'] != null &&
+      detailFinalis['video_profile'].toString().isNotEmpty;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
@@ -528,7 +594,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, currencyCode);
           },
         ),
         actions: [
@@ -549,248 +615,400 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         ],
       ),
 
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: Column(
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 4 / 5,
-                        child: detailFinalis['poster_finalis'] != null
-                          ? Image.network(
-                              detailFinalis['poster_finalis'],
-                              width: double.infinity,
-                              fit: BoxFit.cover, 
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.network(
-                                  "$baseUrl/noimage_finalis.png",
-                                  width: double.infinity,
-                                  fit: BoxFit.cover, 
-                                );
-                              },
-                            )
-                          : Image.network(
-                              "$baseUrl/noimage_finalis.png",
-                              width: double.infinity,
-                              fit: BoxFit.cover, 
-                            ),
-                      ),
-                  
-                      const SizedBox(height: 15,),
-                      Container(
-                        padding: kGlobalPadding,
-                        color: Colors.white,
-                        child: Column(
-                          children: [
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 4 / 5,
+                          child: hasVideo
+                            ? Stack(
+                                children: [
+                                  PageView(
+                                    controller: _pageController,
+                                    physics: const PageScrollPhysics(), // user gesture only
+                                    onPageChanged: (index) {
+                                      _pageIndex.value = index;
+                                    },
+                                    children: [
+                                      // POSTER
+                                      Image.network(
+                                        detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) {
+                                          return Image.network(
+                                            "$baseUrl/noimage_finalis.png",
+                                            fit: BoxFit.cover,
+                                          );
+                                        },
+                                      ),
 
-                            const SizedBox(height: 10,),
-                            Text(
-                              detailFinalis['nama_finalis'],
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                                      // VIDEO
+                                      Align(
+                                        alignment: Alignment.center,
+                                        child: SizedBox(
+                                          child: VideoSection(
+                                            link: detailFinalis['video_profile'],
+                                            headerText: videoProfilText!,
+                                            noValidText: bahasa!['video_no_valid'],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
 
-                            if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
-                              const SizedBox(height: 10,),
-                              Text(detailFinalis['nama_tambahan'],
-                                  style: const TextStyle(color: Colors.grey),
+                                  // // BUTTON PREV
+                                  // Positioned(
+                                  //   left: 8,
+                                  //   top: 0,
+                                  //   bottom: 0,
+                                  //   child: IconButton(
+                                  //     icon: const Icon(Icons.chevron_left, size: 36, color: Colors.grey),
+                                  //     onPressed: () {
+                                  //       _pageController.previousPage(
+                                  //         duration: const Duration(milliseconds: 300),
+                                  //         curve: Curves.easeOut,
+                                  //       );
+                                  //     },
+                                  //   ),
+                                  // ),
+
+                                  // // BUTTON NEXT
+                                  // Positioned(
+                                  //   right: 8,
+                                  //   top: 0,
+                                  //   bottom: 0,
+                                  //   child: IconButton(
+                                  //     icon: const Icon(Icons.chevron_right, size: 36, color: Colors.grey),
+                                  //     onPressed: () {
+                                  //       _pageController.nextPage(
+                                  //         duration: const Duration(milliseconds: 300),
+                                  //         curve: Curves.easeOut,
+                                  //       );
+                                  //     },
+                                  //   ),
+                                  // ),
+                                ],
+                              )
+                            : Image.network(
+                                detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                        ),
+
+                        SizedBox(height: 8, child: Container(color: Colors.white,),),
+                        ValueListenableBuilder<int>(
+                          valueListenable: _pageIndex,
+                          builder: (context, index, _) {
+                            return Container(
+                              color: Colors.white,
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  hasVideo ? 2 : 1,
+                                  (i) => AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    width: index == i ? 14 : 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: index == i ? color : color.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
                                 ),
-                            ],
-                  
-                            if (widget.flag_hide_nomor_urut == "0") ...[
+                              )
+                            );
+                          },
+                        ),
+                    
+                        const SizedBox(height: 15,),
+                        Container(
+                          padding: kGlobalPadding,
+                          color: Colors.white,
+                          child: Column(
+                            children: [
+
                               const SizedBox(height: 10,),
                               Text(
-                                detailFinalis['nomor_urut'].toString(),
+                                detailFinalis['nama_finalis'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                            ],
-                  
-                            const SizedBox(height: 30,),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        SvgPicture.network(
-                                          "$baseUrl/image/icon-vote/$themeName/dollar-coin.svg",
-                                          width: 25,
-                                          height: 25,
-                                          fit: BoxFit.contain,
-                                        ),
-                  
-                                        SizedBox(width: 4),
-                                        //text
-                                        Text(hargaText!),
-                                      ],
-                                    ),
-                  
-                                    const SizedBox(height: 10,),
-                                    Text(
-                                      harga == 0
-                                      ? hargaDetail!
-                                      : currencyCode == null
-                                        ? "${detailvote['currency']} ${formatter.format(harga)}"
-                                        : "$currencyCode ${formatter.format(harga)}",
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    )
-                                  ],
-                                ),
 
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        SvgPicture.network(
-                                          "$baseUrl/image/icon-vote/$themeName/chart.svg",
-                                          width: 25,
-                                          height: 25,
-                                          fit: BoxFit.contain,
-                                        ),
-                  
-                                        SizedBox(width: 4),
-                                        //text
-                                        Text("Vote"),
-                                      ],
-                                    ),
-                  
-                                    const SizedBox(height: 10,),
-                                    Text(
-                                      formatter.format(detailFinalis['total_voters'] ?? 0),
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    )
-                                  ],
+                              if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                                const SizedBox(height: 10,),
+                                Text(detailFinalis['nama_tambahan'],
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                              ],
+                    
+                              if (widget.flag_hide_nomor_urut == "0") ...[
+                                const SizedBox(height: 10,),
+                                Text(
+                                  detailFinalis['nomor_urut'].toString(),
                                 ),
                               ],
-                            ),
-                  
-                            if (widget.close_payment == '1') ... [
-                              SizedBox(height: 30),
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
-                                decoration: BoxDecoration(
-                                  color: widget.close_payment == '1' ? Colors.grey : color,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '$voteOpenAgain ${widget.tanggal_buka_vote}',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(color: Colors.white),
-                                      softWrap: true,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ]
-                            else ... [
+                    
                               const SizedBox(height: 30,),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
-                                  //button minus
-                                  InkWell(
-                                    onTap: (isTutup)
-                                      ? null
-                                      : () {
-                                        if (counts > 0) {
-                                          setState(() {
-                                            counts--;
-                                            controllers!.text = counts.toString();
-                  
-                                            final namaFinalis = detailFinalis['nama_finalis']; 
-                                            final existingIndex = ids_finalis.indexOf(widget.id_finalis);
-                  
-                                            if (counts == 0) {
-                                              selectedVotes = null;
-                                              if (existingIndex != -1) {
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: <Widget>[
+                                          SvgPicture.network(
+                                            "$baseUrl/image/icon-vote/$themeName/dollar-coin.svg",
+                                            width: 25,
+                                            height: 25,
+                                            fit: BoxFit.contain,
+                                          ),
+                    
+                                          SizedBox(width: 4),
+                                          //text
+                                          Text(hargaText!),
+                                        ],
+                                      ),
+                    
+                                      const SizedBox(height: 10,),
+                                      Text(
+                                        harga == 0
+                                        ? hargaDetail!
+                                        : currencyCode == null
+                                          ? "${detailvote['currency']} ${formatter.format(harga)}"
+                                          : "$currencyCode ${formatter.format(harga)}",
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      )
+                                    ],
+                                  ),
+
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: <Widget>[
+                                          SvgPicture.network(
+                                            "$baseUrl/image/icon-vote/$themeName/chart.svg",
+                                            width: 25,
+                                            height: 25,
+                                            fit: BoxFit.contain,
+                                          ),
+                    
+                                          SizedBox(width: 4),
+                                          //text
+                                          Text("Vote"),
+                                        ],
+                                      ),
+                    
+                                      const SizedBox(height: 10,),
+                                      Text(
+                                        formatter.format(detailFinalis['total_voters'] ?? 0),
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      )
+                                    ],
+                                  ),
+                                ],
+                              ),
+                    
+                              if (widget.close_payment == '1') ... [
+                                SizedBox(height: 30),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
+                                  decoration: BoxDecoration(
+                                    color: widget.close_payment == '1' ? Colors.grey : color,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '$voteOpenAgain ${widget.tanggal_buka_vote}',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(color: Colors.white),
+                                        softWrap: true,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ]
+                              else ... [
+                                const SizedBox(height: 30,),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    //button minus
+                                    InkWell(
+                                      onTap: (isTutup)
+                                        ? null
+                                        : () {
+                                          if (counts > 0) {
+                                            setState(() {
+                                              counts--;
+                                              controllers!.text = counts.toString();
+                    
+                                              final namaFinalis = detailFinalis['nama_finalis']; 
+                                              final existingIndex = ids_finalis.indexOf(widget.id_finalis);
+                    
+                                              if (counts == 0) {
+                                                selectedVotes = null;
+                                                if (existingIndex != -1) {
+                                                  ids_finalis.removeAt(existingIndex);
+                                                  names_finalis.removeAt(existingIndex);
+                                                  counts_finalis.removeAt(existingIndex);
+                                                }
+                                              } else {
+                                                if (existingIndex != -1) {
+                                                  counts_finalis[existingIndex] = counts;
+                                                  names_finalis[existingIndex] = namaFinalis;
+                                                }
+                                              }
+
+                                              totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                            });
+                                          }
+                                        },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: isTutup ? Colors.grey : color,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
+                                      ),
+                                    ),
+                    
+                                    //text field
+                                    const SizedBox(width: 15),
+                                    Container(
+                                      height: 40,
+                                      width: 100,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey.shade300,),
+                                      ),
+                                      child: TextField(
+                                        controller: controllers,
+                                        textAlign: TextAlign.center,
+                                        keyboardType: TextInputType.number,
+                                        enabled: !isTutup,
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                          isCollapsed: true, // hilangkan padding bawaan
+                                          contentPadding: EdgeInsets.all(8),
+                                        ),
+                                        onChanged: (value) => _updateCountFromInput(value, detailFinalis, detailvote),
+                                        onTap: () {
+                                          // langsung block semua teks ketika diklik
+                                          controllers!.selection = TextSelection(
+                                            baseOffset: 0,
+                                            extentOffset: controllers!.text.length,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                    
+                                    //button plus
+                                    const SizedBox(width: 15),
+                                    InkWell(
+                                      onTap: (isTutup)
+                                        ? null
+                                        : () {
+                                            setState(() {
+
+                                              if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
+                                                return; // tidak menambah lagi
+                                              }
+
+                                              counts++;
+                                              controllers!.text = counts.toString();
+                    
+                                              final namaFinalis = detailFinalis['nama_finalis']; 
+                                              final existingIndex = ids_finalis.indexOf(widget.id_finalis);
+                    
+                                              if (counts > 0) {
+                                                if (existingIndex == -1) {
+                                                  ids_finalis.add(widget.id_finalis);
+                                                  names_finalis.add(namaFinalis);
+                                                  counts_finalis.add(counts);
+                                                } else {
+                                                  counts_finalis[existingIndex] = counts;
+                                                  names_finalis[existingIndex] = namaFinalis;
+                                                }
+                                              }
+                                              
+                                              if (counts == 0 && existingIndex != -1) {
                                                 ids_finalis.removeAt(existingIndex);
                                                 names_finalis.removeAt(existingIndex);
                                                 counts_finalis.removeAt(existingIndex);
                                               }
-                                            } else {
-                                              if (existingIndex != -1) {
-                                                counts_finalis[existingIndex] = counts;
-                                                names_finalis[existingIndex] = namaFinalis;
-                                              }
-                                            }
 
-                                            totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
-                                          });
-                                        }
-                                      },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isTutup ? Colors.grey : color,
-                                        borderRadius: BorderRadius.circular(8),
+                                              totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                            });
+                                          },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: isTutup ? Colors.grey : color,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
                                       ),
-                                      child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
                                     ),
-                                  ),
-                  
-                                  //text field
-                                  const SizedBox(width: 15),
-                                  Container(
-                                    height: 40,
-                                    width: 100,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.shade300,),
-                                    ),
-                                    child: TextField(
-                                      controller: controllers,
-                                      textAlign: TextAlign.center,
-                                      keyboardType: TextInputType.number,
-                                      enabled: !isTutup,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        isCollapsed: true, // hilangkan padding bawaan
-                                        contentPadding: EdgeInsets.all(8),
-                                      ),
-                                      onChanged: (value) => _updateCountFromInput(value, detailFinalis, detailvote),
-                                      onTap: () {
-                                        // langsung block semua teks ketika diklik
-                                        controllers!.selection = TextSelection(
-                                          baseOffset: 0,
-                                          extentOffset: controllers!.text.length,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                  
-                                  //button plus
-                                  const SizedBox(width: 15),
-                                  InkWell(
-                                    onTap: (isTutup)
-                                      ? null
-                                      : () {
+                                  ],
+                                ),
+                              ],
+
+                              if (counts == detailvote['batas_qty'] && detailvote['batas_qty'] > 0) ...[
+                                SizedBox(height: 8,),
+                                Text(
+                                  "* $text",
+                                  style: const TextStyle(color: Colors.red),
+                                )
+                              ],
+
+                              if (counts >= 1) ...[
+                                if (filteredOptions.isNotEmpty) ...[
+                                  const SizedBox(height: 15,),
+                                  Wrap(
+                                    spacing: 5,
+                                    runSpacing: 5,
+                                    alignment: WrapAlignment.center,
+                                    children: filteredOptions.asMap().entries.map((entry) {
+                                      final voteCount = entry.value;
+                                      final isSelected = counts == voteCount;
+                      
+                                      return InkWell(
+                                        onTap: () {
                                           setState(() {
-
-                                            if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
-                                              return; // tidak menambah lagi
-                                            }
-
-                                            counts++;
+                                            selectedVotes = voteCount;
+                                            counts = voteCount;
                                             controllers!.text = counts.toString();
-                  
-                                            final namaFinalis = detailFinalis['nama_finalis']; 
+                                            
+                                            final namaFinalis = detailFinalis['nama_finalis'];
                                             final existingIndex = ids_finalis.indexOf(widget.id_finalis);
-                  
+                      
+                      
                                             if (counts > 0) {
                                               if (existingIndex == -1) {
                                                 ids_finalis.add(widget.id_finalis);
@@ -800,117 +1018,314 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                                 counts_finalis[existingIndex] = counts;
                                                 names_finalis[existingIndex] = namaFinalis;
                                               }
-                                            }
-                                            
-                                            if (counts == 0 && existingIndex != -1) {
+                                            } else if (counts == 0 && existingIndex != -1) {
                                               ids_finalis.removeAt(existingIndex);
                                               names_finalis.removeAt(existingIndex);
                                               counts_finalis.removeAt(existingIndex);
                                             }
-
-                                            totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
                                           });
                                         },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: isTutup ? Colors.grey : color,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
-                                    ),
+                      
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: isSelected ? color : Colors.white,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: color),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                NumberFormat.decimalPattern("en_US").format(voteCount),
+                                                style: TextStyle(
+                                                  color: isSelected ? Colors.white : Colors.black,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text("vote", 
+                                                style: TextStyle(fontSize: 12,
+                                                color: isSelected ? Colors.white : Colors.black,)
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
                                   ),
                                 ],
-                              ),
+                              ]
                             ],
+                          ),
+                        ),
 
-                            if (counts == detailvote['batas_qty'] && detailvote['batas_qty'] > 0) ...[
-                              SizedBox(height: 8,),
-
-                              Text(
-                                "* ${bahasa!['batas']} ${detailvote['batas_qty']}",
-                                style: TextStyle(
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-
-                            if (counts > 0) ... [
-                              if (filteredOptions.isNotEmpty) ...[
-                  
-                                const SizedBox(height: 15,),
-                                Wrap(
-                                  spacing: 5,
-                                  runSpacing: 5,
-                                  alignment: WrapAlignment.center,
-                                  children: filteredOptions.asMap().entries.map((entry) {
-                                    final voteCount = entry.value;
-                                    final isSelected = selectedVotes == voteCount && counts > 0;
-                    
-                                    return InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedVotes = voteCount;
-                                          counts = voteCount;
-                                          controllers!.text = counts.toString();
-                                          
-                                          final namaFinalis = detailFinalis['nama_finalis'];
-                                          final existingIndex = ids_finalis.indexOf(widget.id_finalis);
-                    
-                    
-                                          if (counts > 0) {
-                                            if (existingIndex == -1) {
-                                              ids_finalis.add(widget.id_finalis);
-                                              names_finalis.add(namaFinalis);
-                                              counts_finalis.add(counts);
-                                            } else {
-                                              counts_finalis[existingIndex] = counts;
-                                              names_finalis[existingIndex] = namaFinalis;
-                                            }
-                                          } else if (counts == 0 && existingIndex != -1) {
-                                            ids_finalis.removeAt(existingIndex);
-                                            names_finalis.removeAt(existingIndex);
-                                            counts_finalis.removeAt(existingIndex);
-                                          }
-                                        });
-                                      },
-                    
-                                      child: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? color : Colors.white,
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: color),
+                        if (detailFinalis['usia'] != 0 ||
+                            (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
+                            (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
+                          const SizedBox(height: 12,),
+                          Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            child: Padding(
+                              padding: kGlobalPadding,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                      
+                                  if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
+                                    SizedBox(height: 12,),
+                                    Text(
+                                      ageText!,
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                      
+                                    (detailFinalis['usia'] == 0)
+                                      ? Text(
+                                          noDataText!,
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        )
+                                      : Text(detailFinalis['usia'].toString(),
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                  ],
+                      
+                                  if (detailFinalis['profesi'].toString().isNotEmpty) ... [
+                                    SizedBox(height: 12,),
+                                    Text(
+                                      activityText!,
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      detailFinalis['profesi']
+                                    ),
+                                  ],
+                      
+                                  if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
+                                    SizedBox(height: 12,),
+                                    Text(
+                                      biographyText!,
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Html(
+                                      data: detailFinalis['deskripsi'],
+                                      style: {
+                                        '*': Style(
+                                          margin: Margins.zero,
+                                          padding: HtmlPaddings.zero,
                                         ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
+                                        'p': Style(
+                                          margin: Margins.zero,
+                                          padding: HtmlPaddings.zero,
+                                        )
+                                      },
+                                    ),
+                                  ],
+                      
+                                  const SizedBox(height: 12,),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        
+                        if (detailFinalis['id_qrcode'] != null) ... [
+                          const SizedBox(height: 12,),
+                          Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            child: Padding(
+                              padding: kGlobalPadding,
+                              child: Column(
+                                children: [
+                    
+                                  const SizedBox(height: 12,),
+                                  Image.network(
+                                    'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${detailFinalis['id_qrcode']}',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.contain,
+                                      );
+                                    },
+                                  ),
+                    
+                                  const SizedBox(height: 12,),
+                                  Text(
+                                    scanQrText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                    
+                                  const SizedBox(height: 12,),
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: canDownload 
+                                        ? () async {
+                                            await downloadQrImage(
+                                              context, 
+                                              detailFinalis['id_qrcode'],
+                                              bahasa!['download_scan_gagal'],
+                                              bahasa!['download_scan_berhasil'],
+                                              bahasa!['kesalahan_simpan_scan'],
+                                            );
+                                          }
+                                        : null,
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: canDownload ? color : Colors.grey,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              NumberFormat.decimalPattern("en_US").format(voteCount),
-                                              style: TextStyle(
-                                                color: isSelected ? Colors.white : Colors.black,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              downloadQrText!,
+                                              style: TextStyle(color: Colors.white),
                                             ),
-                                            Text("vote", 
-                                              style: TextStyle(fontSize: 12,
-                                              color: isSelected ? Colors.white : Colors.black,)
-                                            ),
+                                            SizedBox(width: 10,),
+                                            Icon(
+                                              Icons.download, color: Colors.white, size: 15,
+                                            )
                                           ],
                                         ),
                                       ),
-                                    );
-                                  }).toList(),
+                                    ),
+                                  ),
+                    
+                                  const SizedBox(height: 12,),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: InkWell(
+                                      onTap: () async {
+                                        await TutorModal.show(context, detailvote['tutorial_vote'], bahasa!['tutorial_vote_text']);
+                                      },
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            tataCaraText!,
+                                            style: TextStyle(color: Colors.blue),
+                                          ),
+                                          const SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.info, color: Colors.blue, size: 15,
+                                          )
+                                        ],
+                                      )
+                                    )
+                                  ),
+                                  const SizedBox(height: 12,),
+                                ],
+                              ),
+                            )
+                          ),
+                    
+                          if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              color: Colors.white,
+                              width: double.infinity,
+                              padding: kGlobalPadding,
+                              child: Column(
+                                children: [
+                                Text(
+                                  videoProfilText!,
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
-                              ],
-                            ],
-                          ],
-                        ),
-                      ),
 
-                      if (detailFinalis['usia'] != 0 ||
-                          (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                          (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
+                                const SizedBox(height: 12),
+                                  VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+
+                        if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty
+                            || detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty
+                            || detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty
+                            || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
+
+                              SizedBox(height: 12),
+                              // Media Social Section
+                              Container(
+                                width: double.infinity,
+                                padding: kGlobalPadding,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade300,),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                    socialMediaText!,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    SizedBox(height: 16),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
+                                          _buildSocialButton(
+                                            icon: FontAwesomeIcons.facebook,
+                                            color:  Color(0xFF1877F2),
+                                            link: detailFinalis['facebook'],
+                                            platform: "facebook",
+                                          ),
+
+                                        if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
+                                          _buildSocialButton(
+                                            icon: FontAwesomeIcons.twitter,
+                                            color:  Color(0xFF1DA1F2),
+                                            link: detailFinalis['twitter'],
+                                            platform: "twitter",
+                                          ),
+
+                                        if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
+                                          _buildSocialButton(
+                                            icon: FontAwesomeIcons.linkedin,
+                                            color:  Color(0xFF0077B5),
+                                            link: detailFinalis['linkedin'],
+                                            platform: "linkedin",
+                                          ),
+
+                                        if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
+                                          _buildSocialButton(
+                                            icon: FontAwesomeIcons.instagram,
+                                            color:  Color(0xFFE1306C),
+                                            link: detailFinalis['instagram'],
+                                            platform: "instagram",
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                        ],
+
+                        // DESKRIPSI
                         const SizedBox(height: 12,),
                         Container(
                           width: double.infinity,
@@ -920,608 +1335,351 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                    
-                                if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
-                                  SizedBox(height: 12,),
-                                  Text(
-                                    ageText!,
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                    
-                                  (detailFinalis['usia'] == 0)
-                                    ? Text(
-                                        noDataText!,
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontStyle: FontStyle.italic,
-                                        ),
-                                      )
-                                    : Text(detailFinalis['usia'].toString(),
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                ],
-                    
-                                if (detailFinalis['profesi'].toString().isNotEmpty) ... [
-                                  SizedBox(height: 12,),
-                                  Text(
-                                    activityText!,
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    detailFinalis['profesi']
-                                  ),
-                                ],
-                    
-                                if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
-                                  SizedBox(height: 12,),
-                                  Text(
-                                    biographyText!,
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Html(
-                                    data: detailFinalis['deskripsi'],
-                                    style: {
-                                      '*': Style(
-                                        margin: Margins.zero,
-                                        padding: HtmlPaddings.zero,
-                                      ),
-                                      'p': Style(
-                                        margin: Margins.zero,
-                                        padding: HtmlPaddings.zero,
-                                      )
-                                    },
-                                  ),
-                                ],
-                    
-                                const SizedBox(height: 12,),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      
-                      if (detailFinalis['id_qrcode'] != null) ... [
-                        const SizedBox(height: 12,),
-                        Container(
-                          width: double.infinity,
-                          color: Colors.white,
-                          child: Padding(
-                            padding: kGlobalPadding,
-                            child: Column(
-                              children: [
-                  
-                                const SizedBox(height: 12,),
-                                Image.network(
-                                  'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${detailFinalis['id_qrcode']}',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      height: 100,
-                                      width: 100,
-                                      fit: BoxFit.contain,
-                                    );
-                                  },
-                                ),
-                  
-                                const SizedBox(height: 12,),
                                 Text(
-                                  scanQrText!,
+                                  detailvote['judul_vote'] ?? '-',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                  
-                                const SizedBox(height: 12,),
-                                Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: canDownload 
-                                      ? () async {
-                                          await downloadQrImage(
-                                            context, 
-                                            detailFinalis['id_qrcode'],
-                                            bahasa!['download_scan_gagal'],
-                                            bahasa!['download_scan_berhasil'],
-                                            bahasa!['kesalahan_simpan_scan'],
-                                          );
-                                        }
-                                      : null,
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: canDownload ? color : Colors.grey,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            downloadQrText!,
-                                            style: TextStyle(color: Colors.white),
-                                          ),
-                                          SizedBox(width: 10,),
-                                          Icon(
-                                            Icons.download, color: Colors.white, size: 15,
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                  
-                                const SizedBox(height: 12,),
+
                                 Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: InkWell(
-                                    onTap: () async {
-                                      await TutorModal.show(context, detailvote['tutorial_vote'], bahasa!['tutorial_vote_text']);
-                                    },
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                  color: Colors.white,
+                                  child: Padding(
+                                    padding: kGlobalPadding,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          tataCaraText!,
-                                          style: TextStyle(color: Colors.blue),
-                                        ),
-                                        const SizedBox(width: 10,),
-                                        Icon(
-                                          Icons.info, color: Colors.blue, size: 15,
-                                        )
-                                      ],
-                                    )
-                                  )
-                                ),
-                                const SizedBox(height: 12,),
-                              ],
-                            ),
-                          )
-                        ),
-                  
-                        if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            color: Colors.white,
-                            width: double.infinity,
-                            padding: kGlobalPadding,
-                            child: Column(
-                              children: [
-                                VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-
-                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty
-                          || detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty
-                          || detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty
-                          || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
-
-                            SizedBox(height: 12),
-                            // Media Social Section
-                            Container(
-                              width: double.infinity,
-                              padding: kGlobalPadding,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300,),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                  socialMediaText!,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
-                                        _buildSocialButton(
-                                          icon: FontAwesomeIcons.facebook,
-                                          color:  Color(0xFF1877F2),
-                                          link: detailFinalis['facebook'],
-                                          platform: "facebook",
-                                        ),
-
-                                      if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
-                                        _buildSocialButton(
-                                          icon: FontAwesomeIcons.twitter,
-                                          color:  Color(0xFF1DA1F2),
-                                          link: detailFinalis['twitter'],
-                                          platform: "twitter",
-                                        ),
-
-                                      if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
-                                        _buildSocialButton(
-                                          icon: FontAwesomeIcons.linkedin,
-                                          color:  Color(0xFF0077B5),
-                                          link: detailFinalis['linkedin'],
-                                          platform: "linkedin",
-                                        ),
-
-                                      if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
-                                        _buildSocialButton(
-                                          icon: FontAwesomeIcons.instagram,
-                                          color:  Color(0xFFE1306C),
-                                          link: detailFinalis['instagram'],
-                                          platform: "instagram",
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                      ],
-
-                      // DESKRIPSI
-                      const SizedBox(height: 12,),
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                detailvote['judul_vote'] ?? '-',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-
-                              Container(
-                                color: Colors.white,
-                                child: Padding(
-                                  padding: kGlobalPadding,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          Image.network(
-                                            detailvote['icon_penyelenggara'],
-                                            width: 80,   // atur sesuai kebutuhan
-                                            height: 80,
-                                            fit: BoxFit.contain,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'assets/images/img_broken.jpg',
-                                                height: 80,
-                                                width: 80,
-                                                fit: BoxFit.contain,
-                                              );
-                                            },
-                                          ),
-
-                                          const SizedBox(width: 12),
-                                          //text
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  bahasa!['penyelenggara'],
-                                                  style: TextStyle(
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4),
-                                                Text(
-                                                  detailvote['nama_penyelenggara'],
-                                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                                  softWrap: true,          // biar teks bisa kebungkus
-                                                  overflow: TextOverflow.visible, 
-                                                ),
-                                              ],
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Image.network(
+                                              detailvote['icon_penyelenggara'],
+                                              width: 80,   // atur sesuai kebutuhan
+                                              height: 80,
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'assets/images/img_broken.jpg',
+                                                  height: 80,
+                                                  width: 80,
+                                                  fit: BoxFit.contain,
+                                                );
+                                              },
                                             ),
-                                          ),
-                                        ],
-                                      ),
 
-                                      // const SizedBox(height: 40,),
-                                      // Text(
-                                      //   "Deskripsi",
-                                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                                      // ),
-
-                                      // const SizedBox(height: 12,),
-                                      // Container(
-                                      //   color: Colors.white,
-                                      //   child: Padding(
-                                      //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                      //     child: Column(
-                                      //       children: [
-                                      //         Column(
-                                      //           crossAxisAlignment: CrossAxisAlignment.start,
-                                      //           mainAxisAlignment: MainAxisAlignment.center,
-                                      //           children: [
-                                      //             if (detailvote['merchant_description'] != null) ... [
-                                      //               Html(
-                                      //                 data: detailvote['merchant_description'],
-                                      //                 style: {
-                                      //                   "p": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                   "body": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                 },
-                                      //               ),
-                                      //               SizedBox(height: 12,)
-                                      //             ],
-                                      //             Html(
-                                      //               data: detailvote['deskripsi'],
-                                      //                 style: {
-                                      //                   "p": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                   "body": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                 },
-                                      //             )
-                                      //           ],
-                                      //         ),
-                                      //       ],
-                                      //     ),
-                                      //   ) 
-                                      // ),
-
-                                      const SizedBox(height: 20,),
-                                      Text(
-                                        bahasa!['grandfinal_detail'],
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-
-                                      const SizedBox(height: 12,),
-                                      Container(
-                                        color: Colors.white,
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                children: <Widget>[
-                                                  SvgPicture.network(
-                                                    "$baseUrl/image/icon-vote/$themeName/Calendar.svg",
-                                                    width: 30,
-                                                    height: 30,
-                                                    fit: BoxFit.contain,
-                                                  ),
-
-                                                  const SizedBox(width: 12),
-                                                  //text
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Text(
-                                                          formattedDate,
-                                                          style: TextStyle(
-                                                            color: Colors.black,
-                                                          ),
-                                                        ),
-                                                      ],
+                                            const SizedBox(width: 12),
+                                            //text
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    bahasa!['penyelenggara'],
+                                                    style: TextStyle(
+                                                      color: Colors.grey,
                                                     ),
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  Text(
+                                                    detailvote['nama_penyelenggara'],
+                                                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                                                    softWrap: true,          // biar teks bisa kebungkus
+                                                    overflow: TextOverflow.visible, 
                                                   ),
                                                 ],
                                               ),
+                                            ),
+                                          ],
+                                        ),
 
-                                              const SizedBox(height: 12,),
-                                              Row(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                children: <Widget>[
-                                                  SvgPicture.network(
-                                                    "$baseUrl/image/icon-vote/$themeName/Time.svg",
-                                                    width: 30,
-                                                    height: 30,
-                                                    fit: BoxFit.contain,
-                                                  ),
+                                        // const SizedBox(height: 40,),
+                                        // Text(
+                                        //   "Deskripsi",
+                                        //   style: TextStyle(fontWeight: FontWeight.bold),
+                                        // ),
 
-                                                  const SizedBox(width: 12),
-                                                  //text
-                                                  Expanded(
-                                                    child: RichText(
-                                                      text: TextSpan(
+                                        // const SizedBox(height: 12,),
+                                        // Container(
+                                        //   color: Colors.white,
+                                        //   child: Padding(
+                                        //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                        //     child: Column(
+                                        //       children: [
+                                        //         Column(
+                                        //           crossAxisAlignment: CrossAxisAlignment.start,
+                                        //           mainAxisAlignment: MainAxisAlignment.center,
+                                        //           children: [
+                                        //             if (detailvote['merchant_description'] != null) ... [
+                                        //               Html(
+                                        //                 data: detailvote['merchant_description'],
+                                        //                 style: {
+                                        //                   "p": Style(
+                                        //                     margin: Margins.zero,
+                                        //                     padding: HtmlPaddings.zero,
+                                        //                   ),
+                                        //                   "body": Style(
+                                        //                     margin: Margins.zero,
+                                        //                     padding: HtmlPaddings.zero,
+                                        //                   ),
+                                        //                 },
+                                        //               ),
+                                        //               SizedBox(height: 12,)
+                                        //             ],
+                                        //             Html(
+                                        //               data: detailvote['deskripsi'],
+                                        //                 style: {
+                                        //                   "p": Style(
+                                        //                     margin: Margins.zero,
+                                        //                     padding: HtmlPaddings.zero,
+                                        //                   ),
+                                        //                   "body": Style(
+                                        //                     margin: Margins.zero,
+                                        //                     padding: HtmlPaddings.zero,
+                                        //                   ),
+                                        //                 },
+                                        //             )
+                                        //           ],
+                                        //         ),
+                                        //       ],
+                                        //     ),
+                                        //   ) 
+                                        // ),
+
+                                        const SizedBox(height: 20,),
+                                        Text(
+                                          bahasa!['grandfinal_detail'],
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+
+                                        const SizedBox(height: 12,),
+                                        Container(
+                                          color: Colors.white,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    SvgPicture.network(
+                                                      "$baseUrl/image/icon-vote/$themeName/Calendar.svg",
+                                                      width: 30,
+                                                      height: 30,
+                                                      fit: BoxFit.contain,
+                                                    ),
+
+                                                    const SizedBox(width: 12),
+                                                    //text
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        mainAxisAlignment: MainAxisAlignment.center,
                                                         children: [
-                                                          TextSpan(
-                                                            text: "$jamMulai - $jamSelesai",
-                                                            style: const TextStyle(
-                                                              color: Colors.black,
-                                                              fontSize: 14,
-                                                            ),
-                                                          ),
-                                                          TextSpan(
-                                                            text: detailvote['code_timezone'] == 'WIB'
-                                                              ? " (GMT+7)"
-                                                              : detailvote['code_timezone'] == 'WITA'
-                                                                ? " (GMT+8)"
-                                                                : detailvote['code_timezone'] == 'WIT'
-                                                                  ? " (GMT+9)"
-                                                                  : "",
+                                                          Text(
+                                                            formattedDate,
                                                             style: TextStyle(
-                                                              color: color,
-                                                              fontWeight: FontWeight.bold,
-                                                              fontStyle: FontStyle.italic,
-                                                              fontSize: 14,
+                                                              color: Colors.black,
                                                             ),
                                                           ),
                                                         ],
                                                       ),
                                                     ),
-                                                  )
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ) 
-                                      ),
+                                                  ],
+                                                ),
 
-                                      // const SizedBox(height: 20,),
-                                      // Text(
-                                      //   "Lokasi",
-                                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                                      // ),
+                                                const SizedBox(height: 12,),
+                                                Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    SvgPicture.network(
+                                                      "$baseUrl/image/icon-vote/$themeName/Time.svg",
+                                                      width: 30,
+                                                      height: 30,
+                                                      fit: BoxFit.contain,
+                                                    ),
 
-                                      // const SizedBox(height: 12,),
-                                      // Container(
-                                      //   color: Colors.white,
-                                      //   child: Padding(
-                                      //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                      //     child: Column(
-                                      //       children: [
-                                      //         Row(
-                                      //           crossAxisAlignment: CrossAxisAlignment.center,
-                                      //           children: <Widget>[
-                                      //             SvgPicture.network(
-                                      //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                      //               width: 30,
-                                      //               height: 30,
-                                      //               fit: BoxFit.contain,
-                                      //             ),
+                                                    const SizedBox(width: 12),
+                                                    //text
+                                                    Expanded(
+                                                      child: RichText(
+                                                        text: TextSpan(
+                                                          children: [
+                                                            TextSpan(
+                                                              text: "$jamMulai - $jamSelesai",
+                                                              style: const TextStyle(
+                                                                color: Colors.black,
+                                                                fontSize: 14,
+                                                              ),
+                                                            ),
+                                                            TextSpan(
+                                                              text: detailvote['code_timezone'] == 'WIB'
+                                                                ? " (GMT+7)"
+                                                                : detailvote['code_timezone'] == 'WITA'
+                                                                  ? " (GMT+8)"
+                                                                  : detailvote['code_timezone'] == 'WIT'
+                                                                    ? " (GMT+9)"
+                                                                    : "",
+                                                              style: TextStyle(
+                                                                color: color,
+                                                                fontWeight: FontWeight.bold,
+                                                                fontStyle: FontStyle.italic,
+                                                                fontSize: 14,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ) 
+                                        ),
 
-                                      //             const SizedBox(width: 12),
-                                      //             //text
-                                      //             Expanded(
-                                      //               child: Column(
-                                      //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                      //                 mainAxisAlignment: MainAxisAlignment.center,
-                                      //                 children: [
-                                      //                   Text(
-                                      //                     detailvote['lokasi_alamat'] ?? '-',
-                                      //                     style: TextStyle(
-                                      //                       color: Colors.black,
-                                      //                     ),
-                                      //                   ),
-                                      //                 ],
-                                      //               ),
-                                      //             ),
-                                      //           ],
-                                      //         ),
+                                        // const SizedBox(height: 20,),
+                                        // Text(
+                                        //   "Lokasi",
+                                        //   style: TextStyle(fontWeight: FontWeight.bold),
+                                        // ),
 
-                                      //       ],
-                                      //     ),
-                                      //   ) 
-                                      // ),
+                                        // const SizedBox(height: 12,),
+                                        // Container(
+                                        //   color: Colors.white,
+                                        //   child: Padding(
+                                        //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                        //     child: Column(
+                                        //       children: [
+                                        //         Row(
+                                        //           crossAxisAlignment: CrossAxisAlignment.center,
+                                        //           children: <Widget>[
+                                        //             SvgPicture.network(
+                                        //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                                        //               width: 30,
+                                        //               height: 30,
+                                        //               fit: BoxFit.contain,
+                                        //             ),
 
-                                      // const SizedBox(height: 20,),
-                                      // Text(
-                                      //   "Venue",
-                                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                                      // ),
+                                        //             const SizedBox(width: 12),
+                                        //             //text
+                                        //             Expanded(
+                                        //               child: Column(
+                                        //                 crossAxisAlignment: CrossAxisAlignment.start,
+                                        //                 mainAxisAlignment: MainAxisAlignment.center,
+                                        //                 children: [
+                                        //                   Text(
+                                        //                     detailvote['lokasi_alamat'] ?? '-',
+                                        //                     style: TextStyle(
+                                        //                       color: Colors.black,
+                                        //                     ),
+                                        //                   ),
+                                        //                 ],
+                                        //               ),
+                                        //             ),
+                                        //           ],
+                                        //         ),
 
-                                      // const SizedBox(height: 12,),
-                                      // Container(
-                                      //   color: Colors.white,
-                                      //   child: Padding(
-                                      //     padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                                      //     child: Column(
-                                      //       children: [
-                                      //         Row(
-                                      //           crossAxisAlignment: CrossAxisAlignment.center,
-                                      //           children: <Widget>[
-                                      //             SvgPicture.network(
-                                      //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                      //               width: 30,
-                                      //               height: 30,
-                                      //               fit: BoxFit.contain,
-                                      //             ),
+                                        //       ],
+                                        //     ),
+                                        //   ) 
+                                        // ),
 
-                                      //             const SizedBox(width: 12),
-                                      //             //text
-                                      //             Expanded(
-                                      //               child: Column(
-                                      //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                      //                 mainAxisAlignment: MainAxisAlignment.center,
-                                      //                 children: [
-                                      //                   Text(
-                                      //                     detailvote['lokasi_nama_tempat'],
-                                      //                     style: TextStyle(
-                                      //                       color: Colors.black,
-                                      //                     ),
-                                      //                   ),
-                                      //                 ],
-                                      //               ),
-                                      //             ),
-                                      //           ],
-                                      //         ),
+                                        // const SizedBox(height: 20,),
+                                        // Text(
+                                        //   "Venue",
+                                        //   style: TextStyle(fontWeight: FontWeight.bold),
+                                        // ),
 
-                                      //       ],
-                                      //     ),
-                                      //   ) 
-                                      // ),
-                                    ],
-                                  ),
-                                ) 
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                                        // const SizedBox(height: 12,),
+                                        // Container(
+                                        //   color: Colors.white,
+                                        //   child: Padding(
+                                        //     padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
+                                        //     child: Column(
+                                        //       children: [
+                                        //         Row(
+                                        //           crossAxisAlignment: CrossAxisAlignment.center,
+                                        //           children: <Widget>[
+                                        //             SvgPicture.network(
+                                        //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                                        //               width: 30,
+                                        //               height: 30,
+                                        //               fit: BoxFit.contain,
+                                        //             ),
 
-                      const SizedBox(height: 12,),
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsetsGeometry.all(0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                                        //             const SizedBox(width: 12),
+                                        //             //text
+                                        //             Expanded(
+                                        //               child: Column(
+                                        //                 crossAxisAlignment: CrossAxisAlignment.start,
+                                        //                 mainAxisAlignment: MainAxisAlignment.center,
+                                        //                 children: [
+                                        //                   Text(
+                                        //                     detailvote['lokasi_nama_tempat'],
+                                        //                     style: TextStyle(
+                                        //                       color: Colors.black,
+                                        //                     ),
+                                        //                   ),
+                                        //                 ],
+                                        //               ),
+                                        //             ),
+                                        //           ],
+                                        //         ),
 
-                            // === LEADERBOARD ===
-                            if (detailvote['leaderboard_limit_tampil'] != -1)
-                              DetailVoteLang(
-                                values: bahasa!,
-                                child: Container(
-                                  color: Colors.white,
-                                  padding: kGlobalPadding,
-                                  child: _buildLeaderboardSection(view_api, ranking, detailvote, langCode!),
+                                        //       ],
+                                        //     ),
+                                        //   ) 
+                                        // ),
+                                      ],
+                                    ),
+                                  ) 
                                 ),
-                              ),
-                              
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                  
-                      const SizedBox(height: 12),
-                  
-                    ],
-                  )
-                ),
-              ],
+
+                        const SizedBox(height: 12,),
+                        Container(
+                          width: double.infinity,
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsetsGeometry.all(0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+
+                              // === LEADERBOARD ===
+                              if (detailvote['leaderboard_limit_tampil'] != -1)
+                                DetailVoteLang(
+                                  values: bahasa!,
+                                  child: Container(
+                                    color: Colors.white,
+                                    padding: kGlobalPadding,
+                                    child: _buildLeaderboardSection(view_api, ranking, detailvote, langCode!),
+                                  ),
+                                ),
+                                
+                              ],
+                            ),
+                          ),
+                        ),
+                    
+                        const SizedBox(height: 12),
+                    
+                      ],
+                    )
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
 
       bottomNavigationBar: SafeArea(
         child: Container(
           color: Colors.white,
-          padding: EdgeInsetsGeometry.symmetric(vertical: 8, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1533,8 +1691,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                   Text(totalHargaText!),
                   Text(
                     harga == 0
-                    ? hargaDetail!
-                    : currencyCode == null
+                    ? bahasa!['harga_detail']
+                    : currencyCode == null 
                       ? "${detailvote['currency']} ${formatter.format(totalHarga)}"
                       : "$currencyCode ${formatter.format(totalHarga)}",
                     style: TextStyle(
@@ -1543,9 +1701,11 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                     ),
                   ),
                   Text(
-                    "Qty $totalQty ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
-                    style: TextStyle(fontSize: 12),
-                  ),
+                    "Qty $counts ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
+                    style: TextStyle(fontSize: 12,),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
                 ],
               ),
 
@@ -1715,6 +1875,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _pageIndex.dispose();
+    super.dispose();
   }
 
   Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote, String langCode) {

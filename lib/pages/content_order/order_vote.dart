@@ -22,7 +22,7 @@ class OrderVote extends StatefulWidget {
 }
 
 class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMixin{
-  String? langCode, currencyCode;
+  String? langCode;
   late TabController _tabController;
   bool isLoading = true;
 

@@ -18,14 +18,14 @@
   ],
 
   "bahasa" : {
-    "pick_language" : "Pilih bahasa",
-    "pick_currency" : "Pilih mata uang",
+    "pick_language" : "Pilih Bahasa",
+    "pick_currency" : "Pilih Mata Uang",
 
     "lewati" : "Lewati",
     "lanjut" : "Lanjut",
     "selesai" : "Selesai",
-    "login": "Masuk",
-    "guest_login": "Masuk Sebagai Tamu",
+    "login": "Login",
+    "guest_login": "Lanjut sebagai Tamu",
     "login_as": "Atau",
 
     "input_email": "Masukkan email",
@@ -110,7 +110,7 @@
     "appBarTitle" : "Riwayat Pesanan",
 
     "notLogin": "Ayo... Login terlebih Dahulu",
-    "notLoginDesc": "Klik tombol dibawah ini untuk lanjut",
+    "notLoginDesc": "Klik tombol dibawah ini untuk melanjutkan",
 
     "google_login" : "Lanjut dengan Google",
     "nama_lengkap_label": "Nama Lengkap",

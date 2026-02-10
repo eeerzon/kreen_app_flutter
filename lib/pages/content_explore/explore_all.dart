@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -14,17 +16,19 @@ import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ExploreAll extends StatefulWidget {
-  final String keyword;
+  final String? keyword;
   final List<String> timeFilter;
   final List<String> priceFilter;
   final int pageFilter;
+  final VoidCallback onResetSearch;
 
   const ExploreAll({
     super.key, 
     required this.keyword,
     required this.timeFilter,
     required this.priceFilter,
-    required this.pageFilter
+    required this.pageFilter,
+    required this.onResetSearch,
   });
 
   @override
@@ -32,7 +36,7 @@ class ExploreAll extends StatefulWidget {
 }
 
 class _ExploreAllState extends State<ExploreAll> {
-  String? langCode, currencyCode;
+  String? langCode;
   bool isLoadingMore = false;
   bool isFirstLoad = true;
 
@@ -41,7 +45,7 @@ class _ExploreAllState extends State<ExploreAll> {
   List<dynamic> votes = [];
   List<dynamic> allDataCombained = [];
 
-  final ScrollController _scrollController = ScrollController();
+  ScrollController _scrollController = ScrollController();
   bool hasMore = true;
   int limit = 6;
   late int currentPage = widget.pageFilter;
@@ -82,11 +86,20 @@ class _ExploreAllState extends State<ExploreAll> {
       filterPrice = widget.priceFilter.join(",");
     }
 
-    final endpointAll = isFirst 
-      ? "/v2/global-search?time=$filterTime&price=$filterPrice&limit=$limit&page=1" 
-      : filterTime == ""
-        ? "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=$limit&page=1"
-        : "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999&page=1";
+    // final endpointAll = isFirst 
+    //   ? "/v2/global-search?time=$filterTime&price=$filterPrice&limit=$limit&page=1&order=asc&order_by=start_date" 
+    //   : filterTime == ""
+    //     ? "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=$limit&page=1&order=asc&order_by=start_date"
+    //     : "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999&page=1&order=asc&order_by=start_date";
+
+    String endpointAll = "/v2/global-search?"
+      "term=${term ?? ''}"
+      "&time=$filterTime"
+      "&price=$filterPrice"
+      "&limit=$limit"
+      "&page=1"
+      "&order=asc"
+      "&order_by=start_date";
 
     final responses = await ApiService.get(endpointAll, xLanguage: langCode, xCurrency: currencyCode);
     if (responses == null || responses['rc'] != 200) {
@@ -105,12 +118,16 @@ class _ExploreAllState extends State<ExploreAll> {
       allDataCombained = resultAll;
       isFirstLoad = false;
       showErrorBar = false;
+      currentPage = 1;
+      hasMore = resultAll.length >= limit;
     });
   }
 
   @override
   void initState() {
     super.initState();
+
+    _scrollController = ScrollController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
@@ -138,8 +155,8 @@ class _ExploreAllState extends State<ExploreAll> {
       hasMore = true;
     }
 
-    final url = "$baseapiUrl/v2/global-search?time=${widget.timeFilter.join(",")}&price=${widget.priceFilter.join(",")}&limit=6&page=$currentPage";
-
+    final url = "$baseapiUrl/v2/global-search?time=${widget.timeFilter.join(",")}&price=${widget.priceFilter.join(",")}&limit=6&page=$currentPage&order=asc&order_by=start_date";
+    
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -191,8 +208,9 @@ class _ExploreAllState extends State<ExploreAll> {
     await _fetchKonten(loadMore: true);
   }
 
-  Future<void> _refresh() async {
-    await Future.delayed(Duration(seconds: 1));
+  Future<void> _refresh(bool isFirst, String? term) async {
+
+    await _loadContent(false, term);
   }
 
   @override
@@ -201,6 +219,11 @@ class _ExploreAllState extends State<ExploreAll> {
     if (oldWidget.timeFilter != widget.timeFilter ||
       oldWidget.priceFilter != widget.priceFilter ||
       oldWidget.keyword != widget.keyword) {
+
+        currentPage = 1;
+        hasMore = true;
+        isLoadingMore = false;
+
       _loadContent(false, widget.keyword);
     }
   }
@@ -316,238 +339,275 @@ class _ExploreAllState extends State<ExploreAll> {
     }
 
     return RefreshIndicator(
-      onRefresh: _refresh,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (scrollInfo) {
-          if (!isLoadingMore &&
-              hasMore &&
-              scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-            _loadMoreKonten();
-          }
-          return false;
+      onRefresh: () => _refresh(false, widget.keyword),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
         },
-        child: MasonryGridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
-          controller: _scrollController,
-          physics: AlwaysScrollableScrollPhysics(),
-          itemCount: allDataCombained.length + (isLoadingMore ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index < allDataCombained.length) {
-              final item = allDataCombained[index];
-              final title = item['title']?.toString() ?? 'Tanpa Judul';
-              final dateStr = item['start_date']?.toString() ?? '-';
-              final img = item['banner']?.toString() ?? '';
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (scrollInfo) {
+            if (!isLoadingMore &&
+                hasMore &&
+                scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              _loadMoreKonten();
+            }
+            return false;
+          },
+          child: MasonryGridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 12,
+            controller: _scrollController,
+            physics: AlwaysScrollableScrollPhysics(),
+            itemCount: allDataCombained.length + (isLoadingMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index < allDataCombained.length) {
+                final item = allDataCombained[index];
+                final title = item['title']?.toString() ?? 'Tanpa Judul';
+                final dateStr = item['start_date']?.toString() ?? '-';
+                final img = item['banner']?.toString() ?? '';
 
-              String formattedDate = '-';
-              if (dateStr.isNotEmpty) {
-                try {
-                  final date = DateTime.parse(dateStr);
-                  if (langCode == 'id') {
-                    formattedDate = DateFormat("EEEE, dd MMMM yyyy", "id_ID").format(date);
-                  } else {
-                    final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
-                    formattedDate = formatter.format(date);
-                    final day = date.day;
-                    String suffix = 'th';
-                    if (day % 10 == 1 && day != 11) {
-                      suffix = 'st';
-                    } else if (day % 10 == 2 && day != 12) {
-                      suffix = 'nd';
-                    } else if (day % 10 == 3 && day != 13) {
-                      suffix = 'rd';
+                String formattedDate = '-';
+                if (dateStr.isNotEmpty) {
+                  try {
+                    final date = DateTime.parse(dateStr);
+                    if (langCode == 'id') {
+                      formattedDate = DateFormat("$formatDay, $formatDateId", "id_ID").format(date);
+                    } else {
+                      final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
+                      formattedDate = formatter.format(date);
+                      final day = date.day;
+                      String suffix = 'th';
+                      if (day % 10 == 1 && day != 11) {
+                        suffix = 'st';
+                      } else if (day % 10 == 2 && day != 12) {
+                        suffix = 'nd';
+                      } else if (day % 10 == 3 && day != 13) {
+                        suffix = 'rd';
+                      }
+                      formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
                     }
-                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+                  } catch (e) {
+                    formattedDate = '-';
                   }
-                } catch (e) {
-                  formattedDate = '-';
                 }
-              }
 
-              final formatter = NumberFormat.decimalPattern("en_US");
-              final hargaFormatted = formatter.format(item['price'] ?? 0);
+                final formatter = NumberFormat.decimalPattern("en_US");
+                final hargaFormatted = formatter.format(item['price'] ?? 0);
 
-              final typeEvent = item['type_event'] ?? '-';
-              Color colorType = Colors.blue;
-              if (typeEvent == 'offline') {
-                colorType = Colors.red;
-              }
+                final typeEvent = item['type_event'] ?? '-';
+                Color colorType = Colors.blue;
+                if (typeEvent == 'offline') {
+                  colorType = Colors.red;
+                }
 
-              return Padding(
-                padding: const EdgeInsets.all(0),
-                child: InkWell(
-                  onTap: () {
-                    if (item['type'] == 'event') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              DetailEventPage(
-                                id_event: item['id'].toString(), 
-                                price: item['price'],
-                              ),
-                        ),
-                      );
-                    } else if (item['type'] == 'vote') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DetailVotePage(
-                            id_event: item['id'].toString(),
+                return Padding(
+                  padding: const EdgeInsets.all(0),
+                  child: InkWell(
+                    onTap: () async {
+                      if (isChoosed == 0) {
+                        currencyCode = item['currency'];
+                        lastCurrency = item['currency'];
+                        await StorageService.setCurrency(currencyCode!);
+                      }
+                      if (item['type'] == 'event') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DetailEventPage(
+                                  id_event: item['id'].toString(), 
+                                  price: item['price'],
+                                  currencyCode: currencyCode,
+                                ),
                           ),
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300,),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        //gambar
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: img.isNotEmpty
-                                  ? Image.network(
-                                      img,
-                                      fit: BoxFit.cover,
-                                      loadingBuilder: (context, child, loadingProgress) {
-                                        if (loadingProgress == null) return child;
-                                        return Image.asset(
-                                          'assets/images/img_placeholder.jpg',
-                                          fit: BoxFit.cover,
-                                        );
-                                      },
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/images/img_broken.jpg',
-                                          fit: BoxFit.cover,
-                                        );
-                                      },
-                                    )
-                                  : Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      fit: BoxFit.cover,
-                                    ),
-                              ),
+                        ).then((_) {
+                          _handleBackFromDetail();
+                        });
+                      } else if (item['type'] == 'vote') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DetailVotePage(
+                              id_event: item['id'].toString(),
+                              currencyCode: currencyCode,
                             ),
-
-                            if (item['type'] == 'event') Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  typeEvent.toString().toUpperCase(),
-                                  style: TextStyle(
-                                    color: colorType,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        ).then((_) {
+                          _handleBackFromDetail();
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300,),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          //gambar
+                          Stack(
                             children: [
-                              SizedBox(
-                                height: 38,
-                                child: Text(
-                                  title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: img.isNotEmpty
+                                    ? Image.network(
+                                        img,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return Image.asset(
+                                            'assets/images/img_placeholder.jpg',
+                                            fit: BoxFit.cover,
+                                          );
+                                        },
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            fit: BoxFit.cover,
+                                          );
+                                        },
+                                      )
+                                    : Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      ),
                                 ),
                               ),
 
-                              //penyelenggara
-                              const SizedBox(height: 4),
-                              Text(
-                                item['merchant_name'],
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
-                              ),
-
-                              const SizedBox(height: 4),
-                              SizedBox(
-                                height: 38,
+                              if (item['type'] == 'event') Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
                                   child: Text(
+                                    typeEvent.toString().toUpperCase(),
+                                    style: TextStyle(
+                                      color: colorType,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 38,
+                                  child: Text(
+                                    title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+
+                                //penyelenggara
+                                const SizedBox(height: 4),
+                                Text(
+                                  item['organizer'],
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+
+                                const SizedBox(height: 4),
+                                // SizedBox(
+                                //   height: 38,
+                                //     child: Text(
+                                //     formattedDate,
+                                //     maxLines: 1,
+                                //     overflow: TextOverflow.ellipsis,
+                                //     style: const TextStyle(
+                                //       fontSize: 12, color: Colors.grey
+                                //     ),
+                                //   ),
+                                // ),
+                                Text(
                                   formattedDate,
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 12, color: Colors.grey
                                   ),
                                 ),
-                              ),
-                              
+                                
+                                if (item['type'] == 'event') ... [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item['price'] == 0
+                                    ? '' //"Harga"
+                                    : bahasa['mulai_dari'] //"Mulai dari",
+                                  ),
+                                ] else ...[
+                                  const SizedBox(height: 4),
+                                  Text(""),
+                                ],
 
-                              const SizedBox(height: 4),
-                              Text(
-                                item['price'] == 0
-                                ? bahasa['harga_detail']  //'Gratis'
-                                : currencyCode == null
-                                  ? "${item['currency']} $hargaFormatted"
-                                  : "$currencyCode $hargaFormatted",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
+                                const SizedBox(height: 4),
+                                Text(
+                                  item['price'] == 0
+                                  ? bahasa['harga_detail']  //'Gratis'
+                                  : currencyCode == null
+                                    ? "${item['currency']} $hargaFormatted"
+                                    : "$currencyCode $hargaFormatted",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            } else {
-              if (isLoadingMore) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator(color: Colors.red,)),
-                );
-              } else if (!hasMore) {
-                return Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: Text(
-                      //"Tidak ada data lagi",
-                      bahasa['no_more'] ?? "",
-                      style: TextStyle(color: Colors.grey),
+                        ],
+                      ),
                     ),
                   ),
                 );
               } else {
-                return const SizedBox.shrink();
+                if (isLoadingMore) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator(color: Colors.red,)),
+                  );
+                } else if (!hasMore) {
+                  return Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: Text(
+                        //"Tidak ada data lagi",
+                        bahasa['no_more'] ?? "",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
               }
-            }
-          },
+            },
+          ),
         ),
       ),
     );
@@ -555,6 +615,14 @@ class _ExploreAllState extends State<ExploreAll> {
   
   @override
   void dispose() {
+    _scrollController.removeListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !isLoadingMore &&
+          hasMore) {
+        _loadMoreKonten();
+      }
+    });
     _scrollController.dispose();
     super.dispose();
   }
@@ -575,5 +643,13 @@ class _ExploreAllState extends State<ExploreAll> {
 
       return diffA.compareTo(diffB);
     });
+  }
+
+  Future<void> _handleBackFromDetail() async {
+    if (isChoosed == 0) {
+      currencyCode = lastCurrency;
+      await _loadContent(false, widget.keyword);
+      setState(() {});
+    }
   }
 }

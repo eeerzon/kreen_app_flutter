@@ -38,7 +38,6 @@ class HomeContent extends StatefulWidget {
 class _HomeContentState extends State<HomeContent> {
   final prefs = FlutterSecureStorage();
   String? langCode;
-  String? currencyCode;
   String? login;
   String? token;
   Map<String, dynamic> bahasa = {};
@@ -828,11 +827,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -858,14 +857,24 @@ class _HomeContentState extends State<HomeContent> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12), // jarak antar card
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
+                                    if (isChoosed == 0) {
+                                      currencyCode = item['currency'];
+                                      lastCurrency = item['currency'];
+                                      await StorageService.setCurrency(currencyCode!);
+                                    }
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            DetailVotePage(id_event: item['id_event'].toString()),
+                                            DetailVotePage(
+                                              id_event: item['id_event'].toString(),
+                                              currencyCode: currencyCode,
+                                            ),
                                       ),
-                                    );
+                                    ).then((_) {
+                                      _handleBackFromDetail();
+                                    });
                                   },
                                   child: SizedBox(
                                     width: 200,
@@ -1042,11 +1051,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("dd MMM yyyy HH:mm", "id_ID");
+                                    final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("MMM d, yyyy HH:mm", "en_US");
+                                    final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1069,7 +1078,12 @@ class _HomeContentState extends State<HomeContent> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12), // jarak antar card
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
+                                    if (isChoosed == 0) {
+                                      currencyCode = item['currency'];
+                                      lastCurrency = item['currency'];
+                                      await StorageService.setCurrency(currencyCode!);
+                                    }
 
                                     if (item['flag_paket'] == '0') { //0
                                       Navigator.push(
@@ -1082,9 +1096,12 @@ class _HomeContentState extends State<HomeContent> {
                                             close_payment: item['close_payment'],
                                             tanggal_buka_vote: formattedDate,
                                             flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
+                                            currencyCode: currencyCode,
                                           ),
                                         ),
-                                      );
+                                      ).then((_) {
+                                        _handleBackFromDetail();
+                                      });
                                     } else {
                                       Navigator.push(
                                         context,
@@ -1098,9 +1115,12 @@ class _HomeContentState extends State<HomeContent> {
                                             close_payment: item['close_payment'],
                                             tanggal_buka_vote: formattedDate,
                                             flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
+                                            currencyCode: currencyCode,
                                           ),
                                         ),
-                                      );
+                                      ).then((_) {
+                                        _handleBackFromDetail();
+                                      });
                                     }
                                   },
                                   child: SizedBox(
@@ -1319,11 +1339,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1356,14 +1376,25 @@ class _HomeContentState extends State<HomeContent> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12), // jarak antar card
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
+                                    if (isChoosed == 0) {
+                                      currencyCode = item['currency'];
+                                      lastCurrency = item['currency'];
+                                      await StorageService.setCurrency(currencyCode!);
+                                    }
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            DetailEventPage(id_event: item['id_event'].toString(), price: price,),
+                                          DetailEventPage(
+                                            id_event: item['id_event'].toString(), 
+                                            price: price,
+                                            currencyCode: currencyCode
+                                          ),
                                       ),
-                                    );
+                                    ).then((_) {
+                                      _handleBackFromDetail();
+                                    });
                                   },
                                   child: SizedBox(
                                     width: 200,
@@ -1599,11 +1630,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1629,14 +1660,24 @@ class _HomeContentState extends State<HomeContent> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12), // jarak antar card
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
+                                    if (isChoosed == 0) {
+                                      currencyCode = item['currency'];
+                                      lastCurrency = item['currency'];
+                                      await StorageService.setCurrency(currencyCode!);
+                                    }
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            DetailVotePage(id_event: item['id_event'].toString()),
+                                            DetailVotePage(
+                                              id_event: item['id_event'].toString(),
+                                              currencyCode: currencyCode,
+                                            ),
                                       ),
-                                    );
+                                    ).then((_) {
+                                      _handleBackFromDetail();
+                                    });
                                   },
                                   child: SizedBox(
                                     width: 200,
@@ -1846,11 +1887,11 @@ class _HomeContentState extends State<HomeContent> {
                                   final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
                                   if (langCode == 'id') {
                                     // Bahasa Indonesia
-                                    final formatter = DateFormat("EEE, dd MMMM yyyy", "id_ID");
+                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
                                     formattedDate = formatter.format(date);
                                   } else {
                                     // Bahasa Inggris
-                                    final formatter = DateFormat("EEE, MMMM d yyyy", "en_US");
+                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -1883,14 +1924,25 @@ class _HomeContentState extends State<HomeContent> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 12), // jarak antar card
                                 child: InkWell(
-                                  onTap: () {
+                                  onTap: () async {
+                                    if (isChoosed == 0) {
+                                      currencyCode = item['currency'];
+                                      lastCurrency = item['currency'];
+                                      await StorageService.setCurrency(currencyCode!);
+                                    }
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            DetailEventPage(id_event: item['id_event'].toString(), price: price,),
+                                          DetailEventPage(
+                                            id_event: item['id_event'].toString(), 
+                                            price: price,
+                                            currencyCode: currencyCode
+                                          ),
                                       ),
-                                    );
+                                    ).then((_) {
+                                      _handleBackFromDetail();
+                                    });
                                   },
                                   child: SizedBox(
                                     width: 200,
@@ -2111,15 +2163,15 @@ class _HomeContentState extends State<HomeContent> {
                                       englishFormat = englishFormat.replaceAll(indo, eng);
                                     });
                                     
-                                    date = DateFormat("dd MMMM yyyy", "en_US").parse(englishFormat);
+                                    date = DateFormat(formatDateId, "en_US").parse(englishFormat);
                                   } else {
                                     date = DateTime.parse(dateStr);
                                   }
                                   
                                   if (langCode == 'id') {
-                                    formattedDate = DateFormat("dd MMMM yyyy", "id_ID").format(date);
+                                    formattedDate = DateFormat(formatDateId, "id_ID").format(date);
                                   } else {
-                                    final formatter = DateFormat("MMMM d, yyyy", "en_US");
+                                    final formatter = DateFormat(formatDateEn, "en_US");
                                     formattedDate = formatter.format(date);
 
                                     // suffix: st, nd, rd, th
@@ -2321,4 +2373,12 @@ class _HomeContentState extends State<HomeContent> {
     );   
   }
 
+  Future<void> _handleBackFromDetail() async {
+    if (isChoosed == 0) {
+      currencyCode = lastCurrency;
+      isLoadingContent = true;
+      await _loadContent();
+      setState(() {});
+    }
+  }
 }

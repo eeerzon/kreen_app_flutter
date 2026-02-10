@@ -95,14 +95,18 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   
   int? selectedIndex;
 
-  final formatter = NumberFormat.decimalPattern("en_US");
+  late final formatter = NumberFormat.currency(
+    locale: "en_US",
+    symbol: "",
+    decimalDigits: currencyCode == "IDR" ? 0 : 2,
+  );
   final ScrollController _scrollController = ScrollController();
   final TextEditingController expDateController = TextEditingController();
   bool _isEditing = false;
 
   bool isLoading = true;
 
-  String? langCode, currencyCode, token;
+  String? langCode, token;
   Map<String, dynamic> bahasa = {};
   String? namaLengkapLabel, namaLengkapHint;
   String? phoneLabel, phoneHint;
@@ -405,9 +409,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         } else {
           AwesomeDialog(
             context: context,
-            dialogType: DialogType.error,
+            dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
-            title: 'Oops!',
+            title: bahasa['maaf'],
             desc: bahasa['error'], //error message dari api
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
@@ -420,9 +424,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       } else {
         AwesomeDialog(
           context: context,
-          dialogType: DialogType.error,
+          dialogType: DialogType.noHeader,
           animType: AnimType.topSlide,
-          title: 'Oops!',
+          title: bahasa['maaf'],
           desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
           btnOkOnPress: () {},
           btnOkColor: Colors.red,
@@ -1400,6 +1404,16 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = debit[index]['id_metod'];
                                     currencySession = debit[index]['currency_pg'];
                                   });
+
+                                  if (item['flag_client'] == "1") {
+                                    Future.delayed(const Duration(milliseconds: 200), () {
+                                      _scrollController.animateTo(
+                                        _scrollController.position.maxScrollExtent,
+                                        duration: const Duration(milliseconds: 600),
+                                        curve: Curves.easeOut,
+                                      );
+                                    });
+                                  }
     
                                   // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
                                   var resultFee = await getFeeNew(

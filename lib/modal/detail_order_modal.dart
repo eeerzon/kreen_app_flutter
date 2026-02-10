@@ -697,11 +697,11 @@ class DetailOrderModal {
           final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
           if (langCode == 'id') {
             // Bahasa Indonesia
-            final dayName = DateFormat("EEEE", "id_ID").format(date);
+            final dayName = DateFormat(formatDay, "id_ID").format(date);
             formattedDate = dayName;
           } else {
             // Bahasa Inggris
-            final dayName = DateFormat("EEEE", "en_US").format(date);
+            final dayName = DateFormat(formatDay, "en_US").format(date);
             formattedDate = dayName;
           }
         } catch (e) {
@@ -1295,7 +1295,7 @@ class DetailOrderModal {
                       }),
                     ),
 
-                    if (eventOder['order_status'] == '3') ... [
+                    if (eventOder['amount'] != 0) ... [
                       const SizedBox(height: 16),
                       Text(
                         bahasa['detail_pembayaran'] ?? "", //'Detail Pembayaran',

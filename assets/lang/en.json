@@ -8,7 +8,7 @@
     {
       "image": "assets/images/img_onboarding2.png",
       "title": "Discover Your Favorite Event",
-      "desc": "Bringing you unforgettable experiences in every special moment"
+      "desc": "Bringing You Unforgettable Experiences in Every Special Moment"
     },
     {
       "image": "assets/images/img_onboarding3.png",
@@ -25,7 +25,7 @@
     "lanjut" : "Next",
     "selesai" : "Done",
     "login": "Login",
-    "guest_login": "Login as Guest",
+    "guest_login": "Continue as Guest",
     "login_as": "or",
 
     "input_email": "Email",

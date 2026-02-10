@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'login_page.dart';
@@ -28,7 +29,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   String? selesai;
   String? login;
   String? guest;
-  String? langCode, currencyCode;
+  String? langCode;
 
   String _selectedLang = "id";
   final Map<String, String> languages = {

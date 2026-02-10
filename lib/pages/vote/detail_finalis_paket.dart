@@ -55,7 +55,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   Map<String, dynamic> detailvote = {};
   Map<String, dynamic> bahasa = {};
 
-  String? langCode, currencyCode;
+  String? langCode;
   String? notLogin, notLoginDesc, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
   String? endVote, voteOpen, voteOpenAgain;
@@ -156,18 +156,18 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
               .cast<Map<String, dynamic>>()
               .toList();
         }
-
-        DateTime deadline = DateTime.parse(detailvote['tanggal_tutup_vote']);
+        
+        DateTime deadlineUtc = DateTime.parse(detailvote['real_tanggal_tutup_vote']);
         Duration remaining = Duration.zero;
-        final now = DateTime.now();
-        final difference = deadline.difference(now);
+        final nowUtc = DateTime.now().toUtc();
+        final difference = deadlineUtc.difference(nowUtc);
 
         remaining = difference.isNegative ? Duration.zero : difference;
+        
+        final bukaVoteUtc = DateTime.parse(detailvote['real_tanggal_buka_vote']);
+        bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
-        DateTime bukaVote = DateTime.parse(detailvote['real_tanggal_buka_vote']);
-        bool isBeforeOpen = DateTime.now().isBefore(bukaVote);
-
-        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
         
         if (isBeforeOpen) {
           buttonText = '$voteOpen $formattedBukaVote';

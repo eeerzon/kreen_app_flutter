@@ -58,6 +58,10 @@ class _RegisPageState extends State<RegisPage> {
       ),
     );
   }
+  
+  bool _emailTouched = false;
+  bool _lockPasswordField = false;
+  bool _lockConfirmPasswordField = false;
 
   int errorCode = 0;
   Map<String, dynamic> errorMessage = {};
@@ -84,6 +88,36 @@ class _RegisPageState extends State<RegisPage> {
       ).show().then((_) {
         hideLoadingDialog(context);
         Navigator.pop(context);
+      });
+    } else if (result['rc'] == 422) {
+
+      final data = result['data'];
+      String desc = '';
+      if (data is Map) {
+        final errorMessages = data.values
+          .whereType<List>()
+          .expand((e) => e)
+          .whereType<String>()
+          .toList();
+
+        desc = errorMessages.join('\n');
+      } else {
+        desc = data?.toString() ?? '';
+      }
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: bahasa['maaf'],
+        desc: bahasa['error'] + '\n' + desc,
+        btnOkOnPress: () {},
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show().then((_) {
+        hideLoadingDialog(context);
       });
     } else {
       AwesomeDialog(
@@ -338,7 +372,13 @@ class _RegisPageState extends State<RegisPage> {
                     ),
                     TextField(
                       controller: _emailController,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) => setState(() {
+                        if (!_emailTouched) {
+                          setState(() => _emailTouched = true);
+                        } else {
+                          setState(() {});
+                        }
+                      }),
                       decoration: InputDecoration(
                         hintText: email!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -349,6 +389,9 @@ class _RegisPageState extends State<RegisPage> {
                         fillColor: Colors.white,
                         enabledBorder: _border(_emailController.text.isNotEmpty),
                         focusedBorder: _border(true),
+                        errorText: _emailTouched &&  !isValidEmail(_emailController.text)
+                          ? bahasa['error_email_1']
+                          : null,
                       ),
                     ),
                     if (errorCode == 422) ... [
@@ -414,6 +457,7 @@ class _RegisPageState extends State<RegisPage> {
                     TextField(
                       controller: _passwordController,
                       focusNode: _passwordFocus,
+                      readOnly: _lockPasswordField,
                       onChanged: (_) => setState(() {}),
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
@@ -426,14 +470,24 @@ class _RegisPageState extends State<RegisPage> {
                         fillColor: Colors.white,
                         enabledBorder: _border(_passwordController.text.isNotEmpty),
                         focusedBorder: _border(true),
-                        suffixIcon: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
-                            _passwordFocus.canRequestFocus = false;
+                        suffixIcon: InkWell(
+                          onTap: () async {
+                            _unfocusAll(context);
+                            setState(() {
+                              _lockPasswordField = true;
+                              _obscurePassword = !_obscurePassword;
+                            });
+
+                            await Future.delayed(const Duration(milliseconds: 50));
+
+                            setState(() {
+                              _lockPasswordField = false;
+                            });
                           },
                           child: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                         ),
                       ),
@@ -450,6 +504,7 @@ class _RegisPageState extends State<RegisPage> {
                     TextField(
                       controller: _confirmpasswordController,
                       focusNode: _confirmpasswordFocus,
+                      readOnly: _lockConfirmPasswordField,
                       onChanged: (_) => setState(() {}),
                       obscureText: _obscurePasswordConfirm,
                       decoration: InputDecoration(
@@ -464,9 +519,18 @@ class _RegisPageState extends State<RegisPage> {
                         focusedBorder: _border(true),
                         suffixIcon: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm);
-                            _confirmpasswordFocus.canRequestFocus = false;
+                          onTap: () async {
+                            _unfocusAll(context);
+                            setState(() {
+                              _lockConfirmPasswordField = true;
+                              _obscurePasswordConfirm = !_obscurePasswordConfirm;
+                            });
+
+                            await Future.delayed(const Duration(milliseconds: 50));
+
+                            setState(() {
+                              _lockConfirmPasswordField = false;
+                            });
                           },
                           child: Icon(
                             _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
@@ -621,6 +685,10 @@ class _RegisPageState extends State<RegisPage> {
         ),
       ),
     );
+  }
+
+  void _unfocusAll(BuildContext context) {
+    FocusScope.of(context).unfocus();
   }
 }
 

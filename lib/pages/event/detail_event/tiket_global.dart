@@ -57,7 +57,7 @@ class TiketGlobalPage extends StatefulWidget {
 }
 
 class _TiketGlobalPageState extends State<TiketGlobalPage> {
-  String? langCode, currencyCode;
+  String? langCode;
 
   bool _isLoading = true;
   bool _isFree = false;
@@ -79,6 +79,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+
+  bool isConfirmLoading = false;
   
   Set<int> _duplicateEmailIndexes = {};
   Set<int> _duplicatePhoneIndexes = {};
@@ -1355,12 +1357,17 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                     SizedBox(height: 20,),
                     InkWell(
-                      onTap: () async {
+                      onTap: isConfirmLoading 
+                      ? null 
+                      : () async {
                         // answers = List.generate(answerControllers.length, (index) {
                         //   return answerControllers[index].text.trim();
                         // });
 
+                        if (isConfirmLoading) return;
+
                         setState(() {
+                          isConfirmLoading = true;
                           _showError = true;
                         });
 
@@ -1375,82 +1382,98 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         if (!isValid) {
                           return;
                         }
-                        
-                        if (_isFree) {
-                          final position = await getCurrentLocationWithValidation(context);
 
-                          if (position == null) {
-                            // Stop, jangan lanjut submit
-                            return;
-                          }
+                        try {
+                          if (_isFree) {
+                            final position = await getCurrentLocationWithValidation(context);
 
-                          final latitude = position.latitude;
-                          final longitude = position.longitude;
-                          //payment
-                          String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
-
-                          final tickets = <Map<String, dynamic>>[];
-                          int controllerIndex = 0;
-
-                          for (int i = 0; i < widget.ids_tiket!.length; i++) {
-                            final idTicket = widget.ids_tiket![i];
-                            final count = int.tryParse(widget.qty[i].toString()) ?? 1;
-
-                            for (int j = 0; j < count; j++) {
-                              
-                              String genderValue;
-                              final rawGender = selectedGenders[controllerIndex]?.toString().toLowerCase();
-
-                              if (rawGender == 'laki-laki' || rawGender == 'male') {
-                                genderValue = 'male';
-                              } else if (rawGender == 'perempuan' || rawGender == 'female') {
-                                genderValue = 'female';
-                              } else {
-                                genderValue = ''; // atau throw / handle error
-                              }
-                              tickets.add({
-                                "id_ticket": idTicket,
-                                "first_name": nameControllers[controllerIndex].text,
-                                "email": emailControllers[controllerIndex].text,
-                                "phone": phoneControllers[controllerIndex].text,
-                                "gender" : genderValue
-                              });
-                              controllerIndex++;
+                            if (position == null) {
+                              // Stop, jangan lanjut submit
+                              return;
                             }
-                          }
 
-                          final body = {
-                            "id_event": widget.id_event,
-                            "id_user": widget.idUser,
-                            'platform': platform,
-                            "latitude": latitude,
-                            "longitude": longitude,
-                            "tickets": tickets,
-                            "payment_method": null,
-                            "order_form_answers_global": List.generate(
-                              ids_order_form_master.length, (index) => {
-                                "id_order_form_master": ids_order_form_master[index],
-                                "id_order_form_detail": ids_order_form_detail[index],
-                                "answer": answers[index]
-                              },
-                            ),
-                          };
+                            final latitude = position.latitude;
+                            final longitude = position.longitude;
+                            //payment
+                            String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
 
-                          var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
+                            final tickets = <Map<String, dynamic>>[];
+                            int controllerIndex = 0;
 
-                          if (resultEventOrder != null) {
-                            if (resultEventOrder['rc'] == 200) {
-                              var tempOrder = resultEventOrder['data'];
+                            for (int i = 0; i < widget.ids_tiket!.length; i++) {
+                              final idTicket = widget.ids_tiket![i];
+                              final count = int.tryParse(widget.qty[i].toString()) ?? 1;
 
-                              var id_order = tempOrder['id_order'];
-                              Navigator.pop(context);
+                              for (int j = 0; j < count; j++) {
+                                
+                                String genderValue;
+                                final rawGender = selectedGenders[controllerIndex]?.toString().toLowerCase();
 
-                              Navigator.pop(context);
+                                if (rawGender == 'laki-laki' || rawGender == 'male') {
+                                  genderValue = 'male';
+                                } else if (rawGender == 'perempuan' || rawGender == 'female') {
+                                  genderValue = 'female';
+                                } else {
+                                  genderValue = ''; // atau throw / handle error
+                                }
+                                tickets.add({
+                                  "id_ticket": idTicket,
+                                  "first_name": nameControllers[controllerIndex].text,
+                                  "email": emailControllers[controllerIndex].text,
+                                  "phone": phoneControllers[controllerIndex].text,
+                                  "gender" : genderValue
+                                });
+                                controllerIndex++;
+                              }
+                            }
 
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
-                              );
+                            final body = {
+                              "id_event": widget.id_event,
+                              "id_user": widget.idUser,
+                              'platform': platform,
+                              "latitude": latitude,
+                              "longitude": longitude,
+                              "tickets": tickets,
+                              "payment_method": null,
+                              "order_form_answers_global": List.generate(
+                                ids_order_form_master.length, (index) => {
+                                  "id_order_form_master": ids_order_form_master[index],
+                                  "id_order_form_detail": ids_order_form_detail[index],
+                                  "answer": answers[index]
+                                },
+                              ),
+                            };
+
+                            var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
+
+                            if (resultEventOrder != null) {
+                              if (resultEventOrder['rc'] == 200) {
+                                var tempOrder = resultEventOrder['data'];
+
+                                var id_order = tempOrder['id_order'];
+                                Navigator.pop(context);
+
+                                Navigator.pop(context);
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
+                                );
+                              } else {
+                                AwesomeDialog(
+                                  context: context,
+                                  dialogType: DialogType.noHeader,
+                                  animType: AnimType.topSlide,
+                                  title: bahasa['maaf'],
+                                  desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+                                  btnOkOnPress: () {},
+                                  btnOkColor: Colors.red,
+                                  buttonsTextStyle: TextStyle(color: Colors.white),
+                                  headerAnimationLoop: false,
+                                  dismissOnTouchOutside: true,
+                                  showCloseIcon: true,
+                                ).show();
+                              }
                             } else {
                               AwesomeDialog(
                                 context: context,
@@ -1467,49 +1490,39 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               ).show();
                             }
                           } else {
-                            AwesomeDialog(
-                              context: context,
-                              dialogType: DialogType.noHeader,
-                              animType: AnimType.topSlide,
-                              title: bahasa['maaf'],
-                              desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-                              btnOkOnPress: () {},
-                              btnOkColor: Colors.red,
-                              buttonsTextStyle: TextStyle(color: Colors.white),
-                              headerAnimationLoop: false,
-                              dismissOnTouchOutside: true,
-                              showCloseIcon: true,
-                            ).show();
-                          }
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StatePaymentGlobal(
-                                id_event: widget.id_event,
-                                ids_tiket: widget.ids_tiket!, 
-                                names_tiket: widget.namas_tiket!, 
-                                counts_tiket: widget.qty, 
-                                prices_tiket: widget.prices_tiket!, 
-                                prices_tiket_asli: widget.prices_tiket_asli!,
-                                totalHarga: totalHarga,
-                                totalHargaAsli: totalHargaAsli,
-                                first_names: nameControllers,
-                                genders: selectedGenders,
-                                emails: emailControllers,
-                                phones: phoneControllers,
-                                ids_order_form_details: ids_order_form_detail,
-                                ids_order_form_master: ids_order_form_master,
-                                answers: answers,
-                                formGlobal: true,
-                                fromDetail: true,
-                                jenis_participant: widget.jenis_participant!,
-                                idUser: widget.idUser,
-                                rateCurrency: widget.rateCurrency,
-                                rateCurrencyUser: widget.rateCurrencyUser,
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => StatePaymentGlobal(
+                                  id_event: widget.id_event,
+                                  ids_tiket: widget.ids_tiket!, 
+                                  names_tiket: widget.namas_tiket!, 
+                                  counts_tiket: widget.qty, 
+                                  prices_tiket: widget.prices_tiket!, 
+                                  prices_tiket_asli: widget.prices_tiket_asli!,
+                                  totalHarga: totalHarga,
+                                  totalHargaAsli: totalHargaAsli,
+                                  first_names: nameControllers,
+                                  genders: selectedGenders,
+                                  emails: emailControllers,
+                                  phones: phoneControllers,
+                                  ids_order_form_details: ids_order_form_detail,
+                                  ids_order_form_master: ids_order_form_master,
+                                  answers: answers,
+                                  formGlobal: true,
+                                  fromDetail: true,
+                                  jenis_participant: widget.jenis_participant!,
+                                  idUser: widget.idUser,
+                                  rateCurrency: widget.rateCurrency,
+                                  rateCurrencyUser: widget.rateCurrencyUser,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
+                        } finally {
+                          setState(() {
+                            isConfirmLoading = false;
+                          });
                         }
                       },
                       child: Container(
@@ -1519,7 +1532,17 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
+                        alignment: Alignment.center,
+                        child: isConfirmLoading
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SvgPicture.network(

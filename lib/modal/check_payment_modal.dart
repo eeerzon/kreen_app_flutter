@@ -57,9 +57,9 @@ class CheckPaymentModal {
         } else {
           AwesomeDialog(
             context: context,
-            dialogType: DialogType.error,
+            dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
-            title: 'Oops!',
+            title: bahasa['maaf'],
             desc: bahasa['error'],
             btnOkOnPress: () {},
             btnOkColor: Colors.red,

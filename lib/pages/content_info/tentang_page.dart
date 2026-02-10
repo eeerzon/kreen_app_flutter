@@ -75,7 +75,7 @@ class _TentangPageState extends State<TentangPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(bahasa['tentang_kami']),
+        title: Text(bahasa['tentang_kami'] ?? ""),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),

@@ -23,8 +23,9 @@ class FinalisPage extends StatefulWidget {
 }
 
 class _FinalisPageState extends State<FinalisPage> {
-  String? langCode, currencyCode;
+  String? langCode;
   DateTime deadline = DateTime(2025, 09, 26, 13, 30, 00, 00, 00);
+  late DateTime deadlineUtc;
 
   Duration remaining = Duration.zero;
   Timer? _timer;
@@ -102,6 +103,9 @@ class _FinalisPageState extends State<FinalisPage> {
         finalis = tempFinalis;
 
         deadline = DateTime.parse(vote['real_tanggal_tutup_vote']);
+        // deadlineUtc = DateTime.parse(vote['real_tanggal_tutup_vote']);
+        deadlineUtc = parseWib(vote['real_tanggal_tutup_vote']);
+        deadlineUtc = deadlineUtc.toLocal();
         counts = List<int>.filled(finalis.length, 0);
         selectedVotes = List.filled(finalis.length, null);
         selectedIndexes = List.filled(finalis.length, null);
@@ -274,8 +278,8 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   void _updateRemaining() {
-    final now = DateTime.now();
-    final difference = deadline.difference(now);
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
 
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
@@ -709,8 +713,10 @@ class _FinalisPageState extends State<FinalisPage> {
 
     if (dateStr.isNotEmpty) {
       try {
+        final wibDate = parseWib(dateStr);
         // parsing string ke DateTime
-        final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+        var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+        date = wibDate.toLocal();
         if (langCode == 'id') {
           // Bahasa Indonesia
           final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
@@ -733,10 +739,13 @@ class _FinalisPageState extends State<FinalisPage> {
       }
     }
 
-    DateTime bukaVote = DateTime.parse(vote['real_tanggal_buka_vote']);
-    bool isBeforeOpen = DateTime.now().isBefore(bukaVote);
+    final bukaVoteUtc = DateTime.parse(vote['real_tanggal_buka_vote']);
 
-    String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
+    final nowUtc = DateTime.now().toUtc();
+
+    bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+
+    String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
 
     String buttonText = '';
     

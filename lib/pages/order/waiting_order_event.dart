@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously
 
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -16,6 +17,7 @@ import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WaitingOrderEvent extends StatefulWidget {
   final String id_order;
@@ -28,7 +30,7 @@ class WaitingOrderEvent extends StatefulWidget {
 }
 
 class _WaitingOrderEventState extends State<WaitingOrderEvent> {
-  String? langCode, currencyCode;
+  String? langCode;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now();
@@ -1196,6 +1198,15 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               color: Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () async {
+                                Uri? uri = Uri.tryParse('https://wa.me/6282124594440');
+                                if (uri != null && await canLaunchUrl(uri)) {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                } else {
+                                  await launchUrl(Uri.parse("https://google.com"), mode: LaunchMode.externalApplication);
+                                }
+                              },
                           ),
                         ],
                       )

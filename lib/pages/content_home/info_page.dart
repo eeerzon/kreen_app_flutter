@@ -23,7 +23,7 @@ class InfoPage extends StatefulWidget {
 
 class _InfoPageState extends State<InfoPage> {
   final prefs = FlutterSecureStorage();
-  String? langCode, currencyCode;
+  String? langCode;
   String? login, daftar, dialog_language, dialog_currency;
   String? token;
 
@@ -186,16 +186,31 @@ class _InfoPageState extends State<InfoPage> {
                       value: entry.key,
                       groupValue: tempCurr,
                       onChanged: (val) async {
-                        if (val != null) {
-                          setState(() {
-                            currencyCode = val; // update global
-                          });
-                          await StorageService.setCurrency(val);
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HomePage()),
-                          );
-                        }
+                        // if (val != null) {
+                        //   setState(() {
+                        //     currencyCode = val; // update global
+                        //   });
+                        //   await StorageService.setCurrency(val);
+                        //   Navigator.pushReplacement(
+                        //     context,
+                        //     MaterialPageRoute(builder: (_) => const HomePage()),
+                        //   );
+                        // }
+
+                        if (val == null) return;
+                        setState(() {
+                          userCurrency = val;
+                          currencyCode = val;
+                          isChoosed = 1;
+                        });
+
+                        await StorageService.setCurrency(val);
+                        await StorageService.setIsChoosed(1);
+
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomePage()),
+                        );
                       },
                       title: Row(
                         children: [

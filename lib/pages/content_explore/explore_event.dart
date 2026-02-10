@@ -1,8 +1,9 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -11,17 +12,19 @@ import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ExploreEvent extends StatefulWidget {
-  final String keyword;
+  final String? keyword;
   final List<String> timeFilter;
   final List<String> priceFilter;
   final int pageFilter;
+  final VoidCallback onResetSearch;
 
   const ExploreEvent({
     super.key, 
     required this.keyword,
     required this.timeFilter,
     required this.priceFilter,
-    required this.pageFilter
+    required this.pageFilter,
+    required this.onResetSearch
   });
 
   @override
@@ -29,7 +32,7 @@ class ExploreEvent extends StatefulWidget {
 }
 
 class _ExploreEventState extends State<ExploreEvent> {
-  String? langCode, currencyCode;
+  String? langCode;
   bool isLoadingMore = false;
   bool isFirstLoad = true;
   
@@ -58,13 +61,22 @@ class _ExploreEventState extends State<ExploreEvent> {
       filterPrice = widget.priceFilter.join(",");
     }
 
-    final endpointVote = isFirst 
-      ? "/v2/global-search?time=$filterTime&price=$filterPrice&limit=9999" 
-      : filterTime == ""
-        ? "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999"
-        : "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999";
+    // final endpointVote = isFirst 
+    //   ? "/v2/global-search?time=$filterTime&price=$filterPrice&limit=9999&order=asc&order_by=start_date" 
+    //   : filterTime == ""
+    //     ? "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999&order=asc&order_by=start_date"
+    //     : "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999&order=asc&order_by=start_date";
 
-    final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode);
+    String endpointEvent = "/v2/global-search?"
+      "term=${term ?? ''}"
+      "&time=$filterTime"
+      "&price=$filterPrice"
+      "&limit=9999"
+      "&page=1"
+      "&order=asc"
+      "&order_by=start_date";
+
+    final responses = await ApiService.get(endpointEvent, xLanguage: langCode, xCurrency: currencyCode);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -171,8 +183,9 @@ class _ExploreEventState extends State<ExploreEvent> {
     await _fetchKonten(loadMore: true);
   }
 
-  Future<void> _refresh() async {
-    await Future.delayed(Duration(seconds: 1));
+  Future<void> _refresh(bool isFirst, String? term) async {
+
+    await _loadContent(false, term);
   }
 
   @override
@@ -181,7 +194,12 @@ class _ExploreEventState extends State<ExploreEvent> {
     if (oldWidget.timeFilter != widget.timeFilter ||
       oldWidget.priceFilter != widget.priceFilter ||
       oldWidget.keyword != widget.keyword) {
-      _loadContent(false, widget.keyword);
+
+        currentPage = 1;
+        hasMore = true;
+        isLoadingMore = false;
+
+        _loadContent(false, widget.keyword);
     }
   }
 
@@ -297,7 +315,7 @@ class _ExploreEventState extends State<ExploreEvent> {
     }
 
     return RefreshIndicator(
-      onRefresh: _refresh,
+      onRefresh: () => _refresh(false, widget.keyword),
       child: NotificationListener<ScrollNotification>(
         onNotification: (scrollInfo) {
           if (!isLoadingMore &&
@@ -313,10 +331,10 @@ class _ExploreEventState extends State<ExploreEvent> {
           crossAxisSpacing: 12,
           controller: _scrollController,
           physics: AlwaysScrollableScrollPhysics(),
-          itemCount: events.length,
+          itemCount: pageEvents.length,
           itemBuilder: (context, index) {
             if (index < pageEvents.length) {
-              final item = events[index];
+              final item = pageEvents[index];
               final title = item['title']?.toString() ?? 'Tanpa Judul';
               final dateStr = item['start_date']?.toString() ?? '-';
               final img = item['banner']?.toString() ?? '';
@@ -326,9 +344,9 @@ class _ExploreEventState extends State<ExploreEvent> {
                 try {
                   final date = DateTime.parse(dateStr);
                   if (langCode == 'id') {
-                    formattedDate = DateFormat("EEEE, dd MMMM yyyy", "id_ID").format(date);
+                    formattedDate = DateFormat("$formatDay, $formatDateId", "id_ID").format(date);
                   } else {
-                    final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                     formattedDate = formatter.format(date);
                     final day = date.day;
                     String suffix = 'th';
@@ -358,15 +376,25 @@ class _ExploreEventState extends State<ExploreEvent> {
               return Padding(
                 padding: const EdgeInsets.all(0),
                 child: InkWell(
-                  onTap: () {
+                  onTap: () async {
+                    if (isChoosed == 0) {
+                        currencyCode = item['currency'];
+                        lastCurrency = item['currency'];
+                        await StorageService.setCurrency(currencyCode!);
+                      }
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailEventPage(
-                          id_event: item['id'].toString(), price: item['price'],
+                        builder: (context) => 
+                          DetailEventPage(
+                            id_event: item['id'].toString(), 
+                            price: item['price'],
+                            currencyCode: currencyCode,
                         ),
                       ),
-                    );
+                    ).then((_) {
+                      _handleBackFromDetail();
+                    });
                   },
                   child: Container(
                     width: double.infinity,
@@ -377,6 +405,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         //gambar
                         Stack(
@@ -410,7 +439,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                               ),
                             ),
 
-                            if (item['jenis'] == 'event') Positioned(
+                            if (item['type'] == 'event') Positioned(
                               top: 8,
                               right: 8,
                               child: Container(
@@ -453,23 +482,39 @@ class _ExploreEventState extends State<ExploreEvent> {
                               //penyelenggara
                               const SizedBox(height: 4),
                               Text(
-                                item['merchant_name'],
+                                item['organizer'],
                                 style: TextStyle(fontSize: 12, color: Colors.grey),
                               ),
 
                               const SizedBox(height: 4),
-                              SizedBox(
-                                height: 38,
-                                  child: Text(
-                                  formattedDate,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey
-                                  ),
+                              // SizedBox(
+                              //   height: 38,
+                              //     child: Text(
+                              //     formattedDate,
+                              //     maxLines: 2,
+                              //     overflow: TextOverflow.ellipsis,
+                              //     style: const TextStyle(
+                              //       fontSize: 12, color: Colors.grey
+                              //     ),
+                              //   ),
+                              // ),
+                              Text(
+                                formattedDate,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey
                                 ),
                               ),
                               
+                              if (item['type'] == 'event') ... [
+                                const SizedBox(height: 4),
+                                Text(
+                                  item['price'] == 0
+                                  ? '' //"Harga"
+                                  : bahasa['mulai_dari'] //"Mulai dari",
+                                ),
+                              ],
 
                               const SizedBox(height: 4),
                               Text(
@@ -518,5 +563,27 @@ class _ExploreEventState extends State<ExploreEvent> {
         ),
       ),
     );
+  }
+  
+  @override
+  void dispose() {
+    _scrollController.removeListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !isLoadingMore &&
+          hasMore) {
+        _loadMoreKonten();
+      }
+    });
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleBackFromDetail() async {
+    if (isChoosed == 0) {
+      currencyCode = lastCurrency;
+      await _loadContent(false, widget.keyword);
+      setState(() {});
+    }
   }
 }

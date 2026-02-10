@@ -20,7 +20,8 @@ import 'package:shimmer/shimmer.dart';
 
 class DetailVotePage extends StatefulWidget {
   final String id_event;
-  const DetailVotePage({super.key, required this.id_event});
+  final String? currencyCode;
+  const DetailVotePage({super.key, required this.id_event, this.currencyCode});
 
   @override
   State<DetailVotePage> createState() => _DetailVotePageState();
@@ -28,7 +29,7 @@ class DetailVotePage extends StatefulWidget {
 
 class _DetailVotePageState extends State<DetailVotePage> {
   final prefs = FlutterSecureStorage();
-  String? langCode, currencyCode;
+  String? langCode;
   String? flag_paket;
   
   final ScrollController _scrollController = ScrollController();
@@ -460,7 +461,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, currencyCode);
           },
         ),
       ),

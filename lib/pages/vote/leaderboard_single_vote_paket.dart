@@ -40,7 +40,21 @@ class LeaderboardSingleVotePaket extends StatefulWidget {
   final String? close_payment;
   final String? tanggal_buka_vote;
   final String? flag_hide_nomor_urut;
-  const LeaderboardSingleVotePaket({super.key, required this.id_finalis, required this.vote, required this.index, required this.total_detail, required this.id_paket_bw, this.remaining, this.close_payment, this.tanggal_buka_vote, this.flag_hide_nomor_urut});
+  final String? currencyCode;
+
+  const LeaderboardSingleVotePaket({
+    super.key, 
+    required this.id_finalis, 
+    required this.vote, 
+    required this.index, 
+    required this.total_detail, 
+    required this.id_paket_bw, 
+    this.remaining, 
+    this.close_payment, 
+    this.tanggal_buka_vote, 
+    this.flag_hide_nomor_urut, 
+    this.currencyCode
+  });
 
   @override
   State<LeaderboardSingleVotePaket> createState() => _LeaderboardSingleVotePaketState();
@@ -52,8 +66,10 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   bool isTutup = false;
   bool canDownload = true;
 
+  String buttonText = '';
+
   final prefs = FlutterSecureStorage();
-  String? langCode, currencyCode;
+  String? langCode;
   String? flag_paket;
 
   bool _isLoading = true;
@@ -82,6 +98,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   bool showErrorBar = false;
   String errorMessage = '';
+
+  final PageController _pageController = PageController();
+  final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -221,14 +240,59 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
               .toList();
         }
 
-        DateTime deadline = DateTime.parse(tempDetailVote['tanggal_tutup_vote']);
+        final dateStr = detailvote['tanggal_buka_payment']?.toString() ?? '-';
+        String formattedDate = '-';
+
+        if (dateStr.isNotEmpty) {
+          try {
+            final wibDate = parseWib(dateStr);
+            // parsing string ke DateTime
+            var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+            date = wibDate.toLocal();
+            if (langCode == 'id') {
+              // Bahasa Indonesia
+              final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+              formattedDate = formatter.format(date);
+            } else {
+              // Bahasa Inggris
+              final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+              formattedDate = formatter.format(date);
+
+              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              final day = date.day;
+              String suffix = 'th';
+              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+              formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+            }
+          } catch (e) {
+            formattedDate = '-';
+          }
+        }
+        
+        DateTime deadlineUtc = parseWib(detailvote['real_tanggal_tutup_vote']);
+        deadlineUtc = deadlineUtc.toLocal();
         Duration remaining = Duration.zero;
-        final now = DateTime.now();
-        final difference = deadline.difference(now);
+        final nowUtc = DateTime.now().toUtc();
+        final difference = deadlineUtc.difference(nowUtc);
 
         remaining = difference.isNegative ? Duration.zero : difference;
+        
+        final bukaVoteUtc = DateTime.parse(detailvote['real_tanggal_buka_vote']);
+        bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
-        if (remaining.inSeconds == 0) {
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
+
+        if (isBeforeOpen) {
+          buttonText = '$voteOpen $formattedBukaVote';
+        } else if (detailvote['close_payment'] == '1') {
+          buttonText = '$voteOpenAgain $formattedDate';
+        } else {
+          buttonText = buttonPilihPaketText!;
+        }
+
+        if (remaining.inSeconds == 0 || isBeforeOpen) {
           isTutup = true;
         }
 
@@ -449,11 +513,11 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
         if (langCode == 'id') {
           // Bahasa Indonesia
-          final formatter = DateFormat("EEEE, dd MMMM yyyy", "id_ID");
+          final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
           // Bahasa Inggris
-          final formatter = DateFormat("EEEE, MMMM d yyyy", "en_US");
+          final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
 
           // tambahkan suffix (1st, 2nd, 3rd, 4th...)
@@ -477,6 +541,10 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     String jamMulai = "${mulai.hour.toString().padLeft(2, '0')}:${mulai.minute.toString().padLeft(2, '0')}";
     String jamSelesai = "${selesai.hour.toString().padLeft(2, '0')}:${selesai.minute.toString().padLeft(2, '0')}";
 
+    final bool hasVideo =
+      detailFinalis['video_profile'] != null &&
+      detailFinalis['video_profile'].toString().isNotEmpty;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
@@ -489,7 +557,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, currencyCode);
           },
         ),
         actions: [
@@ -522,24 +590,108 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                     children: [
                       AspectRatio(
                         aspectRatio: 4 / 5,
-                        child: detailFinalis['poster_finalis'] != null
-                          ? Image.network(
-                              detailFinalis['poster_finalis'],
-                              width: double.infinity,
-                              fit: BoxFit.cover, 
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.network(
-                                  "$baseUrl/noimage_finalis.png",
-                                  width: double.infinity,
-                                  fit: BoxFit.cover, 
-                                );
-                              },
+                        child: hasVideo
+                          ? Stack(
+                              children: [
+                                PageView(
+                                  controller: _pageController,
+                                  physics: const PageScrollPhysics(), // user gesture only
+                                  onPageChanged: (index) {
+                                    _pageIndex.value = index;
+                                  },
+                                  children: [
+                                    // POSTER
+                                    Image.network(
+                                      detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) {
+                                        return Image.network(
+                                          "$baseUrl/noimage_finalis.png",
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+
+                                    // VIDEO
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: SizedBox(
+                                        child: VideoSection(
+                                          link: detailFinalis['video_profile'],
+                                          headerText: videoProfilText!,
+                                          noValidText: bahasa!['video_no_valid'],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // // BUTTON PREV
+                                // Positioned(
+                                //   left: 8,
+                                //   top: 0,
+                                //   bottom: 0,
+                                //   child: IconButton(
+                                //     icon: const Icon(Icons.chevron_left, size: 36, color: Colors.grey),
+                                //     onPressed: () {
+                                //       _pageController.previousPage(
+                                //         duration: const Duration(milliseconds: 300),
+                                //         curve: Curves.easeOut,
+                                //       );
+                                //     },
+                                //   ),
+                                // ),
+
+                                // // BUTTON NEXT
+                                // Positioned(
+                                //   right: 8,
+                                //   top: 0,
+                                //   bottom: 0,
+                                //   child: IconButton(
+                                //     icon: const Icon(Icons.chevron_right, size: 36, color: Colors.grey),
+                                //     onPressed: () {
+                                //       _pageController.nextPage(
+                                //         duration: const Duration(milliseconds: 300),
+                                //         curve: Curves.easeOut,
+                                //       );
+                                //     },
+                                //   ),
+                                // ),
+                              ],
                             )
                           : Image.network(
-                              "$baseUrl/noimage_finalis.png",
+                              detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                               width: double.infinity,
-                              fit: BoxFit.cover, 
+                              fit: BoxFit.cover,
                             ),
+                      ),
+
+                      SizedBox(height: 8, child: Container(color: Colors.white,),),
+                      ValueListenableBuilder<int>(
+                        valueListenable: _pageIndex,
+                        builder: (context, index, _) {
+                          return Container(
+                            color: Colors.white,
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                hasVideo ? 2 : 1,
+                                (i) => AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                                  width: index == i ? 14 : 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: index == i ? color.withOpacity(0.5) : color.withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            )
+                          );
+                        },
                       ),
                   
                       SizedBox(height: 15,),
@@ -679,7 +831,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          buttonPilihPaketText!,
+                                          buttonText,
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(color: Colors.white),
                                         ),
@@ -888,6 +1040,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                           padding: kGlobalPadding,
                           child: Column(
                             children: [
+                              Text(
+                                videoProfilText!,
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+
+                              const SizedBox(height: 12),
                               VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!),
                             ],
                           ),
@@ -1511,6 +1669,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _pageIndex.dispose();
+    super.dispose();
   }
 
   Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote, String langCode) {
