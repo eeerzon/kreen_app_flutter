@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
@@ -37,6 +39,12 @@ class _ChangePasswordState extends State<ChangePassword> {
   bool showErrorBar= false;
 
   bool isLoading = true;
+  bool _lockCurrentPasswordField = false;
+  bool _lockNewPasswordField = false;
+  bool _lockConfirmPasswordField = false;
+  
+  String? newPasswordError;
+  String? confirmPasswordError;
 
   String? langCode;
   Map<String, dynamic> bahasa = {};
@@ -117,6 +125,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                         TextField(
                           controller: _currentPasswordController,
                           focusNode: _currentPasswordFocus,
+                          readOnly: _lockCurrentPasswordField,
                           onChanged: (_) => setState(() {}),
                           obscureText: _obscurePasswordCurrent,
                           decoration: InputDecoration(
@@ -131,16 +140,26 @@ class _ChangePasswordState extends State<ChangePassword> {
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(color: Colors.grey, width: 2),
                             ),
-                            suffixIcon: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                setState(() => _obscurePasswordCurrent = !_obscurePasswordCurrent);
-                                _currentPasswordFocus.canRequestFocus = false;
+                            suffixIcon: InkWell(
+                              onTap: () async {
+                                _unfocusAll(context);
+                                setState(() {
+                                  _lockCurrentPasswordField = true;
+                                  _obscurePasswordCurrent = !_obscurePasswordCurrent;
+                                });
+
+                                await Future.delayed(const Duration(milliseconds: 50));
+
+                                setState(() {
+                                  _lockCurrentPasswordField = false;
+                                });
                               },
                               child: Icon(
-                                _obscurePasswordCurrent ? Icons.visibility_off : Icons.visibility,
+                                _obscurePasswordCurrent
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               ),
-                            ),
+                            )
                           ),
                         ),
                         if (errorCode == 500) ... [
@@ -178,6 +197,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                         TextField(
                           controller: _newPasswordController,
                           focusNode: _newPasswordFocus,
+                          readOnly: _lockNewPasswordField,
                           onChanged: (_) => setState(() {}),
                           obscureText: _obscurePasswordNew,
                           decoration: InputDecoration(
@@ -192,18 +212,43 @@ class _ChangePasswordState extends State<ChangePassword> {
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(color: Colors.grey, width: 2),
                             ),
-                            suffixIcon: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                setState(() => _obscurePasswordNew = !_obscurePasswordNew);
-                                _newPasswordFocus.canRequestFocus = false;
+                            suffixIcon: InkWell(
+                              onTap: () async {
+                                _unfocusAll(context);
+                                setState(() {
+                                  _lockNewPasswordField = true;
+                                  _obscurePasswordNew = !_obscurePasswordNew;
+                                });
+
+                                await Future.delayed(const Duration(milliseconds: 50));
+
+                                setState(() {
+                                  _lockNewPasswordField = false;
+                                });
                               },
                               child: Icon(
-                                _obscurePasswordNew ? Icons.visibility_off : Icons.visibility,
+                                _obscurePasswordNew
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               ),
-                            ),
+                            )
                           ),
                         ),
+                        if (errorCode == 500) ... [
+                          SizedBox(height: 4,),
+                          Text(
+                            errorMessage500,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ]
+                        else if (errorCode == 422) ... [
+                          const SizedBox(height: 4),
+                          if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('New')))
+                            Text(
+                              newPasswordError!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                        ],
 
                         SizedBox(height: 20),
                         Text(
@@ -215,10 +260,11 @@ class _ChangePasswordState extends State<ChangePassword> {
                         TextField(
                           controller: _confirmPasswordController,
                           focusNode: _confirmPasswordFocus,
+                          readOnly: _lockConfirmPasswordField,
                           onChanged: (_) => setState(() {}),
                           obscureText: _obscurePasswordConfirm,
                           decoration: InputDecoration(
-                            hintText: bahasa['konfirmasi_password_hint'], //']'Konfirmasi kata sandi lama',
+                            hintText: bahasa['konfirmasi_password'], //'konfirmasi kata sandi',
                             hintStyle: TextStyle(color: Colors.grey.shade400),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -229,33 +275,42 @@ class _ChangePasswordState extends State<ChangePassword> {
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(color: Colors.grey, width: 2),
                             ),
-                            suffixIcon: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                setState(() => _obscurePasswordConfirm = !_obscurePasswordConfirm);
-                                _confirmPasswordFocus.canRequestFocus = false;
+                            suffixIcon: InkWell(
+                              onTap: () async {
+                                _unfocusAll(context);
+                                setState(() {
+                                  _lockConfirmPasswordField = true;
+                                  _obscurePasswordConfirm = !_obscurePasswordConfirm;
+                                });
+
+                                await Future.delayed(const Duration(milliseconds: 50));
+
+                                setState(() {
+                                  _lockConfirmPasswordField = false;
+                                });
                               },
                               child: Icon(
-                                _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
+                                _obscurePasswordConfirm
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               ),
-                            ),
+                            )
                           ),
                         ),
-                        if (errorCode == 422) ... [
-                          SizedBox(height: 4),
-                          Align(
-                            alignment: AlignmentGeometry.centerLeft,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (var err in errorMessage['password'])
-                                  Text(
-                                    err,
-                                    style: const TextStyle(color: Colors.red),
-                                  ),
-                              ],
+                        if (errorCode == 500) ... [
+                          SizedBox(height: 4,),
+                          Text(
+                            errorMessage500,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ]
+                        else if (errorCode == 422) ... [
+                          const SizedBox(height: 4),
+                          if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Konfirmasi')))
+                            Text(
+                              confirmPasswordError!,
+                              style: const TextStyle(color: Colors.red),
                             ),
-                          )
                         ],
 
                         SizedBox(height: 30),
@@ -318,21 +373,61 @@ class _ChangePasswordState extends State<ChangePassword> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(bahasa['sukses_info'])), //'Kata sandi berhasil diubah'
       );
+      errorCode = 200;
       Navigator.pop(context);
-    } else if(response['rc'] != 200) {
+    } else {
+      final data = response['data'];
+      String desc = '';
+
+      newPasswordError = null;
+      confirmPasswordError = null;
+
+      if (data is Map) {
+        final errorMessages = data.values
+            .whereType<List>()
+            .expand((e) => e)
+            .whereType<String>()
+            .toList();
+
+        desc = errorMessages.join('\n');
+        if (data['password'] is List) {
+          for (var msg in data['password']) {
+            final message = msg.toString();
+
+            if (message.toLowerCase().contains('new password')) {
+              newPasswordError = message;
+            } else if (message.toLowerCase().contains('konfirmasi') ||
+                      message.toLowerCase().contains('confirm')) {
+              confirmPasswordError = message;
+            }
+          }
+        }
+      } else {
+        desc = response['message'] ?? data?.toString() ?? '';
+      }
+
+      errorCode = response['rc'] ?? 0;
+      errorMessage = data;
+
       AwesomeDialog(
         context: context,
         dialogType: DialogType.noHeader,
         animType: AnimType.topSlide,
         title: bahasa['maaf'],
-        desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-        btnOkOnPress: () {},
+        desc: bahasa['error'] + '\n' + desc,
+        btnOkOnPress: () {
+          setState(() {});
+        },
         btnOkColor: Colors.red,
-        buttonsTextStyle: TextStyle(color: Colors.white),
+        buttonsTextStyle: const TextStyle(color: Colors.white),
         headerAnimationLoop: false,
         dismissOnTouchOutside: true,
         showCloseIcon: true,
       ).show();
     }
+  }
+
+  void _unfocusAll(BuildContext context) {
+    FocusScope.of(context).unfocus();
   }
 }

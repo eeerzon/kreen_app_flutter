@@ -551,9 +551,10 @@ class _AddSupportPageState extends State<AddSupportPage> {
                         if (result != null) {
                           final temprc = result['rc'];
                           if (temprc == 200) {
-                            Navigator.pushReplacement(
-                              context, 
-                              MaterialPageRoute(builder: (context) => HomePage()),
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (_) => const HomePage()),
+                              (route) => false,
                             );
                           }
                         }

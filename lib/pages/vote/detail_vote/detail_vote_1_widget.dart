@@ -472,7 +472,7 @@ class LeaderboardSection extends StatelessWidget {
                 colors = Colors.brown;
               }
 
-              if (item['total_voters'] > 0){
+              if ((item['total_voters'] ?? 0) > 0) {
                 return buildTopCard(
                   context: context, 
                   rank: item['rank'], 

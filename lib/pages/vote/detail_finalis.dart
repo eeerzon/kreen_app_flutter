@@ -1,5 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
@@ -72,6 +74,31 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   final PageController _pageController = PageController();
   final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
+  Timer? _timer;
+  bool isPaymentClosed = false;
+
+  Future<void> checkPaymentStatus() async {
+    if (widget.close_payment != '1') {
+      isPaymentClosed = false;
+      return;
+    }
+
+    try {
+      final reopenTime = DateTime.parse(widget.tanggal_buka_payment!);
+      final now = DateTime.now().toUtc();
+
+      final closed = now.isBefore(reopenTime);
+
+      if (closed != isPaymentClosed) {
+        setState(() {
+          isPaymentClosed = closed;
+        });
+      }
+    } catch (e) {
+      isPaymentClosed = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +107,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       await _getBahasa();
       await _getCurrency();
       await _loadFinalis();
+
+      await checkPaymentStatus();
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        await checkPaymentStatus();
+      });
     });
   }
 
@@ -706,12 +739,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 ],
                               ),
                     
-                              if (widget.close_payment == '1') ... [
+                              if (isPaymentClosed) ... [
                                 SizedBox(height: 30),
                                 Container(
                                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
                                   decoration: BoxDecoration(
-                                    color: widget.close_payment == '1' ? Colors.grey : color,
+                                    color: isPaymentClosed ? Colors.grey : color,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Column(
@@ -735,7 +768,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   children: [
                                     //button minus
                                     InkWell(
-                                      onTap: (isTutup)
+                                      onTap: (isTutup || isPaymentClosed)
                                         ? null
                                         : () {
                                           if (counts > 0) {
@@ -767,7 +800,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isTutup ? Colors.grey : color,
+                                          color: isTutup || isPaymentClosed ? Colors.grey : color,
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
@@ -787,7 +820,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         controller: controllers,
                                         textAlign: TextAlign.center,
                                         keyboardType: TextInputType.number,
-                                        enabled: !isTutup,
+                                        enabled: !isTutup || !isPaymentClosed,
                                         decoration: const InputDecoration(
                                           border: InputBorder.none,
                                           isCollapsed: true, // hilangkan padding bawaan
@@ -807,7 +840,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     //button plus
                                     const SizedBox(width: 15),
                                     InkWell(
-                                      onTap: (isTutup)
+                                      onTap: (isTutup || isPaymentClosed)
                                         ? null
                                         : () {
                                             setState(() {
@@ -845,7 +878,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isTutup ? Colors.grey : color,
+                                          color: isTutup || isPaymentClosed ? Colors.grey : color,
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
@@ -1310,6 +1343,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   void dispose() {
     _pageController.dispose();
     _pageIndex.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 

@@ -1061,9 +1061,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               ),
                             ),
                             onPressed: () async {
-                              Navigator.pushReplacement(
-                                context, 
-                                MaterialPageRoute(builder: (context) => HomePage()),
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const HomePage()),
+                                (route) => false,
                               );
                             },
                             child: Text(
@@ -1173,9 +1174,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                           ),
                         );
                       } else {
-                        Navigator.pushReplacement(
-                          context, 
-                          MaterialPageRoute(builder: (context) => HomePage()),
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomePage()),
+                          (route) => false,
                         );
                       }
                     },

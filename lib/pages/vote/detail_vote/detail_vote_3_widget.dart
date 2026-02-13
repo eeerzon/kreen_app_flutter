@@ -773,12 +773,12 @@ class LeaderboardSection_3 extends StatelessWidget {
                 colors = Colors.brown;
               }
 
-              if (item['total_voters'] > 0){
+              if ((item['total_voters'] ?? 0) > 0){
                 return buildTopCard(
                   context: context, 
                   rank: item['rank'], 
                   name: item['nama_finalis'], 
-                  votes: item['total_voters'], 
+                  votes: item['total_voters'] ?? 0, 
                   color: colors, 
                   isBig: big, 
                   image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
@@ -805,7 +805,7 @@ class LeaderboardSection_3 extends StatelessWidget {
                     child: buildListCard(
                       rank: item['rank'],
                       name: item['nama_finalis'],
-                      votes: item['total_voters'],
+                      votes: item['total_voters'] ?? 0,
                       image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                       totalVotes: item['percent'],
                       tema: color

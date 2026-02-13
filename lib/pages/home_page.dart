@@ -229,10 +229,14 @@ class _HomePageState extends State<HomePage> {
     if (index == 2) {
       final previousIndex = _selectedIndex;
 
-      await Navigator.push(
+      final result = await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const OrderPage()),
       );
+
+      if (result == true) {
+        await _checkToken();
+      }
 
       // setelah OrderPage di-pop
       setState(() {

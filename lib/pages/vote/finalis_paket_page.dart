@@ -51,6 +51,39 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
   int countData = 0;
 
+  Map<String, dynamic> vote = {};
+  List<dynamic> finalis = [];
+
+  List<Map<String, dynamic>> paketTerbaik = [];
+  List<Map<String, dynamic>> paketLainnya = [];
+  
+  bool showErrorBar = false;
+  String errorMessage = ''; 
+
+  bool isPaymentClosed = false;
+
+  Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
+    if (close_payment != '1') {
+      isPaymentClosed = false;
+      return;
+    }
+
+    try {
+      final reopenTime = DateTime.parse(tanggal_buka_payment!);
+      final now = DateTime.now().toUtc();
+
+      final closed = now.isBefore(reopenTime);
+
+      if (closed != isPaymentClosed) {
+        setState(() {
+          isPaymentClosed = closed;
+        });
+      }
+    } catch (e) {
+      isPaymentClosed = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,17 +93,12 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       await _getCurrency();
       await _loadVotes();
       _startCountdown();
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        await checkPaymentStatus(vote['close_payment'], vote['tanggal_buka_payment']);
+      });
     });
   }
-
-  Map<String, dynamic> vote = {};
-  List<dynamic> finalis = [];
-
-  List<Map<String, dynamic>> paketTerbaik = [];
-  List<Map<String, dynamic>> paketLainnya = [];
-  
-  bool showErrorBar = false;
-  String errorMessage = ''; 
 
   Future<void> _loadVotes() async {
 
@@ -875,7 +903,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: (vote['close_payment'] == '1' || isBeforeOpen)
+                    onTap: (isPaymentClosed || isBeforeOpen)
                       ? null
                       : () async {
                           if (remaining.inSeconds == 0) {
@@ -914,7 +942,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
                       decoration: BoxDecoration(
-                        color: (remaining.inSeconds == 0 || vote['close_payment'] == '1' || isBeforeOpen)
+                        color: (remaining.inSeconds == 0 || isPaymentClosed || isBeforeOpen)
                           ? Colors.grey
                           : color,
                         borderRadius: BorderRadius.circular(8),
@@ -929,7 +957,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
-                          if (vote['close_payment'] != '1') ...[
+                          if (!isPaymentClosed) ...[
                             // SizedBox(width: 10),
                             Icon(
                               Icons.keyboard_arrow_down_rounded,

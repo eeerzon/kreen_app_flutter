@@ -1055,9 +1055,10 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               ),
                             ),
                             onPressed: () async {
-                              Navigator.pushReplacement(
-                                context, 
-                                MaterialPageRoute(builder: (context) => HomePage()),
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const HomePage()),
+                                (route) => false,
                               );
                             },
                             child: Text(
@@ -1171,9 +1172,10 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                           );
                           
                         } else {
-                          Navigator.pushReplacement(
-                            context, 
-                            MaterialPageRoute(builder: (context) => HomePage()),
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HomePage()),
+                            (route) => false,
                           );
                         }
                       },

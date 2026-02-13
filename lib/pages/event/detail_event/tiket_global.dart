@@ -1,5 +1,6 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
@@ -81,6 +82,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   String errorMessage = '';
 
   bool isConfirmLoading = false;
+  
+  bool _emailTouched = false;
   
   Set<int> _duplicateEmailIndexes = {};
   Set<int> _duplicatePhoneIndexes = {};
@@ -688,6 +691,11 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           focusNode: emailFocusNodes[index],
                           controller: emailControllers[index],
                           onChanged: (value) {
+                            if (!_emailTouched) {
+                              setState(() => _emailTouched = true);
+                            } else {
+                              setState(() {});
+                            }
                             if (widget.flag_samakan_input_tiket_pertama == '0') {
                               emailControllers[index].text = value;
                               emailControllers[index].selection = TextSelection.fromPosition(
@@ -709,7 +717,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           decoration: InputDecoration(
                             hintText: bahasa['email_hint'],
                             hintStyle: TextStyle(color: Colors.grey.shade400),
-                            errorText: _showError && !isValidEmail(emailControllers[index].text)
+                            errorText: _emailTouched && !isValidEmail(emailControllers[index].text)
                               ? bahasa['error_email_1']
                               : _duplicateEmailIndexes.contains(index)
                                   ? bahasa['error_email_2']
@@ -1007,14 +1015,16 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              if (formTiket[idx]['type_form'] == 'varchar') ... [
+                              if (formTiket[idx]['type_form'] == 'varchar' || formTiket[idx]['type_form'] == 'text') ... [
                                 TextField(
-                                  focusNode: indikatorFocus[idx],
+                                  focusNode: formTiket[idx]['required'] == 1 ? indikatorFocus[idx] : null,
                                   controller: answerControllers[idx],
                                   onChanged: (value) {
-                                    answerControllers[idx].text = value;
+                                    setState(() {
+                                      answerControllers[idx].text = value;
 
-                                    answers[idx] = value;
+                                      answers[idx] = value;
+                                    });
                                   },
                                   autofocus: false,
                                   decoration: InputDecoration(
@@ -1044,7 +1054,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                               else if (formTiket[idx]['type_form'] == 'file') ... [
                                 Focus(
-                                  focusNode: indikatorFocus[idx],
+                                  focusNode: formTiket[idx]['required'] == 1 ? indikatorFocus[idx] : null,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -1139,7 +1149,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               else if (formTiket[idx]['type_form'] == 'radio') ... [
                                 if (formTiket[idx]['question'].contains('Jenis Kelamin')) ...[
                                   Focus(
-                                    focusNode: indikatorFocus[idx],
+                                    focusNode: formTiket[idx]['required'] == 1 ? indikatorFocus[idx] : null,
                                     child: Row(
                                       children: List.generate(genders.length, (indx) {
                                         final item = genders[indx];
@@ -1208,35 +1218,36 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                                 else ...[
                                   Focus(
-                                    focusNode: indikatorFocus[idx],
+                                    focusNode: formTiket[idx]['required'] == 1 ? indikatorFocus[idx] : null,
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        ...formTiket[idx]['answer']
-                                            .toString()
-                                            .split(',')
-                                            .map((option) => RadioListTile<String>(
-                                                  title: Text(option.trim()),
-                                                  value: option.trim(),
-                                                  groupValue: answerControllers[idx].text,
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      answerControllers[idx].text = value ?? '';
-                                                    });
-                                                  },
-                                                  contentPadding: EdgeInsets.zero,
-                                                  dense: true,
-                                                  activeColor: Colors.red,
-                                                ))
-                                            ,
+                                        ...(jsonDecode(formTiket[idx]['answer'] ?? '[]') as List)
+                                            .map((option) {
+                                          final value = option.toString();
+                                          return RadioListTile<String>(
+                                            title: Text(value),
+                                            value: value,
+                                            groupValue: answerControllers[idx].text,
+                                            onChanged: (val) {
+                                              setState(() {
+                                                answerControllers[idx].text = val ?? '';
+                                              });
+                                            },
+                                            contentPadding: EdgeInsets.zero,
+                                            dense: true,
+                                            activeColor: Colors.red,
+                                          );
+                                        }),
+
                                         if (formTiket[idx]['required'] == 1 &&
                                             _showError &&
                                             answerControllers[idx].text.trim().isEmpty)
                                           Padding(
-                                            padding: EdgeInsets.only(top: 4),
+                                            padding: const EdgeInsets.only(top: 4),
                                             child: Text(
                                               bahasa['tiket_template_answer_error'],
-                                              style: TextStyle(color: Colors.red),
+                                              style: const TextStyle(color: Colors.red),
                                             ),
                                           ),
                                       ],
@@ -1245,9 +1256,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 ]
                               ]
 
-                              else if (formTiket[idx]['type_form'] == 'select')
+                              else if (formTiket[idx]['type_form'] == 'select') ... [
                                 Focus(
-                                  focusNode: indikatorFocus[idx],
+                                  focusNode: formTiket[idx]['required'] == 1 ? indikatorFocus[idx] : null,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -1255,14 +1266,14 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         value: answerControllers[idx].text.isNotEmpty
                                             ? answerControllers[idx].text
                                             : null,
-                                        items: formTiket[idx]['answer']
-                                            .toString()
-                                            .split(',')
-                                            .map((option) => DropdownMenuItem<String>(
-                                                  value: option.trim(),
-                                                  child: Text(option.trim()),
-                                                ))
-                                            .toList(),
+                                        items: (jsonDecode(formTiket[idx]['answer'] ?? '[]') as List)
+                                            .map<DropdownMenuItem<String>>((option) {
+                                          final value = option.toString();
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Text(value),
+                                          );
+                                        }).toList(),
                                         onChanged: (value) {
                                           setState(() {
                                             answerControllers[idx].text = value ?? '';
@@ -1271,6 +1282,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.grey),
                                           ),
                                           contentPadding:
                                               const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -1282,15 +1294,83 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           _showError &&
                                           answerControllers[idx].text.trim().isEmpty)
                                         Padding(
-                                          padding: EdgeInsets.only(top: 4),
+                                          padding: const EdgeInsets.only(top: 4),
                                           child: Text(
                                             bahasa['tiket_template_answer_error'],
-                                            style: TextStyle(color: Colors.red),
+                                            style: const TextStyle(color: Colors.red),
                                           ),
                                         ),
                                     ],
                                   ),
                                 )
+                              ]
+
+                              else if (formTiket[idx]['type_form'] == 'checkbox') ...[
+                                Focus(
+                                  focusNode: formTiket[idx]['required'] == 1 ? indikatorFocus[idx] : null,
+                                  child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ...(() {
+                                        final rawAnswer = formTiket[idx]['answer'];
+
+                                        List<String> options = [];
+
+                                        if (rawAnswer != null && rawAnswer.toString().isNotEmpty) {
+                                          try {
+                                            options = List<String>.from(jsonDecode(rawAnswer));
+                                          } catch (_) {
+                                            options = rawAnswer.toString().split(',');
+                                          }
+                                        }
+
+                                        return options.map((option) {
+                                          final value = option.trim();
+
+                                          final selectedValues = answerControllers[idx]
+                                              .text
+                                              .split(',')
+                                              .where((e) => e.isNotEmpty)
+                                              .toList();
+
+                                          final isChecked = selectedValues.contains(value);
+
+                                          return CheckboxListTile(
+                                            dense: true,
+                                            contentPadding: EdgeInsets.zero,
+                                            title: Text(value),
+                                            value: isChecked,
+                                            activeColor: Colors.red,
+                                            onChanged: (checked) {
+                                              setState(() {
+                                                if (checked == true) {
+                                                  selectedValues.add(value);
+                                                } else {
+                                                  selectedValues.remove(value);
+                                                }
+
+                                                answerControllers[idx].text =
+                                                    selectedValues.join(',');
+                                              });
+                                            },
+                                          );
+                                        }).toList();
+                                      })(),
+
+                                      if (formTiket[idx]['required'] == 1 &&
+                                          _showError &&
+                                          answerControllers[idx].text.trim().isEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            bahasa['tiket_template_answer_error'],
+                                            style: const TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         );
@@ -1621,8 +1701,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
       // form tiket
       for (int j = 0; j < formTiket.length; j++) {
-        if (formTiket[j]['required'] == 1 &&
-            answers[j].toString().trim().isEmpty) {
+        final field = formTiket[j];
+
+        if (field['required'] != 1) continue;
+
+        final value = answers[j];
+
+        if (value.toString().trim().isEmpty) {
           isValid = false;
           firstErrorFocus ??= indikatorFocus[j];
         }
@@ -1632,6 +1717,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     if (!isValid && firstErrorFocus != null) {
       _scrollToFocus(firstErrorFocus);
       firstErrorFocus.requestFocus();
+    }
+
+    if (!isValid) {
+      setState(() {
+        isConfirmLoading = false;
+      });
     }
 
     return isValid;

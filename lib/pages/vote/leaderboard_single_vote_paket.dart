@@ -1,5 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously, prefer_typing_uninitialized_variables
 
+import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -102,6 +104,31 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   final PageController _pageController = PageController();
   final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
+  Timer? _timer;
+  bool isPaymentClosed = false;
+
+  Future<void> checkPaymentStatus(String tanggal_buka_payment) async {
+    if (widget.close_payment != '1') {
+      isPaymentClosed = false;
+      return;
+    }
+
+    try {
+      final reopenTime = DateTime.parse(tanggal_buka_payment);
+      final now = DateTime.now().toUtc();
+
+      final closed = now.isBefore(reopenTime);
+
+      if (closed != isPaymentClosed) {
+        setState(() {
+          isPaymentClosed = closed;
+        });
+      }
+    } catch (e) {
+      isPaymentClosed = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -110,6 +137,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       await _getBahasa();
       await _getCurrency();
       await _loadFinalis();
+
+      await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
+      });
     });
   }
 
@@ -790,7 +823,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: (isTutup || widget.close_payment == '1')
+                                onTap: isTutup || isPaymentClosed
                                   ? null
                                   : () async {
                     
@@ -821,7 +854,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                 child: Container(
                                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
                                   decoration: BoxDecoration(
-                                    color: (isTutup || widget.close_payment == '1')
+                                    color: (isTutup || isPaymentClosed)
                                       ? Colors.grey
                                       : color,
                                     borderRadius: BorderRadius.circular(8),
@@ -836,7 +869,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                           style: const TextStyle(color: Colors.white),
                                         ),
                                       ),
-                                      if (widget.close_payment != '1') ...[
+                                      if (!isPaymentClosed) ...[
                                         // SizedBox(width: 10),
                                         Icon(
                                           Icons.keyboard_arrow_down_rounded,
@@ -1675,6 +1708,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   void dispose() {
     _pageController.dispose();
     _pageIndex.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 

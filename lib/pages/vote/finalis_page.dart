@@ -58,7 +58,31 @@ class _FinalisPageState extends State<FinalisPage> {
   Map<String, dynamic> vote = {};
   List<dynamic> finalis = [];
   bool showErrorBar = false;
-  String errorMessage = ''; 
+  String errorMessage = '';
+
+  bool isPaymentClosed = false;
+
+  Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
+    if (close_payment != '1') {
+      isPaymentClosed = false;
+      return;
+    }
+
+    try {
+      final reopenTime = DateTime.parse(tanggal_buka_payment!);
+      final now = DateTime.now().toUtc();
+
+      final closed = now.isBefore(reopenTime);
+
+      if (closed != isPaymentClosed) {
+        setState(() {
+          isPaymentClosed = closed;
+        });
+      }
+    } catch (e) {
+      isPaymentClosed = false;
+    }
+  }
 
   @override
   void initState() {
@@ -69,6 +93,10 @@ class _FinalisPageState extends State<FinalisPage> {
       await _getCurrency();
       await _loadVotes();
       _startCountdown();
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        await checkPaymentStatus(vote['close_payment'], vote['tanggal_buka_payment']);
+      });
     });
   }
   Future<void> _loadVotes() async {
@@ -956,12 +984,12 @@ class _FinalisPageState extends State<FinalisPage> {
                     ),
                   ),
 
-                  if (vote['close_payment'] == '1' || isBeforeOpen) ... [
+                  if (isPaymentClosed || isBeforeOpen) ... [
                     SizedBox(height: 15),
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
                       decoration: BoxDecoration(
-                        color: (vote['close_payment'] == '1' || isBeforeOpen)
+                        color: (isPaymentClosed || isBeforeOpen)
                           ? Colors.grey
                           : color,
                         borderRadius: BorderRadius.circular(8),
@@ -987,7 +1015,7 @@ class _FinalisPageState extends State<FinalisPage> {
                       children: [
                         // button minus
                         InkWell(
-                          onTap: (remaining.inSeconds == 0)
+                          onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                               ? null
                               : () {
                                   if (counts[index] > 0) {
@@ -1026,7 +1054,7 @@ class _FinalisPageState extends State<FinalisPage> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: (remaining.inSeconds == 0)
+                              color: (remaining.inSeconds == 0) || isPaymentClosed
                                   ? Colors.grey
                                   : color,
                               borderRadius: BorderRadius.circular(8),
@@ -1053,7 +1081,7 @@ class _FinalisPageState extends State<FinalisPage> {
                             controller: controllers[index],
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
-                            enabled: remaining.inSeconds != 0,
+                            enabled: remaining.inSeconds != 0 && !isPaymentClosed,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               isCollapsed: true,
@@ -1072,7 +1100,7 @@ class _FinalisPageState extends State<FinalisPage> {
                         // button plus
                         const SizedBox(width: 15),
                         InkWell(
-                          onTap: (remaining.inSeconds == 0)
+                          onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                               ? null
                               : () {
                                   setState(() {
@@ -1118,7 +1146,7 @@ class _FinalisPageState extends State<FinalisPage> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: (remaining.inSeconds == 0)
+                              color: (remaining.inSeconds == 0) || isPaymentClosed
                                   ? Colors.grey
                                   : color,
                               borderRadius: BorderRadius.circular(8),

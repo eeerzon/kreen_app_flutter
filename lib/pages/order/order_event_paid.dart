@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -31,6 +32,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   Map<String, dynamic> paymentDetail = {};
   List<dynamic> instruction = [];
   Map<String, dynamic> event = {};
+  Map<String, dynamic> dataEvents = {};
+  Map<String, dynamic> detailEvent = {};
   String? statusOrder, dateshow, maxend, formattedDate, penyelenggara, venue_name;
   var qty, price;
 
@@ -54,7 +57,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
     final temp_event_order = tempOrder['event_order'] ?? {};
     final temp_event_order_detail = tempOrder['event_order_detail'] ?? [];
-    final temp_event_tiket = tempOrder['event_ticket'] ?? [];
 
     final temp_payment_detail = tempOrder['payment_detail'] ?? {};
     final temp_instruction = temp_payment_detail['instruction'] ?? [];
@@ -67,6 +69,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
     final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode);
     final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
+    final temp_event_tiket = tempEventDetail['event_ticket'] ?? [];
 
     if (!mounted) return;
     if (mounted) {
@@ -81,13 +84,15 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
         instruction = temp_instruction;
 
         event = temp_event;
+        dataEvents = tempEventDetail;
+        detailEvent = tempEventDetail['event'] ?? {};
 
-        dateshow = tempEventDetail['eventdate'][0]['dateshow'];
-        maxend = tempEventDetail['eventdate'][0]['maxend'];
+        dateshow = tempEventDetail['event_datetime'][0]['date_event'];
+        maxend = tempEventDetail['event_datetime'][0]['time_end'];
         penyelenggara = tempEventDetail['event']['organizer'];
         venue_name = tempEventDetail['event']['venue_name'];
 
-        final dateStr = tempEventDetail['eventdate'][0]['date_event']?.toString() ?? '-';
+        final dateStr = tempEventDetail['event_datetime'][0]['date_event']?.toString() ?? '-';
         
         if (dateStr.isNotEmpty) {
           try {
@@ -275,6 +280,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   }
 
   Widget buildKonten() {
+
     return SafeArea(
       // backgroundColor: Colors.white,
       // appBar: AppBar(
@@ -421,12 +427,60 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            '$formattedDate $dateshow, $maxend'
-                                          ),
-                                        ],
+                                        children: List.generate(dataEvents['event_datetime'].length, (idx) {
+                                          final item = dataEvents['event_datetime'][idx];
+                                          String formattedDate = '-';
+                                          String dateStr = item['date_event'];
+          
+                                          if (dateStr.isNotEmpty) {
+                                            try {
+                                              // parsing string ke DateTime
+                                              final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+                                              if (langCode == 'id') {
+                                                // Bahasa Indonesia
+                                                final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
+                                                formattedDate = formatter.format(date);
+                                              } else {
+                                                // Bahasa Inggris
+                                                final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
+                                                formattedDate = formatter.format(date);
+
+                                                // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                                                final day = date.day;
+                                                String suffix = 'th';
+                                                if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+                                                else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                                                else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+                                                formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+                                              }
+                                            } catch (e) {
+                                              formattedDate = '-';
+                                            }
+                                          }
+
+                                          String formatTime(String time) {
+                                            final t = DateFormat("HH:mm:ss").parse(time);
+                                            return DateFormat("HH:mm").format(t);
+                                          }
+
+                                          return Padding(
+                                            padding: EdgeInsets.only(bottom: idx == dataEvents['event_datetime'].length - 1 ? 0 : 8,),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  formattedDate,
+                                                  style: const TextStyle(color: Colors.black),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  "${formatTime(item['time_start'])} - ${formatTime(item['time_end'])} (${detailEvent['code_timezone']})",
+                                                  style: const TextStyle(color: Colors.black),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
                                       ),
                                     ),
                                   ],
@@ -434,7 +488,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
                                 SizedBox(height: 8,),
                                 Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
                                     SvgPicture.network(
@@ -452,7 +506,9 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            '${bahasa['lokasi']}: ${venue_name ?? '-'}',
+                                            detailEvent['type_event'] == 'offline'
+                                              ? "${bahasa['lokasi']}: ${detailEvent['location_map'] ?? '-'}"
+                                              : "${bahasa['lokasi']}: ${detailEvent['type_event']} via ${detailEvent['venue_platform']}",
                                             style: TextStyle(
                                               color: Colors.black,
                                             ),
@@ -564,7 +620,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '${bahasa['tiket']} ${index + 1} ${item['ticket_name']}',
+                                                '${bahasa['tiket']} ${index + 1} ${item['name_ticket']}',
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
                                               const SizedBox(height: 8),
@@ -578,11 +634,69 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                               const SizedBox(height: 8),
                                               Text(eventOrderDetail[index]['ticket_buyer_phone']),
                                               const SizedBox(height: 8),
-                                              Text(
-                                                //"Berlaku hingga"
-                                                '${bahasa['expired_at']} \n$formattedDate $dateshow \n$maxend',
-                                                softWrap: true,
-                                              ),
+                                              Builder(
+                                                builder: (_) {
+                                                  final orderedTicketId =
+                                                      eventOrderDetail[index]['id_event_ticket'];
+
+                                                  final ticketDetail = eventTiket.firstWhere(
+                                                    (e) => e['id_event_ticket'] == orderedTicketId,
+                                                    orElse: () => null,
+                                                  );
+
+                                                  if (ticketDetail == null) {
+                                                    return const Text("-");
+                                                  }
+                                                  
+                                                  final end =
+                                                      DateTime.parse(ticketDetail['sale_datetime_end_plus_diff']);
+
+                                                  String formatDate(DateTime date) {
+                                                    if (langCode == 'id') {
+                                                      return DateFormat("$formatDay, $formatDateId", "id_ID")
+                                                          .format(date);
+                                                    } else {
+                                                      final formatter =
+                                                          DateFormat("$formatDay, $formatDateEn", "en_US");
+
+                                                      final base = formatter.format(date);
+                                                      final day = date.day;
+
+                                                      String suffix = 'th';
+                                                      if (day % 10 == 1 && day != 11) {
+                                                        suffix = 'st';
+                                                      } else if (day % 10 == 2 && day != 12) {
+                                                        suffix = 'nd';
+                                                      } else if (day % 10 == 3 && day != 13) {
+                                                        suffix = 'rd';
+                                                      }
+
+                                                      return base.replaceFirst('$day', '$day$suffix');
+                                                    }
+                                                  }
+
+                                                  String formatTime(DateTime date) {
+                                                    return DateFormat("HH:mm").format(date);
+                                                  }
+
+                                                  return Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        //berlaku hingga
+                                                        '${bahasa['expired_at']} \n${formatDate(end)}',
+                                                        style: const TextStyle(color: Colors.black),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        "${formatTime(end)} "
+                                                        "(${detailEvent['code_timezone']})",
+                                                        style: const TextStyle(color: Colors.black),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              )
                                             ],
                                           ),
                                         ),
@@ -637,7 +751,11 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                           ),
                         ),
                         onPressed: () {
-                          Navigator.pop(context);
+                          Navigator.pushAndRemoveUntil(
+                            context, 
+                            MaterialPageRoute(builder: (context) => HomePage()), 
+                            (route) => false
+                          );
                         },
                         child: Text(
                           bahasa['selesai'], //"Selesai",
