@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/pages/content_order/order_event.dart';
 import 'package:kreen_app_flutter/pages/content_order/order_vote.dart';
+import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -143,8 +144,13 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
-          onPressed: () {
-            Navigator.pop(context);
+          onPressed: () { token == null
+              ? Navigator.pop(context)
+              : Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomePage()),
+                  (route) => false,
+                );
           },
         ),
         bottom: PreferredSize(

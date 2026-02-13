@@ -61,6 +61,20 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
   }
 
   @override
+  void didUpdateWidget(covariant ExploreSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.initialTime != widget.initialTime ||
+        oldWidget.initialPrice != widget.initialPrice) {
+      setState(() {
+        paramTime = widget.initialTime;
+        paramPrice = widget.initialPrice;
+      });
+    }
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     return isLoading 
       ? const CircularProgressIndicator(color: Colors.red,) 

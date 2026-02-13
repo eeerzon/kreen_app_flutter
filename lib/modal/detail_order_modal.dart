@@ -639,7 +639,8 @@ class DetailOrderModal {
     List<dynamic> eventOrderDetail = [];
     List<dynamic> eventTiket = [];
     Map<String, dynamic> event = {};
-    String? statusOrder, dateshow, maxend, formattedDate;
+    Map<String, dynamic> detailEvent = {};
+    String? statusOrder;
     bool isLoading = true;
 
     String? langCode, currencyRegion;
@@ -656,26 +657,18 @@ class DetailOrderModal {
       isLoading = false;
     }
 
-    String formatTime(String time) {
-      final t = DateFormat("HH:mm:ss").parse(time);
-      return DateFormat("HH:mm").format(t);
-    }
-    
-
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
       final tempOrder = resultOrder?['data'] ?? {};
 
       final tempEventOrder = tempOrder['event_order'] ?? {};
       final tempEventOrderDetail = tempOrder['event_order_detail'] ?? [];
-      final tempEventTiket = tempOrder['event_ticket'] ?? [];
 
       final tempEvent = tempOrder['event'] ?? {};
 
       eventOder = tempEventOrder;
       eventOrderDetail = tempEventOrderDetail;
       eventOrderDetail = eventOrderDetail.reversed.toList();
-      eventTiket = tempEventTiket;
 
       event = tempEvent;
 
@@ -685,29 +678,10 @@ class DetailOrderModal {
 
       final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode);
       final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
+      final tempEventTiket = tempEventDetail['event_ticket'] ?? [];
 
-      dateshow = tempEventDetail['eventdate'][0]['dateshow'];
-      maxend = formatTime(tempEventDetail['eventdate'][0]['maxend']).toString();
-
-      final dateStr = tempEventDetail['eventdate'][0]['date_event']?.toString() ?? '-';
-      
-      if (dateStr.isNotEmpty) {
-        try {
-          // parsing string ke DateTime
-          final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-          if (langCode == 'id') {
-            // Bahasa Indonesia
-            final dayName = DateFormat(formatDay, "id_ID").format(date);
-            formattedDate = dayName;
-          } else {
-            // Bahasa Inggris
-            final dayName = DateFormat(formatDay, "en_US").format(date);
-            formattedDate = dayName;
-          }
-        } catch (e) {
-          formattedDate = '-';
-        }
-      }
+      detailEvent = tempEventDetail['event'] ?? {};
+      eventTiket = tempEventTiket;
       
       if (eventOder['order_status'] == '0'){
         statusOrder = bahasa['status_order_0'] ?? ""; // 'gagal';
@@ -1187,7 +1161,7 @@ class DetailOrderModal {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  '${bahasa['tiket']} ${index + 1} ${item['ticket_name']}',
+                                                  '${bahasa['tiket']} ${index + 1} ${item['name_ticket']}',
                                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                                 ),
                                                 const SizedBox(height: 8),
@@ -1201,11 +1175,69 @@ class DetailOrderModal {
                                                 const SizedBox(height: 8),
                                                 Text(eventOrderDetail[index]['ticket_buyer_phone']),
                                                 const SizedBox(height: 8),
-                                                Text(
-                                                  // berlaku hingga
-                                                  '${bahasa['expired_at']} \n$formattedDate $dateshow \n$maxend',
-                                                  softWrap: true,
-                                                ),
+                                                Builder(
+                                                  builder: (_) {
+                                                    final orderedTicketId =
+                                                        eventOrderDetail[index]['id_event_ticket'];
+
+                                                    final ticketDetail = eventTiket.firstWhere(
+                                                      (e) => e['id_event_ticket'] == orderedTicketId,
+                                                      orElse: () => null,
+                                                    );
+
+                                                    if (ticketDetail == null) {
+                                                      return const Text("-");
+                                                    }
+                                                    
+                                                    final end =
+                                                        DateTime.parse(ticketDetail['sale_datetime_end_plus_diff']);
+
+                                                    String formatDate(DateTime date) {
+                                                      if (langCode == 'id') {
+                                                        return DateFormat("$formatDay, $formatDateId", "id_ID")
+                                                            .format(date);
+                                                      } else {
+                                                        final formatter =
+                                                            DateFormat("$formatDay, $formatDateEn", "en_US");
+
+                                                        final base = formatter.format(date);
+                                                        final day = date.day;
+
+                                                        String suffix = 'th';
+                                                        if (day % 10 == 1 && day != 11) {
+                                                          suffix = 'st';
+                                                        } else if (day % 10 == 2 && day != 12) {
+                                                          suffix = 'nd';
+                                                        } else if (day % 10 == 3 && day != 13) {
+                                                          suffix = 'rd';
+                                                        }
+
+                                                        return base.replaceFirst('$day', '$day$suffix');
+                                                      }
+                                                    }
+
+                                                    String formatTime(DateTime date) {
+                                                      return DateFormat("HH:mm").format(date);
+                                                    }
+
+                                                    return Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          //berlaku hingga
+                                                          '${bahasa['expired_at']} \n${formatDate(end)}',
+                                                          style: const TextStyle(color: Colors.black),
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        Text(
+                                                          "${formatTime(end)} "
+                                                          "(${detailEvent['code_timezone']})",
+                                                          style: const TextStyle(color: Colors.black),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                )
                                               ],
                                             ),
                                           ),

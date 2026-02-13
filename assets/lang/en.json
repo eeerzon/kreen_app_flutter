@@ -356,6 +356,7 @@
     "batas_file_2" : "Only accepts pdf format.",
     "id_card" : "ID Card",
 
-    "bayar_sekarang" : "Pay Now"
+    "bayar_sekarang" : "Pay Now",
+    "tiket_tidak_tersedia" : "Tickets not available"
   }
 }

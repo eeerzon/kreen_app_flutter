@@ -127,9 +127,10 @@ class _InfoPageState extends State<InfoPage> {
                             langCode = val; // update global
                           });
                           await StorageService.setLanguage(val);
-                          Navigator.pushReplacement(
+                          Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(builder: (_) => const HomePage()),
+                            (route) => false,
                           );
                         }
                       },
@@ -191,10 +192,11 @@ class _InfoPageState extends State<InfoPage> {
                         //     currencyCode = val; // update global
                         //   });
                         //   await StorageService.setCurrency(val);
-                        //   Navigator.pushReplacement(
-                        //     context,
-                        //     MaterialPageRoute(builder: (_) => const HomePage()),
-                        //   );
+                        //   Navigator.pushAndRemoveUntil(
+                          //   context,
+                          //   MaterialPageRoute(builder: (_) => const HomePage()),
+                          //   (route) => false,
+                          // );
                         // }
 
                         if (val == null) return;
@@ -207,9 +209,10 @@ class _InfoPageState extends State<InfoPage> {
                         await StorageService.setCurrency(val);
                         await StorageService.setIsChoosed(1);
 
-                        Navigator.pushReplacement(
+                        Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (_) => const HomePage()),
+                          (route) => false,
                         );
                       },
                       title: Row(

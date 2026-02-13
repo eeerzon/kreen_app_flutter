@@ -1,9 +1,10 @@
 
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use, prefer_typing_uninitialized_variables
 
+import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -57,6 +58,35 @@ class _DetailEventPageState extends State<DetailEventPage> {
   bool showErrorBar = false;
   String errorMessage = '';
 
+  Timer? _timer;
+
+  String getTicketStatus(Map<String, dynamic> ticket) {
+    try {
+      final now = DateTime.now().toUtc();
+
+      final start = DateTime.parse(ticket['sale_datetime_start']);
+      final end = DateTime.parse(ticket['sale_datetime_end']);
+
+      if (now.isBefore(start)) {
+        return 'not_started';
+      } else if (!now.isBefore(end)) {
+        return 'ended';
+      } else {
+        return 'open';
+      }
+    } catch (_) {
+      return 'invalid';
+    }
+  }
+
+  void startTicketWatcher(List tickets) {
+    _timer?.cancel();
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {});
+    });
+  }
+  
   @override
   void initState() {
     super.initState();
@@ -65,7 +95,15 @@ class _DetailEventPageState extends State<DetailEventPage> {
       await _getBahasa();
       await _getCurrency();
       await _loadEvent();
+
+      startTicketWatcher(event['event_ticket'] ?? []);
     });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Map<String, dynamic> event = {};
@@ -348,6 +386,10 @@ class _DetailEventPageState extends State<DetailEventPage> {
         };
       }).toList();
     }
+
+    final activeTickets = eventTiket
+      .where((e) => e['flag_aktif'] == 1)
+      .toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -909,7 +951,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                     }
 
                                     return Padding(
-                                      padding: const EdgeInsets.only(bottom: 10),
+                                      padding: EdgeInsets.only(bottom: idx == eventDateTime.length - 1 ? 0 : 8,),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -919,7 +961,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            "${formatTime(item['time_start'])} - ${formatTime(item['time_end'])}",
+                                            "${formatTime(item['time_start'])} - ${formatTime(item['time_end'])} (${detailEvent['code_timezone']})",
                                             style: const TextStyle(color: Colors.black),
                                           ),
                                         ],
@@ -1818,259 +1860,303 @@ class _DetailEventPageState extends State<DetailEventPage> {
                       ],
 
                       const SizedBox(height: 30,),
-                      ...List.generate(eventTiket.length, (index) {
-                        final item = eventTiket[index];
+                      if (activeTickets.isEmpty)
+                        Center(
+                          child: Column(
+                            children: [
+                              ColorFiltered(
+                                colorFilter: const ColorFilter.matrix([
+                                  0.2126, 0.7152, 0.0722, 0, 0,
+                                  0.2126, 0.7152, 0.0722, 0, 0,
+                                  0.2126, 0.7152, 0.0722, 0, 0,
+                                  0,      0,      0,      1, 0,
+                                ]),
+                                child: Image.network(
+                                  'https://dev.kreenconnect.com/image/no-ticket.png',
+                                  width: 220,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                bahasa['tiket_tidak_tersedia'],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ...List.generate(activeTickets.length, (index) {
+                          final item = activeTickets[index];
 
-                        final dateStr = item['sale_date_end']?.toString() ?? '-';
-    
-                        String formattedDate = '-';
-                        
-                        if (dateStr.isNotEmpty) {
-                          try {
-                            // parsing string ke DateTime
-                            final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                            if (langCode == 'id') {
-                              // Bahasa Indonesia
-                              final dayName = DateFormat(formatDay, "id_ID").format(date);
-                              final datePart = DateFormat(formatDateId, "id_ID").format(date);
-                              formattedDate = "$dayName,\n$datePart";
-                            } else {
-                              // Bahasa Inggris
-                              final dayName = DateFormat(formatDay, "en_US").format(date);
-                              final datePart = DateFormat(formatDateEn, "en_US").format(date);
+                          final dateStr = item['sale_datetime_end_plus_diff']?.toString() ?? '-';
+      
+                          String formattedDate = '-';
+                          
+                          if (dateStr.isNotEmpty) {
+                            try {
+                              // parsing string ke DateTime
+                              final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+                              if (langCode == 'id') {
+                                // Bahasa Indonesia
+                                final dayName = DateFormat(formatDay, "id_ID").format(date);
+                                final datePart = DateFormat(formatDateId, "id_ID").format(date);
+                                formattedDate = "$dayName,\n$datePart";
+                              } else {
+                                // Bahasa Inggris
+                                final dayName = DateFormat(formatDay, "en_US").format(date);
+                                final datePart = DateFormat(formatDateEn, "en_US").format(date);
 
-                              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                              final day = date.day;
-                              String suffix = 'th';
-                              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-                              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-                              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+                                // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                                final day = date.day;
+                                String suffix = 'th';
+                                if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+                                else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                                else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
 
-                              final datePartWithSuffix = datePart.replaceFirst('$day', '$day$suffix');
-                              formattedDate = "$dayName,\n$datePartWithSuffix";
+                                final datePartWithSuffix = datePart.replaceFirst('$day', '$day$suffix');
+                                formattedDate = "$dayName,\n$datePartWithSuffix";
+                              }
+                            } catch (e) {
+                              formattedDate = '-';
                             }
-                          } catch (e) {
-                            formattedDate = '-';
                           }
-                        }
 
-                        String hargaFormatted = '-';
-                        hargaFormatted = currencyCode == null
-                          ? "${detailEvent['currency']} ${formatter.format(item['price'] ?? 0)}"
-                          : "$currencyCode ${formatter.format(item['price'] ?? 0)}";
-                        if (item['price'] == 0) {
-                          hargaFormatted = bahasa['harga_detail'];
-                        }
+                          String hargaFormatted = '-';
+                          hargaFormatted = currencyCode == null
+                            ? "${detailEvent['currency']} ${formatter.format(item['price'] ?? 0)}"
+                            : "$currencyCode ${formatter.format(item['price'] ?? 0)}";
+                          if (item['price'] == 0) {
+                            hargaFormatted = bahasa['harga_detail'];
+                          }
 
-                        final dateOpenTiket = DateTime.parse("${item['sale_date_start']} ${item['sale_time_start']}");
-                        final bool belumBuka = DateTime.now().isBefore(dateOpenTiket);
+                          final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
+                          final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0 || item['sisa_stok'] < 0;
 
-                        final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
-                        final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0 || item['sisa_stok'] < 0;
+                          final text = bahasa['batas_event']
+                            .replaceAll('{qty}', item['max_qty'].toString());
 
-                        final text = bahasa['batas_event']
-                          .replaceAll('{qty}', item['max_qty'].toString());
+                          final status = getTicketStatus(item);
 
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 25),
-                          child: Container(
-                            width: double.infinity,
-                            padding: kGlobalPadding,
-                            decoration: BoxDecoration(
-                              color: sudahTutup ? Colors.grey.shade300 : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade300,),
-                            ),
-                            child: IntrinsicHeight(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  SvgPicture.network(
-                                    "$baseUrl/image/barcode.svg",
-                                    fit: BoxFit.fitHeight,
+                          return item['flag_aktif'] == 1 
+                            ? Padding(
+                                padding: EdgeInsets.only(bottom: 25),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: kGlobalPadding,
+                                  decoration: BoxDecoration(
+                                    color: sudahTutup ? Colors.grey.shade300 : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade300,),
                                   ),
-
-                                  SizedBox(width: 8,),
-                                  Container(
-                                    width: 1.2,
-                                    color: Colors.grey.shade400,
-                                  ),
-
-                                  SizedBox(width: 12,),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          item['name_ticket'],
-                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        SvgPicture.network(
+                                          "$baseUrl/image/barcode.svg",
+                                          fit: BoxFit.fitHeight,
                                         ),
 
-                                        SizedBox(height: 8,),
-                                        Text(
-                                          item['description_ticket'],
-                                          softWrap: true,
+                                        SizedBox(width: 8,),
+                                        Container(
+                                          width: 1.2,
+                                          color: Colors.grey.shade400,
                                         ),
 
-                                        SizedBox(height: 8,),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.start,
-                                          children: [
-                                            SvgPicture.network(
-                                              "$baseUrl/image/Locations.svg",
-                                              width: 30,
-                                              height: 30,
-                                              fit: BoxFit.contain,
-                                            ),
+                                        SizedBox(width: 12,),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item['name_ticket'],
+                                                style: TextStyle(fontWeight: FontWeight.bold),
+                                              ),
 
-                                            SizedBox(width: 10,),
-                                            Container(
-                                              width: 1.2,
-                                              height: 30,
-                                              color: Colors.grey.shade400,
-                                            ),
+                                              SizedBox(height: 8,),
+                                              Text(
+                                                item['description_ticket'],
+                                                softWrap: true,
+                                              ),
 
-                                            SizedBox(width: 10,),
-                                            Text(
-                                              '${bahasa['berakhir']} $formattedDate',
-                                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-                                            ),
-                                          ],
-                                        ),
-
-                                        SizedBox(height: 12,),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  hargaFormatted,
-                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                                ),
-                                            
-                                                SizedBox(width: 10,),
-                                                Container(
-                                                  width: 1.2,
-                                                  height: 30,
-                                                  color: Colors.grey.shade400,
-                                                ),
-                                              ],
-                                            ),
-
-                                            SizedBox(width: 40,),
-                                            belumBuka
-                                            ? Container(
-                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-                                                decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  bahasa['segera'], // "Segera"
-                                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
-                                                ),
-                                              )
-                                            : sudahTutup
-                                              ? Container(
-                                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(8),
+                                              SizedBox(height: 8,),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                children: [
+                                                  SvgPicture.network(
+                                                    "$baseUrl/image/Locations.svg",
+                                                    width: 30,
+                                                    height: 30,
+                                                    fit: BoxFit.contain,
                                                   ),
-                                                  child: Text(
-                                                    bahasa['habis'], // "Habis"
-                                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red,),
+
+                                                  SizedBox(width: 10,),
+                                                  Container(
+                                                    width: 1.2,
+                                                    height: 30,
+                                                    color: Colors.grey.shade400,
                                                   ),
-                                                )
-                                              : Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
+
+                                                  SizedBox(width: 10,),
+                                                  Text(
+                                                    '${bahasa['berakhir']} $formattedDate',
+                                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              SizedBox(height: 12,),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
                                                   Row(
-                                                    mainAxisAlignment: MainAxisAlignment.end,
+                                                    mainAxisAlignment: MainAxisAlignment.start,
                                                     children: [
-                                                      InkWell(
-                                                        onTap: () {
-                                                          if (counts[index] > 0) {
-                                                            setState(() {
-                                                              counts[index]--;
-                                                              _syncSelectedTickets();
-                                                            });
-                                                          }
-                                                        },
-                                                        child: Container(
-                                                          padding: const EdgeInsets.all(8),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.red,
-                                                            borderRadius: BorderRadius.circular(100),
-                                                          ),
-                                                          child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
-                                                        ),
-                                                      ),
-
-                                                      const SizedBox(width: 8),
                                                       Text(
-                                                        counts[index].toString(),
-                                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                        hargaFormatted,
+                                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                                       ),
-
-                                                      const SizedBox(width: 8),
-                                                      InkWell(
-                                                        onTap: () {
-                                                          setState(() {
-                                                            final maxQty = item['max_qty'];
-                                                            final sisaStok = item['sisa_stok'];
-
-                                                            final limit = sisaStok < maxQty ? sisaStok : maxQty;
-                                                            if (counts[index] < limit) {
-                                                              counts[index]++;
-                                                              _syncSelectedTickets();
-                                                            }
-                                                          });
-                                                        },
-                                                        child: Container(
-                                                          padding: const EdgeInsets.all(8),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.red,
-                                                            borderRadius: BorderRadius.circular(100),
-                                                          ),
-                                                          child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
-                                                        ),
+                                                  
+                                                      SizedBox(width: 10,),
+                                                      Container(
+                                                        width: 1.2,
+                                                        height: 30,
+                                                        color: Colors.grey.shade400,
                                                       ),
                                                     ],
                                                   ),
+
+                                                  SizedBox(width: 40,),
+                                                  status == 'not_started'
+                                                    ? Container(
+                                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                                        child: Text(
+                                                          bahasa['segera'],
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: 16,
+                                                            color: Colors.red,
+                                                          ),
+                                                        ),
+                                                      )
+
+                                                    : status == 'ended'
+                                                        ? Container(
+                                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                                            child: Text(
+                                                              bahasa['habis'],
+                                                              style: const TextStyle(
+                                                                fontWeight: FontWeight.bold,
+                                                                fontSize: 16,
+                                                                color: Colors.red,
+                                                              ),
+                                                            ),
+                                                          )
+
+                                                        : Column(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment: MainAxisAlignment.end,
+                                                                children: [
+                                                                  InkWell(
+                                                                    onTap: counts[index] > 0
+                                                                        ? () {
+                                                                            setState(() {
+                                                                              counts[index]--;
+                                                                              _syncSelectedTickets();
+                                                                            });
+                                                                          }
+                                                                        : null,
+                                                                    child: Container(
+                                                                      padding: const EdgeInsets.all(8),
+                                                                      decoration: BoxDecoration(
+                                                                        color: Colors.red,
+                                                                        borderRadius: BorderRadius.circular(100),
+                                                                      ),
+                                                                      child: const Icon(
+                                                                        FontAwesomeIcons.minus,
+                                                                        size: 15,
+                                                                        color: Colors.white,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(width: 8),
+                                                                  Text(
+                                                                    counts[index].toString(),
+                                                                    style: const TextStyle(
+                                                                      fontWeight: FontWeight.bold,
+                                                                      fontSize: 16,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(width: 8),
+                                                                  InkWell(
+                                                                    onTap: () {
+                                                                      setState(() {
+                                                                        final maxQty = item['max_qty'];
+                                                                        final sisaStok = item['sisa_stok'];
+
+                                                                        final limit =
+                                                                            sisaStok < maxQty ? sisaStok : maxQty;
+
+                                                                        if (counts[index] < limit) {
+                                                                          counts[index]++;
+                                                                          _syncSelectedTickets();
+                                                                        }
+                                                                      });
+                                                                    },
+                                                                    child: Container(
+                                                                      padding: const EdgeInsets.all(8),
+                                                                      decoration: BoxDecoration(
+                                                                        color: Colors.red,
+                                                                        borderRadius: BorderRadius.circular(100),
+                                                                      ),
+                                                                      child: const Icon(
+                                                                        FontAwesomeIcons.plus,
+                                                                        size: 15,
+                                                                        color: Colors.white,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          )
                                                 ],
-                                              )
-                                          ],
-                                        ),
+                                              ),
 
-                                        Text(
-                                          detailEvent['show_tickets_available'] == 1 && !sudahTutup
-                                            ? '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
-                                            : '',
-                                          style: TextStyle(color: Colors.grey),
-                                        ),
+                                              Text(
+                                                detailEvent['show_tickets_available'] == 1 && !sudahTutup
+                                                  ? '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
+                                                  : '',
+                                                style: TextStyle(color: Colors.grey),
+                                              ),
 
-                                        if (counts[index] == item['max_qty']) ... [
+                                              if (counts[index] == item['max_qty']) ... [
 
-                                          SizedBox(height: 4,),
+                                                SizedBox(height: 4,),
 
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              "* $text",
-                                              style: const TextStyle(color: Colors.red),
-                                            )
+                                                Align(
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text(
+                                                    "* $text",
+                                                    style: const TextStyle(color: Colors.red),
+                                                  )
+                                                ),
+                                              ],
+                                            ],
                                           ),
-                                        ],
+                                        ),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
+                                ),
+                              )
+                            : const SizedBox.shrink();
+                        }),
                     ],
                   ),
                 ),
@@ -2097,7 +2183,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
         names_tiket.add(item['name_ticket']);
         counts_tiket.add(count);
         prices_tiket.add(item['price']);
-        prices_tiket_asli.add(item['price_asli']);
+        prices_tiket_asli.add(item['price_asli'] ?? 0);
       }
     }
   }

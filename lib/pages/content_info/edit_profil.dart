@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -273,7 +274,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (resultSimpan?['rc'] == 200) {
       await StorageService.setUser(
-        first_name: firstNameController.text, 
+        id: widget.user['id'],
+        first_name: "${firstNameController.text} ${lastNameController.text.isNotEmpty ? lastNameController.text : ''}",
         last_name: lastNameController.text.isNotEmpty ? lastNameController.text : null, 
         phone: phoneController.text, 
         email: emailController.text, 
@@ -294,7 +296,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       showErrorBar = false;
       isImage = false;
 
-      Navigator.pop(context, true);
+      Navigator.pushAndRemoveUntil(
+        context, 
+        MaterialPageRoute(builder: (context) => HomePage()), 
+        (route) => false
+      );
+      
     } else if (resultSimpan?['rc'] == 422) {
       setState(() {
         showErrorBar = true;
@@ -780,6 +787,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             focusNode: phoneFocusNode,
                             controller: phoneController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
                               hintText: phoneHint,

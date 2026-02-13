@@ -103,9 +103,10 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pop(context, true);
       } else {
         // jika login dari splashscreen
-        Navigator.pushReplacement(
-          context, 
-          MaterialPageRoute(builder: (context) => HomePage()),
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+          (route) => false,
         );
       }
     } else {
@@ -173,9 +174,10 @@ class _LoginPageState extends State<LoginPage> {
             link_twitter: user['link_twitter'],
           );
 
-          Navigator.pushReplacement(
-            context, 
-            MaterialPageRoute(builder: (context) => HomePage()),
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+            (route) => false,
           );
         } else {
           Fluttertoast.showToast(msg: cancelLogin!);
@@ -263,9 +265,10 @@ class _LoginPageState extends State<LoginPage> {
                             langCode = val; // update global
                           });
                           await StorageService.setLanguage(val);
-                          Navigator.pushReplacement(
+                          Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(builder: (_) => const HomePage()),
+                            (route) => false,
                           );
                         }
                       },

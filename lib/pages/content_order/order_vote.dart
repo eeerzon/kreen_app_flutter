@@ -1613,7 +1613,7 @@ class _VoteFailState extends State<VoteFail> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  if (itemVotes['id_v0rder'] != null) {
+                                  if (itemVotes['id_order'] != null) {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(

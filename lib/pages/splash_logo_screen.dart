@@ -37,10 +37,10 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
     final seen = await StorageService.hasSeenOnboarding();
     if (seen) {
       // langsung ke home
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
-        // MaterialPageRoute(builder: (_) => CheckingUpUserPage()),
+        (route) => false,
       );
     } else {
       // ke onboarding

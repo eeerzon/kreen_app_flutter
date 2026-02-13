@@ -31,6 +31,7 @@ class _ProfileState extends State<Profile> {
   String? login, keluar;
   String? token;
 
+  String? id;
   String? first_name, last_name;
   String? email, phone;
   String? gender;
@@ -86,6 +87,7 @@ class _ProfileState extends State<Profile> {
 
         // first_name = storeUser['first_name'];
         // last_name = storeUser['last_name'];
+        id = storeUser['id'];
         email = storeUser['email'];
         gender = storeUser['gender'];
         phone = storeUser['phone'];
@@ -314,6 +316,7 @@ class _ProfileState extends State<Profile> {
                 MaterialPageRoute(
                   builder: (context) => EditProfilePage(
                     user: {
+                      'id': id,
                       'photo': photo,
                       'first_name': first_name,
                       'last_name': last_name,
@@ -451,7 +454,7 @@ class _ProfileState extends State<Profile> {
                           SizedBox(height: 10,),
                           Row(
                             children: [
-                              Icon(Icons.cake_outlined, color: Colors.red,),
+                              Icon(FontAwesomeIcons.cakeCandles, color: Colors.red,),
 
                               SizedBox(width: 12,),
                               Text(
@@ -469,7 +472,7 @@ class _ProfileState extends State<Profile> {
                             SizedBox(height: 10,),
                             Row(
                               children: [
-                                Icon(FontAwesomeIcons.transgender, color: Colors.red,),
+                                Icon(FontAwesomeIcons.marsAndVenus, color: Colors.red,),
 
                                 SizedBox(width: 12,),
                                 Text(
@@ -548,7 +551,7 @@ class _ProfileState extends State<Profile> {
                           SizedBox(height: 10,),
                           Row(
                             children: [
-                              Icon(FontAwesomeIcons.googlePlay, color: Colors.red,),
+                              Icon(Icons.email_outlined, color: Colors.red,),
 
                               SizedBox(width: 12,),
                               Text(

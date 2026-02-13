@@ -69,29 +69,36 @@ class _ExplorePageState extends State<ExplorePage> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      ExploreAll(
-        keyword: _keyword,
-        timeFilter: timeFilter,
-        priceFilter: priceFilter,
-        pageFilter: pageFilter,
-        onResetSearch: _resetSearch,
-      ),
-      ExploreVote(
-        keyword: _keyword,
-        timeFilter: timeFilter,
-        priceFilter: priceFilter,
-        pageFilter: pageFilter,
-        onResetSearch: _resetSearch,
-      ),
-      ExploreEvent(
-        keyword: _keyword,
-        timeFilter: timeFilter,
-        priceFilter: priceFilter,
-        pageFilter: pageFilter,
-        onResetSearch: _resetSearch,
-      ),
-    ];
+    Widget buildPage() {
+      switch (_selectedIndex) {
+        case 0:
+          return ExploreAll(
+            keyword: _keyword,
+            timeFilter: timeFilter,
+            priceFilter: priceFilter,
+            pageFilter: pageFilter,
+            onResetSearch: _resetSearch,
+          );
+        case 1:
+          return ExploreVote(
+            keyword: _keyword,
+            timeFilter: timeFilter,
+            priceFilter: priceFilter,
+            pageFilter: pageFilter,
+            onResetSearch: _resetSearch,
+          );
+        case 2:
+          return ExploreEvent(
+            keyword: _keyword,
+            timeFilter: timeFilter,
+            priceFilter: priceFilter,
+            pageFilter: pageFilter,
+            onResetSearch: _resetSearch,
+          );
+        default:
+          return const SizedBox();
+      }
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -169,7 +176,7 @@ class _ExplorePageState extends State<ExplorePage> {
               onChanged: onFilterChanged,
             ),
             const SizedBox(height: 16),
-            Expanded(child: pages[_selectedIndex]),
+            Expanded(child: buildPage()),
           ],
         ),
       ),

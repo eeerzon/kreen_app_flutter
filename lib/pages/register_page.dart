@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, prefer_interpolation_to_compose_strings
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -185,9 +185,10 @@ class _RegisPageState extends State<RegisPage> {
             link_twitter: user['link_twitter'],
           );
 
-          Navigator.pushReplacement(
-            context, 
-            MaterialPageRoute(builder: (context) => HomePage()),
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const HomePage()),
+            (route) => false,
           );
         } else {
           Fluttertoast.showToast(msg: cancelLogin!);
