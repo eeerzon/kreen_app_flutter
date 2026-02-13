@@ -393,7 +393,9 @@ class _ExploreEventState extends State<ExploreEvent> {
                         ),
                       ),
                     ).then((_) {
-                      _handleBackFromDetail();
+                      if (item['price'] != 0) {
+                        _handleBackFromDetail();
+                      }
                     });
                   },
                   child: Container(

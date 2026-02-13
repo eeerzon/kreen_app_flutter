@@ -423,7 +423,9 @@ class _ExploreAllState extends State<ExploreAll> {
                                 ),
                           ),
                         ).then((_) {
-                          _handleBackFromDetail();
+                          if (item['price'] != 0) {
+                            _handleBackFromDetail();
+                          }
                         });
                       } else if (item['type'] == 'vote') {
                         Navigator.push(

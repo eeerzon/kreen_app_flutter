@@ -873,7 +873,9 @@ class _HomeContentState extends State<HomeContent> {
                                             ),
                                       ),
                                     ).then((_) {
-                                      _handleBackFromDetail();
+                                      if (item['price'] != 0) {
+                                        _handleBackFromDetail();
+                                      }
                                     });
                                   },
                                   child: SizedBox(
@@ -1393,7 +1395,9 @@ class _HomeContentState extends State<HomeContent> {
                                           ),
                                       ),
                                     ).then((_) {
-                                      _handleBackFromDetail();
+                                      if (item['price'] != 0) {
+                                        _handleBackFromDetail();
+                                      }
                                     });
                                   },
                                   child: SizedBox(
@@ -1676,7 +1680,9 @@ class _HomeContentState extends State<HomeContent> {
                                             ),
                                       ),
                                     ).then((_) {
-                                      _handleBackFromDetail();
+                                      if (item['price'] != 0) {
+                                        _handleBackFromDetail();
+                                      }
                                     });
                                   },
                                   child: SizedBox(
@@ -1941,7 +1947,9 @@ class _HomeContentState extends State<HomeContent> {
                                           ),
                                       ),
                                     ).then((_) {
-                                      _handleBackFromDetail();
+                                      if (item['price'] != 0) {
+                                        _handleBackFromDetail();
+                                      }
                                     });
                                   },
                                   child: SizedBox(

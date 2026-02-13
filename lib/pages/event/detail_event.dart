@@ -1872,7 +1872,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                   0,      0,      0,      1, 0,
                                 ]),
                                 child: Image.network(
-                                  'https://dev.kreenconnect.com/image/no-ticket.png',
+                                  '$baseUrl/image/no-ticket.png',
                                   width: 220,
                                   fit: BoxFit.contain,
                                 ),

@@ -384,7 +384,9 @@ class _ExploreVoteState extends State<ExploreVote> {
                         ),
                       ),
                     ).then((_) {
-                      _handleBackFromDetail();
+                      if (item['price'] != 0) {
+                        _handleBackFromDetail();
+                      }
                     });
                   },
                   child: Container(
