@@ -104,7 +104,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   late YoutubePlayerController _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
   bool _videoReady = false;
-  bool _isTopVideo = true;
+  final bool _isTopVideo = true;
 
   void onFullscreenChanged(bool value) {
     setState(() {
@@ -1243,7 +1243,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   }
 
   Widget buildVideo() {
-    if (!_videoReady || _ytTopController == null || _ytBottomController == null) {
+    if (!_videoReady) {
       return const AspectRatio(
         aspectRatio: 16 / 9,
         child: Center(child: CircularProgressIndicator(color: Colors.red)),

@@ -11,11 +11,9 @@ import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
-import 'package:kreen_app_flutter/helper/yt_section_player.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/helper/download_qr.dart';
-import 'package:kreen_app_flutter/pages/backup_temp.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -105,7 +103,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   late YoutubePlayerController _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
   bool _videoReady = false;
-  bool _isTopVideo = true;
+  final bool _isTopVideo = true;
 
   void onFullscreenChanged(bool value) {
     setState(() {
@@ -1459,7 +1457,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   }
 
   Widget buildVideo() {
-    if (!_videoReady || _ytTopController == null || _ytBottomController == null) {
+    if (!_videoReady) {
       return const AspectRatio(
         aspectRatio: 16 / 9,
         child: Center(child: CircularProgressIndicator(color: Colors.red)),

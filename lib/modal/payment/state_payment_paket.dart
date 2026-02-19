@@ -2508,7 +2508,6 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
           !isValidEmail(_emailController.text)) {
         isValid = false;
         firstErrorFocus ??= _emailFocus;
-        print(isValid);
       }
 
       // phone

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:kreen_app_flutter/helper/yt_section_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class VideoSection extends StatefulWidget {
@@ -16,7 +14,6 @@ class VideoSection extends StatefulWidget {
 }
 
 class _VideoSectionState extends State<VideoSection> {
-  bool _isOpeningFullscreen = false;
 
   @override
   void initState() {

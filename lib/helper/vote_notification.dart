@@ -72,7 +72,6 @@ class VoteNotifStack extends StatefulWidget {
 class _VoteNotifStackState extends State<VoteNotifStack> {
 
   final List<String> _visibleNotifs = [];
-  int _index = 0;
 
   @override
   void initState() {

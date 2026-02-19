@@ -1,7 +1,6 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -36,11 +35,9 @@ class _BackupTempPageState extends State<BackupTempPage> {
   YoutubePlayerController? _ytController;
   VideoPlayerController? _videoController;
 
-  // bool get _isYoutube =>
-  //   widget.link.contains('youtube.com') ||
-  //   widget.link.contains('youtu.be');
-
-    bool _isYoutube = false; // ⛔ FOR TESTING VIDEO PLAYER BIASA, GANTI LINK DULU KE VIDEO BIASA
+  bool get _isYoutube =>
+    widget.link.contains('youtube.com') ||
+    widget.link.contains('youtu.be');
 
   @override
   void initState() {
@@ -116,8 +113,6 @@ class _BackupTempPageState extends State<BackupTempPage> {
   }
   
   Widget _buildNormalVideo() {
-
-    print('isYoutube: $_isYoutube, videoController: ${_videoController!.value.isInitialized}');
     if (!_videoController!.value.isInitialized) {
       return const AspectRatio(
         aspectRatio: 16 / 9,

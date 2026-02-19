@@ -130,7 +130,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   late YoutubePlayerController _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
   bool _videoReady = false;
-  bool _isTopVideo = true;
+  final bool _isTopVideo = true;
 
   void onFullscreenChanged(bool value) {
     setState(() {
@@ -158,7 +158,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     final videoId =
       YoutubePlayer.convertUrlToId(detailFinalis['video_profile'])!;
 
-    if (videoId != null && mounted) {
+    if (mounted) {
       setState(() {
         _ytTopController = YoutubePlayerController(
           initialVideoId: videoId,
@@ -2045,7 +2045,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   }
 
   Widget buildVideo() {
-    if (!_videoReady || _ytTopController == null || _ytBottomController == null) {
+    if (!_videoReady) {
       return const AspectRatio(
         aspectRatio: 16 / 9,
         child: Center(child: CircularProgressIndicator(color: Colors.red)),
