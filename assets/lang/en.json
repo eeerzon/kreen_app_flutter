@@ -338,6 +338,7 @@
     "tentang_kami" : "About Us",
     "loading" : "Loading data...",
     "time" : "Time",
+    "time_event" : "Event Time",
     "this_week" : "This week",
     "this_month" : "This month",
     "next_month" : "Next month",
@@ -357,6 +358,7 @@
     "id_card" : "ID Card",
 
     "bayar_sekarang" : "Pay Now",
-    "tiket_tidak_tersedia" : "Tickets not available"
+    "tiket_tidak_tersedia" : "Tickets not available",
+    "has_been": "has been voted"
   }
 }

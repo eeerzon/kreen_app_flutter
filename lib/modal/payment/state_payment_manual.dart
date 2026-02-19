@@ -121,6 +121,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   String? notLoginText, notLoginDesc, login;
   
   bool _emailTouched = false;
+  bool _phoneTouched = false;
 
   bool creditCardClicked = false;
   bool virtualAkunClicked = false;
@@ -285,16 +286,16 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       showErrorBar = false;
     });
 
-      answers = List.filled(indikator.length, '');
-      ids_indikator = List.filled(indikator.length, '');
-      answerControllers = List.generate(
-        indikator.length,
-        (index) => TextEditingController(),
-      );
-      indikatorFocus = List.generate(
-        indikator.length,
-        (_) => FocusNode(),
-      );
+    answers = List.filled(indikator.length, '');
+    ids_indikator = List.filled(indikator.length, '');
+    answerControllers = List.generate(
+      indikator.length,
+      (index) => TextEditingController(),
+    );
+    indikatorFocus = List.generate(
+      indikator.length,
+      (_) => FocusNode(),
+    );
   }
   
   @override
@@ -1003,6 +1004,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         ? _emailFocus 
                                         : indikatorFocus[idx],
                                     onChanged: (value) {
+                                      if (isPhoneField) {
+                                        if (!_phoneTouched) {
+                                          setState(() => _phoneTouched = true);
+                                        } else {
+                                          setState(() {});
+                                        }
+                                      }
                                       // answerControllers[idx].text = value;
                                       answers[idx] = value;
                                       setState(() {});
@@ -1024,7 +1032,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       ),
                                       focusedBorder: _border(true),
                                       errorText: isPhoneField
-                                        ? (!isValidPhone(_phoneController.text)
+                                        ? (!isValidPhone(_phoneController.text) && _phoneTouched
                                           ? bahasa['nomor_hp_error']
                                           : null)
                                         : null,
@@ -2532,6 +2540,23 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         isValid = false;
         firstErrorFocus ??= _phoneFocus;
       }
+    }
+
+    final bool isEmailRequired =
+    indikator.any((e) => e['id_indikator_vote'] == 12);
+
+    final email = _emailController.text.trim();
+
+    if (email.isNotEmpty && !isValidEmail(email)) {
+      // format salah
+      isValid = false;
+      firstErrorFocus ??= _emailFocus;
+    }
+
+    if (isEmailRequired && email.isEmpty) {
+      // wajib tapi kosong
+      isValid = false;
+      firstErrorFocus ??= _emailFocus;
     }
 
     // form indokator

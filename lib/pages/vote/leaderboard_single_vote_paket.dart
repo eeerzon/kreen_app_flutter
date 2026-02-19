@@ -31,6 +31,7 @@ import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class LeaderboardSingleVotePaket extends StatefulWidget {
   final String id_finalis;
@@ -129,21 +130,57 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     }
   }
 
+  late YoutubePlayerController _ytTopController, _ytBottomController;
+  bool _isFullscreen = false;
+  bool _videoReady = false;
+  bool _isTopVideo = true;
+
+  void onFullscreenChanged(bool value) {
+    setState(() {
+      _isFullscreen = value;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _initData();
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _getBahasa();
-      await _getCurrency();
-      await _loadFinalis();
+  Future<void> _initData() async {
+    await _getBahasa();
+    await _getCurrency();
+    await _loadFinalis();
 
+    await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
-
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-        await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
-      });
     });
+
+    final videoId =
+      YoutubePlayer.convertUrlToId(detailFinalis['video_profile'])!;
+
+    if (videoId != null && mounted) {
+      setState(() {
+        _ytTopController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            forceHD: false,
+          ),
+        );
+
+        _ytBottomController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            forceHD: false,
+          ),
+        );
+        _videoReady = true;
+      });
+    }
   }
 
   Future<void> _getBahasa() async {
@@ -580,7 +617,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      appBar: AppBar(
+      appBar: _isFullscreen ? null : AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -647,13 +684,21 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                     ),
 
                                     // VIDEO
-                                    Align(
-                                      alignment: Alignment.center,
-                                      child: SizedBox(
-                                        child: VideoSection(
-                                          link: detailFinalis['video_profile'],
-                                          headerText: videoProfilText!,
-                                          noValidText: bahasa!['video_no_valid'],
+                                    Container(
+                                      color: Colors.white,
+                                      child: Align(
+                                        alignment: Alignment.center,
+                                        child: Container(
+                                          color: Colors.white,
+                                          child: 
+                                          // VideoSection(
+                                            // link: detailFinalis['video_profile'],
+                                            // headerText: videoProfilText!, 
+                                            // noValidText: noValidText!,
+                                            // onFullscreenChanged: onFullscreenChanged,
+                                            // controller: _ytController,
+                                          // ),
+                                          buildVideo()
                                         ),
                                       ),
                                     ),
@@ -1079,7 +1124,20 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                               ),
 
                               const SizedBox(height: 12),
-                              VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidVideo!),
+                              Align(
+                                alignment: Alignment.center,
+                                child: SizedBox(
+                                  child: 
+                                  // VideoSection(
+                                  //   // link: detailFinalis['video_profile'],
+                                  //   // headerText: videoProfilText!, 
+                                  //   // noValidText: noValidText!,
+                                  //   // onFullscreenChanged: onFullscreenChanged,
+                                  //   controller: _ytController,
+                                  // ),
+                                  buildVideo()
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -1117,15 +1175,15 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                       if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
                                         _buildSocialButton(
                                           icon: FontAwesomeIcons.facebook,
-                                          color:  Color(0xFF1877F2),
+                                          color: color,
                                           link: detailFinalis['facebook'],
                                           platform: "facebook",
                                         ),
 
                                       if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
                                         _buildSocialButton(
-                                          icon: FontAwesomeIcons.twitter,
-                                          color:  Color(0xFF1DA1F2),
+                                          icon: FontAwesomeIcons.xTwitter,
+                                          color: color,
                                           link: detailFinalis['twitter'],
                                           platform: "twitter",
                                         ),
@@ -1133,7 +1191,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                       if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
                                         _buildSocialButton(
                                           icon: FontAwesomeIcons.linkedin,
-                                          color:  Color(0xFF0077B5),
+                                          color: color,
                                           link: detailFinalis['linkedin'],
                                           platform: "linkedin",
                                         ),
@@ -1141,7 +1199,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                       if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
                                         _buildSocialButton(
                                           icon: FontAwesomeIcons.instagram,
-                                          color:  Color(0xFFE1306C),
+                                          color: color,
                                           link: detailFinalis['instagram'],
                                           platform: "instagram",
                                         ),
@@ -1504,7 +1562,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         ],
       ),
 
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: _isFullscreen ? null : SafeArea(
         child: Container(
           color: Colors.white,
           padding:  EdgeInsets.symmetric(vertical: 8, horizontal: 20),
@@ -1512,28 +1570,30 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // kiri
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
-                children: [
-                  Text(totalHargaText!),
-                  Text(
-                    harga == 0
-                    ? hargaDetail!
-                    : currencyCode == null
-                      ? "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}"
-                      : "$currencyCode ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color,
+              isTutup || widget.close_payment == '1'
+              ? SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                  children: [
+                    Text(totalHargaText!),
+                    Text(
+                      harga == 0
+                      ? hargaDetail!
+                      : currencyCode == null
+                        ? "${detailvote['currency']} ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}"
+                        : "$currencyCode ${formatter.format(totalHarga == 0 ? widget.total_detail : totalHarga)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "${bahasa!['paket']} $counts ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
+                    Text(
+                      "${bahasa!['paket']} $counts ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
 
               ElevatedButton(
                 style: ButtonStyle(
@@ -1709,6 +1769,8 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
+    _ytTopController.dispose();
+    _ytBottomController.dispose();
     super.dispose();
   }
 
@@ -1753,7 +1815,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         duration:  Duration(milliseconds: 200),
         padding:  EdgeInsets.all(12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(100),
           color: isEmpty ? Colors.grey[400] : color,
         ),
         child: Icon(icon, color: Colors.white, size: 24),
@@ -1773,6 +1835,21 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         return Uri.parse("https://instagram.com/$username");
       default:
         return Uri.parse(username);
+    }
+  }
+
+  Widget buildVideo() {
+    if (!_videoReady || _ytTopController == null || _ytBottomController == null) {
+      return const AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Center(child: CircularProgressIndicator(color: Colors.red)),
+      );
+    }
+
+    if (_isTopVideo) {
+      return VideoSection(controller: _ytTopController);
+    } else {
+      return VideoSection(controller: _ytBottomController);
     }
   }
 }

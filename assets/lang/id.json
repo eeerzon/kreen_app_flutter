@@ -338,6 +338,7 @@
     "tentang_kami" : "Tentang Kami",
     "loading" : "Memuat data...",
     "time" : "Waktu",
+    "time_event" : "Waktu Event",
     "this_week" : "Minggu ini",
     "this_month" : "Bulan ini",
     "next_month" : "Bulan depan",
@@ -357,6 +358,7 @@
     "id_card" : "Masukkan Nomor Identitas",
 
     "bayar_sekarang" : "Bayar Sekarang",
-    "tiket_tidak_tersedia" : "Tiket tidak tersedia"
+    "tiket_tidak_tersedia" : "Tiket tidak tersedia",
+    "has_been": "telah di vote"
   }
 }

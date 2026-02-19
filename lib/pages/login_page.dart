@@ -266,10 +266,10 @@ class _LoginPageState extends State<LoginPage> {
                           });
                           await StorageService.setLanguage(val);
                           Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HomePage()),
-                            (route) => false,
-                          );
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomePage()),
+                          (route) => false,
+                        );
                         }
                       },
                       title: Row(

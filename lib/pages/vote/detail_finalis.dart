@@ -11,15 +11,18 @@ import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
+import 'package:kreen_app_flutter/helper/yt_section_player.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/helper/download_qr.dart';
+import 'package:kreen_app_flutter/pages/backup_temp.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class DetailFinalisPage extends StatefulWidget {
   final String id_finalis;
@@ -99,21 +102,57 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     }
   }
 
+  late YoutubePlayerController _ytTopController, _ytBottomController;
+  bool _isFullscreen = false;
+  bool _videoReady = false;
+  bool _isTopVideo = true;
+
+  void onFullscreenChanged(bool value) {
+    setState(() {
+      _isFullscreen = value;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _initData();
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _getBahasa();
-      await _getCurrency();
-      await _loadFinalis();
+  Future<void> _initData() async {
+    await _getBahasa();
+    await _getCurrency();
+    await _loadFinalis();
+    await checkPaymentStatus();
 
-      await checkPaymentStatus();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => checkPaymentStatus(),
+    );
 
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-        await checkPaymentStatus();
+    final videoId =
+        YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
+
+    if (videoId != null && mounted) {
+      setState(() {
+        _ytTopController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            forceHD: false,
+          ),
+        );
+
+        _ytBottomController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            forceHD: false,
+          ),
+        );
+        _videoReady = true;
       });
-    });
+    }
   }
 
   Future<void> _loadFinalis() async {
@@ -496,7 +535,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      appBar: AppBar(
+      appBar: _isFullscreen ? null : AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -568,13 +607,21 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       ),
 
                                       // VIDEO
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: SizedBox(
-                                          child: VideoSection(
-                                            link: detailFinalis['video_profile'],
-                                            headerText: videoProfilText!,
-                                            noValidText: noValidText!,
+                                      Container(
+                                        color: Colors.white,
+                                        child: Align(
+                                          alignment: Alignment.center,
+                                          child: Container(
+                                            color: Colors.white,
+                                            child: 
+                                            // VideoSection(
+                                              // link: detailFinalis['video_profile'],
+                                              // headerText: videoProfilText!, 
+                                              // noValidText: noValidText!,
+                                              // onFullscreenChanged: onFullscreenChanged,
+                                              // controller: _ytController,
+                                            // ),
+                                            buildVideo()
                                           ),
                                         ),
                                       ),
@@ -1153,13 +1200,26 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 padding: kGlobalPadding,
                                 child: Column(
                                   children: [
-                                  Text(
-                                    videoProfilText!,
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
+                                    Text(
+                                      videoProfilText!,
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
 
-                                  const SizedBox(height: 12),
-                                    VideoSection(link: detailFinalis['video_profile'], headerText: videoProfilText!, noValidText: noValidText!,),
+                                    const SizedBox(height: 12),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: SizedBox(
+                                        child: 
+                                        // VideoSection(
+                                        //   // link: detailFinalis['video_profile'],
+                                        //   // headerText: videoProfilText!, 
+                                        //   // noValidText: noValidText!,
+                                        //   // onFullscreenChanged: onFullscreenChanged,
+                                        //   controller: _ytController,
+                                        // ),
+                                        buildVideo()
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1179,7 +1239,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 padding: kGlobalPadding,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.grey.shade300,),
                                 ),
                                 child: Column(
@@ -1199,15 +1258,15 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
                                           _buildSocialButton(
                                             icon: FontAwesomeIcons.facebook,
-                                            color:  Color(0xFF1877F2),
+                                            color: color,
                                             link: detailFinalis['facebook'],
                                             platform: "facebook",
                                           ),
 
                                         if (detailFinalis['twitter'] != null && detailFinalis['twitter'].toString().trim().isNotEmpty)
                                           _buildSocialButton(
-                                            icon: FontAwesomeIcons.twitter,
-                                            color:  Color(0xFF1DA1F2),
+                                            icon: FontAwesomeIcons.xTwitter,
+                                            color: color,
                                             link: detailFinalis['twitter'],
                                             platform: "twitter",
                                           ),
@@ -1215,7 +1274,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         if (detailFinalis['linkedin'] != null && detailFinalis['linkedin'].toString().trim().isNotEmpty)
                                           _buildSocialButton(
                                             icon: FontAwesomeIcons.linkedin,
-                                            color:  Color(0xFF0077B5),
+                                            color: color,
                                             link: detailFinalis['linkedin'],
                                             platform: "linkedin",
                                           ),
@@ -1223,7 +1282,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         if (detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty)
                                           _buildSocialButton(
                                             icon: FontAwesomeIcons.instagram,
-                                            color:  Color(0xFFE1306C),
+                                            color: color,
                                             link: detailFinalis['instagram'],
                                             platform: "instagram",
                                           ),
@@ -1246,7 +1305,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         ),
       ),
 
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: _isFullscreen ? null : SafeArea(
         child: Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
@@ -1254,30 +1313,32 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // kiri
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
-                children: [
-                  Text(totalHargaText!),
-                  Text(
-                    harga == 0
-                    ? bahasa['harga_detail']
-                    : currencyCode == null 
-                      ? "${detailvote['currency']} ${formatter.format(totalHarga)}"
-                      : "$currencyCode ${formatter.format(totalHarga)}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color,
+              isTutup || widget.close_payment == '1'
+              ? SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                  children: [
+                    Text(totalHargaText!),
+                    Text(
+                      harga == 0
+                      ? bahasa['harga_detail']
+                      : currencyCode == null 
+                        ? "${detailvote['currency']} ${formatter.format(totalHarga)}"
+                        : "$currencyCode ${formatter.format(totalHarga)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "Qty $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
-                    style: TextStyle(fontSize: 12,),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                ],
-              ),
+                    Text(
+                      "Qty $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
+                      style: TextStyle(fontSize: 12,),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  ],
+                ),
 
               // kanan
               ElevatedButton(
@@ -1344,6 +1405,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
+    _ytTopController.dispose();
+    _ytBottomController.dispose();
     super.dispose();
   }
 
@@ -1372,7 +1435,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(100),
           color: isEmpty ? Colors.grey[400] : color,
         ),
         child: Icon(icon, color: Colors.white, size: 24),
@@ -1392,6 +1455,21 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         return Uri.parse("https://instagram.com/$username");
       default:
         return Uri.parse(username);
+    }
+  }
+
+  Widget buildVideo() {
+    if (!_videoReady || _ytTopController == null || _ytBottomController == null) {
+      return const AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Center(child: CircularProgressIndicator(color: Colors.red)),
+      );
+    }
+
+    if (_isTopVideo) {
+      return VideoSection(controller: _ytTopController);
+    } else {
+      return VideoSection(controller: _ytBottomController);
     }
   }
 }

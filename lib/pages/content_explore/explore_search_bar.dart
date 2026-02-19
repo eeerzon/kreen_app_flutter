@@ -12,6 +12,7 @@ class ExploreSearchBar extends StatefulWidget {
   final List<String> initialTime;
   final List<String> initialPrice;
   final Function(List<String>, List<String>) onFilterApply;
+  final int selectedIndex;
 
   const ExploreSearchBar({
     super.key, 
@@ -20,6 +21,7 @@ class ExploreSearchBar extends StatefulWidget {
     required this.initialTime,
     required this.initialPrice,
     required this.onFilterApply,
+    required this.selectedIndex,
   });
 
   @override
@@ -110,7 +112,8 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
                   langCode!,
                   paramTime,
                   paramPrice,
-                  paramPage
+                  paramPage,
+                  selectedIndex: widget.selectedIndex,
                 );
 
                 if (result != null) {

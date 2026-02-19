@@ -11,6 +11,9 @@ class ModalFilter {
     List<String> initialTime,
     List<String> initialPrice,
     int ititialPage,
+    {
+      required int selectedIndex,
+    }
   ) async {
 
     // copy agar tidak langsung mutate parent sebelum OK
@@ -45,6 +48,14 @@ class ModalFilter {
             : paramPrice.add(key);
       });
     }
+
+    final String timeTitle =
+      selectedIndex == 0 // 0 = All
+        ? "${bahasa['time_event']}/Grand Final"
+        : selectedIndex == 1 // 1 = Vote
+          ? "Grand Final"
+          : bahasa['time_event'];
+
 
     return await showModalBottomSheet<Map<String, List<String>>>(
       context: context,
@@ -97,7 +108,7 @@ class ModalFilter {
 
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(bahasa['time'], style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(timeTitle, style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     Column(
                       children: timeLabels.keys.map((key) {

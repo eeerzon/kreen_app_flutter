@@ -624,40 +624,37 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               ],
 
                               if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
-                                if (paymentDetail['qr_url'] == null && paymentDetail['qr_url'].toString().isEmpty || 
-                                  paymentDetail['qr_string'] == null && paymentDetail['qr_string'].toString().isEmpty) ...[
 
-                                    if (voteOder['bank_code'] != "apple_pay") ...[
-                                      // const SizedBox(height: 10,),
-                                      SizedBox(
-                                        height: 48,
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                            padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          onPressed: () async {
-                                            StripePay(
-                                              context,
-                                              paymentDetail['client_secret']!,
-                                              "vote",
-                                              vote,
-                                              voteOder,
-                                              null,
-                                              null
-                                            );
-                                          },
-                                          child: Text(
-                                            bahasa['bayar_sekarang'],
-                                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
-                                          ),
+                                if (voteOder['bank_code'] != "apple_pay") ...[
+                                  // const SizedBox(height: 10,),
+                                  SizedBox(
+                                    height: 48,
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                       ),
-                                    ],
+                                      onPressed: () async {
+                                        StripePay(
+                                          context,
+                                          paymentDetail['client_secret']!,
+                                          "vote",
+                                          vote,
+                                          voteOder,
+                                          null,
+                                          null
+                                        );
+                                      },
+                                      child: Text(
+                                        bahasa['bayar_sekarang'],
+                                        style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ],
 

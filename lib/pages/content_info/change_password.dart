@@ -179,7 +179,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 4),
                                     child: Text(
-                                      err,
+                                      translateError(err.toString(), langCode),
                                       style: const TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -304,9 +304,9 @@ class _ChangePasswordState extends State<ChangePassword> {
                             style: TextStyle(color: Colors.red),
                           ),
                         ]
-                        else if (errorCode == 422) ... [
+                        else if (errorCode == 422) ...[
                           const SizedBox(height: 4),
-                          if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Konfirmasi')))
+                          if (confirmPasswordError != null)
                             Text(
                               confirmPasswordError!,
                               style: const TextStyle(color: Colors.red),
@@ -356,6 +356,36 @@ class _ChangePasswordState extends State<ChangePassword> {
     );
   }
 
+  final Map<String, String> errorTranslationMap = {
+    // current password
+    'current password minimal 8 karakter':
+        'Current password must be at least 8 characters',
+
+    // new password
+    'new password minimal 8 karakter':
+        'New password must be at least 8 characters',
+
+    // confirm password
+    'konfirmasi password tidak cocok':
+        'Password confirmation does not match',
+  };
+
+  String translateError(String message, String? langCode) {
+    if (langCode != 'en') {
+      return message; // ⛔ jangan translate
+    }
+
+    final lower = message.toLowerCase().trim();
+
+    for (final entry in errorTranslationMap.entries) {
+      if (lower.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+
+    return message; // fallback
+  }
+
   void _doChangePassword() async {
     String? token = await StorageService.getToken();
     
@@ -383,22 +413,38 @@ class _ChangePasswordState extends State<ChangePassword> {
       confirmPasswordError = null;
 
       if (data is Map) {
+        // final errorMessages = data.values
+        //     .whereType<List>()
+        //     .expand((e) => e)
+        //     .whereType<String>()
+        //     .toList();
+
         final errorMessages = data.values
-            .whereType<List>()
-            .expand((e) => e)
-            .whereType<String>()
-            .toList();
+          .whereType<List>()
+          .expand((e) => e)
+          .whereType<String>()
+          .map((e) => translateError(e, langCode))
+          .toList();
 
         desc = errorMessages.join('\n');
         if (data['password'] is List) {
           for (var msg in data['password']) {
-            final message = msg.toString();
+            // final message = msg.toString();
 
-            if (message.toLowerCase().contains('new password')) {
-              newPasswordError = message;
-            } else if (message.toLowerCase().contains('konfirmasi') ||
-                      message.toLowerCase().contains('confirm')) {
-              confirmPasswordError = message;
+            // if (message.toLowerCase().contains('new password')) {
+            //   newPasswordError = message;
+            // } else if (message.toLowerCase().contains('konfirmasi') ||
+            //           message.toLowerCase().contains('confirm')) {
+            //   confirmPasswordError = message;
+            // }
+
+            final translated = translateError(msg.toString(), langCode);
+            final lower = translated.toLowerCase();
+
+            if (lower.contains('new password') || lower.contains('password baru')) {
+              newPasswordError = translated;
+            } else if (lower.contains('confirmation') || lower.contains('konfirmasi')) {
+              confirmPasswordError = translated;
             }
           }
         }

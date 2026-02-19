@@ -9,6 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/constants.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/vote_notification.dart';
 import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
@@ -20,9 +21,10 @@ import 'package:share_plus/share_plus.dart';
 
 class DeskripsiSection extends StatefulWidget {
   final Map<String, dynamic> data;
+  final List<dynamic> dataNotif;
   final String langCode;
   final String? currencyCode;
-  const DeskripsiSection({super.key, required this.data, required this.langCode, this.currencyCode});
+  const DeskripsiSection({super.key, required this.data, required this.dataNotif, required this.langCode, this.currencyCode});
 
   @override
   State<DeskripsiSection> createState() => _DeskripsiSectionState();
@@ -108,22 +110,37 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 4 / 5,
-          child: FadeInImage.assetNetwork(
-            placeholder: 'assets/images/img_placeholder.jpg',
-            image: widget.data['banner'],
-            width: double.infinity,
-            fit: BoxFit.cover,
-            fadeInDuration: const Duration(milliseconds: 200),
-            imageErrorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                'assets/images/img_broken.jpg',
+        Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 4 / 5,
+              child: FadeInImage.assetNetwork(
+                placeholder: 'assets/images/img_placeholder.jpg',
+                image: widget.data['banner'],
                 width: double.infinity,
                 fit: BoxFit.cover,
-              );
-            },
-          ),
+                fadeInDuration: const Duration(milliseconds: 200),
+                imageErrorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/images/img_broken.jpg',
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
+            ),
+
+            Positioned(
+              top: 12,
+              right: 4,
+              child: VoteNotifStack(
+                notifList: widget.dataNotif,
+                color: color,
+                bgColor: bgColor,
+                themeName: themeName,
+              ),
+            ),
+          ]
         ),
 
         const SizedBox(height: 8),
@@ -925,6 +942,7 @@ class DukunganSection extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20), // jarak antar item
                 child: CommentCard(
+                  namaFinalis: item['nama_finalis'] ?? '-',
                   name: hideNama == '0' ? nama : 'Anonymous',
                   time: formattedDate,
                   message: item['dukungan']
@@ -1175,6 +1193,7 @@ Widget buildListCard({
 }
 
 Widget CommentCard({
+  required String namaFinalis,
   required String name,
   required String time,
   required String message,
@@ -1190,6 +1209,31 @@ Widget CommentCard({
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start, // biar teks rata kiri
       children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            namaFinalis,
+            style: TextStyle(color: Colors.black,),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        Text(
+          message,
+          softWrap: true, // biar otomatis turun ke bawah
+        ),
+
+        const SizedBox(height: 12),
+
+        Divider(),
+
+        const SizedBox(height: 12),
+        
         Text(
           name,
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -1198,13 +1242,6 @@ Widget CommentCard({
         Text(
           time,
           style: const TextStyle(fontSize: 11, color: Colors.grey),
-        ),
-
-        const SizedBox(height: 15),
-
-        Text(
-          message,
-          softWrap: true, // biar otomatis turun ke bawah
         ),
       ],
     ),

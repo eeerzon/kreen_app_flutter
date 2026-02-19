@@ -121,6 +121,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   String? notLoginText, notLoginDesc, login;
   
   bool _emailTouched = false;
+  bool _phoneTouched = false;
 
   bool creditCardClicked = false;
   bool virtualAkunClicked = false;
@@ -176,8 +177,6 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     _nameController = TextEditingController();
     _phoneController = TextEditingController();
     _emailController = TextEditingController();
-
-    indikatorFocus = List.generate(indikator.length, (_) => FocusNode());
   }
 
   Future<void> _getBahasa() async {
@@ -297,6 +296,17 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       isLoading = false;
       showErrorBar = false;
     });
+
+    answers = List.filled(indikator.length, '');
+    ids_indikator = List.filled(indikator.length, '');
+    answerControllers = List.generate(
+      indikator.length,
+      (index) => TextEditingController(),
+    );
+    indikatorFocus = List.generate(
+      indikator.length,
+      (_) => FocusNode(),
+    );
   }
 
   double ceil2(num value) {
@@ -404,12 +414,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       final longitude = position.longitude;
       
       bool isNameEmpty = _nameController.text.trim().isEmpty;
-      bool isPhoneEmpty = _phoneController.text.trim().isEmpty;
+      // bool isPhoneEmpty = _phoneController.text.trim().isEmpty;
       bool isGenderEmpty = selectedGender == null;
       bool isCheckboxUnchecked = !_isChecked3;
 
       if (widget.totalHargaAsli != 0) {
-        if (isNameEmpty || isPhoneEmpty || isGenderEmpty || isCheckboxUnchecked) {
+        // if (isNameEmpty || isPhoneEmpty || isGenderEmpty || isCheckboxUnchecked) {
+        if (isNameEmpty || isGenderEmpty || isCheckboxUnchecked) {
           setState(() {
             _showError = true;
           });
@@ -1005,6 +1016,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                       ? _emailFocus 
                                       : indikatorFocus[idx],
                                   onChanged: (value) {
+                                    if (isPhoneField) {
+                                      if (!_phoneTouched) {
+                                        setState(() => _phoneTouched = true);
+                                      } else {
+                                        setState(() {});
+                                      }
+                                    }
                                     // answerControllers[idx].text = value;
                                     answers[idx] = value;
                                   },
@@ -2490,6 +2508,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
           !isValidEmail(_emailController.text)) {
         isValid = false;
         firstErrorFocus ??= _emailFocus;
+        print(isValid);
       }
 
       // phone
@@ -2498,6 +2517,23 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
         isValid = false;
         firstErrorFocus ??= _phoneFocus;
       }
+    }
+
+    final bool isEmailRequired =
+    indikator.any((e) => e['id_indikator_vote'] == 12);
+
+    final email = _emailController.text.trim();
+
+    if (email.isNotEmpty && !isValidEmail(email)) {
+      // format salah
+      isValid = false;
+      firstErrorFocus ??= _emailFocus;
+    }
+
+    if (isEmailRequired && email.isEmpty) {
+      // wajib tapi kosong
+      isValid = false;
+      firstErrorFocus ??= _emailFocus;
     }
 
     // form indokator

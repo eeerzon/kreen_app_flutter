@@ -61,6 +61,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   String errorMessage = ''; 
 
   bool isPaymentClosed = false;
+  bool isBeforeOpen = false;
+  bool _isSearching = false;
 
   Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
     if (close_payment != '1') {
@@ -279,11 +281,19 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   void _onSearchChanged(String value) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (!mounted) return;
+
       if (value.length >= 3) {
-        _searchFinalis(value);
+        setState(() => _isSearching = true);
+        await _searchFinalis(value);
+        if (!mounted) return;
+        setState(() => _isSearching = false);
       } else if (value.isEmpty) {
+        setState(() => _isSearching = true);
         _resetFinalis();
+        if (!mounted) return;
+        setState(() => _isSearching = false);
       }
     });
   }
@@ -496,28 +506,30 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // kiri
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
-                children: [
-                  Text(totalHargaText!),
-                  Text(
-                    vote['harga'] == 0
-                    ? hargaDetail!
-                    : currencyCode == null
-                      ? "${vote['currency']} ${formatter.format(totalHarga)}"
-                      : "$currencyCode ${formatter.format(totalHarga)}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: color,
+              remaining.inSeconds == 0 || isBeforeOpen || vote['close_payment'] == '1'
+              ? SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                  children: [
+                    Text(totalHargaText!),
+                    Text(
+                      vote['harga'] == 0
+                      ? hargaDetail!
+                      : currencyCode == null
+                        ? "${vote['currency']} ${formatter.format(totalHarga)}"
+                        : "$currencyCode ${formatter.format(totalHarga)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "${bahasa['paket']} $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
+                    Text(
+                      "${bahasa['paket']} $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
 
               // kanan
               ElevatedButton(
@@ -642,7 +654,21 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                child: buildGridView(vote, finalis, color, bgColor, themeName, noDataText),
+                child: _isSearching
+                  ? Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: CircularProgressIndicator(color: Colors.red,),
+                      ),
+                    )
+                  : buildGridView(
+                      vote, 
+                      finalis, 
+                      color, 
+                      bgColor, 
+                      themeName, 
+                      noDataText
+                    ),
               ),
             ),
           ],
@@ -693,7 +719,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
     final nowUtc = DateTime.now().toUtc();
 
-    bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+    isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
     String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
 
@@ -710,10 +736,18 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     if (listFinalis.isEmpty) {
       return Column(
         children: [
-          Image.asset(
-            'assets/images/placeholder.png',
-            width: 200,
-            height: 200,
+          ColorFiltered(
+            colorFilter: const ColorFilter.matrix([
+              0.2126, 0.7152, 0.0722, 0, 0,
+              0.2126, 0.7152, 0.0722, 0, 0,
+              0.2126, 0.7152, 0.0722, 0, 0,
+              0,      0,      0,      1, 0,
+            ]),
+            child: Image.asset(
+              'assets/images/placeholder.png',
+              width: 200,
+              height: 200,
+            ),
           ),
 
           SizedBox(height: 12,),

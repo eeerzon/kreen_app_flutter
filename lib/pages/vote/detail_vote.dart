@@ -49,6 +49,8 @@ class _DetailVotePageState extends State<DetailVotePage> {
   String? detailVoteLangText;
 
   Map<String, dynamic> vote = {};
+  List<dynamic> maplistOrderVote = [];
+  List<dynamic> listOrderVote = [];
   List<dynamic> ranking = [];
   List<dynamic> support = [];
   bool showErrorBar = false;
@@ -99,6 +101,17 @@ class _DetailVotePageState extends State<DetailVotePage> {
       return;
     }
 
+    final resultListOrderVote = await ApiService.get("/order/vote?id_vote=${widget.id_event}&status=success&sort_by=terbaru&page_size=5", xLanguage: langCode);
+    if (resultListOrderVote == null || resultListOrderVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultListOrderVote?['message'];
+      });
+      return;
+    }
+
+    maplistOrderVote = resultListOrderVote['data'];
+
     final Map<String, dynamic> tempVote = resultVote['data'] ?? {};
     final tempRanking = resultLeaderboard['data'] ?? [];
 
@@ -111,6 +124,13 @@ class _DetailVotePageState extends State<DetailVotePage> {
         ranking = tempRanking;
         support = resultSupport['data'] ?? [];
         flag_paket = vote['flag_paket'];
+
+        listOrderVote = maplistOrderVote.map<String>((item) {
+          final String name = item['nama_finalis'] ?? '';
+          final int qty = int.tryParse(item['qty'].toString()) ?? 0;
+
+          return "$name ${bahasa!["has_been"]} ($qty ${bahasa!["text_vote"]})";
+        }).toList();
 
         _isLoading = false;
         showErrorBar = false;
@@ -549,7 +569,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                   SizedBox(
                     key: descKey,
                     width: double.infinity,
-                    child: _buildDeskripsiSection(view_api, vote, langCode!, currencyCode)
+                    child: _buildDeskripsiSection(view_api, vote, listOrderVote, langCode!, currencyCode)
                   ),
 
 
@@ -588,20 +608,20 @@ class _DetailVotePageState extends State<DetailVotePage> {
 }
 
 /// Helper builder untuk pilih Section berdasarkan view_api
-Widget _buildDeskripsiSection(int api, Map<String, dynamic> vote, String langCode, String? currencyCode) {
+Widget _buildDeskripsiSection(int api, Map<String, dynamic> vote, List<dynamic> listOrderVote, String langCode, String? currencyCode) {
   switch (api) {
     case 2:
-      return DeskripsiSection_2(data: vote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_2(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
     case 3:
-      return DeskripsiSection_3(data: vote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_3(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
     case 4:
-      return DeskripsiSection_4(data: vote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_4(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
     case 5:
-      return DeskripsiSection_5(data: vote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_5(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
     case 6:
-      return DeskripsiSection_6(data: vote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_6(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
     default:
-      return DeskripsiSection(data: vote, langCode: langCode,);
+      return DeskripsiSection(data: vote, dataNotif: listOrderVote, langCode: langCode,);
   }
 }
 

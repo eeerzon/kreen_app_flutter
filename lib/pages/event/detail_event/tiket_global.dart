@@ -84,12 +84,23 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   bool isConfirmLoading = false;
   
   bool _emailTouched = false;
+  bool _phoneTouched = false;
   
   Set<int> _duplicateEmailIndexes = {};
   Set<int> _duplicatePhoneIndexes = {};
   Set<int> _duplicateNameIndexes = {};
 
   void checkDuplicateInputs() {
+    // JIKA MODE SAMAKAN AKTIF -> DUPLIKASI BOLEH
+    if (widget.flag_samakan_input_tiket_pertama == '1') {
+      setState(() {
+        _duplicateEmailIndexes = {};
+        _duplicatePhoneIndexes = {};
+        _duplicateNameIndexes = {};
+      });
+      return;
+    }
+
     Map<String, List<int>> emailMap = {};
     Map<String, List<int>> phoneMap = {};
     Map<String, List<int>> nameMap = {};
@@ -99,32 +110,22 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
       final p = phoneControllers[i].text.trim();
       final n = nameControllers[i].text.trim();
 
-      if (e.isNotEmpty) {
-        emailMap.putIfAbsent(e, () => []).add(i);
-      }
-
-      if (p.isNotEmpty) {
-        phoneMap.putIfAbsent(p, () => []).add(i);
-      }
-
-      if (n.isNotEmpty) {
-        nameMap.putIfAbsent(n, () => []).add(i);
-      }
+      if (e.isNotEmpty) emailMap.putIfAbsent(e, () => []).add(i);
+      if (p.isNotEmpty) phoneMap.putIfAbsent(p, () => []).add(i);
+      if (n.isNotEmpty) nameMap.putIfAbsent(n, () => []).add(i);
     }
 
     Set<int> dupEmail = {};
     Set<int> dupPhone = {};
     Set<int> dupName = {};
 
-    emailMap.forEach((key, indexes) {
+    emailMap.forEach((_, indexes) {
       if (indexes.length > 1) dupEmail.addAll(indexes);
     });
-
-    phoneMap.forEach((key, indexes) {
+    phoneMap.forEach((_, indexes) {
       if (indexes.length > 1) dupPhone.addAll(indexes);
     });
-
-    nameMap.forEach((key, indexes) {
+    nameMap.forEach((_, indexes) {
       if (indexes.length > 1) dupName.addAll(indexes);
     });
 
@@ -629,39 +630,35 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ],
                         ),
 
-
                         if (index != 0 && widget.flag_samakan_input_tiket_pertama == '1') ...[
-                          SizedBox(height: 2),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Checkbox(
-                                value: _isCheckedList[index],
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isCheckedList[index] = value ?? false;
-                                    if (_isCheckedList[index]) {
-                                      // salin data dari tiket pertama
-                                      emailControllers[index].text = emailControllers[0].text;
-                                      nameControllers[index].text = nameControllers[0].text;
-                                      phoneControllers[index].text = phoneControllers[0].text;
-                                      selectedGenders[index] = selectedGenders[0];
-                                    } else {
-                                      // reset data jika checkbox di-uncheck
-                                      emailControllers[index].clear();
-                                      nameControllers[index].clear();
-                                      phoneControllers[index].clear();
-                                      selectedGenders[index] = null;
-                                    }
-                                  });
-                                },
-                                activeColor: Colors.red,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text("${bahasa['samakan_input']} ${bahasa['tiket']} 1"),
-                              ),
-                            ],
+                          const SizedBox(height: 2),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: Colors.red,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            value: _isCheckedList[index],
+                            title: Text(
+                              "${bahasa['samakan_input']} ${bahasa['tiket']} 1",
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _isCheckedList[index] = value ?? false;
+
+                                if (_isCheckedList[index]) {
+                                  // copy dari tiket pertama
+                                  emailControllers[index].text = emailControllers[0].text;
+                                  nameControllers[index].text = nameControllers[0].text;
+                                  phoneControllers[index].text = phoneControllers[0].text;
+                                  selectedGenders[index] = selectedGenders[0];
+                                } else {
+                                  // reset
+                                  emailControllers[index].clear();
+                                  nameControllers[index].clear();
+                                  phoneControllers[index].clear();
+                                  selectedGenders[index] = null;
+                                }
+                              });
+                            },
                           ),
                         ],
 
@@ -719,7 +716,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             hintStyle: TextStyle(color: Colors.grey.shade400),
                             errorText: _emailTouched && !isValidEmail(emailControllers[index].text)
                               ? bahasa['error_email_1']
-                              : _duplicateEmailIndexes.contains(index)
+                              : (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                  _duplicateEmailIndexes.contains(index))
                                   ? bahasa['error_email_2']
                                   : null,
                             border: OutlineInputBorder(
@@ -784,7 +782,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           decoration: InputDecoration(
                             hintText: namaHint,
                             hintStyle: TextStyle(color: Colors.grey.shade400),
-                            errorText: _duplicateNameIndexes.contains(index)
+                            errorText: (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                  _duplicateNameIndexes.contains(index))
                               ? bahasa['error_nama_1']
                               : null,
                             border: OutlineInputBorder(
@@ -910,6 +909,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           focusNode: phoneFocusNodes[index],
                           controller: phoneControllers[index],
                           onChanged: (value) {
+                            if (!_phoneTouched) {
+                              setState(() => _phoneTouched = true);
+                            } else {
+                              setState(() {});
+                            }
+
                             setState(() {
                               if (widget.flag_samakan_input_tiket_pertama == '0') {
                                 phoneControllers[index].text = value;
@@ -939,11 +944,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             hintText: nohpHint!,
                             hintStyle: TextStyle(color: Colors.grey.shade400),
                             errorText: phoneControllers[index].text.isNotEmpty &&
-                                    !isValidPhone(phoneControllers[index].text)
-                                ? nohpError
-                                : _duplicatePhoneIndexes.contains(index)
-                                    ? bahasa['error_nohp_1']
-                                    : null,
+                                  !isValidPhone(phoneControllers[index].text) && _phoneTouched
+                              ? nohpError
+                              : (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                  _duplicatePhoneIndexes.contains(index))
+                                  ? bahasa['error_nohp_1']
+                                  : null,
                             errorMaxLines: 3,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1673,14 +1679,16 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
       // email
       if (emailControllers[i].text.trim().isEmpty ||
           !isValidEmail(emailControllers[i].text) ||
-          _duplicateEmailIndexes.contains(i)) {
+          (widget.flag_samakan_input_tiket_pertama == '0' &&
+          _duplicateEmailIndexes.contains(i))) {
         isValid = false;
         firstErrorFocus ??= emailFocusNodes[i];
       }
 
       // nama
       if (nameControllers[i].text.trim().isEmpty ||
-          _duplicateNameIndexes.contains(i)) {
+          (widget.flag_samakan_input_tiket_pertama == '0' &&
+          _duplicateNameIndexes.contains(i))) {
         isValid = false;
         firstErrorFocus ??= nameFocusNodes[i];
       }
@@ -1694,7 +1702,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
       // phone
       if (phoneControllers[i].text.trim().isEmpty ||
           !isValidPhone(phoneControllers[i].text) ||
-          _duplicatePhoneIndexes.contains(i)) {
+          (widget.flag_samakan_input_tiket_pertama == '0' &&
+          _duplicatePhoneIndexes.contains(i))) {
         isValid = false;
         firstErrorFocus ??= phoneFocusNodes[i];
       }

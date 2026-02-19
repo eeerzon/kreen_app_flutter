@@ -9,7 +9,6 @@ import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
 import 'package:kreen_app_flutter/pages/content_home/info_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/order_page.dart';
-import 'package:kreen_app_flutter/pages/content_home/scan_page.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';

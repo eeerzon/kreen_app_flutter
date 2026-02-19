@@ -1,72 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:flutter/services.dart';
+import 'package:kreen_app_flutter/helper/yt_section_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class VideoSection extends StatelessWidget {
-  final String link;
-  final String headerText;
-  final String noValidText;
-  const VideoSection({super.key, required this.link, required this.headerText, required this.noValidText});
+class VideoSection extends StatefulWidget {
+  final YoutubePlayerController controller;
 
-  String extractVideoId(String url) {
-    try {
-      return YoutubePlayer.convertUrlToId(url) ?? "";
-    } catch (_) {
-      return "";
-    }
+  const VideoSection({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  State<VideoSection> createState() => _VideoSectionState();
+}
+
+class _VideoSectionState extends State<VideoSection> {
+  bool _isOpeningFullscreen = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.controller.addListener(() {
+      if (widget.controller.value.isFullScreen) {
+        widget.controller.toggleFullScreenMode();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final videoId = extractVideoId(link);
+    return YoutubePlayerBuilder(
+      // cegah fullscreen default
+      // onEnterFullScreen: () async {
+      //   if (_isOpeningFullscreen) return; // 🔒 GUARD
+      //     _isOpeningFullscreen = true;
 
-    if (videoId.isEmpty) {
-      return Text(
-        noValidText,
-        style: TextStyle(color: Colors.red),
-      );
-    }
+      //   await Navigator.of(context).push(
+      //     MaterialPageRoute(
+      //       builder: (_) => FullscreenYoutubePage(
+      //         controller: widget.controller,
+      //       ),
+      //     ),
+      //   );
 
-    final controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: false,
-        mute: false,
+      //   _isOpeningFullscreen = false; // 🔓 RELEASE
+      // },
+      onEnterFullScreen: null, // cegah fullscreen default
+
+      // kosongkan exit default
+      // onExitFullScreen: () {},
+
+      player: YoutubePlayer(
+        controller: widget.controller,
+        showVideoProgressIndicator: true,
       ),
+
+      // JANGAN bungkus Column / Container
+      builder: (context, player) => player,
     );
-
-    // return Container(
-    //   color: Colors.white,
-    //   padding: kGlobalPadding,
-    //   child: Column(
-    //     crossAxisAlignment: CrossAxisAlignment.center,
-    //     children: [
-    //       Text(
-    //         headerText,
-    //         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-    //       ),
-    //       const SizedBox(height: 12),
-    //       YoutubePlayer(
-    //         controller: controller,
-    //         showVideoProgressIndicator: true,
-    //       )
-    //     ],
-    //   ),
-    // );
-
-    return Container(
-      color: Colors.white,
-      padding: kGlobalPadding,
-      child: Center(
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: YoutubePlayer(
-            controller: controller,
-            showVideoProgressIndicator: true,
-          ),
-        ),
-      ),
-    );
-
   }
 }
