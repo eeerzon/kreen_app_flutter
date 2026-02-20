@@ -38,7 +38,6 @@ dependencies:
   image_picker: ^1.1.2
   share_plus: ^10.0.2
   youtube_player_flutter: ^9.0.1
-  video_player: ^2.8.2
   flutter_svg: ^2.0.10
   url_launcher: ^6.3.0
   geolocator: ^9.0.2
@@ -103,8 +102,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - assets/flags/id.png
-    - assets/flags/en.png
+    - assets/flags/
     - assets/lang/
     - assets/currencies/
 
