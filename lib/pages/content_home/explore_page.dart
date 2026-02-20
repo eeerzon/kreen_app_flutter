@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_all.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_event.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_filter.dart';

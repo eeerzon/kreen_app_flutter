@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/constants.dart';
+import 'package:kreen_app_flutter/helper/global_var.dart';
 
 class PaymentList extends StatelessWidget {
   final GlobalKey sectionKey;
