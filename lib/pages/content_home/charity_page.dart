@@ -214,7 +214,7 @@ class _CharityPageState extends State<CharityPage> {
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         prefixIcon: Icon(Icons.search),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       onChanged: (value) {
@@ -266,15 +266,15 @@ class _CharityPageState extends State<CharityPage> {
         final item = items[index];
         return InkWell(
           onTap: () {},
-          borderRadius: BorderRadius.circular(12), // biar ripple ikut radius
+          borderRadius: BorderRadius.circular(8), // biar ripple ikut radius
           child: Card(
             color: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                   child: Image.asset(
                     item.imagePath,
                     width: double.infinity,

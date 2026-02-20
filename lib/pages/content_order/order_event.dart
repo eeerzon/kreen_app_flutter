@@ -269,7 +269,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
@@ -1756,7 +1756,7 @@ class _NoOrderState extends State<NoOrder> {
             width: MediaQuery.of(context).size.width * 0.9,
             decoration: BoxDecoration(
               color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Padding(
               padding: kGlobalPadding,

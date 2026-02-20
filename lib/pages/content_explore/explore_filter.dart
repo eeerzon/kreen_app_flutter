@@ -29,7 +29,7 @@ class ExploreFilter extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: isActive ? Colors.red : Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 filters[index],

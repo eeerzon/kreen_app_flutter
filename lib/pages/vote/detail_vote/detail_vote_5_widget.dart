@@ -1022,7 +1022,7 @@ Widget buildTopCard({
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.shade300,),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           color: Colors.white,
         ),
         child: Column(
@@ -1088,7 +1088,7 @@ Widget buildTopCard({
                 padding: const EdgeInsets.symmetric(horizontal: 13),
                 backgroundColor: tema,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: const Text(
@@ -1227,7 +1227,7 @@ Widget CommentCard({
     padding: kGlobalPadding,
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       border: Border.all(color: Colors.grey.shade300,),
     ),
     child: Column(

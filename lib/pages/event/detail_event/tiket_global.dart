@@ -393,7 +393,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
 
@@ -411,7 +411,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       height: 120,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.grey),
                       ),
                     )
@@ -422,7 +422,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       height: 120,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.grey),
                       ),
                     )
@@ -721,10 +721,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                   ? bahasa['error_email_2']
                                   : null,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
                                 color: Colors.grey,
                                 width: 2,
@@ -787,10 +787,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               ? bahasa['error_nama_1']
                               : null,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
                                 color: Colors.grey,
                                 width: 2,
@@ -850,7 +850,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           left: indx == 1 ? 8 : 0,
                                         ),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(8),
                                           border: Border.all(color: Colors.grey),
                                           color: isSelectedGender
                                               ? Colors.green.withOpacity(0.1)
@@ -952,10 +952,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                   : null,
                             errorMaxLines: 3,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(
                                 color: Colors.grey,
                                 width: 2,
@@ -1037,10 +1037,10 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                     hintText: bahasa['tiket_template_answer_hint'],
                                     hintStyle: TextStyle(color: Colors.grey.shade400),
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
                                         color: Colors.grey,
                                         width: 2,
@@ -1106,7 +1106,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(8),
                                             border: Border.all(color: Colors.grey),
                                           ),
                                           child: Row(
@@ -1176,7 +1176,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                 left: indx == 1 ? 8 : 0,
                                               ),
                                               decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius: BorderRadius.circular(8),
                                                 border: Border.all(
                                                   color: Colors.grey,
                                                   width: 1,
@@ -1287,7 +1287,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         },
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(8),
                                             borderSide: BorderSide(color: Colors.grey),
                                           ),
                                           contentPadding:

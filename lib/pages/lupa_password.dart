@@ -117,7 +117,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
                           hintText: emailHint!,
                           hintStyle: TextStyle(color: Colors.grey.shade400),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -141,7 +141,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
                             }),
                             shape: WidgetStateProperty.all(
                               RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                           ),

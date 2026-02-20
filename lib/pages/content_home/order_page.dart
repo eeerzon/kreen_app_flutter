@@ -94,7 +94,7 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [

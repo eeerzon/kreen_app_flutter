@@ -510,7 +510,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                       hintText: bahasa['support_hint'],
                       hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     onChanged: (val) {

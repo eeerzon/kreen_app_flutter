@@ -353,7 +353,7 @@ class _HomeContentState extends State<HomeContent> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
@@ -387,7 +387,7 @@ class _HomeContentState extends State<HomeContent> {
                         child: Card(
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,7 +498,7 @@ class _HomeContentState extends State<HomeContent> {
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
                                           backgroundColor: const Color(0xFFFFDFE0),
                                         ),
@@ -884,7 +884,7 @@ class _HomeContentState extends State<HomeContent> {
                                       color: Colors.white,
                                       elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1131,7 +1131,7 @@ class _HomeContentState extends State<HomeContent> {
                                       color: Colors.white,
                                       elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1406,7 +1406,7 @@ class _HomeContentState extends State<HomeContent> {
                                       color: Colors.white,
                                       elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1691,7 +1691,7 @@ class _HomeContentState extends State<HomeContent> {
                                       color: Colors.white,
                                       elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1958,7 +1958,7 @@ class _HomeContentState extends State<HomeContent> {
                                       color: Colors.white,
                                       elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2215,7 +2215,7 @@ class _HomeContentState extends State<HomeContent> {
                                       color: Colors.white,
                                       elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,

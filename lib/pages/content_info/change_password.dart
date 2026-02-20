@@ -327,7 +327,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                               }),
                               shape: WidgetStateProperty.all(
                                 RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),

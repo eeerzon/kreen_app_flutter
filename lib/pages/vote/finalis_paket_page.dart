@@ -1077,7 +1077,7 @@ class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
             hintStyle: TextStyle(color: Colors.grey.shade400),
             prefixIcon: const Icon(Icons.search),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade400,),
             ),
           ),

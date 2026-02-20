@@ -96,7 +96,7 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey.shade400,),
                     ),
                   ),

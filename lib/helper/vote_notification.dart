@@ -16,7 +16,6 @@ class VoteNotification extends StatelessWidget {
       clipBehavior: Clip.none,
       alignment: Alignment.centerLeft,
       children: [
-        // 🔹 Container utama
         Container(
           padding: const EdgeInsets.fromLTRB(24, 8, 12, 8),
           decoration: BoxDecoration(
@@ -32,12 +31,12 @@ class VoteNotification extends StatelessWidget {
           ),
         ),
 
-        // 🔔 Icon (DI LUAR CONTAINER)
+
         Positioned(
-          left: -12,
+          left: -8,
           child: Container(
-            width: 28,
-            height: 28,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
               color: bgColor,
               shape: BoxShape.circle,
@@ -108,18 +107,18 @@ class _VoteNotifStackState extends State<VoteNotifStack> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: _visibleNotifs
-          .map(
-            (text) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: VoteNotification(
-                text: text,
-                color: widget.color,
-                bgColor: widget.bgColor,
-                themeName: widget.themeName
-              ),
+        .map(
+          (text) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: VoteNotification(
+              text: text,
+              color: widget.color,
+              bgColor: widget.bgColor,
+              themeName: widget.themeName
             ),
-          )
-          .toList(),
+          ),
+        )
+        .toList(),
     );
   }
 }

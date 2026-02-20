@@ -1109,7 +1109,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
               width: MediaQuery.of(context).size.width * 0.9,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey.shade300,),
               ),
               child: Padding(

@@ -601,7 +601,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: isButtonEnabled ? Colors.red : Colors.grey,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1948,7 +1948,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                   padding: kGlobalPadding,
                                   decoration: BoxDecoration(
                                     color: sudahTutup ? Colors.grey.shade300 : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: Colors.grey.shade300,),
                                   ),
                                   child: IntrinsicHeight(

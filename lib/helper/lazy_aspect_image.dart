@@ -12,7 +12,7 @@ class _LazyAspectImageState extends State<LazyAspectImage> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: Image.network(
         widget.url,
         fit: BoxFit.cover,

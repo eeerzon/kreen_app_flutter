@@ -501,7 +501,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                       height: 40,
                       width: 40,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: Colors.grey,
                           width: 1,

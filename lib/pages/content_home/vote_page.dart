@@ -101,7 +101,7 @@ class _VotePageState extends State<VotePage> {
                       hintStyle: TextStyle(color: Colors.grey.shade400),
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     onChanged: (value) {
@@ -158,10 +158,10 @@ class _VotePageState extends State<VotePage> {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(12), // biar ripple ikut radius
+          borderRadius: BorderRadius.circular(8), // biar ripple ikut radius
           child: Card(
             color: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

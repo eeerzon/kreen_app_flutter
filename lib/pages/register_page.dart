@@ -51,7 +51,7 @@ class _RegisPageState extends State<RegisPage> {
   
   OutlineInputBorder _border(bool isFilled) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(
         color: isFilled ? Colors.orange : Colors.grey.shade400,
         width: 1.5,
@@ -327,7 +327,7 @@ class _RegisPageState extends State<RegisPage> {
                         hintText: firstName!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -354,7 +354,7 @@ class _RegisPageState extends State<RegisPage> {
                         hintText: lastName!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -384,7 +384,7 @@ class _RegisPageState extends State<RegisPage> {
                         hintText: email!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -427,7 +427,7 @@ class _RegisPageState extends State<RegisPage> {
                         hintText: phone!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -465,7 +465,7 @@ class _RegisPageState extends State<RegisPage> {
                         hintText: password!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -512,7 +512,7 @@ class _RegisPageState extends State<RegisPage> {
                         hintText: confirmPassword!,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -571,7 +571,7 @@ class _RegisPageState extends State<RegisPage> {
                           }),
                           shape: WidgetStateProperty.all(
                             RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                         ),

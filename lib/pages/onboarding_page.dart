@@ -255,7 +255,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               style: ElevatedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 50),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 backgroundColor: Colors.red,
                               ),
@@ -271,7 +271,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               style: ElevatedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 50),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 backgroundColor: Colors.white,
                               ),

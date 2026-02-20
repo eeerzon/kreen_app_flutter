@@ -101,7 +101,7 @@ class _EventPageState extends State<EventPage> {
                       hintStyle: TextStyle(color: Colors.grey.shade400),
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     onChanged: (value) {
@@ -150,10 +150,10 @@ class _EventPageState extends State<EventPage> {
         final item = events[index];
         return InkWell(
           onTap: () {},
-          borderRadius: BorderRadius.circular(12), // biar ripple ikut radius
+          borderRadius: BorderRadius.circular(8), // biar ripple ikut radius
           child: Card(
             color: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -822,7 +822,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               hintText: namaLengkapHint!,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               enabledBorder: _border(_nameController.text.isNotEmpty),
                               focusedBorder: _border(true),
@@ -879,7 +879,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           left: index == 1 ? 8 : 0,
                                         ),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(8),
                                           border: Border.all(color: Colors.grey.shade300),
                                           color: isSelectedGender ? Colors.green.withOpacity(0.1) : Colors.white,
                                         ),
@@ -951,7 +951,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               hintText: emailHint!,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               enabledBorder: _border(_emailController.text.isNotEmpty),
                               focusedBorder: _border(true),
@@ -1033,7 +1033,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                     hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
                                     hintStyle: TextStyle(color: Colors.grey.shade400),
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     enabledBorder: _border(isPhoneField 
                                       ? _phoneController.text.isNotEmpty 
@@ -1105,7 +1105,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               height: 40,
                               width: 40,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: Colors.grey,
                                   width: 1,
@@ -2457,7 +2457,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   
   OutlineInputBorder _border(bool isFilled) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(color: Colors.grey.shade300,),
     );
   }

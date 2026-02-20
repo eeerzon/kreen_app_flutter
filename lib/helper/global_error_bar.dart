@@ -52,7 +52,7 @@ class _GlobalErrorBarState extends State<GlobalErrorBar> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.red,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               boxShadow: const [
                 BoxShadow(
                   color: Colors.black26,

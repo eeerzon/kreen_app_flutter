@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
   OutlineInputBorder _border(bool isFilled) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(
         color: isFilled ? Colors.orange : Colors.grey.shade400,
         width: 1.5,
@@ -385,7 +385,7 @@ class _LoginPageState extends State<LoginPage> {
                         hintText: input_email,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -404,7 +404,7 @@ class _LoginPageState extends State<LoginPage> {
                         hintText: input_password,
                         hintStyle: TextStyle(color: Colors.grey.shade400),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -455,7 +455,7 @@ class _LoginPageState extends State<LoginPage> {
                           }),
                           shape: WidgetStateProperty.all(
                             RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                         ),

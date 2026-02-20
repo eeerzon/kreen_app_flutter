@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 const EdgeInsets kGlobalPadding = EdgeInsets.all(20);
 
 const String baseUrl = "https://dev.kreenconnect.com"; //dev
-// const String baseUrl = "https://kreenconnect.com";
+// const String baseUrl = "https://kreenconnect.com"; //prod
 
 const String baseapiUrl = "$baseUrl/kreenapi";
 
@@ -29,8 +29,8 @@ bool isValidPhone(String phone) {
   return regex.hasMatch(phone);
 }
 
-String? currencyCode = 'IDR';       // currency aktif UI
-String? userCurrency = 'IDR';       // preference user
+String? currencyCode = 'IDR'; // currency aktif UI
+String? userCurrency = 'IDR'; // preference user
 String? lastCurrency;
 
 int isChoosed = 0; // 0 = belum pilih, 1 = sudah pilih

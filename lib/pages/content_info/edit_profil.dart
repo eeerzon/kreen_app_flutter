@@ -542,7 +542,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['nama_depan_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -580,7 +580,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['nama_belakang_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -604,7 +604,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['pilih_dob'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -650,7 +650,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       left: index == 1 ? 8 : 0,
                                     ),
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                       border: Border.all(color: Colors.grey.shade300),
                                       color: isSelectedGender ? Colors.green.withOpacity(0.1) : Colors.white,
                                     ),
@@ -696,7 +696,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['company_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -718,7 +718,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['job_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -749,7 +749,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: emailHint,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -796,7 +796,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: phoneHint,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -841,7 +841,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['uname_linkedin_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -880,7 +880,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['uname_instagram_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -919,7 +919,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               hintText: bahasa['uname_twitter_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               filled: true,
                               fillColor: Colors.white,

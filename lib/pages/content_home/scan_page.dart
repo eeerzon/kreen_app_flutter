@@ -138,7 +138,7 @@ class _ScannerPageState extends State<ScannerPage>
                     padding: const EdgeInsets.symmetric(
                         vertical: 12, horizontal: 20),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   icon: const Icon(Icons.image),

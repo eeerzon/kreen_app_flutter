@@ -243,7 +243,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                 //     hintStyle: TextStyle(color: Colors.grey.shade400),
                 //     prefixIcon: Icon(Icons.search),
                 //     border: OutlineInputBorder(
-                //       borderRadius: BorderRadius.circular(12),
+                //       borderRadius: BorderRadius.circular(8),
                 //     ),
                 //   ),
                 //   onChanged: (value) {
