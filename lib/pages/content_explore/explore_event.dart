@@ -401,7 +401,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                         ),
                       ),
                     ).then((_) {
-                      if (item['price'] != 0) {
+                      if (item['price'] != 0 || isChoosed == 1) {
                         _handleBackFromDetail();
                       }
                     });
@@ -456,7 +456,7 @@ class _ExploreEventState extends State<ExploreEvent> {
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   typeEvent.toString().toUpperCase(),

@@ -230,7 +230,7 @@ class _OrderPageState extends State<OrderPage> with SingleTickerProviderStateMix
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFFFE5E5),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Image.asset(
               "assets/images/img_ovo30d.png",

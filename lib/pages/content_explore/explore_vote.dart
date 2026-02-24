@@ -392,7 +392,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                         ),
                       ),
                     ).then((_) {
-                      if (item['price'] != 0) {
+                      if (item['price'] != 0 || isChoosed == 1) {
                         _handleBackFromDetail();
                       }
                     });

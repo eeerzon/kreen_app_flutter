@@ -88,9 +88,9 @@ class _ChangePasswordState extends State<ChangePassword> {
         ),
       ),
 
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) {
           FocusManager.instance.primaryFocus?.unfocus();
         },
         child: Stack(
@@ -98,6 +98,7 @@ class _ChangePasswordState extends State<ChangePassword> {
             isLoading
               ? Center(child: CircularProgressIndicator(color: Colors.red,),)
               : SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Container(
                     height: MediaQuery.of(context).size.height,
                     color: Colors.white,
@@ -126,6 +127,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                           controller: _currentPasswordController,
                           focusNode: _currentPasswordFocus,
                           readOnly: _lockCurrentPasswordField,
+                          keyboardType: TextInputType.visiblePassword,
                           onChanged: (_) => setState(() {}),
                           obscureText: _obscurePasswordCurrent,
                           decoration: InputDecoration(
@@ -148,7 +150,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                                   _obscurePasswordCurrent = !_obscurePasswordCurrent;
                                 });
 
-                                await Future.delayed(const Duration(milliseconds: 50));
+                                await Future.delayed(const Duration(milliseconds: 30));
 
                                 setState(() {
                                   _lockCurrentPasswordField = false;
@@ -198,6 +200,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                           controller: _newPasswordController,
                           focusNode: _newPasswordFocus,
                           readOnly: _lockNewPasswordField,
+                          keyboardType: TextInputType.visiblePassword,
                           onChanged: (_) => setState(() {}),
                           obscureText: _obscurePasswordNew,
                           decoration: InputDecoration(
@@ -220,7 +223,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                                   _obscurePasswordNew = !_obscurePasswordNew;
                                 });
 
-                                await Future.delayed(const Duration(milliseconds: 50));
+                                await Future.delayed(const Duration(milliseconds: 30));
 
                                 setState(() {
                                   _lockNewPasswordField = false;
@@ -261,6 +264,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                           controller: _confirmPasswordController,
                           focusNode: _confirmPasswordFocus,
                           readOnly: _lockConfirmPasswordField,
+                          keyboardType: TextInputType.visiblePassword,
                           onChanged: (_) => setState(() {}),
                           obscureText: _obscurePasswordConfirm,
                           decoration: InputDecoration(
@@ -283,7 +287,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                                   _obscurePasswordConfirm = !_obscurePasswordConfirm;
                                 });
 
-                                await Future.delayed(const Duration(milliseconds: 50));
+                                await Future.delayed(const Duration(milliseconds: 30));
 
                                 setState(() {
                                   _lockConfirmPasswordField = false;
@@ -429,14 +433,6 @@ class _ChangePasswordState extends State<ChangePassword> {
         desc = errorMessages.join('\n');
         if (data['password'] is List) {
           for (var msg in data['password']) {
-            // final message = msg.toString();
-
-            // if (message.toLowerCase().contains('new password')) {
-            //   newPasswordError = message;
-            // } else if (message.toLowerCase().contains('konfirmasi') ||
-            //           message.toLowerCase().contains('confirm')) {
-            //   confirmPasswordError = message;
-            // }
 
             final translated = translateError(msg.toString(), langCode);
             final lower = translated.toLowerCase();

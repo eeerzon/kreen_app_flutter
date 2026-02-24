@@ -209,7 +209,7 @@ class DeskripsiSection_3 extends StatefulWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           widget.data['nama_kategori'] ?? '-',

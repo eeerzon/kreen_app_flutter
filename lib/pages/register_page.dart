@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, prefer_interpolation_to_compose_strings
+// ignore_for_file: use_build_context_synchronously, prefer_interpolation_to_compose_strings, non_constant_identifier_names
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +65,10 @@ class _RegisPageState extends State<RegisPage> {
 
   int errorCode = 0;
   Map<String, dynamic> errorMessage = {};
+  
+  String? PasswordError, PasswordError2;
+  String? confirmPasswordError;
+
   void _doRegis() async {
     showLoadingDialog(context, bahasa['loading']);
 
@@ -93,24 +97,52 @@ class _RegisPageState extends State<RegisPage> {
 
       final data = result['data'];
       String desc = '';
-      if (data is Map) {
+      if (data is Map<String, dynamic>) {
+
         final errorMessages = data.values
           .whereType<List>()
           .expand((e) => e)
           .whereType<String>()
+          .map((e) => translateError(e, langCode))
           .toList();
 
         desc = errorMessages.join('\n');
-      } else {
-        desc = data?.toString() ?? '';
+        if (data['password'] is List) {
+          for (var msg in data['password']) {
+            // final message = msg.toString();
+
+            // if (message.toLowerCase().contains('new password')) {
+            //   newPasswordError = message;
+            // } else if (message.toLowerCase().contains('konfirmasi') ||
+            //           message.toLowerCase().contains('confirm')) {
+            //   confirmPasswordError = message;
+            // }
+
+            final translated = translateError(msg.toString(), langCode);
+            final lower = translated.toLowerCase();
+
+            if (lower.contains('minimal 8 karakter') || lower.contains('must be at least 8 characters')) {
+              PasswordError = translated;
+            } else if (lower.contains('mengandung setidaknya satu huruf dan satu angka') || lower.contains('must contain at least one letter and one number')) {
+              PasswordError2 = translated;
+            } else if (lower.contains('tidak cocok') || lower.contains('does not match')) {
+              confirmPasswordError = translated;
+            }
+          }
+        }
       }
+      errorCode = result['rc'] ?? 0;
+      errorMessage = data;
+
       AwesomeDialog(
         context: context,
         dialogType: DialogType.noHeader,
         animType: AnimType.topSlide,
         title: bahasa['maaf'],
         desc: bahasa['error'] + '\n' + desc,
-        btnOkOnPress: () {},
+        btnOkOnPress: () {
+          setState(() {});
+        },
         btnOkColor: Colors.red,
         buttonsTextStyle: TextStyle(color: Colors.white),
         headerAnimationLoop: false,
@@ -126,7 +158,9 @@ class _RegisPageState extends State<RegisPage> {
         animType: AnimType.topSlide,
         title: bahasa['maaf'],
         desc: bahasa['error'],
-        btnOkOnPress: () {},
+        btnOkOnPress: () {
+          setState(() {});
+        },
         btnOkColor: Colors.red,
         buttonsTextStyle: TextStyle(color: Colors.white),
         headerAnimationLoop: false,
@@ -295,401 +329,450 @@ class _RegisPageState extends State<RegisPage> {
         ),
       ),
 
-      body: GestureDetector(
+      body: Listener(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
+        onPointerDown: (_) {
           FocusManager.instance.primaryFocus?.unfocus();
         },
-        child: Stack(
-          children: [
-            //konten page
-            SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Column(
-                  children: [
-                    //nama lengkap
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              children: [
+                //nama lengkap
 
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(firstNameLabel ?? "..."),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Text(firstNameLabel ?? "..."),
+                ),
+                TextField(
+                  controller: _firstNameController,
+                  onChanged: (_) => setState(() {}),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r"[a-zA-Z\s]"),
                     ),
-                    TextField(
-                      controller: _firstNameController,
-                      onChanged: (_) => setState(() {}),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r"[a-zA-Z\s]"),
-                        ),
-                        NameInputFormatter(),
-                      ],
-                      decoration: InputDecoration(
-                        hintText: firstName!,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_firstNameController.text.isNotEmpty),
-                        focusedBorder: _border(true),
+                    NameInputFormatter(),
+                  ],
+                  decoration: InputDecoration(
+                    hintText: firstName!,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_firstNameController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Text(lastNameLabel ?? "..."), // nama belakang
+                ),
+                TextField(
+                  controller: _lastNameController,
+                  onChanged: (_) => setState(() {}),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r"[a-zA-Z\s]"),
+                    ),
+                    LastNameInputFormatter(),
+                  ],
+                  decoration: InputDecoration(
+                    hintText: lastName!,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_lastNameController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                  ),
+                ),
+
+                //email 
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Text(
+                    emailLabel!
+                  ),
+                ),
+                TextField(
+                  controller: _emailController,
+                  onChanged: (_) => setState(() {
+                    if (!_emailTouched) {
+                      setState(() => _emailTouched = true);
+                    } else {
+                      setState(() {});
+                    }
+                  }),
+                  decoration: InputDecoration(
+                    hintText: email!,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_emailController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                    errorText: _emailTouched &&  !isValidEmail(_emailController.text)
+                      ? bahasa['error_email_1']
+                      : null,
+                  ),
+                ),
+                if (errorCode == 422) ... [
+                  SizedBox(height: 4),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Text(
+                      langCode == "en"
+                        ? translateError(errorMessage['email'][0], langCode)
+                        : errorMessage['email'][0],
+                      style: TextStyle(
+                        color: Colors.red,
                       ),
                     ),
+                  )
+                ],
 
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(lastNameLabel ?? "..."), // nama belakang
+                //phone
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Text(
+                    phoneLabel!
+                  ),
+                ),
+                TextField(
+                  controller: _phoneController,
+                  onChanged: (_) => setState(() {}),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  decoration: InputDecoration(
+                    hintText: phone!,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    TextField(
-                      controller: _lastNameController,
-                      onChanged: (_) => setState(() {}),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r"[a-zA-Z\s]"),
-                        ),
-                        LastNameInputFormatter(),
-                      ],
-                      decoration: InputDecoration(
-                        hintText: lastName!,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_lastNameController.text.isNotEmpty),
-                        focusedBorder: _border(true),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_phoneController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                  ),
+                ),
+                if (_phoneController.text.isNotEmpty &&
+                    !isValidPhone(_phoneController.text))
+                  Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      phoneError ?? '',
+                      style: const TextStyle(
+                        color: Colors.red,
                       ),
                     ),
+                  ),
 
-                    //email 
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(
-                        emailLabel!
+                //password
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Text(
+                    passwordLabel!
+                  ),
+                ),
+                TextField(
+                  controller: _passwordController,
+                  focusNode: _passwordFocus,
+                  readOnly: _lockPasswordField,
+                  keyboardType: TextInputType.visiblePassword,
+                  onChanged: (_) => setState(() {}),
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    hintText: password!,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_passwordController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                    suffixIcon: InkWell(
+                      onTap: () async {
+                        _unfocusAll(context);
+                        setState(() {
+                          _lockPasswordField = true;
+                          _obscurePassword = !_obscurePassword;
+                        });
+
+                        await Future.delayed(const Duration(milliseconds: 30));
+
+                        setState(() {
+                          _lockPasswordField = false;
+                        });
+                      },
+                      child: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                     ),
-                    TextField(
-                      controller: _emailController,
-                      onChanged: (_) => setState(() {
-                        if (!_emailTouched) {
-                          setState(() => _emailTouched = true);
-                        } else {
-                          setState(() {});
+                  ),
+                ),
+                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password minimal 8 karakter'))) ... [
+                  SizedBox(height: 4,),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Text(
+                      langCode == "en"
+                        ? translateError(PasswordError!, langCode)
+                        : PasswordError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password harus mengandung setidaknya satu huruf dan satu angka'))) ...[
+                  SizedBox(height: 4,),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Text(
+                      langCode == "en"
+                        ? translateError(PasswordError2!, langCode)
+                        : PasswordError2!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+
+                //confirm password
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Text(
+                    confirmPasswordLabel!
+                  ),
+                ),
+                TextField(
+                  controller: _confirmpasswordController,
+                  focusNode: _confirmpasswordFocus,
+                  readOnly: _lockConfirmPasswordField,
+                  keyboardType: TextInputType.visiblePassword,
+                  onChanged: (_) => setState(() {}),
+                  obscureText: _obscurePasswordConfirm,
+                  decoration: InputDecoration(
+                    hintText: confirmPassword!,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_confirmpasswordController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                    suffixIcon: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        _unfocusAll(context);
+                        setState(() {
+                          _lockConfirmPasswordField = true;
+                          _obscurePasswordConfirm = !_obscurePasswordConfirm;
+                        });
+
+                        await Future.delayed(const Duration(milliseconds: 30));
+
+                        setState(() {
+                          _lockConfirmPasswordField = false;
+                        });
+                      },
+                      child: Icon(
+                        _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
+                      ),
+                    ),
+                  ),
+                ),
+                if (errorCode == 422) ... [
+                  SizedBox(height: 4,),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Text(
+                      langCode == "en"
+                        ? translateError(confirmPasswordError!, langCode)
+                        : confirmPasswordError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+
+                // tombol Login
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                        if (states.contains(WidgetState.disabled)) {
+                          return Colors.grey;
                         }
+                        return Colors.red;
                       }),
-                      decoration: InputDecoration(
-                        hintText: email!,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_emailController.text.isNotEmpty),
-                        focusedBorder: _border(true),
-                        errorText: _emailTouched &&  !isValidEmail(_emailController.text)
-                          ? bahasa['error_email_1']
-                          : null,
                       ),
                     ),
-                    if (errorCode == 422) ... [
-                      SizedBox(height: 4),
-                      Align(
-                        alignment: AlignmentGeometry.centerLeft,
-                        child: Text(
-                          errorMessage['email'][0],
-                          style: TextStyle(
-                            color: Colors.red,
-                          ),
-                        ),
-                      )
-                    ],
-
-                    //phone
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(
-                        phoneLabel!
-                      ),
+                    onPressed: _isFormFilled ? _doRegis : null,
+                    child: Text(
+                      daftarText!,
+                      style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
-                    TextField(
-                      controller: _phoneController,
-                      onChanged: (_) => setState(() {}),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      decoration: InputDecoration(
-                        hintText: phone!,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_phoneController.text.isNotEmpty),
-                        focusedBorder: _border(true),
-                      ),
+                  ),
+                ),
+
+                // masuk dengan
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: Divider(thickness: 1)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(loginAs!),
                     ),
-                    if (_phoneController.text.isNotEmpty &&
-                        !isValidPhone(_phoneController.text))
-                      Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          phoneError ?? '',
-                          style: const TextStyle(
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-
-                    //password
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(
-                        passwordLabel!
-                      ),
-                    ),
-                    TextField(
-                      controller: _passwordController,
-                      focusNode: _passwordFocus,
-                      readOnly: _lockPasswordField,
-                      onChanged: (_) => setState(() {}),
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        hintText: password!,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_passwordController.text.isNotEmpty),
-                        focusedBorder: _border(true),
-                        suffixIcon: InkWell(
-                          onTap: () async {
-                            _unfocusAll(context);
-                            setState(() {
-                              _lockPasswordField = true;
-                              _obscurePassword = !_obscurePassword;
-                            });
-
-                            await Future.delayed(const Duration(milliseconds: 50));
-
-                            setState(() {
-                              _lockPasswordField = false;
-                            });
-                          },
-                          child: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    //confirm password
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(
-                        confirmPasswordLabel!
-                      ),
-                    ),
-                    TextField(
-                      controller: _confirmpasswordController,
-                      focusNode: _confirmpasswordFocus,
-                      readOnly: _lockConfirmPasswordField,
-                      onChanged: (_) => setState(() {}),
-                      obscureText: _obscurePasswordConfirm,
-                      decoration: InputDecoration(
-                        hintText: confirmPassword!,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_confirmpasswordController.text.isNotEmpty),
-                        focusedBorder: _border(true),
-                        suffixIcon: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () async {
-                            _unfocusAll(context);
-                            setState(() {
-                              _lockConfirmPasswordField = true;
-                              _obscurePasswordConfirm = !_obscurePasswordConfirm;
-                            });
-
-                            await Future.delayed(const Duration(milliseconds: 50));
-
-                            setState(() {
-                              _lockConfirmPasswordField = false;
-                            });
-                          },
-                          child: Icon(
-                            _obscurePasswordConfirm ? Icons.visibility_off : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (errorCode == 422) ... [
-                      SizedBox(height: 4),
-                      Align(
-                        alignment: AlignmentGeometry.centerLeft,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var err in errorMessage['password'])
-                              Text(
-                                err,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                          ],
-                        ),
-                      )
-                    ],
-
-                    // tombol Login
-                    const SizedBox(height: 30),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                            if (states.contains(WidgetState.disabled)) {
-                              return Colors.grey;
-                            }
-                            return Colors.red;
-                          }),
-                          shape: WidgetStateProperty.all(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                        onPressed: _isFormFilled ? _doRegis : null,
-                        child: Text(
-                          daftarText!,
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ),
-
-                    // masuk dengan
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: Divider(thickness: 1)),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(loginAs!),
-                        ),
-                        Expanded(child: Divider(thickness: 1)),
-                      ],
-                    ),
-
-                    // tombol google dan fb
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: _isGoogleLoading ? null : _loginGoogle,
-                      child: Container(
-                        height: 50,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        alignment: Alignment.center,
-                        child: _isGoogleLoading
-                          ? SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.red,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  "assets/images/img_google.png",
-                                  height: 24,
-                                  width: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  googleLogin ?? '',
-                                  style: const TextStyle(color: Colors.black),
-                                ),
-                              ],
-                            ),
-                      ),
-                    ),
-
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                        // IconButton(
-                        //   onPressed: () {},
-                        //   icon: Image.asset("assets/images/img_facebook.png"),
-                        //   iconSize: 50,
-                        // ),
-                        // const SizedBox(width: 24),
-                    //     IconButton(
-                    //       onPressed: () {},
-                    //       icon: Image.asset("assets/images/img_google.png"),
-                    //       iconSize: 50,
-                    //     ),
-                    //   ],
-                    // ),
-
-                    // regis
-                    const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(sudahPunyaAkunText!),
-                        GestureDetector(
-                          onTap: () {
-                            if (widget.fromProfil) {
-                              Navigator.pushReplacement(
-                                context, 
-                                MaterialPageRoute(builder: (context) => LoginPage()),
-                              );
-                            } else {
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Text(
-                            login!,
-                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 30),
+                    Expanded(child: Divider(thickness: 1)),
                   ],
                 ),
+
+                // tombol google dan fb
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: _isGoogleLoading ? null : _loginGoogle,
+                  child: Container(
+                    height: 50,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: _isGoogleLoading
+                      ? SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.red,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              "assets/images/img_google.png",
+                              height: 24,
+                              width: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              googleLogin ?? '',
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                          ],
+                        ),
+                  ),
                 ),
-            )
-          ],
-        ),
+
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                    // IconButton(
+                    //   onPressed: () {},
+                    //   icon: Image.asset("assets/images/img_facebook.png"),
+                    //   iconSize: 50,
+                    // ),
+                    // const SizedBox(width: 24),
+                //     IconButton(
+                //       onPressed: () {},
+                //       icon: Image.asset("assets/images/img_google.png"),
+                //       iconSize: 50,
+                //     ),
+                //   ],
+                // ),
+
+                // regis
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(sudahPunyaAkunText!),
+                    GestureDetector(
+                      onTap: () {
+                        if (widget.fromProfil) {
+                          Navigator.pushReplacement(
+                            context, 
+                            MaterialPageRoute(builder: (context) => LoginPage()),
+                          );
+                        } else {
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: Text(
+                        login!,
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 30),
+              ],
+            ),
+            ),
+        )
       ),
     );
   }
 
   void _unfocusAll(BuildContext context) {
     FocusScope.of(context).unfocus();
+  }
+
+  final Map<String, String> errorTranslationMap = {
+    'Email sudah terdaftar': 'Email is already registered',
+
+    'Password minimal 8 karakter': 'Password must be at least 8 characters',
+
+    'Password harus mengandung setidaknya satu huruf dan satu angka':
+        'Password must contain at least one letter and one number',
+
+    'Password tidak cocok': 'Password does not match',
+  };
+
+  String translateError(String message, String? langCode) {
+    if (langCode != 'en') {
+      return message;
+    }
+
+    final normalized = message.toLowerCase().trim();
+
+    for (final entry in errorTranslationMap.entries) {
+      final key = entry.key.toLowerCase().trim();
+
+      if (normalized.contains(key)) {
+        return entry.value;
+      }
+    }
+
+    return message;
   }
 }
 

@@ -209,7 +209,7 @@ class DeskripsiSection_5 extends StatefulWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           widget.data['nama_kategori'] ?? '-',
@@ -1191,7 +1191,7 @@ Widget buildListCard({
               LinearProgressIndicator(
                 value: progress,
                 minHeight: 6,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 color: tema,
                 backgroundColor: Colors.grey.shade200,
               ),

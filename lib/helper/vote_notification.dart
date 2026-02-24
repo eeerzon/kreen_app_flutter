@@ -17,7 +17,7 @@ class VoteNotification extends StatelessWidget {
       alignment: Alignment.centerLeft,
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(24, 8, 12, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(8),
@@ -33,7 +33,7 @@ class VoteNotification extends StatelessWidget {
 
 
         Positioned(
-          left: -8,
+          left: -9,
           child: Container(
             width: 22,
             height: 22,
@@ -79,6 +79,8 @@ class _VoteNotifStackState extends State<VoteNotifStack> {
   }
 
   void _startLoop() async {
+    await Future.delayed(const Duration(seconds: 2));
+
     while (mounted) {
       for (var i = 0; i < widget.notifList.length; i++) {
         if (!mounted) return;
@@ -97,7 +99,7 @@ class _VoteNotifStackState extends State<VoteNotifStack> {
           _visibleNotifs.clear();
         });
 
-        await Future.delayed(const Duration(milliseconds: 200)); // jeda halus
+        await Future.delayed(const Duration(seconds: 1)); // jeda halus
       }
     }
   }

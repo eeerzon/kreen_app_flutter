@@ -492,7 +492,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   onTap: () {
                                     showPickSourceDialog();
                                   },
-                                  borderRadius: BorderRadius.circular(30),
+                                  borderRadius: BorderRadius.circular(8),
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(

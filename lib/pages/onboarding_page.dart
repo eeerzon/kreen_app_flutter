@@ -95,7 +95,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(8),
               ),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

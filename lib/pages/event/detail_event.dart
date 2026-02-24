@@ -453,7 +453,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFE5E5),
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Image.asset(
                               "assets/images/img_ovo30d.png",
@@ -595,7 +595,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                 }
               }
               : null,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(8),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1945,7 +1945,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 padding: EdgeInsets.only(bottom: 25),
                                 child: Container(
                                   width: double.infinity,
-                                  padding: kGlobalPadding,
+                                  padding: EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: sudahTutup ? Colors.grey.shade300 : Colors.white,
                                     borderRadius: BorderRadius.circular(8),
@@ -2128,12 +2128,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 ],
                                               ),
 
-                                              Text(
-                                                detailEvent['show_tickets_available'] == 1 && !sudahTutup
-                                                  ? '${bahasa['stok_tiket']}: ${item['sisa_stok']}'
-                                                  : '',
-                                                style: TextStyle(color: Colors.grey),
-                                              ),
+                                              if (detailEvent['show_tickets_available'] == 1 && !sudahTutup) ... [
+                                                Text(
+                                                  '${bahasa['stok_tiket']}: ${item['sisa_stok']}',
+                                                  style: TextStyle(color: Colors.grey),
+                                                ),
+                                              ],
 
                                               if (counts[index] == item['max_qty']) ... [
 

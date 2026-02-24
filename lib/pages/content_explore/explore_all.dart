@@ -442,7 +442,7 @@ class _ExploreAllState extends State<ExploreAll> {
                                     ),
                               ),
                             ).then((_) {
-                              if (item['price'] != 0) {
+                              if (item['price'] != 0 || isChoosed == 1) {
                                 _handleBackFromDetail();
                               }
                             });
@@ -456,7 +456,9 @@ class _ExploreAllState extends State<ExploreAll> {
                                 ),
                               ),
                             ).then((_) {
-                              _handleBackFromDetail();
+                              if (item['price'] != 0 || isChoosed == 1) {
+                                _handleBackFromDetail();
+                              }
                             });
                           }
                         },
@@ -510,7 +512,7 @@ class _ExploreAllState extends State<ExploreAll> {
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         typeEvent.toString().toUpperCase(),

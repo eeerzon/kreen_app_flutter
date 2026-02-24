@@ -47,6 +47,8 @@ class _LoginPageState extends State<LoginPage> {
       _emailController.text.isNotEmpty &&
       _passwordController.text.isNotEmpty;
 
+  bool _lockPasswordField = false;
+
   OutlineInputBorder _border(bool isFilled) {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
@@ -240,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(8),
               ),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -350,222 +352,239 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
 
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) {
           FocusManager.instance.primaryFocus?.unfocus();
         },
-        child: Stack(
-          children: [
-            //konten page
-            SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Column(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              children: [
+                //logo
+                Column(
                   children: [
-                    //logo
-                    Column(
-                      children: [
-                        Image.asset(
-                          "assets/images/img_homekreen.png",
-                          width: 200,   // atur sesuai kebutuhan
-                          height: 200,
-                          fit: BoxFit.contain, // biar proporsional tanpa crop
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                    Image.asset(
+                      "assets/images/img_homekreen.png",
+                      width: 200,   // atur sesuai kebutuhan
+                      height: 200,
+                      fit: BoxFit.contain, // biar proporsional tanpa crop
                     ),
-
-                    //email
-                    const SizedBox(height: 35),
-                    TextField(
-                      controller: _emailController,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: input_email,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_emailController.text.isNotEmpty),
-                        focusedBorder: _border(true),
-                      ),
-                    ),
-
-                    //password
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _passwordController,
-                      onChanged: (_) => setState(() {}),
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        hintText: input_password,
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: _border(_emailController.text.isNotEmpty),
-                        focusedBorder: _border(true),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
-                          },
-                        ),
-                      ),
-                    ),
-
-                    // lupa Password
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LupaPasswordPage(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "$lupa_password ?",
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ),
-
-                    // tombol Login
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                            if (states.contains(WidgetState.disabled)) {
-                              return Colors.grey;
-                            }
-                            return Colors.red;
-                          }),
-                          shape: WidgetStateProperty.all(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                        onPressed: _isFormFilled ? _doLogin : null,
-                        child: Text(
-                          login,
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ),
-
-                    // masuk dengan
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(child: Divider(thickness: 1)),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(login_as),
-                        ),
-                        Expanded(child: Divider(thickness: 1)),
-                      ],
-                    ),
-
-                    // tombol google dan fb
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: _isGoogleLoading ? null : _loginGoogle,
-                      child: Container(
-                        height: 50,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        alignment: Alignment.center,
-                        child: _isGoogleLoading
-                          ? SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.red,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  "assets/images/img_google.png",
-                                  height: 24,
-                                  width: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  googleLogin ?? '',
-                                  style: const TextStyle(color: Colors.black),
-                                ),
-                              ],
-                            ),
-                      ),
-                    ),
-
-                    // Row(
-                      // mainAxisAlignment: MainAxisAlignment.center,
-                      // children: [
-                        // IconButton(
-                        //   onPressed: () {},
-                        //   icon: Image.asset("assets/images/img_facebook.png"),
-                        //   iconSize: 50,
-                        // ),
-                        // const SizedBox(width: 24),
-                        // IconButton(
-                        //   onPressed: () {},
-                        //   icon: Image.asset("assets/images/img_google.png"),
-                        //   iconSize: 50,
-                        // ),
-                      // ],
-                    // ),
-
-                    // regis
-                    const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(belum),
-                        GestureDetector(
-                          onTap: () {
-                            // navigasi ke register
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => RegisPage(fromProfil: false,)),
-                            );
-                          },
-                          child: Text(
-                            daftar,
-                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 20,),
+                    const SizedBox(height: 12),
                   ],
                 ),
-              ),
+
+                //email
+                const SizedBox(height: 35),
+                TextField(
+                  controller: _emailController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: input_email,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_emailController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                  ),
+                ),
+
+                //password
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  readOnly: _lockPasswordField,
+                  keyboardType: TextInputType.visiblePassword,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  onChanged: (_) => setState(() {}),
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    hintText: input_password,
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    enabledBorder: _border(_emailController.text.isNotEmpty),
+                    focusedBorder: _border(true),
+                    suffixIcon: InkWell(
+                      onTap: () async {
+                        _unfocusAll(context);
+                        setState(() {
+                          _lockPasswordField = true;
+                          _obscurePassword = !_obscurePassword;
+                        });
+
+                        await Future.delayed(const Duration(milliseconds: 30));
+
+                        setState(() {
+                          _lockPasswordField = false;
+                        });
+                      },
+                      child: Icon(
+                        _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      ),
+                    )
+                  ),
+                ),
+
+                // lupa Password
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LupaPasswordPage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      "$lupa_password ?",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ),
+
+                // tombol Login
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                        if (states.contains(WidgetState.disabled)) {
+                          return Colors.grey;
+                        }
+                        return Colors.red;
+                      }),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    onPressed: _isFormFilled ? _doLogin : null,
+                    child: Text(
+                      login,
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                // masuk dengan
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(child: Divider(thickness: 1)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(login_as),
+                    ),
+                    Expanded(child: Divider(thickness: 1)),
+                  ],
+                ),
+
+                // tombol google dan fb
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: _isGoogleLoading ? null : _loginGoogle,
+                  child: Container(
+                    height: 50,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: _isGoogleLoading
+                      ? SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.red,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              "assets/images/img_google.png",
+                              height: 24,
+                              width: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              googleLogin ?? '',
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                          ],
+                        ),
+                  ),
+                ),
+
+                // Row(
+                  // mainAxisAlignment: MainAxisAlignment.center,
+                  // children: [
+                    // IconButton(
+                    //   onPressed: () {},
+                    //   icon: Image.asset("assets/images/img_facebook.png"),
+                    //   iconSize: 50,
+                    // ),
+                    // const SizedBox(width: 24),
+                    // IconButton(
+                    //   onPressed: () {},
+                    //   icon: Image.asset("assets/images/img_google.png"),
+                    //   iconSize: 50,
+                    // ),
+                  // ],
+                // ),
+
+                // regis
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(belum),
+                    GestureDetector(
+                      onTap: () {
+                        // navigasi ke register
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => RegisPage(fromProfil: false,)),
+                        );
+                      },
+                      child: Text(
+                        daftar,
+                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20,),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  void _unfocusAll(BuildContext context) {
+    FocusScope.of(context).unfocus();
   }
 }

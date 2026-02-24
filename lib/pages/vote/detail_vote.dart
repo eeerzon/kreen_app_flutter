@@ -126,8 +126,12 @@ class _DetailVotePageState extends State<DetailVotePage> {
         flag_paket = vote['flag_paket'];
 
         listOrderVote = maplistOrderVote.map<String>((item) {
-          final String name = item['nama_finalis'] ?? '';
+          final String rawName = item['nama_finalis'] ?? '';
           final int qty = int.tryParse(item['qty'].toString()) ?? 0;
+
+          final String name = rawName.length > 14
+            ? '${rawName.substring(0, 11)}...'
+            : rawName;
 
           return "$name ${bahasa!["has_been"]} ($qty ${bahasa!["text_vote"]})";
         }).toList();
@@ -510,7 +514,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                 );
               }
             },
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(8),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),

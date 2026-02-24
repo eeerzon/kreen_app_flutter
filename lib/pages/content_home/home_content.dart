@@ -236,6 +236,8 @@ class _HomeContentState extends State<HomeContent> {
     
     await _precacheAllImages(context, tempActiveBanners, tempVotes);
 
+    var tempChoosed = await StorageService.getIsChoosed();
+
     if (!mounted) return;
     if (mounted) {
       setState(() {
@@ -249,6 +251,8 @@ class _HomeContentState extends State<HomeContent> {
         latestvotes = tempLatestVotes;
         recomenevent = tempRecomenEvent;
         listArtikel = tempListArtikel;
+
+        isChoosed = tempChoosed ?? 0;
 
         preloadImageSizes();
         isLoadingContent = false;
@@ -873,7 +877,7 @@ class _HomeContentState extends State<HomeContent> {
                                             ),
                                       ),
                                     ).then((_) {
-                                      if (item['price'] != 0) {
+                                      if (item['price'] != 0 || isChoosed == 1) {
                                         _handleBackFromDetail();
                                       }
                                     });
@@ -1395,7 +1399,7 @@ class _HomeContentState extends State<HomeContent> {
                                           ),
                                       ),
                                     ).then((_) {
-                                      if (item['price'] != 0) {
+                                      if (item['price'] != 0 || isChoosed == 1) {
                                         _handleBackFromDetail();
                                       }
                                     });
@@ -1449,7 +1453,7 @@ class _HomeContentState extends State<HomeContent> {
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    borderRadius: BorderRadius.circular(8),
                                                   ),
                                                   child: Text(
                                                     type_event.toString().toUpperCase(),
@@ -1680,7 +1684,7 @@ class _HomeContentState extends State<HomeContent> {
                                             ),
                                       ),
                                     ).then((_) {
-                                      if (item['price'] != 0) {
+                                      if (item['price'] != 0 || isChoosed == 1) {
                                         _handleBackFromDetail();
                                       }
                                     });
@@ -1947,7 +1951,7 @@ class _HomeContentState extends State<HomeContent> {
                                           ),
                                       ),
                                     ).then((_) {
-                                      if (item['price'] != 0) {
+                                      if (item['price'] != 0 || isChoosed == 1) {
                                         _handleBackFromDetail();
                                       }
                                     });
@@ -2001,7 +2005,7 @@ class _HomeContentState extends State<HomeContent> {
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    borderRadius: BorderRadius.circular(8),
                                                   ),
                                                   child: Text(
                                                     type_event.toString().toUpperCase(),
