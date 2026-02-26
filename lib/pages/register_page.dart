@@ -578,8 +578,7 @@ class _RegisPageState extends State<RegisPage> {
                     fillColor: Colors.white,
                     enabledBorder: _border(_confirmpasswordController.text.isNotEmpty),
                     focusedBorder: _border(true),
-                    suffixIcon: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                    suffixIcon: InkWell(
                       onTap: () async {
                         _unfocusAll(context);
                         setState(() {
@@ -758,7 +757,7 @@ class _RegisPageState extends State<RegisPage> {
   };
 
   String translateError(String message, String? langCode) {
-    if (langCode != 'en') {
+    if (langCode == 'id') {
       return message;
     }
 

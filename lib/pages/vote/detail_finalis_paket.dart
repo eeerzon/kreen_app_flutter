@@ -101,7 +101,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     }
   }
 
-  late YoutubePlayerController _ytTopController, _ytBottomController;
+  YoutubePlayerController? _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
   bool _videoReady = false;
   final bool _isTopVideo = true;
@@ -134,22 +134,25 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
     if (videoId != null && mounted) {
       setState(() {
-        _ytTopController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            forceHD: false,
-          ),
-        );
+        if (videoId != "" && videoId.isNotEmpty) {
+          _ytTopController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              forceHD: false,
+            ),
+          );
 
-        _ytBottomController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            forceHD: false,
-          ),
-        );
-        _videoReady = true;
+            _ytBottomController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              forceHD: false,
+            ),
+          );
+
+          _videoReady = true;
+        }
       });
     }
   }
@@ -615,32 +618,34 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                             ),
                       ),
 
-                      SizedBox(height: 8, child: Container(color: Colors.white,),),
-                      ValueListenableBuilder<int>(
-                        valueListenable: _pageIndex,
-                        builder: (context, index, _) {
-                          return Container(
-                            color: Colors.white,
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                hasVideo ? 2 : 1,
-                                (i) => AnimatedContainer(
-                                  duration: const Duration(milliseconds: 250),
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  width: index == i ? 14 : 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: index == i ? color.withOpacity(0.5) : color.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(8),
+                      if (hasVideo) ...[
+                        SizedBox(height: 8, child: Container(color: Colors.white,),),
+                        ValueListenableBuilder<int>(
+                          valueListenable: _pageIndex,
+                          builder: (context, index, _) {
+                            return Container(
+                              color: Colors.white,
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  hasVideo ? 2 : 1,
+                                  (i) => AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    width: index == i ? 14 : 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: index == i ? color.withOpacity(0.5) : color.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                          );
-                        },
-                      ),
+                              )
+                            );
+                          },
+                        ),
+                      ],
                   
                       SizedBox(height: 15,),
                       Container(
@@ -1190,8 +1195,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
-    _ytTopController.dispose();
-    _ytBottomController.dispose();
+    _ytTopController?.dispose();
+    _ytBottomController?.dispose();
     super.dispose();
   }
 
@@ -1251,9 +1256,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     }
 
     if (_isTopVideo) {
-      return VideoSection(controller: _ytTopController);
+      return VideoSection(controller: _ytTopController!);
     } else {
-      return VideoSection(controller: _ytBottomController);
+      return VideoSection(controller: _ytBottomController!);
     }
   }
 }

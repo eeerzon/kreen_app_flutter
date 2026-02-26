@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -127,7 +128,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     }
   }
 
-  late YoutubePlayerController _ytTopController, _ytBottomController;
+  YoutubePlayerController? _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
   bool _videoReady = false;
   final bool _isTopVideo = true;
@@ -156,26 +157,29 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     });
 
     final videoId =
-      YoutubePlayer.convertUrlToId(detailFinalis['video_profile'])!;
+      YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
-    if (mounted) {
+    if (videoId != null && mounted) {
       setState(() {
-        _ytTopController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            forceHD: false,
-          ),
-        );
+        if (videoId != "" && videoId.isNotEmpty) {
+          _ytTopController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              forceHD: false,
+            ),
+          );
 
-        _ytBottomController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            forceHD: false,
-          ),
-        );
-        _videoReady = true;
+            _ytBottomController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              forceHD: false,
+            ),
+          );
+
+          _videoReady = true;
+        }
       });
     }
   }
@@ -787,32 +791,34 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               ),
                         ),
 
-                        SizedBox(height: 8, child: Container(color: Colors.white,),),
-                        ValueListenableBuilder<int>(
-                          valueListenable: _pageIndex,
-                          builder: (context, index, _) {
-                            return Container(
-                              color: Colors.white,
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(
-                                  hasVideo ? 2 : 1,
-                                  (i) => AnimatedContainer(
-                                    duration: const Duration(milliseconds: 250),
-                                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                                    width: index == i ? 14 : 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: index == i ? color : color.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(8),
+                        if (hasVideo) ...[
+                          SizedBox(height: 8, child: Container(color: Colors.white,),),
+                          ValueListenableBuilder<int>(
+                            valueListenable: _pageIndex,
+                            builder: (context, index, _) {
+                              return Container(
+                                color: Colors.white,
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    hasVideo ? 2 : 1,
+                                    (i) => AnimatedContainer(
+                                      duration: const Duration(milliseconds: 250),
+                                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                                      width: index == i ? 14 : 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: index == i ? color.withOpacity(0.5) : color.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              )
-                            );
-                          },
-                        ),
+                                )
+                              );
+                            },
+                          ),
+                        ],
                     
                         const SizedBox(height: 15,),
                         Container(
@@ -1774,145 +1780,187 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // kiri
-              isTutup || widget.close_payment == '1'
-              ? SizedBox.shrink()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
-                  children: [
-                    Text(totalHargaText!),
-                    Text(
-                      harga == 0
-                      ? bahasa!['harga_detail']
-                      : currencyCode == null 
-                        ? "${detailvote['currency']} ${formatter.format(totalHarga)}"
-                        : "$currencyCode ${formatter.format(totalHarga)}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
+              // KIRI (fleksibel)
+              Expanded(
+                child: isTutup || widget.close_payment == '1'
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(totalHargaText!),
+
+                        // HARGA AUTO KECIL
+                        AutoSizeText(
+                          detailvote['harga'] == 0
+                              ? hargaDetail!
+                              : currencyCode == null
+                                  ? "${detailvote['currency']} ${formatter.format(totalHarga)}"
+                                  : "$currencyCode ${formatter.format(totalHarga)}",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          minFontSize: 9, // penting
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        AutoSizeText(
+                          "Qty $counts ${bahasa?['text_vote']}",
+                          style: TextStyle(
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          minFontSize: 9, // penting
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        Text(
+                          "$countData ${bahasa?['finalis']}(s)",
+                          style: const TextStyle(fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    Text(
-                      "Qty $counts ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
-                      style: TextStyle(fontSize: 12,),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  ],
-                ),
+              ),
 
-              // kanan
-              ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                    (states) {
-                      if (states.contains(MaterialState.disabled)) {
-                        return Colors.grey;
-                      }
-                      return color;
-                    },
+              // KANAN (TETAP)
+              SizedBox(
+                height: 40,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                      (states) {
+                        if (states.contains(MaterialState.disabled)) {
+                          return Colors.grey;
+                        }
+                        return color;
+                      },
+                    ),
+                    padding: MaterialStateProperty.all(
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
+                    ),
+                    shape: MaterialStateProperty.all(
+                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
                   ),
-                  padding: MaterialStateProperty.all(
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
-                  ),
-                  shape: MaterialStateProperty.all(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-                onPressed: (harga != 0 && totalHarga == 0) || counts == 0 
-                  ? null 
-                  : () async {
-                    final getUser = await StorageService.getUser();
+                  onPressed: (harga != 0 && totalHarga == 0) || counts == 0 
+                    ? null 
+                    : () async {
+                      final getUser = await StorageService.getUser();
 
-                    String? idUser = getUser['id'];
+                      String? idUser = getUser['id'];
 
-                    if (detailvote['flag_login'] == '1') {
-                      final token = await StorageService.getToken();
+                      if (detailvote['flag_login'] == '1') {
+                        final token = await StorageService.getToken();
 
-                      if (token == null) {
-                        AwesomeDialog(
-                          context: context,
-                          dialogType: DialogType.noHeader,
-                          animType: AnimType.scale,
-                          dismissOnTouchOutside: true,
-                          body: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Icon(
-                                      Icons.close,
-                                      size: 30,
-                                    ),
-                                  )
-                                ],
-                              ),
-
-                              const SizedBox(height: 16,),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFE5E5),
-                                  borderRadius: BorderRadius.circular(8),
+                        if (token == null) {
+                          AwesomeDialog(
+                            context: context,
+                            dialogType: DialogType.noHeader,
+                            animType: AnimType.scale,
+                            dismissOnTouchOutside: true,
+                            body: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    InkWell(
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 30,
+                                      ),
+                                    )
+                                  ],
                                 ),
-                                child: Image.asset(
-                                  "assets/images/img_ovo30d.png",
-                                  height: 60,
-                                  width: 60,
-                                )
-                              ),
 
-                              const SizedBox(height: 24),
-                              Text(
-                                notLogin!,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-
-                              const SizedBox(height: 12),
-                              Text(
-                                notLoginDesc!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.black54, fontSize: 14),
-                              ),
-
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context, 
-                                    MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: color,
-                                  shape: RoundedRectangleBorder(
+                                const SizedBox(height: 16,),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFE5E5),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                                  elevation: 2,
+                                  child: Image.asset(
+                                    "assets/images/img_ovo30d.png",
+                                    height: 60,
+                                    width: 60,
+                                  )
                                 ),
-                                child: Text(
-                                  loginText!,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
+
+                                const SizedBox(height: 24),
+                                Text(
+                                  notLogin!,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
+
+                                const SizedBox(height: 12),
+                                Text(
+                                  notLoginDesc!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                                ),
+
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context, 
+                                      MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: color,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                                    elevation: 2,
+                                  ),
+                                  child: Text(
+                                    loginText!,
+                                    style: TextStyle(fontSize: 16, color: Colors.white),
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 24),
+                              ],
+                            ),
+                          ).show();
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StatePaymentManual(
+                                id_vote: idVote!,
+                                ids_finalis: ids_finalis,
+                                names_finalis: names_finalis,
+                                counts_finalis: counts_finalis,
+                                totalHarga: totalHarga,
+                                totalHargaAsli: totalHargaAsli,
+                                price: hargaAsli,
+                                fromDetail: true,
+                                idUser: idUser,
+                                flag_login: detailvote['flag_login'],
+                                rateCurrency: detailvote['rate_currency_vote'],
+                                rateCurrencyUser: detailvote['rate_currency_user'],
                               ),
-                              
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-                        ).show();
+                            ),
+                          );
+                        }
                       } else {
                         Navigator.push(
                           context,
@@ -1934,33 +1982,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                           ),
                         );
                       }
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StatePaymentManual(
-                            id_vote: idVote!,
-                            ids_finalis: ids_finalis,
-                            names_finalis: names_finalis,
-                            counts_finalis: counts_finalis,
-                            totalHarga: totalHarga,
-                            totalHargaAsli: totalHargaAsli,
-                            price: hargaAsli,
-                            fromDetail: true,
-                            idUser: idUser,
-                            flag_login: detailvote['flag_login'],
-                            rateCurrency: detailvote['rate_currency_vote'],
-                            rateCurrencyUser: detailvote['rate_currency_user'],
-                          ),
-                        ),
-                      );
-                    }
-                },
-                child: Text(
-                  isTutup
-                  ? endVote!
-                  : bayarText!,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  },
+                  child: Text(
+                    isTutup
+                    ? endVote!
+                    : bayarText!,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -1975,8 +2003,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
-    _ytTopController.dispose();
-    _ytBottomController.dispose();
+    _ytTopController?.dispose();
+    _ytBottomController?.dispose();
     super.dispose();
   }
 
@@ -2053,9 +2081,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     }
 
     if (_isTopVideo) {
-      return VideoSection(controller: _ytTopController);
+      return VideoSection(controller: _ytTopController!);
     } else {
-      return VideoSection(controller: _ytBottomController);
+      return VideoSection(controller: _ytBottomController!);
     }
   }
 }

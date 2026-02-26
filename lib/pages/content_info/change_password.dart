@@ -375,8 +375,8 @@ class _ChangePasswordState extends State<ChangePassword> {
   };
 
   String translateError(String message, String? langCode) {
-    if (langCode != 'en') {
-      return message; // ⛔ jangan translate
+    if (langCode == 'id') {
+      return message;
     }
 
     final lower = message.toLowerCase().trim();
@@ -387,7 +387,7 @@ class _ChangePasswordState extends State<ChangePassword> {
       }
     }
 
-    return message; // fallback
+    return message;
   }
 
   void _doChangePassword() async {

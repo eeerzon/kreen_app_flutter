@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
 
 import 'dart:async';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -269,6 +270,7 @@ class _FinalisPageState extends State<FinalisPage> {
     setState(() {
 
       counts[index] = input;
+      totalCount = counts.reduce((a, b) => a + b);
       // controllers[index].text = parsed.toString();
 
       final idFinalis = item['id_finalis'];
@@ -546,84 +548,108 @@ class _FinalisPageState extends State<FinalisPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // kiri
-              remaining.inSeconds == 0 || isBeforeOpen || vote['close_payment'] == '1'
-              ? SizedBox.shrink()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
-                  children: [
-                    Text(totalHargaText!),
-                    Text(
-                      vote['harga'] == 0
-                      ? hargaDetail!
-                      : currencyCode == null
-                        ? "${vote['currency']} ${formatter.format(totalHarga)}"
-                        : "$currencyCode ${formatter.format(totalHarga)}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      "Qty $totalQty ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
-                      style: TextStyle(fontSize: 12,),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  ],
-                ),
+              // KIRI (fleksibel)
+              Expanded(
+                child: remaining.inSeconds == 0 || isBeforeOpen || vote['close_payment'] == '1'
+                  ? SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                      children: [
+                        Text(totalHargaText!),
 
-              // kanan
-              ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                    (states) {
-                      if (states.contains(MaterialState.disabled)) {
-                        return Colors.grey;
-                      }
-                      return color;
-                    },
-                  ),
-                  padding: MaterialStateProperty.all(
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
-                  ),
-                  shape: MaterialStateProperty.all(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-                onPressed: (vote['harga'] != 0 && totalHarga == 0) || totalCount == 0 
-                  ? null 
-                  : () async {
-                    final getUser = await StorageService.getUser();
-
-                    String? idUser = getUser['id'];
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StatePaymentManual(
-                          id_vote: slctedIdVote!,
-                          ids_finalis: ids_finalis,
-                          names_finalis: names_finalis,
-                          counts_finalis: counts_finalis,
-                          totalHarga: totalHarga,
-                          totalHargaAsli: totalHargaAsli,
-                          price: vote['harga_asli'],
-                          fromDetail: false,
-                          idUser: idUser,
-                          flag_login: vote['flag_login'],
-                          rateCurrency: vote['rate_currency_vote'],
-                          rateCurrencyUser: vote['rate_currency_user'],
+                        // HARGA AUTO KECIL
+                        AutoSizeText(
+                          vote['harga'] == 0
+                            ? hargaDetail!
+                            : currencyCode == null
+                              ? "${vote['currency']} ${formatter.format(totalHarga)}"
+                              : "$currencyCode ${formatter.format(totalHarga)}",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          minFontSize: 9, // penting
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    );
-                },
-                child: Text(
-                  remaining.inSeconds == 0
-                  ? endVote!
-                  : bayarText!,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+
+                        AutoSizeText(
+                          "Qty $totalQty ${bahasa['text_vote']}",
+                          style: TextStyle(
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          minFontSize: 9, // penting
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        
+                        Text(
+                          "$countData ${bahasa['finalis']}(s)",
+                          style: TextStyle(fontSize: 12,),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      ],
+                    ),
+              ),
+              
+              const SizedBox(width: 12),
+
+              // KANAN (TETAP)
+              SizedBox(
+                height: 40,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                      (states) {
+                        if (states.contains(MaterialState.disabled)) {
+                          return Colors.grey;
+                        }
+                        return color;
+                      },
+                    ),
+                    padding: MaterialStateProperty.all(
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 22),
+                    ),
+                    shape: MaterialStateProperty.all(
+                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  onPressed: (vote['harga'] != 0 && totalHarga == 0) || totalCount == 0 
+                    ? null 
+                    : () async {
+                      final getUser = await StorageService.getUser();
+
+                      String? idUser = getUser['id'];
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatePaymentManual(
+                            id_vote: slctedIdVote!,
+                            ids_finalis: ids_finalis,
+                            names_finalis: names_finalis,
+                            counts_finalis: counts_finalis,
+                            totalHarga: totalHarga,
+                            totalHargaAsli: totalHargaAsli,
+                            price: vote['harga_asli'],
+                            fromDetail: false,
+                            idUser: idUser,
+                            flag_login: vote['flag_login'],
+                            rateCurrency: vote['rate_currency_vote'],
+                            rateCurrencyUser: vote['rate_currency_user'],
+                          ),
+                        ),
+                      );
+                  },
+                  child: Text(
+                    remaining.inSeconds == 0
+                    ? endVote!
+                    : bayarText!,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ),
               ),
             ],

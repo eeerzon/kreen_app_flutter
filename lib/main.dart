@@ -1,4 +1,6 @@
 
+// ignore_for_file: deprecated_member_use
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,7 +31,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      theme: ThemeData(
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Colors.orange,
+          selectionColor: Color(0x33FFA500), // optional
+          selectionHandleColor: Colors.orange,
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       home: SplashLogoPage(), // langsung splash logo
     );
