@@ -359,6 +359,9 @@
 
     "bayar_sekarang" : "Pay Now",
     "tiket_tidak_tersedia" : "Tickets not available",
-    "has_been": "has been voted"
+    "has_been": "has been voted",
+    "menunggu_konfirmasi" : "Waiting for confirmation...",
+    "redirecting": "Redirecting...",
+    "required": "Card information is required"
   }
 }

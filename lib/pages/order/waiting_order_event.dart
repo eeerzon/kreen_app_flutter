@@ -509,6 +509,10 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                       ),
 
                       const SizedBox(height: 16),
+                      Text(
+                        bahasa['menunggu_konfirmasi'],
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                       Text(bahasa['selesaikan_pembayaran']), //const Text("Selesaikan pembayaranmu sebelum"),
                       Text(
                         formattedDate,

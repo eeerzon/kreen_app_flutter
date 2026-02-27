@@ -159,6 +159,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+  String? typePayment;
   
   @override
   void initState() {
@@ -414,6 +415,44 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           setState(() {
             _showError = true;
           });
+          return;
+        }
+      }
+
+      if (typePayment == 'credit_card' && payment['Credit Card'][selectedIndex]['flag_client'] == "0") {
+        if (card_number == null || card_number!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
+
+          scrollTo(creditCardKey);
+          return;
+        }
+
+        if (expiry_month == null || expiry_month!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
+
+          scrollTo(creditCardKey);
+          return;
+        }
+
+        if (expiry_year == null || expiry_year!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
+
+          scrollTo(creditCardKey);
+          return;
+        }
+
+        if (cvv == null || cvv!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
+
+          scrollTo(creditCardKey);
           return;
         }
       }
@@ -1185,9 +1224,15 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                         expDateController: expDateController,
 
-                                        onCardChanged: (val) => card_number = val,
+                                        onCardChanged: (val) {
+                                          setState(() {
+                                            card_number = val;
+                                          });
+                                        },
                                         onCvvChanged: (val) {
-                                          cvv = val;
+                                          setState(() {
+                                            cvv = val;
+                                          });
 
                                           _cvvDebounce?.cancel();
                                           if (isAMEX) {
@@ -1218,6 +1263,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             selectedIndex = idx;
                                             id_payment_method = creditCard[idx]['id_metod'];
                                             currencySession = creditCard[idx]['currency_pg'];
+                                            typePayment = "credit_card";
                                           });
 
                                           if (item['flag_client'] == "1") {
@@ -1251,6 +1297,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1359,6 +1406,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1469,6 +1517,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1580,6 +1629,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1692,6 +1742,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1806,6 +1857,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1920,6 +1972,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             totalVotes = resultFee['total_votes'];
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -2071,6 +2124,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             });
                                           }
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -2525,25 +2579,26 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     }
     
 
-    if (indikator.isNotEmpty) {
+    // if (indikator.isNotEmpty) {
 
-      // email
-      if (_emailController.text.trim().isEmpty ||
-          !isValidEmail(_emailController.text)) {
-        isValid = false;
-        firstErrorFocus ??= _emailFocus;
-      }
+    //   // email
+    //   if (_emailController.text.trim().isEmpty ||
+    //       !isValidEmail(_emailController.text)) {
+    //     isValid = false;
+    //     firstErrorFocus ??= _emailFocus;
+    //   }
 
-      // phone
-      if (_phoneController.text.trim().isEmpty ||
-          !isValidPhone(_phoneController.text)) {
-        isValid = false;
-        firstErrorFocus ??= _phoneFocus;
-      }
-    }
+    //   // phone
+    //   if (_phoneController.text.trim().isEmpty ||
+    //       !isValidPhone(_phoneController.text)) {
+    //     isValid = false;
+    //     firstErrorFocus ??= _phoneFocus;
+    //   }
+    // }
 
+    //email
     final bool isEmailRequired =
-    indikator.any((e) => e['id_indikator_vote'] == 12);
+      indikator.any((e) => e['id_indikator_vote'] == 12);
 
     final email = _emailController.text.trim();
 
@@ -2557,6 +2612,24 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       // wajib tapi kosong
       isValid = false;
       firstErrorFocus ??= _emailFocus;
+    }
+
+    //phone
+    final bool isPhoneRequired =
+      indikator.any((e) => e['id_indikator_vote'] == 1);
+
+    final phone = _phoneController.text.trim();
+
+    if (phone.isNotEmpty && !isValidPhone(phone)) {
+      // format salah
+      isValid = false;
+      firstErrorFocus ??= _phoneFocus;
+    }
+
+    if (isPhoneRequired && phone.isEmpty) {
+      // wajib tapi kosong
+      isValid = false;
+      firstErrorFocus ??= _phoneFocus;
     }
 
     // form indokator

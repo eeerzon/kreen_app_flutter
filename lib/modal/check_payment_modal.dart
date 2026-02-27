@@ -28,6 +28,8 @@ class CheckPaymentModal {
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
     }
 
+    bool isRedirecting = false;
+
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
       if (resultOrder != null) {
@@ -241,7 +243,9 @@ class CheckPaymentModal {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh, color: Colors.white),
                       label: Text(
-                        bahasa['check_status'],
+                        isRedirecting
+                          ? bahasa['redirecting']
+                          : bahasa['check_status'],
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white),
                       ),
@@ -253,23 +257,70 @@ class CheckPaymentModal {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () async {
+                      onPressed: isRedirecting
+                      ? null 
+                      : () async {
                         await loadOrder();
                         setState(() {});
 
                         if (voteOrder['order_status'] == '1') {
-                          for (int i = 3; i > 0; i--) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("${bahasa['redirect']} $i ${bahasa['second']}..."),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
+                          setState(() {
+                            isRedirecting = true;
+                          });
+
+                          int countdown = 3;
+
+                          late AwesomeDialog dialog;
+                          late void Function(void Function()) dialogSetState;
+
+                          dialog = AwesomeDialog(
+                            context: context,
+                            dialogType: DialogType.noHeader,
+                            animType: AnimType.scale,
+                            dismissOnTouchOutside: false,
+                            dismissOnBackKeyPress: false,
+                            body: StatefulBuilder(
+                              builder: (context, setDialogState) {
+                                // simpan reference setState dialog
+                                dialogSetState = setDialogState;
+
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(color: Colors.red,),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          )..show();
+
+                          for (int i = countdown; i > 0; i--) {
                             await Future.delayed(const Duration(seconds: 1));
+                            countdown--;
+
+                            if (context.mounted) {
+                              dialogSetState(() {});
+                            }
                           }
+
+                          if (!context.mounted) return;
+
+                          dialog.dismiss();
+
                           Navigator.pushReplacement(
-                            context, 
-                            MaterialPageRoute(builder: (context) => AddSupportPage(id_vote: vote['id_vote'], id_order: voteOrder['id_order'], nama: voteOrder['voter_name'],)),
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AddSupportPage(
+                                id_vote: vote['id_vote'],
+                                id_order: voteOrder['id_order'],
+                                nama: voteOrder['voter_name'],
+                              ),
+                            ),
                           );
                         }
                       },
@@ -303,6 +354,8 @@ class CheckPaymentModal {
 
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
     }
+
+    bool isRedirecting = false;
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
@@ -512,7 +565,9 @@ class CheckPaymentModal {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh, color: Colors.white),
                       label: Text(
-                        bahasa['check_status'],
+                        isRedirecting
+                          ? bahasa['redirecting']
+                          : bahasa['check_status'],
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white),
                       ),
@@ -524,20 +579,61 @@ class CheckPaymentModal {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () async {
+                      onPressed: isRedirecting
+                      ? null 
+                      : () async {
                         await loadOrder();
                         setState(() {});
 
                         if (eventOrder['order_status'] == '1') {
-                          for (int i = 3; i > 0; i--) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("${bahasa['redirect']} $i ${bahasa['second']}..."),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
+                          setState(() {
+                            isRedirecting = true;
+                          });
+
+                          int countdown = 3;
+
+                          late AwesomeDialog dialog;
+                          late void Function(void Function()) dialogSetState;
+
+                          dialog = AwesomeDialog(
+                            context: context,
+                            dialogType: DialogType.noHeader,
+                            animType: AnimType.scale,
+                            dismissOnTouchOutside: false,
+                            dismissOnBackKeyPress: false,
+                            body: StatefulBuilder(
+                              builder: (context, setDialogState) {
+                                // simpan reference setState dialog
+                                dialogSetState = setDialogState;
+
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(color: Colors.red,),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          )..show();
+
+                          for (int i = countdown; i > 0; i--) {
                             await Future.delayed(const Duration(seconds: 1));
+                            countdown--;
+
+                            if (context.mounted) {
+                              dialogSetState(() {});
+                            }
                           }
+
+                          if (!context.mounted) return;
+
+                          dialog.dismiss();
+
                           Navigator.pushReplacement(
                             context, 
                             MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOrder['id_order'], isSukses: true,)),

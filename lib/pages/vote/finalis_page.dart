@@ -720,12 +720,13 @@ class _FinalisPageState extends State<FinalisPage> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
                 child: _isSearching
-                  ? Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: CircularProgressIndicator(color: Colors.red,),
-                      ),
-                    )
+                  // ? Center(
+                  //     child: Padding(
+                  //       padding: EdgeInsets.symmetric(vertical: 40),
+                  //       child: CircularProgressIndicator(color: Colors.red,),
+                  //     ),
+                  //   )
+                  ? buildSkeletonGrid()
                   : buildGridView(
                       vote,
                       finalis,
@@ -772,6 +773,65 @@ class _FinalisPageState extends State<FinalisPage> {
           ),
         ),
         SizedBox(height: 20), // biar sejajar dengan label bawah
+      ],
+    );
+  }
+
+  Widget buildSkeletonGrid() {
+    return Column(
+      children: [
+
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Column(
+            children: [
+              Container(
+                height: 200,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Header shimmer
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Column(
+            children: [
+              Image.asset(
+                'assets/images/img_placeholder.jpg',
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+        Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Column(
+            children: [
+              Container(
+                height: 40,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

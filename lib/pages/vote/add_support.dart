@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/pages/home_page.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -47,6 +47,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+      await _getCurrency();
       await _loadkonten();
     });
   }
@@ -62,6 +63,13 @@ class _AddSupportPageState extends State<AddSupportPage> {
 
     setState(() {
       bahasa = tempbahasa;
+    });
+  }
+
+  Future<void> _getCurrency() async {
+    final code = await StorageService.getCurrency();
+    setState(() {
+      currencyCode = code;
     });
   }
 
@@ -553,8 +561,13 @@ class _AddSupportPageState extends State<AddSupportPage> {
                           if (temprc == 200) {
                             Navigator.pushAndRemoveUntil(
                               context,
-                              MaterialPageRoute(builder: (_) => const HomePage()),
-                              (route) => false,
+                              MaterialPageRoute(
+                                builder: (_) => DetailVotePage(
+                                  id_event: widget.id_vote,
+                                  currencyCode: currencyCode,
+                                ),
+                              ),
+                              (route) => route.isFirst, // sisakan Home
                             );
                           }
                         }

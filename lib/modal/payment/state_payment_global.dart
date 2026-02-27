@@ -149,6 +149,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   bool showErrorBar = false;
   String errorMessage = '';
 
+  bool _showError = false;
+
   @override
   void initState() {
     super.initState();
@@ -338,6 +340,42 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       final longitude = position.longitude;
       //payment
       String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
+
+      if (card_number == null || card_number!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (expiry_month == null || expiry_month!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (expiry_year == null || expiry_year!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (cvv == null || cvv!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
 
       final tickets = <Map<String, dynamic>>[];
 
@@ -656,6 +694,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -763,6 +802,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -872,6 +912,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -982,6 +1023,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1093,6 +1135,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1206,6 +1249,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1319,6 +1363,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1469,6 +1514,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     });
                                   }
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),

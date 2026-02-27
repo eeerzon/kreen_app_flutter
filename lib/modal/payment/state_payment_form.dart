@@ -148,6 +148,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+  bool _showError = false;
 
   @override
   void initState() {
@@ -338,6 +339,42 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       final longitude = position.longitude;
       //payment
       String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
+
+      if (card_number == null || card_number!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (expiry_month == null || expiry_month!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (expiry_year == null || expiry_year!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (cvv == null || cvv!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
 
       final tickets = <Map<String, dynamic>>[];
 
@@ -661,6 +698,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -768,6 +806,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -877,6 +916,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -987,6 +1027,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1098,6 +1139,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1211,6 +1253,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1324,6 +1367,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                   });
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),
@@ -1474,6 +1518,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                     });
                                   }
                                 },
+                                showError: _showError,
                               );
                             }).toList(),
                           ),

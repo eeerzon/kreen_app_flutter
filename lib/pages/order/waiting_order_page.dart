@@ -12,6 +12,7 @@ import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/stripe_pay.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
+import 'package:kreen_app_flutter/pages/vote/add_support.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -57,6 +58,9 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   late List<bool> openStates;
 
+  Timer? _paymentTimer;
+  // bool _waitingPayment = true;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +70,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       await _getCurrency();
       await _loadOrder();
       _startCountdown();
+
+      // startPaymentStatusListener();
     });
   }
 
@@ -206,9 +212,43 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
   );
 
+  void startPaymentStatusListener() {
+    _paymentTimer?.cancel();
+
+    _paymentTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      final result = await ApiService.get(
+        "/order/vote/${widget.id_order}",
+        xLanguage: langCode,
+        xCurrency: currencyCode
+      );
+
+      if (result != null && result['rc'] == 200) {
+        final order = result['data']['vote_order'];
+
+        if (order['order_status'] == '1') {
+          _paymentTimer?.cancel();
+
+          if (!mounted) return;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddSupportPage(
+                id_vote: vote['id_vote'],
+                id_order: order['id_order'],
+                nama: order['voter_name'],
+              ),
+            ),
+          );
+        }
+      }
+    });
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
+    _paymentTimer?.cancel();
     super.dispose();
   }
   
@@ -529,6 +569,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       ),
 
                       const SizedBox(height: 16),
+                      Text(
+                        bahasa['menunggu_konfirmasi'],
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                       Text(bahasa['selesaikan_pembayaran']),
                       Text(
                         formattedDate,
@@ -544,6 +588,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [

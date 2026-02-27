@@ -350,7 +350,7 @@
 
     "upcoming" : "Fitur ini segera hadir di update berikutnya.",
     "maaf" : "Maaf...",
-    "redirect" : "Redirect dalam",
+    "redirect" : "Beralih dalam",
     "batas": "Maksimum {qty} vote per user",
     "batas_event" : "Maksimum {qty} tiket per user",
     "batas_file" : "Ukuran file maksimal 1 MB",
@@ -359,6 +359,9 @@
 
     "bayar_sekarang" : "Bayar Sekarang",
     "tiket_tidak_tersedia" : "Tiket tidak tersedia",
-    "has_been": "telah di vote"
+    "has_been": "telah di vote",
+    "menunggu_konfirmasi" : "Menunggu konfirmasi pembayaran...",
+    "redirecting": "Mengalihkan...",
+    "required": "Informasi kartu wajib diisi"
   }
 }

@@ -35,6 +35,8 @@ class PaymentItem extends StatelessWidget {
   final Function(String)? onPhoneChanged;
   final Function(String)? onIDCardChanged;
 
+  final bool showError;
+
   const PaymentItem({
     super.key,
     required this.paymentTipe,
@@ -55,11 +57,13 @@ class PaymentItem extends StatelessWidget {
     this.onCvvChanged,
     this.expDateController,
     this.onPhoneChanged,
-    this.onIDCardChanged
+    this.onIDCardChanged,
+    required this.showError,
   });
 
   @override
   Widget build(BuildContext context) {
+
     final payment_name = item['payment_name'];
     final id_pg_type = item['id_pg_type'];
     final isSvg = item['img_web'].toLowerCase().endsWith('.svg');
@@ -298,6 +302,14 @@ class PaymentItem extends StatelessWidget {
                               ),
                             ],
                           ),
+
+                          if (showError) ... [
+                            const SizedBox(height: 6),
+                            Text(
+                              bahasa['required'],
+                              style: const TextStyle(color: Colors.red),
+                            )
+                          ]
                         ],
                       ]
                     ],

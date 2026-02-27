@@ -435,6 +435,42 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
         }
       }
 
+      if (card_number == null || card_number!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (expiry_month == null || expiry_month!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (expiry_year == null || expiry_year!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
+      if (cvv == null || cvv!.isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        scrollTo(creditCardKey);
+        return;
+      }
+
       // lanjutkan aksi konfirmasi
       if (widget.totalHargaAsli != 0) {
 
@@ -1260,6 +1296,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1367,6 +1404,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1476,6 +1514,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1586,6 +1625,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1697,6 +1737,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1810,6 +1851,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -1923,6 +1965,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
@@ -2073,6 +2116,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             });
                                           }
                                         },
+                                        showError: _showError,
                                       );
                                     }).toList(),
                                   ),
