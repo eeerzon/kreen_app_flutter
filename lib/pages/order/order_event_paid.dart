@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -756,6 +757,18 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                             MaterialPageRoute(builder: (context) => HomePage()), 
                             (route) => false
                           );
+
+                          // Navigator.pushAndRemoveUntil(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (_) => DetailEventPage(
+                          //       id_event: dataEvents['id_event'],
+                          //       currencyCode: currencyCode, 
+                          //       price: dataEvents['event_ticket'][0]['price'],
+                          //     ),
+                          //   ),
+                          //   (route) => route.isFirst, // sisakan Home
+                          // );
                         },
                         child: Text(
                           bahasa['selesai'], //"Selesai",

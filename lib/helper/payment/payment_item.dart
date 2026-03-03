@@ -37,6 +37,15 @@ class PaymentItem extends StatelessWidget {
 
   final bool showError;
 
+  final FocusNode? cardFocus;
+  final FocusNode? expiryFocus;
+  final FocusNode? cvvFocus;
+
+  final FocusNode? phoneFocus;
+  final FocusNode? idCardFocus;
+  final TextEditingController? phoneDebitController;
+  final TextEditingController? idCardDebitController;
+
   const PaymentItem({
     super.key,
     required this.paymentTipe,
@@ -59,6 +68,13 @@ class PaymentItem extends StatelessWidget {
     this.onPhoneChanged,
     this.onIDCardChanged,
     required this.showError,
+    this.cardFocus,
+    this.expiryFocus,
+    this.cvvFocus,
+    this.phoneFocus,
+    this.idCardFocus,
+    this.phoneDebitController,
+    this.idCardDebitController
   });
 
   @override
@@ -221,6 +237,7 @@ class PaymentItem extends StatelessWidget {
                           const SizedBox(height: 6),
 
                           TextField(
+                            focusNode: cardFocus,
                             onChanged: (value) {
                               final rawValue = value.replaceAll(' ', '');
                               onCardChanged!(rawValue);
@@ -253,6 +270,7 @@ class PaymentItem extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: TextField(
+                                  focusNode: expiryFocus,
                                   controller: expDateController,
                                   decoration: InputDecoration(
                                     hintText: "MM/YY",
@@ -276,6 +294,7 @@ class PaymentItem extends StatelessWidget {
                               ),
                               Expanded(
                                 child: TextField(
+                                  focusNode: cvvFocus,
                                   onChanged: onCvvChanged,
                                   decoration: InputDecoration(
                                     hintText: "CVV",
@@ -323,6 +342,16 @@ class PaymentItem extends StatelessWidget {
                               final itemAtribute = attributes[idx];
                               final isLast = idx == attributes.length - 1;
 
+                              final bool isphone = itemAtribute['code'] == 'mobile_number';
+                              final String? value = isphone
+                                ? phoneDebitController?.text.trim()
+                                : idCardDebitController?.text.trim();
+
+                            final bool hasError = showError && (
+                              value == null ||
+                              (isphone && !isValidPhone(value))
+                            );
+
                               return Padding(
                                 padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
                                 child: Column(
@@ -332,11 +361,13 @@ class PaymentItem extends StatelessWidget {
                                       color: Colors.white,
                                       width: double.infinity,
                                       child: TextField(
+                                        focusNode: isphone ? phoneFocus : idCardFocus,
+                                        controller: isphone ? phoneDebitController : idCardDebitController,
                                         autofocus: false,
-                                        onChanged: itemAtribute['code'] == 'mobile_number' ? onPhoneChanged : onIDCardChanged,
+                                        onChanged: isphone ? onPhoneChanged : onIDCardChanged,
                                         keyboardType: TextInputType.number,
                                         decoration: InputDecoration(
-                                          hintText: itemAtribute['code'] == 'mobile_number' ? bahasa['nomor_hp'] : bahasa['id_card'],
+                                          hintText: isphone ? bahasa['nomor_hp'] : bahasa['id_card'],
                                           filled: true,
                                           fillColor: Colors.white,
                                           hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -350,6 +381,13 @@ class PaymentItem extends StatelessWidget {
                                           focusedBorder: OutlineInputBorder(
                                             borderSide: BorderSide(color: Colors.grey.shade300,),
                                           ),
+                                          errorText: hasError
+                                            ? (isphone
+                                                ? value != null && !isValidPhone(value)
+                                                    ? bahasa['nomor_hp_error']
+                                                    : bahasa['nomor_hp']
+                                                : bahasa['id_card'])
+                                            : null,
                                         ),
                                         inputFormatters: [
                                           LengthLimitingTextInputFormatter(16),
@@ -369,6 +407,7 @@ class PaymentItem extends StatelessWidget {
                                     color: Colors.white,
                                     width: double.infinity,
                                     child: TextField(
+                                      focusNode: phoneFocus,
                                       autofocus: false,
                                       onChanged: onPhoneChanged,
                                       keyboardType: TextInputType.number,

@@ -249,7 +249,17 @@ class _AddSupportPageState extends State<AddSupportPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.pop(context);
+            // Navigator.pop(context);
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DetailVotePage(
+                  id_event: widget.id_vote,
+                  currencyCode: currencyCode,
+                ),
+              ),
+              (route) => route.isFirst, // sisakan Home
+            );
           },
         ),
       ),

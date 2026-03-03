@@ -284,7 +284,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       if (!mounted) return;
 
-      if (value.length >= 3) {
+      if (value.isNotEmpty) {
         setState(() => _isSearching = true);
         await _searchFinalis(value);
         if (!mounted) return;

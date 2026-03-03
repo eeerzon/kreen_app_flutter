@@ -94,6 +94,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   late List<TextEditingController> answerControllers;
   
   int? selectedIndex;
+  int? selectedIndexDebit;
 
   late final formatter = NumberFormat.currency(
     locale: "en_US",
@@ -150,6 +151,14 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   String errorMessage = '';
 
   bool _showError = false;
+  String? typePayment;
+
+  final _cardNumberFocus = FocusNode();
+  final _expiryDateFocus = FocusNode();
+  final _cvvFocus = FocusNode();
+
+  final _phoneItemFocus = FocusNode();
+  final _idCardItemFocus = FocusNode();
 
   @override
   void initState() {
@@ -341,40 +350,62 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       //payment
       String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
 
-      if (card_number == null || card_number!.isEmpty) {
-        setState(() {
-          _showError = true;
-        });
+      if (typePayment == 'credit_card' && payment['Credit Card'][selectedIndex]['flag_client'] == "0") {
+        if (card_number == null || card_number!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
 
-        scrollTo(creditCardKey);
-        return;
-      }
+          _scrollToFocus(_cardNumberFocus);
+          return;
+        }
 
-      if (expiry_month == null || expiry_month!.isEmpty) {
-        setState(() {
-          _showError = true;
-        });
+        if (expiry_month == null || expiry_month!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
 
-        scrollTo(creditCardKey);
-        return;
-      }
+          _scrollToFocus(_expiryDateFocus);
+          return;
+        }
 
-      if (expiry_year == null || expiry_year!.isEmpty) {
-        setState(() {
-          _showError = true;
-        });
+        if (expiry_year == null || expiry_year!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
 
-        scrollTo(creditCardKey);
-        return;
-      }
+          _scrollToFocus(_expiryDateFocus);
+          return;
+        }
 
-      if (cvv == null || cvv!.isEmpty) {
-        setState(() {
-          _showError = true;
-        });
+        if (cvv == null || cvv!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
 
-        scrollTo(creditCardKey);
-        return;
+          _scrollToFocus(_cvvFocus);
+          return;
+        }
+      } else if (typePayment == 'debit' && payment['Direct Debit'][selectedIndexDebit]['flag_client'] == "0") {
+        if (mobile_number == null || mobile_number!.isEmpty) {
+          setState(() {
+            _showError = true;
+          });
+
+          _scrollToFocus(_phoneItemFocus);
+          return;
+        }
+
+        if (payment['Direct Debit'][selectedIndexDebit]['bank_code'] == "KTB") {
+          if (id_card_number == null || id_card_number!.isEmpty) {
+            setState(() {
+              _showError = true;
+            });
+
+            _scrollToFocus(_idCardItemFocus);
+            return;
+          }
+        }
       }
 
       final tickets = <Map<String, dynamic>>[];
@@ -662,6 +693,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = creditCard[idx]['id_metod'];
                                     currencySession = creditCard[idx]['currency_pg'];
+                                    typePayment = "credit_card";
                                   });
 
                                   if (item['flag_client'] == "1") {
@@ -695,6 +727,10 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   });
                                 },
                                 showError: _showError,
+
+                                cardFocus: _cardNumberFocus,
+                                expiryFocus: _expiryDateFocus,
+                                cvvFocus: _cvvFocus,
                               );
                             }).toList(),
                           ),
@@ -772,6 +808,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = virtualAkun[index]['id_metod'];
                                     currencySession = virtualAkun[index]['currency_pg'];
+                                    typePayment = "virtual_akun";
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -882,6 +919,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = paymentBank[index]['id_metod'];
                                     currencySession = paymentBank[index]['currency_pg'];
+                                    typePayment = "payment_bank";
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -993,6 +1031,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = eWallet[index]['id_metod'];
                                     currencySession = eWallet[index]['currency_pg'];
+                                    typePayment = "e_wallet";
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1105,6 +1144,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = retail[index]['id_metod'];
                                     currencySession = retail[index]['currency_pg'];
+                                    typePayment = "retail";
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1219,6 +1259,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = konter[index]['id_metod'];
                                     currencySession = konter[index]['currency_pg'];
+                                    typePayment = "konter";
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1333,6 +1374,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = qrCode[index]['id_metod'];
                                     currencySession = qrCode[index]['currency_pg'];
+                                    typePayment = "qr_code";
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1448,6 +1490,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     selectedIndex = idx;
                                     id_payment_method = debit[index]['id_metod'];
                                     currencySession = debit[index]['currency_pg'];
+                                    typePayment = "debit";
+                                    selectedIndexDebit = index;
                                   });
 
                                   if (item['flag_client'] == "1") {
@@ -1515,6 +1559,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   }
                                 },
                                 showError: _showError,
+
+                                phoneFocus: _phoneItemFocus,
+                                idCardFocus: _idCardItemFocus,
                               );
                             }).toList(),
                           ),
@@ -1671,5 +1718,18 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         alignment: 0.1,
       );
     });
+  }
+
+  void _scrollToFocus(FocusNode node) {
+    node.requestFocus();
+
+    final context = node.context;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 }
