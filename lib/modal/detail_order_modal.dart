@@ -639,6 +639,7 @@ class DetailOrderModal {
     List<dynamic> eventOrderDetail = [];
     List<dynamic> eventTiket = [];
     Map<String, dynamic> event = {};
+    Map<String, dynamic> dataEvents = {};
     Map<String, dynamic> detailEvent = {};
     String? statusOrder;
     bool isLoading = true;
@@ -668,7 +669,7 @@ class DetailOrderModal {
 
       eventOder = tempEventOrder;
       eventOrderDetail = tempEventOrderDetail;
-      eventOrderDetail = eventOrderDetail.reversed.toList();
+      // eventOrderDetail = eventOrderDetail.reversed.toList();
 
       event = tempEvent;
 
@@ -680,6 +681,7 @@ class DetailOrderModal {
       final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
       final tempEventTiket = tempEventDetail['event_ticket'] ?? [];
 
+      dataEvents = tempEventDetail;
       detailEvent = tempEventDetail['event'] ?? {};
       eventTiket = tempEventTiket;
       
@@ -1127,11 +1129,19 @@ class DetailOrderModal {
 
                     SizedBox(height: 8,),
                     Column(
-                      children: List.generate(eventTiket.length, (index) {
-                        final item = eventTiket[index];
+                      children: List.generate(eventOrderDetail.length, (index) {
+                        final order = eventOrderDetail[index];
+
+                        // cari ticket berdasarkan id_event_ticket
+                        final ticket = eventTiket.firstWhere(
+                          (e) => e['id_event_ticket'] == order['id_event_ticket'],
+                          orElse: () => null,
+                        );
+
+                        final ticketName = ticket != null ? ticket['name_ticket'] : "-";
 
                         return Padding(
-                          padding: EdgeInsets.only(bottom: index == eventTiket.length - 1 ? 0 : 16),
+                          padding: EdgeInsets.only(bottom: index == eventOrderDetail.length - 1 ? 0 : 16),
                           child: Column(
                             children: [
                               Container(
@@ -1161,7 +1171,7 @@ class DetailOrderModal {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  '${bahasa['tiket']} ${index + 1} ${item['name_ticket']}',
+                                                  '${bahasa['tiket']} ${index + 1} $ticketName',
                                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                                 ),
                                                 const SizedBox(height: 8),
@@ -1190,7 +1200,7 @@ class DetailOrderModal {
                                                     }
                                                     
                                                     final end =
-                                                        DateTime.parse(ticketDetail['sale_datetime_end_plus_diff']);
+                                                        DateTime.parse(dataEvents['event_datetime'][0]['datetime_end_plus_diff']);
 
                                                     String formatDate(DateTime date) {
                                                       if (langCode == 'id') {

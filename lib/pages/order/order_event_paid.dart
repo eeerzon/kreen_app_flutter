@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
-import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -589,11 +588,19 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
                       SizedBox(height: 20,),
                       Column(
-                        children: List.generate(eventTiket.length, (index) {
-                          final item = eventTiket[index];
+                        children: List.generate(eventOrderDetail.length, (index) {
+                          final order = eventOrderDetail[index];
+
+                          // cari ticket berdasarkan id_event_ticket
+                          final ticket = eventTiket.firstWhere(
+                            (e) => e['id_event_ticket'] == order['id_event_ticket'],
+                            orElse: () => null,
+                          );
+
+                          final ticketName = ticket != null ? ticket['name_ticket'] : "-";
 
                           return Padding(
-                            padding: EdgeInsets.only(bottom: index == eventTiket.length - 1 ? 0 : 20),
+                            padding: EdgeInsets.only(bottom: index == eventOrderDetail.length - 1 ? 0 : 20),
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                               decoration: BoxDecoration(
@@ -621,7 +628,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                '${bahasa['tiket']} ${index + 1} ${item['name_ticket']}',
+                                                '${bahasa['tiket']} ${index + 1} $ticketName',
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
                                               const SizedBox(height: 8),
@@ -650,7 +657,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                                   }
                                                   
                                                   final end =
-                                                      DateTime.parse(ticketDetail['sale_datetime_end_plus_diff']);
+                                                      DateTime.parse(dataEvents['event_datetime'][0]['datetime_end_plus_diff']);
 
                                                   String formatDate(DateTime date) {
                                                     if (langCode == 'id') {
@@ -752,23 +759,23 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                           ),
                         ),
                         onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context, 
-                            MaterialPageRoute(builder: (context) => HomePage()), 
-                            (route) => false
-                          );
-
                           // Navigator.pushAndRemoveUntil(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //     builder: (_) => DetailEventPage(
-                          //       id_event: dataEvents['id_event'],
-                          //       currencyCode: currencyCode, 
-                          //       price: dataEvents['event_ticket'][0]['price'],
-                          //     ),
-                          //   ),
-                          //   (route) => route.isFirst, // sisakan Home
+                          //   context, 
+                          //   MaterialPageRoute(builder: (context) => HomePage()), 
+                          //   (route) => false
                           // );
+
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailEventPage(
+                                id_event: event['id_event'],
+                                currencyCode: currencyCode, 
+                                price: dataEvents['event_ticket'][0]['price'],
+                              ),
+                            ),
+                            (route) => route.isFirst, // sisakan Home
+                          );
                         },
                         child: Text(
                           bahasa['selesai'], //"Selesai",

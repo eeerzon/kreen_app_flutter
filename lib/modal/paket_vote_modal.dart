@@ -160,6 +160,7 @@ class PaketVoteModal {
                                     });
                                   },
                                   child: Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
                                     color: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     child: Container(
@@ -257,6 +258,7 @@ class PaketVoteModal {
                                     });
                                   },
                                   child: Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
                                     color: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     child: Container(

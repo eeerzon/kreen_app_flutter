@@ -926,9 +926,10 @@ class _FinalisPageState extends State<FinalisPage> {
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemCount: listFinalis.length,
       itemBuilder: (context, index) {
         final item = listFinalis[index];
@@ -952,8 +953,12 @@ class _FinalisPageState extends State<FinalisPage> {
           color: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: Container(
-            margin: const EdgeInsets.only(bottom: 15),
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300,),
+            ),
             child: SizedBox(
               width: double.infinity,
               child: Column(

@@ -71,6 +71,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
         return 'not_started';
       } else if (!now.isBefore(end)) {
         return 'ended';
+      } else if (ticket['sisa_stok'] == 0) {
+        return 'sold_out';
       } else {
         return 'open';
       }
@@ -1864,7 +1866,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         Center(
                           child: Column(
                             children: [
-                              ColorFiltered(
+                              ColorFiltered( //greyscale
                                 colorFilter: const ColorFilter.matrix([
                                   0.2126, 0.7152, 0.0722, 0, 0,
                                   0.2126, 0.7152, 0.0722, 0, 0,
@@ -2044,6 +2046,19 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                       )
 
                                                     : status == 'ended'
+                                                      ? Container(
+                                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                                          child: Text(
+                                                            bahasa['habis'],
+                                                            style: const TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                              fontSize: 16,
+                                                              color: Colors.red,
+                                                            ),
+                                                          ),
+                                                        )
+
+                                                      : status == 'sold_out'
                                                         ? Container(
                                                             padding: const EdgeInsets.symmetric(vertical: 8),
                                                             child: Text(
@@ -2055,7 +2070,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                               ),
                                                             ),
                                                           )
-
                                                         : Column(
                                                             mainAxisAlignment: MainAxisAlignment.center,
                                                             children: [
@@ -2198,15 +2212,15 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
     return GestureDetector(
       onTap: isEmpty
-          ? null
-          : () async {
-              Uri? uri = Uri.tryParse(link);
-              if (uri != null && await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else {
-                await launchUrl(Uri.parse("https://google.com"), mode: LaunchMode.externalApplication);
-              }
-            },
+        ? null
+        : () async {
+            Uri? uri = Uri.tryParse(link);
+            if (uri != null && await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            } else {
+              await launchUrl(Uri.parse("https://google.com"), mode: LaunchMode.externalApplication);
+            }
+          },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         child: SvgPicture.network(

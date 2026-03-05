@@ -343,6 +343,12 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       currencyRegion = "VND";
     }
 
+    final formaterNumber = NumberFormat.currency(
+      locale: "en_US",
+      symbol: "",
+      decimalDigits: currencyRegion == "IDR" ? 0 : 2,
+    );
+
     num sum_amount = (eventOder['amount'] + eventOder['fees']) * eventOder['currency_value_region'];
     num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
     num displayTotalAmount;
@@ -709,7 +715,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                               const SizedBox(height: 10,),
                               Text(
                                 // '$currencyRegion ${formatter.format(paymentDetail['amount'])}',
-                                '$currencyRegion ${formatter.format(displayTotalAmount)}',
+                                '$currencyRegion ${formaterNumber.format(displayTotalAmount)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
 

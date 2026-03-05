@@ -181,7 +181,7 @@ class CheckPaymentModal {
                               // cari finalis yang sesuai id_finalis-nya
                               final finalis = voteFinalis.firstWhere(
                                 (f) => f['id_finalis'] == detail['id_finalis'],
-                                orElse: () => {'nama_finalis': 'Tidak Diketahui'},
+                                orElse: () => {'nama_finalis': bahasa['no_data']},
                               );
 
                               return Text(
@@ -428,7 +428,7 @@ class CheckPaymentModal {
           final id = detail['id_event_ticket'];
           final ticket = eventTiket.firstWhere(
             (f) => f['id_event_ticket'] == id,
-            orElse: () => {'ticket_name': 'Tidak Diketahui'},
+            orElse: () => {'ticket_name': bahasa['no_data']},
           );
 
           if (groupedTickets.containsKey(id)) {

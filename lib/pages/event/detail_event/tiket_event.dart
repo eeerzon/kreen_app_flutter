@@ -188,12 +188,6 @@ class _TiketEventPageState extends State<TiketEventPage> {
       await _getBahasa();
       await _getCurrency();
       await _loadTiket();
-
-      if (widget.price_global == 0) {
-        _isFree = true;
-      } else {
-        _isFree = false;
-      }
     });
 
     ids_order_form_detail = [];
@@ -523,7 +517,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         hargaFormatted = currencyCode == null
                           ? "${detailEvent['currency']} ${formatter.format(price)}"
                           : "$currencyCode ${formatter.format(price)}";
-                        if (eventTiket[index]['price'] == 0) {
+                        if (widget.prices_tiket_asli![index] == 0) {
                           hargaFormatted = bahasa['harga_detail'];
                         }
 
@@ -1461,70 +1455,73 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         }
 
                         try{
-                          if (_isFree) {
-                            final position = await getCurrentLocationWithValidation(context);
+                          final position = await getCurrentLocationWithValidation(context);
 
-                            if (position == null) {
-                              // Stop, jangan lanjut submit
-                              return;
-                            }
+                          if (position == null) {
+                            // Stop, jangan lanjut submit
+                            return;
+                          }
 
-                            final latitude = position.latitude;
-                            final longitude = position.longitude;
-                            //payment
-                            String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
+                          final latitude = position.latitude;
+                          final longitude = position.longitude;
+                          //payment
+                          String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
 
-                            final tickets = <Map<String, dynamic>>[];
+                          final tickets = <Map<String, dynamic>>[];
 
-                            int globalIndex = 0;
+                          int globalIndex = 0;
 
-                            for (int i = 0; i < widget.ids_tiket!.length; i++) {
-                              final idTicket = widget.ids_tiket![i];
-                              final count = int.tryParse(widget.qty[i].toString()) ?? 1;
+                          for (int i = 0; i < widget.ids_tiket!.length; i++) {
+                            final idTicket = widget.ids_tiket![i];
+                            final count = int.tryParse(widget.qty[i].toString()) ?? 1;
 
-                              for (int j = 0; j < count; j++) {
-                                
-                                String genderValue;
-                                final rawGender = selectedGenders[globalIndex]?.toString().toLowerCase();
+                            for (int j = 0; j < count; j++) {
+                              
+                              String genderValue;
+                              final rawGender = selectedGenders[globalIndex]?.toString().toLowerCase();
 
-                                if (rawGender == 'laki-laki' || rawGender == 'male') {
-                                  genderValue = 'male';
-                                } else if (rawGender == 'perempuan' || rawGender == 'female') {
-                                  genderValue = 'female';
-                                } else {
-                                  genderValue = ''; // atau throw / handle error
-                                }
-
-                                tickets.add({
-                                  "id_ticket": idTicket,
-                                  "first_name": nameControllers[globalIndex].text,
-                                  "email": emailControllers[globalIndex].text,
-                                  "phone": phoneControllers[globalIndex].text,
-                                  "gender" : genderValue,
-                                  "order_form_answers": List.generate(
-                                    ids_order_form_master[j].length,
-                                    (index) => {
-                                      "id_order_form_master": ids_order_form_master[j][index],
-                                      "id_order_form_detail": ids_order_form_detail[j][index],
-                                      "answer": answers[globalIndex][index],
-                                    },
-                                  ),
-                                });
-                                globalIndex++;
+                              if (rawGender == 'laki-laki' || rawGender == 'male') {
+                                genderValue = 'male';
+                              } else if (rawGender == 'perempuan' || rawGender == 'female') {
+                                genderValue = 'female';
+                              } else {
+                                genderValue = ''; // atau throw / handle error
                               }
-                            }
-                            var get_user = await StorageService.getUser();
-                            var user_id = get_user['id'];
 
-                            final body = {
-                              "id_event":widget.id_event,
-                              "id_user": user_id,
-                              'platform': platform,
-                              "latitude": latitude,
-                              "longitude": longitude,
-                              "tickets": tickets,
-                              "payment_method": '',
-                            };
+                              tickets.add({
+                                "id_ticket": idTicket,
+                                "first_name": nameControllers[globalIndex].text,
+                                "email": emailControllers[globalIndex].text,
+                                "phone": phoneControllers[globalIndex].text,
+                                "gender" : genderValue,
+                                "order_form_answers": List.generate(
+                                  ids_order_form_master[j].length,
+                                  (index) => {
+                                    "id_order_form_master": ids_order_form_master[j][index],
+                                    "id_order_form_detail": ids_order_form_detail[j][index],
+                                    "answer": answers[globalIndex][index],
+                                  },
+                                ),
+                              });
+                              globalIndex++;
+                            }
+                          }
+                          var get_user = await StorageService.getUser();
+                          var user_id = get_user['id'];
+
+                          final body = {
+                            "id_event":widget.id_event,
+                            "id_user": user_id,
+                            'platform': platform,
+                            "latitude": latitude,
+                            "longitude": longitude,
+                            "tickets": tickets,
+                            "payment_method": '',
+                          };
+
+                          _isFree = !(widget.prices_tiket_asli?.any((e) => e != 0) ?? false);
+
+                          if (_isFree) {
 
                             var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
 

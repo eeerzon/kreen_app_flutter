@@ -349,15 +349,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       //payment
       String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
 
-      if (card_number == null || card_number!.isEmpty) {
-        setState(() {
-          _showError = true;
-        });
-
-        scrollTo(creditCardKey);
-        return;
-      }
-
       if (typePayment == 'credit_card' && payment['Credit Card'][selectedIndex]['flag_client'] == "0") {
         if (card_number == null || card_number!.isEmpty) {
           setState(() {
