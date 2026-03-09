@@ -30,6 +30,8 @@ class _InfoPageState extends State<InfoPage> {
   bool isLoading = true;
   Map<String, dynamic> bahasa = {};
 
+  bool isEdit = false;
+
   @override
   void initState() {
     super.initState();
@@ -316,13 +318,17 @@ class _InfoPageState extends State<InfoPage> {
               //profile section
               token != null
                 ? InkWell(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => Profile(),
                         ),
                       );
+
+                      if (result == true) {
+                        isEdit = true;
+                      }
                     },
                     child: Container(
                       padding: EdgeInsets.all(14),

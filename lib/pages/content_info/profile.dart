@@ -47,6 +47,8 @@ class _ProfileState extends State<Profile> {
 
   Map<String, dynamic> bahasa = {};
 
+  bool isEdit = false;
+
   @override
   void initState() {
     super.initState();
@@ -304,7 +306,11 @@ class _ProfileState extends State<Profile> {
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
             setState(() {
-              Navigator.pop(context);
+              if (isEdit) {
+                Navigator.pop(context, true);
+              } else {
+                Navigator.pop(context, false);
+              }
             });
           },
         ),
@@ -337,6 +343,9 @@ class _ProfileState extends State<Profile> {
 
               if (result == true) {
                 _fetchUserProfile(); 
+                setState(() {
+                  isEdit = true;
+                });
               }
             },
             child: Container(
@@ -881,11 +890,12 @@ class _ProfileState extends State<Profile> {
                     await StorageService.clearUser();
                     await StorageService.clearToken();
                     await StorageService.clearLoginMethod();
-
-                    SessionManager.isGuest = false;
-                    SessionManager.checkingUserModalShown = false;
                     
                     setState(() {
+
+                      SessionManager.isGuest = true;
+                      SessionManager.checkingUserModalShown = true;
+                      
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -924,8 +934,16 @@ class _ProfileState extends State<Profile> {
   void _fetchUserProfile() async {
     final user = await StorageService.getUser();
     setState(() {
-      first_name = user['first_name'];
-      last_name = user['last_name'];
+      final fullName = user['first_name'];
+      if (fullName != null && fullName.isNotEmpty) {
+          final parts = fullName.split(' ');
+          first_name = parts.first;
+          last_name = parts.length > 1 
+              ? parts.sublist(1).join(' ') 
+              : '';
+        }
+      // first_name = user['first_name'];
+      // last_name = user['last_name'];
       email = user['email'];
       phone = user['phone'];
       dob = user['dob'];

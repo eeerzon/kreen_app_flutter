@@ -215,7 +215,7 @@
     "status_pembayaran" : "Payment Status",
     "tiket" : "Ticket",
     "pembayaran" : "Payment",
-    "metode_pembayaran" : "Payment Method",
+    "metode_pembayaran" : "Payment\nMethod",
     "informasi_tiket" : "Ticket Information",
     "detail_pembayaran" : "Payment Details",
     "another_payment" : "Try again with another payment method",
@@ -362,6 +362,8 @@
     "has_been": "has been voted",
     "menunggu_konfirmasi" : "Waiting for confirmation...",
     "redirecting": "Redirecting...",
-    "required": "Card information is required"
+    "required": "Card information is required",
+    "session_expired": "Session has expired",
+    "login_lagi": "Please login again or login as guest."
   }
 }

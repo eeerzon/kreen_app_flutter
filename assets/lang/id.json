@@ -215,7 +215,7 @@
     "status_pembayaran" : "Status Pembayaran",
     "tiket" : "Tiket",
     "pembayaran" : "Pembayaran",
-    "metode_pembayaran" : "Metode Pembayaran",
+    "metode_pembayaran" : "Metode\nPembayaran",
     "informasi_tiket" : "Informasi Tiket",
     "detail_pembayaran" : "Detail Pembayaran",
     "another_payment" : "Coba lagi dengan metode pembayaran lain",
@@ -362,6 +362,8 @@
     "has_been": "telah di vote",
     "menunggu_konfirmasi" : "Menunggu konfirmasi pembayaran...",
     "redirecting": "Mengalihkan...",
-    "required": "Informasi kartu wajib diisi"
+    "required": "Informasi kartu wajib diisi",
+    "session_expired": "Sesi telah kedaluwarsa",
+    "login_lagi": "Silakan login kembali atau login sebagai tamu."
   }
 }

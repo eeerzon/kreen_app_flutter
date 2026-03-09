@@ -632,16 +632,20 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
                                               const SizedBox(height: 8),
-                                              Text(eventOrderDetail[index]['ticket_buyer_name']),
-                                              const SizedBox(height: 8),
                                               Text(
-                                                eventOrderDetail[index]['ticket_buyer_email'],
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
+                                                "${eventOrderDetail[index]['ticket_buyer_name']}" 
+                                                "\n${eventOrderDetail[index]['ticket_buyer_email']}"
+                                                "\n${eventOrderDetail[index]['ticket_buyer_phone']}"
                                               ),
                                               const SizedBox(height: 8),
-                                              Text(eventOrderDetail[index]['ticket_buyer_phone']),
-                                              const SizedBox(height: 8),
+                                              // Text(
+                                              //   eventOrderDetail[index]['ticket_buyer_email'],
+                                              //   overflow: TextOverflow.ellipsis,
+                                              //   maxLines: 1,
+                                              // ),
+                                              // const SizedBox(height: 8),
+                                              // Text(eventOrderDetail[index]['ticket_buyer_phone']),
+                                              // const SizedBox(height: 8),
                                               Builder(
                                                 builder: (_) {
                                                   final orderedTicketId =

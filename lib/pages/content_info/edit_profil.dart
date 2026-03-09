@@ -2,14 +2,19 @@
 
 import 'dart:io';
 
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
+import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -269,7 +274,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       "link_ig": igController.text.isNotEmpty ? igController.text : null,
       "link_twitter": twitterController.text.isNotEmpty ? twitterController.text : null,
     };
-    
+
     final resultSimpan = await ApiService.postSetProfil('$baseapiUrl/setting/update-profile',token: token, body: body, xLanguage: langCode);
 
     if (resultSimpan?['rc'] == 200) {
@@ -296,11 +301,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
       showErrorBar = false;
       isImage = false;
 
-      Navigator.pushAndRemoveUntil(
-        context, 
-        MaterialPageRoute(builder: (context) => HomePage()), 
-        (route) => false
-      );
+      // Navigator.pushAndRemoveUntil(
+      //   context, 
+      //   MaterialPageRoute(builder: (context) => HomePage()), 
+      //   (route) => false
+      // );
+
+      Navigator.pop(context, true);
       
     } else if (resultSimpan?['rc'] == 422) {
       setState(() {
@@ -335,6 +342,115 @@ class _EditProfilePageState extends State<EditProfilePage> {
           phoneFocusNode.requestFocus();
         });
       }
+    } else if (resultSimpan?['rc'] == 401) {
+      setState(() {
+        showErrorBar = true;
+        errorCode = resultSimpan?['rc'] ?? 0;
+        errorMessageBar = resultSimpan?['message'];
+      });
+
+      final loginMethod = await StorageService.getLoginMethod();
+
+      if (loginMethod == 'google') {
+        final googleSignIn = GoogleSignIn();
+
+        await googleSignIn.disconnect();
+        await googleSignIn.signOut();
+        await FirebaseAuth.instance.signOut();
+      }
+
+      await StorageService.clearUser();
+      await StorageService.clearToken();
+      await StorageService.clearLoginMethod();
+      
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        dismissOnTouchOutside: false,
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              Text(
+                bahasa['session_expired'] ?? "",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                "$errorMessageBar\n\n${bahasa['login_lagi']}",
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 20),
+
+              /// BUTTON LOGIN
+              SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                    );
+                  },
+                  child: Text(
+                    bahasa['login'] ?? "Login",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              /// BUTTON LOGIN SEBAGAI TAMU
+              SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      SessionManager.isGuest = true;
+                      SessionManager.checkingUserModalShown = true;
+                    });
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomePage()),
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    bahasa['guest_login'] ?? "Lanjut sebagai tamu",
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ).show();
     } else {
       setState(() {
         showErrorBar = true;
@@ -633,14 +749,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Row(
                             children: List.generate(genders.length, (index) {
                               final item = genders[index];
-                              final isSelectedGender = selectedGender.toString().toLowerCase() == item['label'].toString().toLowerCase();
+                              final isSelectedGender =
+                                (selectedGender.toString().toLowerCase() == 'male'
+                                        ? bahasa['gender_1']
+                                        : bahasa['gender_2'])
+                                    .toString()
+                                    .toLowerCase() ==
+                                item['label'].toString().toLowerCase();
 
                               return Expanded(
                                 child: GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      selectedGender = item['label'];
-                                      gender = item['label'];
+                                      selectedGender = item['label'].toString().toLowerCase() ==
+                                            bahasa['gender_1'].toString().toLowerCase()
+                                        ? 'male'
+                                        : 'female';
+
+                                      gender = item['label'].toString().toLowerCase() ==
+                                            bahasa['gender_1'].toString().toLowerCase()
+                                        ? 'male'
+                                        : 'female';
                                     });
                                   },
                                   child: Container(

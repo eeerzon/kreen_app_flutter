@@ -552,13 +552,17 @@ class _HomeContentState extends State<HomeContent> {
                               //   ),
 
                               InkWell(
-                                onTap: () {
-                                  Navigator.push(
+                                onTap: () async {
+                                  final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => Profile(),
                                     ),
                                   );
+
+                                  if (result == true) {
+                                    await _loadContent();
+                                  }
                                 },
                                 child: CircleAvatar(
                                   child: ClipOval(

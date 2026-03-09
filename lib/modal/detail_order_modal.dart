@@ -1175,16 +1175,20 @@ class DetailOrderModal {
                                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                                 ),
                                                 const SizedBox(height: 8),
-                                                Text(eventOrderDetail[index]['ticket_buyer_name']),
-                                                const SizedBox(height: 8),
                                                 Text(
-                                                  eventOrderDetail[index]['ticket_buyer_email'],
-                                                  overflow: TextOverflow.ellipsis,
-                                                  maxLines: 1,
+                                                  "${eventOrderDetail[index]['ticket_buyer_name']}" 
+                                                  "\n${eventOrderDetail[index]['ticket_buyer_email']}"
+                                                  "\n${eventOrderDetail[index]['ticket_buyer_phone']}"
                                                 ),
                                                 const SizedBox(height: 8),
-                                                Text(eventOrderDetail[index]['ticket_buyer_phone']),
-                                                const SizedBox(height: 8),
+                                                // Text(
+                                                //   eventOrderDetail[index]['ticket_buyer_email'],
+                                                //   overflow: TextOverflow.ellipsis,
+                                                //   maxLines: 1,
+                                                // ),
+                                                // const SizedBox(height: 8),
+                                                // Text(eventOrderDetail[index]['ticket_buyer_phone']),
+                                                // const SizedBox(height: 8),
                                                 Builder(
                                                   builder: (_) {
                                                     final orderedTicketId =
@@ -1235,13 +1239,7 @@ class DetailOrderModal {
                                                       children: [
                                                         Text(
                                                           //berlaku hingga
-                                                          '${bahasa['expired_at']} \n${formatDate(end)}',
-                                                          style: const TextStyle(color: Colors.black),
-                                                        ),
-                                                        const SizedBox(height: 4),
-                                                        Text(
-                                                          "${formatTime(end)} "
-                                                          "(${detailEvent['code_timezone']})",
+                                                          '${bahasa['expired_at']} \n${formatDate(end)}\n${formatTime(end)} (${detailEvent['code_timezone']})',
                                                           style: const TextStyle(color: Colors.black),
                                                         ),
                                                       ],
@@ -1352,12 +1350,12 @@ class DetailOrderModal {
                           border: Border.all(color: Colors.grey.shade300,),
                         ),
                         child: Table(
+                          defaultVerticalAlignment: TableCellVerticalAlignment.top,
                           columnWidths: {
                             0: IntrinsicColumnWidth(),
                             1: FixedColumnWidth(20),
                             2: FlexColumnWidth(),
                           },
-                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                           children: [
                             TableRow(children: [
                               const Text('ID Order', style: TextStyle(color: Colors.grey),),
