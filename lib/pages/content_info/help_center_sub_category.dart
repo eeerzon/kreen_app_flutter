@@ -221,8 +221,9 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                                                 SizedBox(width: 10,),
                                                 GestureDetector(
                                                   onTap: () {
-                                                    openQuestion[index]![indexx] = !openQuestion[index]![indexx];
-                                                    setState(() {});
+                                                    setState(() {
+                                                      openQuestion[index]![indexx] = !openQuestion[index]![indexx];
+                                                    });
                                                   },
                                                   child: !openQuestion[index]![indexx]
                                                     ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
@@ -234,9 +235,11 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                                             if (openQuestion[index]![indexx]) ...[
                                               SizedBox(height: 6),
                                               Html(
-                                                data: langCode == 'en'
-                                                  ? q['en_content']
-                                                  : q['content'],
+                                                data: formatHtmlContent(
+                                                  langCode == 'en'
+                                                    ? q['en_content']
+                                                    : q['content']
+                                                  ),
                                                 style: {
                                                   "p": Style(
                                                     margin: Margins.zero,

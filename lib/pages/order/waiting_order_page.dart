@@ -166,8 +166,9 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         if (rawExpires != null && rawExpires.toString().isNotEmpty) {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
 
-          // tambahkan 1 jam
+          // tambahkan 1 jam untuk durasi expired payment
           final newDate = date.add(const Duration(hours: 1));
+          // final newDate = date.add(Duration(milliseconds: paymentDetail['expired_duration'] ?? 0));
           
           expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
         } else {

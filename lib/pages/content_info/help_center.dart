@@ -383,8 +383,9 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                               SizedBox(width: 10,),
                               GestureDetector(
                                 onTap: () {
-                                  openQuestion[indexKat] = !openQuestion[indexKat];
-                                  setState(() {});
+                                  setState(() {
+                                    openQuestion[indexKat] = !openQuestion[indexKat];
+                                  });
                                 },
                                 child: !openQuestion[indexKat]
                                 ? Icon(FontAwesomeIcons.plus, color: Colors.red, size: 20,)
@@ -395,10 +396,11 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
 
                           if (openQuestion[indexKat]) ... [
                             Html(
-                              data: 
+                              data: formatHtmlContent(
                                 langCode == 'en'
-                                ? itemKat['en_content']
-                                : itemKat['content'],
+                                    ? itemKat['en_content']
+                                    : itemKat['content'],
+                              ),
                               style: {
                                 "p": Style(
                                   margin: Margins.only(left: 12),
@@ -421,5 +423,4 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       ),
     );
   }
-
 }

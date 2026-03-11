@@ -364,6 +364,8 @@
     "redirecting": "Mengalihkan...",
     "required": "Informasi kartu wajib diisi",
     "session_expired": "Sesi telah kedaluwarsa",
-    "login_lagi": "Silakan login kembali atau login sebagai tamu."
+    "login_lagi": "Silakan login kembali atau login sebagai tamu.",
+    "ingin_keluar": "Apakah kamu ingin keluar?",
+    "ya": "Ya"
   }
 }

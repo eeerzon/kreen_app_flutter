@@ -877,35 +877,104 @@ class _ProfileState extends State<Profile> {
                 SizedBox(height: 20,),
                 InkWell(
                   onTap: () async {
-                    final loginMethod = await StorageService.getLoginMethod();
 
-                    if (loginMethod == 'google') {
-                      final googleSignIn = GoogleSignIn();
+                    AwesomeDialog(
+                      context: context,
+                      dialogType: DialogType.noHeader,
+                      animType: AnimType.topSlide,
+                      dismissOnTouchOutside: false,
+                      body: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
 
-                      await googleSignIn.disconnect();
-                      await googleSignIn.signOut();
-                      await FirebaseAuth.instance.signOut();
-                    }
+                            Text(
+                              bahasa['ingin_keluar'] ?? "", // yakin untuk logout
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
 
-                    await StorageService.clearUser();
-                    await StorageService.clearToken();
-                    await StorageService.clearLoginMethod();
-                    
-                    setState(() {
+                            const SizedBox(height: 10),
 
-                      SessionManager.isGuest = true;
-                      SessionManager.checkingUserModalShown = true;
-                      
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HomePage(
-                            fromLogout: true,
-                          )
+                            /// BUTTON Ya, logout
+                            SizedBox(
+                              width: double.infinity,
+                              height: 45,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  final loginMethod = await StorageService.getLoginMethod();
+
+                                  if (loginMethod == 'google') {
+                                    final googleSignIn = GoogleSignIn();
+
+                                    await googleSignIn.disconnect();
+                                    await googleSignIn.signOut();
+                                    await FirebaseAuth.instance.signOut();
+                                  }
+
+                                  await StorageService.clearUser();
+                                  await StorageService.clearToken();
+                                  await StorageService.clearLoginMethod();
+                                  
+                                  setState(() {
+
+                                    SessionManager.isGuest = true;
+                                    SessionManager.checkingUserModalShown = true;
+                                  });
+                                    
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HomePage(
+                                        fromLogout: true,
+                                      )
+                                    ),
+                                    (Route<dynamic> route) => false,
+                                  );
+                                },
+                                child: Text(
+                                  "${bahasa['ya']}, ${bahasa['keluar']}",
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            /// BUTTON Kembali
+                            SizedBox(
+                              width: double.infinity,
+                              height: 45,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: Colors.grey.shade400),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text(
+                                  bahasa['kembali'] ?? "",
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        (Route<dynamic> route) => false,
-                      );
-                    });
+                      ),
+                    ).show();
                   },
                   child: Container(
                     height: 48,

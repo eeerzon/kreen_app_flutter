@@ -41,3 +41,11 @@ DateTime parseWib(String value) {
     '${value.replaceAll(' ', 'T')}+07:00',
   );
 }
+
+String formatHtmlContent(String? text) {
+  if (text == null) return "";
+  return text
+      .replaceAll('\r\n', '<br>')
+      .replaceAll('\n\n', '<br><br>')
+      .replaceAll('\n', '<br>');
+}

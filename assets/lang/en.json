@@ -364,6 +364,8 @@
     "redirecting": "Redirecting...",
     "required": "Card information is required",
     "session_expired": "Session has expired",
-    "login_lagi": "Please login again or login as guest."
+    "login_lagi": "Please login again or login as guest.",
+    "ingin_keluar": "Do you want to logout?",
+    "ya": "Yes"
   }
 }
