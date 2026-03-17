@@ -347,10 +347,10 @@ class PaymentItem extends StatelessWidget {
                                 ? phoneDebitController?.text.trim()
                                 : idCardDebitController?.text.trim();
 
-                            final bool hasError = showError && (
-                              value == null ||
-                              (isphone && !isValidPhone(value))
-                            );
+                              final bool hasError = showError && (
+                                value == null ||
+                                (isphone && !isValidPhone(value))
+                              );
 
                               return Padding(
                                 padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
@@ -437,6 +437,48 @@ class PaymentItem extends StatelessWidget {
                             )
                           ],
                         ],
+                      ]
+                    ],
+                    
+                    if (paymentTipe == "e_wallet") ...[
+                      if (isSelected) ... [
+                        if (item['id'] == "6387457643547345") ...[
+                          // const SizedBox(height: 10,),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                color: Colors.white,
+                                width: double.infinity,
+                                child: TextField(
+                                  focusNode: phoneFocus,
+                                  autofocus: false,
+                                  onChanged: onPhoneChanged,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    hintText: bahasa['nomor_hp'],
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                      ),
+                                      borderSide: BorderSide(color: Colors.grey.shade300,),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(color: Colors.grey.shade300,),
+                                    ),
+                                  ),
+                                  inputFormatters: [
+                                    LengthLimitingTextInputFormatter(12),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ]
                       ]
                     ],
                   ],

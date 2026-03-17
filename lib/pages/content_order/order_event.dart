@@ -82,6 +82,19 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
   List<Map<String, dynamic>> eventGagal = [];
 
   Future<void> _loadContent() async {
+    orderSuccess = [];
+    orderPending = [];
+    orderFail = [];
+
+    eventSukses = [];
+    eventPending = [];
+    eventGagal = [];
+
+    if (paymentExpired) {
+      setState(() {
+        isLoading = true;
+      });
+    }
 
     var getUser = await StorageService.getUser();
     var idUser = getUser['id'];
@@ -242,7 +255,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
                       : NoOrder(),
 
                     orderPending.isNotEmpty
-                      ? EventPending(orderPending: orderPending, events: eventPending)
+                      ? EventPending(orderPending: orderPending, events: eventPending, reloadParent: _loadContent)
                       : NoOrder(),
 
                     orderFail.isNotEmpty
@@ -780,7 +793,8 @@ class _EventSuccessState extends State<EventSuccess> {
 class EventPending extends StatefulWidget {
   List<dynamic> orderPending;
   List<Map<String, dynamic>> events;
-  EventPending({super.key,  required this.orderPending, required this.events});
+  final VoidCallback? reloadParent;
+  EventPending({super.key,  required this.orderPending, required this.events, this.reloadParent});
 
   @override
   State<EventPending> createState() => _EventPendingState();
@@ -1146,12 +1160,16 @@ class _EventPendingState extends State<EventPending> {
                           children: [
                             Expanded(
                               child: InkWell(
-                                onTap: () {
+                                onTap: () async {
                                   if (itemEvents['id_order'] != null) {
-                                    Navigator.push(
+                                    final changed = await Navigator.push(
                                       context,
                                       MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency'],)),
                                     );
+
+                                    if (changed == true) {
+                                      widget.reloadParent?.call();
+                                    }
                                   } else {
                                     ScaffoldMessenger.of(context)
                                       .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));

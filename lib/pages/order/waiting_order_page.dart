@@ -52,6 +52,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   bool tapinstruksi = false;
 
   bool isExpired = false;
+  bool _didMarkExpired = false;
 
   bool showErrorBar = false;
   String errorMessage = '';
@@ -167,7 +168,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
 
           // tambahkan 1 jam untuk durasi expired payment
-          final newDate = date.add(const Duration(hours: 1));
+          var newDate = date.add(const Duration(hours: 1));
+          if (voteOder['payment_method_id'] == "6387457643547345") {
+            newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
+          }
           // final newDate = date.add(Duration(milliseconds: paymentDetail['expired_duration'] ?? 0));
           
           expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
@@ -1128,7 +1132,29 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     );
   }
 
+  Future<void> setExpired() async {
+    final result = await ApiService.patch(
+      "/order/set-expired",
+      body: {
+        "id_order": widget.id_order,
+        "type": "vote"
+      },
+      xLanguage: langCode
+    );
+
+    if (result != null && result['rc'] == 200) {
+      paymentExpired = true;
+      _didMarkExpired = true;
+
+      orderNeedRefresh.value = true;
+    }
+  }
+
   Widget buildLinkKadaluarsa() {
+    if (!_didMarkExpired) {
+      setExpired();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -1142,7 +1168,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
           ? IconButton(
               icon: Icon(Icons.arrow_back_ios),
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context, paymentExpired);
               },
             )
           : SizedBox.shrink(),

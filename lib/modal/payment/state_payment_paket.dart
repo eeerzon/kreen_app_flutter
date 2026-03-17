@@ -1636,13 +1636,15 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             typePayment = "e_wallet";
                                           });
                                           
-                                          Future.delayed(const Duration(milliseconds: 200), () {
-                                            _scrollController.animateTo(
-                                              _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
-                                              curve: Curves.easeOut,
-                                            );
-                                          });
+                                          if (item['id'] != "6387457643547345") {
+                                            Future.delayed(const Duration(milliseconds: 200), () {
+                                              _scrollController.animateTo(
+                                                _scrollController.position.maxScrollExtent,
+                                                duration: const Duration(milliseconds: 600),
+                                                curve: Curves.easeOut,
+                                              );
+                                            });
+                                          }
           
                                           // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
                                           var resultFee = await getFeeNew(
@@ -1663,6 +1665,23 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             totalPayment = resultFee!['total_payment'];
                                             feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                           });
+                                        },
+
+                                        onPhoneChanged: (val) {
+                                          mobile_number = val;
+
+                                          if (item['id'] == "6387457643547345") {
+                                            _phoneDebounce?.cancel();
+                                            _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                              if (val.length >= 12 && _scrollController.hasClients) {
+                                                _scrollController.animateTo(
+                                                  _scrollController.position.maxScrollExtent,
+                                                  duration: const Duration(milliseconds: 600),
+                                                  curve: Curves.easeOut,
+                                                );
+                                              }
+                                            });
+                                          }
                                         },
                                         showError: _showError,
                                       );

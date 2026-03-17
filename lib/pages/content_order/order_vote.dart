@@ -82,6 +82,19 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> votesGagal = [];
   
   Future<void> _loadContent() async {
+    orderSuccess = [];
+    orderPending = [];
+    orderFail = [];
+
+    votesSukses = [];
+    votesPending = [];
+    votesGagal = [];
+
+    if (paymentExpired) {
+      setState(() {
+        isLoading = true;
+      });
+    }
 
     var getUser = await StorageService.getUser();
     var email = getUser['email'];
@@ -240,7 +253,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
                       : NoOrder(),
 
                     orderPending.isNotEmpty
-                      ? VotePending(orderPending: orderPending, votes: votesPending)
+                      ? VotePending(orderPending: orderPending, votes: votesPending, reloadParent: _loadContent)
                       : NoOrder(),
 
                     orderFail.isNotEmpty
@@ -778,7 +791,8 @@ class _VoteSuccessState extends State<VoteSuccess> {
 class VotePending extends StatefulWidget {
   List<dynamic> orderPending;
   List<Map<String, dynamic>> votes;
-  VotePending({super.key,  required this.orderPending, required this.votes});
+  final VoidCallback? reloadParent;
+  VotePending({super.key,  required this.orderPending, required this.votes, this.reloadParent});
 
   @override
   State<VotePending> createState() => _VotePendingState();
@@ -1144,12 +1158,16 @@ class _VotePendingState extends State<VotePending> {
                           children: [
                             Expanded(
                               child: InkWell(
-                                onTap: () {
+                                onTap: () async {
                                   if (itemVotes['id_order'] != null) {
-                                    Navigator.push(
+                                    final changed = await Navigator.push(
                                       context,
                                       MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: item['currency'],)),
                                     );
+
+                                    if (changed == true) {
+                                      widget.reloadParent?.call();
+                                    }
                                   } else {
                                     ScaffoldMessenger.of(context)
                                       .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));

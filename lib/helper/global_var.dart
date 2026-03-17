@@ -49,3 +49,7 @@ String formatHtmlContent(String? text) {
       .replaceAll('\n\n', '<br><br>')
       .replaceAll('\n', '<br>');
 }
+
+bool paymentExpired = false;
+
+ValueNotifier<bool> orderNeedRefresh = ValueNotifier(false);

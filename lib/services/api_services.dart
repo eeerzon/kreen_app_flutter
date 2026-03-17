@@ -264,4 +264,66 @@ class ApiService {
       };
     }
   }
+
+  static Future<Map<String, dynamic>?> patch(
+    String endpoint, 
+    {
+      Map<String, dynamic>? body,
+      String? xLanguage,
+      String? xCurrency,
+      String? token
+    }
+  ) async {
+    final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
+
+    Map<String, String> headers = {
+      'API-Secret-Key':
+          'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
+      'Content-Type': 'application/json',
+      'x-language': xLanguage,
+      'x-currency': ?xCurrency,
+    };
+
+    final url = Uri.parse("$baseapiUrl$endpoint");
+
+    try {
+      final response = await http
+        .patch(url, headers: headers, body: json.encode(body))
+        .timeout(Duration(seconds: 15));
+        
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        final body = json.decode(response.body);
+
+        return {
+          "rc": response.statusCode,
+          "success": false,
+          "message": body['message'] ?? "Server error (${response.statusCode})",
+          "data": body['data'] ?? []
+        };
+      }
+    } on TimeoutException {
+      return {
+        "rc": 408,
+        "status": false,
+        "message": bahasa['timeout'],
+        "data": []
+      };
+    } on SocketException {
+      return {
+        "rc": 503,
+        "status": false,
+        "message": bahasa['no_internet'],
+        "data": []
+      };
+    } catch (e) {
+      return {
+        "rc": 500,
+        "status": false,
+        "message": bahasa['error'],
+        "data": []
+      };
+    }
+  }
 }
