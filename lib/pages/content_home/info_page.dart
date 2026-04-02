@@ -31,6 +31,7 @@ class _InfoPageState extends State<InfoPage> {
   Map<String, dynamic> bahasa = {};
 
   bool isEdit = false;
+  bool? changed;
 
   @override
   void initState() {
@@ -93,8 +94,8 @@ class _InfoPageState extends State<InfoPage> {
     "VND" : "Vietnamese Dong\nVND"
   };
 
-  void _showLanguageDialog() {
-    showDialog(
+  Future<bool?> _showLanguageDialog() {
+    return showDialog<bool>(
       context: context,
       builder: (context) {
         String tempLang = langCode!;
@@ -126,14 +127,17 @@ class _InfoPageState extends State<InfoPage> {
                       onChanged: (val) async {
                         if (val != null) {
                           setState(() {
-                            langCode = val; // update global
+                            langCode = val; 
+                            langNotifier.value = val; // update global
                           });
                           await StorageService.setLanguage(val);
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HomePage()),
-                            (route) => false,
-                          );
+                          // Navigator.pushAndRemoveUntil(
+                          //   context,
+                          //   MaterialPageRoute(builder: (_) => const HomePage()),
+                          //   (route) => false,
+                          // );
+
+                          Navigator.pop(context, true);
                         }
                       },
                       title: Row(
@@ -432,7 +436,15 @@ class _InfoPageState extends State<InfoPage> {
                   border: Border.all(color: Colors.grey.shade300,),
                 ),
                 child: InkWell(
-                  onTap: _showLanguageDialog,
+                  onTap: () async {
+                    changed = await _showLanguageDialog();
+
+                    if (changed == true) {
+                      setState(() {
+                        _getBahasa();
+                      });
+                    }
+                  },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

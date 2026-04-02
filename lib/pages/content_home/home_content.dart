@@ -507,13 +507,20 @@ class _HomeContentState extends State<HomeContent> {
                                           backgroundColor: const Color(0xFFFFDFE0),
                                         ),
                                         onPressed: () async {
-                                          await Navigator.push(
+                                          final result = await Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (_) => const LoginPage(),
                                             ),
                                           );
-                                          await _checkToken();
+
+                                          if (result == true) {
+                                            await _getBahasa();
+                                            await _loadContent();
+                                            setState(() {
+                                              
+                                            });
+                                          }
                                         },
                                         child: Text(
                                           login!,

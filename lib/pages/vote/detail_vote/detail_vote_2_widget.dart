@@ -92,6 +92,9 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
     if (widget.data['theme_name'] != null) {
       themeName = widget.data['theme_name'];
     }
+    if (themeName == "Default Kreen") {
+      themeName = "default";
+    }
     Color color = colorMap[themeName] ?? Colors.red;
 
     Color bgColor;
@@ -169,16 +172,18 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
               ),
             ),
 
-            Positioned(
-              top: 12,
-              right: 4,
-              child: VoteNotifStack(
-                notifList: widget.dataNotif,
-                color: color,
-                bgColor: bgColor,
-                themeName: themeName,
+            if (widget.dataNotif.isNotEmpty) ... [
+              Positioned(
+                top: 12,
+                right: 4,
+                child: VoteNotifStack(
+                  notifList: widget.dataNotif,
+                  color: color,
+                  bgColor: bgColor,
+                  themeName: themeName,
+                ),
               ),
-            ),
+            ]
           ]
         ),
 

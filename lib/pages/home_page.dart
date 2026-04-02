@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
+import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/modal/checking_user_modal.dart';
 import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
@@ -163,23 +164,31 @@ class _HomePageState extends State<HomePage> {
         // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
         // --- Bottom Navigation Bar ---
-        bottomNavigationBar: BottomAppBar(
-          color: Colors.white,
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(Icons.home, home ?? "Home", 0),
-                _buildNavItem(Icons.search, explore ?? "Eksplore", 1),
-                // const SizedBox(width: 40), //nyalakan kalau pake FloatingActionButton
-                _buildNavItem(Icons.receipt_long, order ?? "Pesanan", 2),
-                _buildNavItem(Icons.person, info ?? "Info", 3),
-              ],
-            ),
-          ),
+        bottomNavigationBar: ValueListenableBuilder(
+          valueListenable: langNotifier,
+          builder: (context, value, _) {
+
+            // reload text berdasarkan bahasa terbaru
+            _getBahasa(); 
+
+            return BottomAppBar(
+              color: Colors.white,
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8,
+              child: SizedBox(
+                height: 60,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(Icons.home, home ?? "Home", 0),
+                    _buildNavItem(Icons.search, explore ?? "Eksplore", 1),
+                    _buildNavItem(Icons.receipt_long, order ?? "Pesanan", 2),
+                    _buildNavItem(Icons.person, info ?? "Info", 3),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
 
         body: _pages[_selectedIndex],

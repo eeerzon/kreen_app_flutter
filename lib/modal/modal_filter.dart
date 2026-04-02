@@ -5,7 +5,7 @@ import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 
 class ModalFilter {
-  static Future<Map<String, List<String>>?> show(
+  static Future<Map<String, dynamic>?> show(
     BuildContext context,
     String langCode,
     List<String> initialTime,
@@ -15,6 +15,12 @@ class ModalFilter {
       required int selectedIndex,
     }
   ) async {
+
+    final Map<int, String> typeLabels = {
+      0: "All",
+      1: "Vote",
+      2: "Event",
+    };
 
     // copy agar tidak langsung mutate parent sebelum OK
     List<String> paramTime = List.from(initialTime);
@@ -57,7 +63,7 @@ class ModalFilter {
           : bahasa['time_event'];
 
 
-    return await showModalBottomSheet<Map<String, List<String>>>(
+    return await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isDismissible: true,
       enableDrag: true,
@@ -102,6 +108,32 @@ class ModalFilter {
                           ),
                         ),
                       ],
+                    ),
+
+                    Divider(),
+
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(bahasa['type'], style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    Column(
+                      children: typeLabels.keys.map((key) {
+                        return InkWell(
+                          onTap: () => setState(() => selectedIndex = key),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(typeLabels[key] ?? key.toString()),
+                              Radio(
+                                value: key,
+                                groupValue: selectedIndex,
+                                onChanged: (_) => setState(() => selectedIndex = key),
+                                activeColor: Colors.red,
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList()
                     ),
 
                     Divider(),
@@ -162,6 +194,7 @@ class ModalFilter {
                         Navigator.pop(context, {
                           'time': paramTime,
                           'price': paramPrice,
+                          'type': selectedIndex,
                         });
                       },
                       child: SizedBox(

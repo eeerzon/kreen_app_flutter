@@ -169,16 +169,18 @@ class DeskripsiSection_3 extends StatefulWidget {
               ),
             ),
 
-            Positioned(
-              top: 12,
-              right: 4,
-              child: VoteNotifStack(
-                notifList: widget.dataNotif,
-                color: color,
-                bgColor: bgColor,
-                themeName: themeName,
+            if (widget.dataNotif.isNotEmpty) ... [
+              Positioned(
+                top: 12,
+                right: 4,
+                child: VoteNotifStack(
+                  notifList: widget.dataNotif,
+                  color: color,
+                  bgColor: bgColor,
+                  themeName: themeName,
+                ),
               ),
-            ),
+            ]
           ]
         ),
 
@@ -696,6 +698,9 @@ class LeaderboardSection_3 extends StatelessWidget {
     String themeName = 'Red';
     if (data['theme_name'] != null) {
       themeName = data['theme_name'];
+    }
+    if (themeName == "Default Kreen") {
+      themeName = "default";
     }
     Color color = colorMap[themeName] ?? Colors.red;
 

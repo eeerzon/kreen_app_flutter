@@ -418,6 +418,34 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       }
     }
 
+    List<dynamic> orderDetails = detailOrder['event_order_detail'] ?? [];
+    List<dynamic> tickets = detailOrder['event_ticket'] ?? [];
+
+    // 1. Grouping qty per id_event_ticket
+    Map<String, num> grouped = {};
+
+    for (var detail in orderDetails) {
+      final id = detail['id_event_ticket'];
+      final qty = detail['qty'] ?? 0;
+
+      if (id == null) continue;
+
+      grouped[id] = (grouped[id] ?? 0) + qty;
+    }
+
+    // 2. Mapping ke nama tiket
+    List<String> tiketInfo = grouped.entries.map((entry) {
+      final ticket = tickets.firstWhere(
+        (t) => t['id_event_ticket'] == entry.key,
+        orElse: () => {},
+      );
+
+      final name = ticket['ticket_name'] ?? '-';
+      final qty = entry.value;
+
+      return "$name (${qty}x)";
+    }).toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -967,10 +995,14 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                       ),
 
                                       const SizedBox(height: 8,),
-                                      Text(
-                                        '${eventTiket[0]['ticket_name']} (${eventOrderDetail[0]['qty']}x)',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
+                                      // Text(
+                                      //   '${eventTiket[0]['ticket_name']} (${eventOrderDetail[0]['qty']}x)',
+                                      //   style: TextStyle(color: Colors.grey),
+                                      // ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: tiketInfo.map((e) => Text(e)).toList(),
+                                      )
                                     ],
                                   )
                                 ],
@@ -1031,29 +1063,29 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                       ),
 
 
-                      const SizedBox(height: 30,),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () async {
-                            await CheckPaymentModal.showEvent(
-                              context,
-                              widget.id_order
-                            );
-                          },
-                          child: Text(
-                            bahasa['check_status'],
-                            style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                        ),
-                      ),
+                      // const SizedBox(height: 30,),
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   child: ElevatedButton(
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: Colors.red,
+                      //       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(8),
+                      //       ),
+                      //     ),
+                      //     onPressed: () async {
+                      //       await CheckPaymentModal.showEvent(
+                      //         context,
+                      //         widget.id_order
+                      //       );
+                      //     },
+                      //     child: Text(
+                      //       bahasa['check_status'],
+                      //       style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                      //     ),
+                      //   ),
+                      // ),
 
                       if (!widget.formHistory) ... [
                         const SizedBox(height: 20,),

@@ -43,7 +43,6 @@ class _RegisPageState extends State<RegisPage> {
 
   bool get _isFormFilled =>
       _firstNameController.text.isNotEmpty &&
-      _lastNameController.text.isNotEmpty &&
       _emailController.text.isNotEmpty &&
       _phoneController.text.isNotEmpty &&
       _passwordController.text.isNotEmpty &&
@@ -344,7 +343,13 @@ class _RegisPageState extends State<RegisPage> {
 
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
-                  child: Text(firstNameLabel ?? "..."),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(firstNameLabel ?? "..."),
+                      Text("*", style: TextStyle(color: Colors.red),),
+                    ],
+                  ),
                 ),
                 TextField(
                   controller: _firstNameController,
@@ -399,8 +404,12 @@ class _RegisPageState extends State<RegisPage> {
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    emailLabel!
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(emailLabel ?? "..."),
+                      Text("*", style: TextStyle(color: Colors.red),),
+                    ],
                   ),
                 ),
                 TextField(
@@ -427,7 +436,7 @@ class _RegisPageState extends State<RegisPage> {
                       : null,
                   ),
                 ),
-                if (errorCode == 422) ... [
+                if (errorCode == 422 && errorMessage['email'] != null) ... [
                   SizedBox(height: 4),
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
@@ -446,8 +455,12 @@ class _RegisPageState extends State<RegisPage> {
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    phoneLabel!
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(phoneLabel ?? "..."),
+                      Text("*", style: TextStyle(color: Colors.red),),
+                    ],
                   ),
                 ),
                 TextField(
@@ -485,8 +498,12 @@ class _RegisPageState extends State<RegisPage> {
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    passwordLabel!
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(passwordLabel ?? "..."),
+                      Text("*", style: TextStyle(color: Colors.red),),
+                    ],
                   ),
                 ),
                 TextField(
@@ -557,8 +574,12 @@ class _RegisPageState extends State<RegisPage> {
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
-                  child: Text(
-                    confirmPasswordLabel!
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(confirmPasswordLabel ?? "..."),
+                      Text("*", style: TextStyle(color: Colors.red),),
+                    ],
                   ),
                 ),
                 TextField(

@@ -182,6 +182,22 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
       ).show().then((_) {
         Navigator.pop(context);
       });
+    } else {
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: requestSend!,
+        desc: bahasa['email_kirim'], //"Permintaan reset password berhasil dikirim. Silakan cek email Anda.",
+        btnOkOnPress: () {},
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show().then((_) {
+        Navigator.pop(context);
+      });
     }
   }
 }

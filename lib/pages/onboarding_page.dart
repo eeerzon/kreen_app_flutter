@@ -31,7 +31,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   String? guest;
   String? langCode;
 
-  String _selectedLang = "id";
+  String _selectedLang = langNotifier.value;
   final Map<String, String> languages = {
     "id": "Indonesia",
     "en": "English"
@@ -68,7 +68,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   //setting bahasa
   Future<void> _loadLanguage(String langCode) async {
-    StorageService.setLanguage(langCode);
+    await StorageService.setLanguage(langCode);
+
+    langNotifier.value = langCode;
 
     final onboarding = await LangService.loadOnboarding(langCode);
     final tempbahasa = await LangService.getJsonData(langCode, "bahasa");
@@ -125,6 +127,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
                         setState(() {
                           _selectedLang = val;
+                          langNotifier.value = val;
                         });
 
                         Navigator.pop(context);

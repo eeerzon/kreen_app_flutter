@@ -669,7 +669,7 @@ class DetailOrderModal {
 
       eventOder = tempEventOrder;
       eventOrderDetail = tempEventOrderDetail;
-      // eventOrderDetail = eventOrderDetail.reversed.toList();
+      eventOrderDetail = eventOrderDetail.reversed.toList();
 
       event = tempEvent;
 

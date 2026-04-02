@@ -53,3 +53,5 @@ String formatHtmlContent(String? text) {
 bool paymentExpired = false;
 
 ValueNotifier<bool> orderNeedRefresh = ValueNotifier(false);
+
+ValueNotifier<String> langNotifier = ValueNotifier('id');

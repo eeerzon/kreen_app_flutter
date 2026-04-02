@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/pages/lupa_password.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
@@ -42,6 +43,7 @@ class _LoginPageState extends State<LoginPage> {
   String? langCode, googleLogin, gagalLogin, cancelLogin;
   bool isLoading = true;
   bool _isGoogleLoading = false;
+  bool? changed;
 
   bool get _isFormFilled =>
       _emailController.text.isNotEmpty &&
@@ -233,8 +235,8 @@ class _LoginPageState extends State<LoginPage> {
     "en": "English"
   };
 
-  void _showLanguageDialog() {
-    showDialog(
+  Future<bool?> _showLanguageDialog() {
+    return showDialog<bool>(
       context: context,
       builder: (context) {
         String tempLang = langCode!;
@@ -264,14 +266,17 @@ class _LoginPageState extends State<LoginPage> {
                       onChanged: (val) async {
                         if (val != null) {
                           setState(() {
-                            langCode = val; // update global
+                            langCode = val; 
+                            langNotifier.value = val; // update global
                           });
                           await StorageService.setLanguage(val);
-                          Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (_) => const HomePage()),
-                          (route) => false,
-                        );
+                          // Navigator.pushAndRemoveUntil(
+                          //   context,
+                          //   MaterialPageRoute(builder: (_) => const HomePage()),
+                          //   (route) => false,
+                          // );
+
+                          Navigator.pop(context, true);
                         }
                       },
                       title: Row(
@@ -327,14 +332,26 @@ class _LoginPageState extends State<LoginPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            Navigator.pop(context);
+            if (changed == true) {
+              Navigator.pop(context, true);
+            } else {
+              Navigator.pop(context);
+            }
           },
         ),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 20),
             child: GestureDetector(
-              onTap: _showLanguageDialog,
+              onTap: () async {
+                changed = await _showLanguageDialog();
+
+                if (changed == true) {
+                  setState(() {
+                    _getBahasa();
+                  });
+                }
+              },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

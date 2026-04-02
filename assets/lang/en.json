@@ -366,6 +366,8 @@
     "session_expired": "Session has expired",
     "login_lagi": "Please login again or login as guest.",
     "ingin_keluar": "Do you want to logout?",
-    "ya": "Yes"
+    "ya": "Yes",
+    "type" : "Type",
+    "email_kirim" : "Password reset request sent successfully. Please check your email."
   }
 }

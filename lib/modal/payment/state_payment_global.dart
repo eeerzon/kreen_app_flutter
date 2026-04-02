@@ -412,26 +412,29 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
       for (int i = 0; i < widget.ids_tiket.length; i++) {
         final idTicket = widget.ids_tiket[i];
+        final count = int.tryParse(widget.counts_tiket[i].toString()) ?? 1;
 
-        String? genderValue;
+        for (int j = 0; j < count; j++) {
+          
+          String genderValue;
+          final rawGender = widget.genders[j]?.toString().toLowerCase();
 
-        final rawGender = widget.genders[i]?.toString().toLowerCase();
+          if (rawGender == 'laki-laki' || rawGender == 'male') {
+            genderValue = 'male';
+          } else if (rawGender == 'perempuan' || rawGender == 'female') {
+            genderValue = 'female';
+          } else {
+            genderValue = ''; // atau throw / handle error
+          }
 
-        if (rawGender == 'laki-laki' || rawGender == 'male') {
-          genderValue = 'male';
-        } else if (rawGender == 'perempuan' || rawGender == 'female') {
-          genderValue = 'female';
-        } else {
-          genderValue = ''; // handle error
+          tickets.add({
+            "id_ticket": idTicket,
+            "first_name": widget.first_names[i].text,
+            "email": widget.emails[i].text,
+            "phone": widget.phones[i].text,
+            "gender": genderValue,
+          });
         }
-
-        tickets.add({
-          "id_ticket": idTicket,
-          "first_name": widget.first_names[i].text,
-          "email": widget.emails[i].text,
-          "phone": widget.phones[i].text,
-          "gender": genderValue,
-        });
       }
 
       final body = {

@@ -366,6 +366,8 @@
     "session_expired": "Sesi telah kedaluwarsa",
     "login_lagi": "Silakan login kembali atau login sebagai tamu.",
     "ingin_keluar": "Apakah kamu ingin keluar?",
-    "ya": "Ya"
+    "ya": "Ya",
+    "type" : "Tipe",
+    "email_kirim" : "Permintaan reset password berhasil dikirim. Silakan cek email Anda."
   }
 }
