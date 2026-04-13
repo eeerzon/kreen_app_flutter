@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -650,6 +651,8 @@ class DetailOrderModal {
 
     num totalPriceRegion = 0;
 
+    bool isGeneratingPdf = false;
+
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
@@ -1141,7 +1144,7 @@ class DetailOrderModal {
                         final ticketName = ticket != null ? ticket['name_ticket'] : "-";
 
                         return Padding(
-                          padding: EdgeInsets.only(bottom: index == eventOrderDetail.length - 1 ? 0 : 16),
+                          padding: EdgeInsets.only(bottom: index == eventOrderDetail.length - 1 ? 0 : 16,),
                           child: Column(
                             children: [
                               Container(
@@ -1295,11 +1298,9 @@ class DetailOrderModal {
                                 ),
                               ),
 
-                              SizedBox(height: 8,),
-                              Divider(),
                               SizedBox(height: 10,),
                               Padding(
-                                padding: EdgeInsets.only(bottom: index == eventTiket.length - 1 ? 0 : 20),
+                                padding: EdgeInsets.zero,
                                 child: Table(
                                   columnWidths: {
                                     0: IntrinsicColumnWidth(),
@@ -1329,11 +1330,68 @@ class DetailOrderModal {
                                   }).toList(),
                                 ),
                               ),
+
+                              SizedBox(height: 8,),
+                              Divider(),
+                              SizedBox(height: 8,),
                             ],
                           ),
                         );
                       }),
                     ),
+
+                    if (isSukses) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            disabledBackgroundColor: Colors.white,
+                          ),
+                          onPressed: () async {
+                            setState(() => isGeneratingPdf = true);
+                            await downloadTicket(
+                              context,
+                              setState,
+                              event,
+                              eventOder,
+                              detailEvent,
+                              dataEvents,
+                              eventOrderDetail,
+                              eventTiket,
+                              langCode!,
+                              bahasa,
+                            );
+                            setState(() => isGeneratingPdf = false);
+                          },
+                          icon: isGeneratingPdf
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.download_outlined, color: Colors.red),
+                          label: Text(
+                            isGeneratingPdf
+                              ? bahasa['loading_pdf'] ?? 'Creating PDF...'
+                              : bahasa['unduh_tiket'] ?? 'Download Ticket(s)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
 
                     if (eventOder['amount'] != 0) ... [
                       const SizedBox(height: 16),

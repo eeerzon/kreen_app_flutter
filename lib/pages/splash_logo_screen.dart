@@ -34,7 +34,7 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
 
   Future<void> _checkOnboarding() async {
     await Future.delayed(const Duration(seconds: 2));
-    final seen = await StorageService.hasSeenOnboarding();
+    final seen = await StorageService.getOnboardingDone();
     if (seen) {
       // langsung ke home
       Navigator.pushAndRemoveUntil(
@@ -48,7 +48,6 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
         context,
         MaterialPageRoute(builder: (_) => const OnboardingPage()),
       );
-      await StorageService.setOnboardingDone();
     }
   }
 

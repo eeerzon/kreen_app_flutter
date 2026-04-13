@@ -2,7 +2,6 @@
 
 import 'dart:async';
 
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -12,11 +11,12 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
+import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
-import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_1_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_2_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.dart';
@@ -1615,118 +1615,16 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                 onPressed: (harga != 0 && totalHarga == 0) || counts == 0 
                 ? null 
                 : () async {
-                  final getUser = await StorageService.getUser();
-
+                  final storedToken = await StorageService.getToken() ?? '';
+                  var getUser = await StorageService.getUser();
                   String? idUser = getUser['id'];
 
-                  if (detailvote['flag_login'] == '1') {
-                    final token = await StorageService.getToken();
+                  await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
-                      if (token == null) {
-                        AwesomeDialog(
-                          context: context,
-                          dialogType: DialogType.noHeader,
-                          animType: AnimType.scale,
-                          dismissOnTouchOutside: true,
-                          body: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Icon(
-                                      Icons.close,
-                                      size: 30,
-                                    ),
-                                  )
-                                ],
-                              ),
+                  getUser = await StorageService.getUser();
+                  
+                  if (detailvote['flag_verify_email'] == '0') {
 
-                              const SizedBox(height: 16,),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFE5E5),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Image.asset(
-                                  "assets/images/img_ovo30d.png",
-                                  height: 60,
-                                  width: 60,
-                                )
-                              ),
-
-                              const SizedBox(height: 24),
-                              Text(
-                                notLogin!,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-
-                              const SizedBox(height: 12),
-                              Text(
-                                notLoginDesc!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.black54, fontSize: 14),
-                              ),
-
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context, 
-                                    MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: color,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                                  elevation: 2,
-                                ),
-                                child: Text(
-                                  loginText!,
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-                        ).show();
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StatePaymentPaket(
-                              id_vote: detailFinalis['id_vote'],
-                              id_finalis: detailFinalis['id_finalis'],
-                              nama_finalis: detailFinalis['nama_finalis'],
-                              counts: counts,
-                              totalHarga: totalHarga,
-                              totalHargaAsli: harga_akhir_asli,
-                              id_paket: id_paket!,
-                              fromDetail: true,
-                              idUser: idUser,
-                              flag_login: detailvote['flag_login'],
-                              rateCurrency: detailvote['rate_currency_vote'],
-                              rateCurrencyUser: detailvote['rate_currency_user'],
-                            ),
-                          ),
-                        );
-                      }
-                  } else {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1746,14 +1644,40 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                         ),
                       ),
                     );
-                  }
+                  } else {
+                    final storedToken = await StorageService.getToken() ?? '';
 
-                  
+                    if (getUser['verifEmail'] == '0') {
+                      EmailVerifModal.show(context, storedToken, langCode!, bahasa!, getUser['email'] ?? '', color);
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatePaymentPaket(
+                            id_vote: detailFinalis['id_vote'],
+                            id_finalis: detailFinalis['id_finalis'],
+                            nama_finalis: detailFinalis['nama_finalis'],
+                            counts: counts,
+                            totalHarga: totalHarga,
+                            totalHargaAsli: harga_akhir_asli,
+                            id_paket: id_paket!,
+                            fromDetail: true,
+                            idUser: idUser,
+                            flag_login: detailvote['flag_login'],
+                            rateCurrency: detailvote['rate_currency_vote'],
+                            rateCurrencyUser: detailvote['rate_currency_user'],
+                          ),
+                        ),
+                      );
+                    }
+                  }
                 },
                 child: Text(
                   isTutup
                   ? endVote!
-                  : bayarText!,
+                  : harga != 0 
+                    ? bayarText!
+                    : bahasa!['lanjutkan'],
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),

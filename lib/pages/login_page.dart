@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/pages/lupa_password.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
@@ -235,71 +234,71 @@ class _LoginPageState extends State<LoginPage> {
     "en": "English"
   };
 
-  Future<bool?> _showLanguageDialog() {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        String tempLang = langCode!;
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(dialog_language),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: languages.entries.map((entry) {
-                    return RadioListTile<String>(
-                      value: entry.key,
-                      groupValue: tempLang,
-                      onChanged: (val) async {
-                        if (val != null) {
-                          setState(() {
-                            langCode = val; 
-                            langNotifier.value = val; // update global
-                          });
-                          await StorageService.setLanguage(val);
-                          // Navigator.pushAndRemoveUntil(
-                          //   context,
-                          //   MaterialPageRoute(builder: (_) => const HomePage()),
-                          //   (route) => false,
-                          // );
+  // Future<bool?> _showLanguageDialog() {
+  //   return showDialog<bool>(
+  //     context: context,
+  //     builder: (context) {
+  //       String tempLang = langCode!;
+  //       return StatefulBuilder(
+  //         builder: (context, setStateDialog) {
+  //           return AlertDialog(
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(8),
+  //             ),
+  //             title: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text(dialog_language),
+  //                 IconButton(
+  //                   icon: Icon(Icons.close),
+  //                   onPressed: () => Navigator.pop(context),
+  //                 ),
+  //               ],
+  //             ),
+  //             content: SingleChildScrollView(
+  //               child: Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: languages.entries.map((entry) {
+  //                   return RadioListTile<String>(
+  //                     value: entry.key,
+  //                     groupValue: tempLang,
+  //                     onChanged: (val) async {
+  //                       if (val != null) {
+  //                         setState(() {
+  //                           langCode = val; 
+  //                           langNotifier.value = val; // update global
+  //                         });
+  //                         await StorageService.setLanguage(val);
+  //                         // Navigator.pushAndRemoveUntil(
+  //                         //   context,
+  //                         //   MaterialPageRoute(builder: (_) => const HomePage()),
+  //                         //   (route) => false,
+  //                         // );
 
-                          Navigator.pop(context, true);
-                        }
-                      },
-                      title: Row(
-                        children: [
-                          Image.asset(
-                            "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
-                            width: 28,
-                            height: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(entry.value),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+  //                         Navigator.pop(context, true);
+  //                       }
+  //                     },
+  //                     title: Row(
+  //                       children: [
+  //                         Image.asset(
+  //                           "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
+  //                           width: 28,
+  //                           height: 28,
+  //                         ),
+  //                         const SizedBox(width: 12),
+  //                         Text(entry.value),
+  //                       ],
+  //                     ),
+  //                   );
+  //                 }).toList(),
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   void initState() {
@@ -339,34 +338,34 @@ class _LoginPageState extends State<LoginPage> {
             }
           },
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 20),
-            child: GestureDetector(
-              onTap: () async {
-                changed = await _showLanguageDialog();
+        // actions: [
+        //   Container(
+        //     margin: const EdgeInsets.only(right: 20),
+        //     child: GestureDetector(
+        //       onTap: () async {
+        //         changed = await _showLanguageDialog();
 
-                if (changed == true) {
-                  setState(() {
-                    _getBahasa();
-                  });
-                }
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset("assets/flags/${langCode ?? 'id'}.png",
-                      width: 24, height: 24),
-                  const SizedBox(width: 4),
-                  Text(
-                    (langCode ?? 'id').toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
+        //         if (changed == true) {
+        //           setState(() {
+        //             _getBahasa();
+        //           });
+        //         }
+        //       },
+        //       child: Row(
+        //         mainAxisSize: MainAxisSize.min,
+        //         children: [
+        //           Image.asset("assets/flags/${langCode ?? 'id'}.png",
+        //               width: 24, height: 24),
+        //           const SizedBox(width: 4),
+        //           Text(
+        //             (langCode ?? 'id').toUpperCase(),
+        //             style: const TextStyle(fontWeight: FontWeight.bold),
+        //           ),
+        //         ],
+        //       ),
+        //     ),
+        //   )
+        // ],
       ),
 
       body: Listener(

@@ -7,6 +7,7 @@ const EdgeInsets kGlobalPadding = EdgeInsets.all(20);
 
 const String baseUrl = "https://dev.kreenconnect.com"; //dev
 // const String baseUrl = "https://kreenconnect.com"; //prod
+// const String baseUrl = "https://bc.kreenconnect.com"; //semiprod
 
 const String baseapiUrl = "$baseUrl/kreenapi";
 
@@ -33,7 +34,7 @@ String? currencyCode = 'IDR'; // currency aktif UI
 String? userCurrency = 'IDR'; // preference user
 String? lastCurrency;
 
-int isChoosed = 0; // 0 = belum pilih, 1 = sudah pilih
+int isChoosed = 1; // 0 = belum pilih, 1 = sudah pilih
 
 DateTime parseWib(String value) {
   // Ubah ke ISO +07:00 agar Flutter tahu ini WIB
@@ -55,3 +56,19 @@ bool paymentExpired = false;
 ValueNotifier<bool> orderNeedRefresh = ValueNotifier(false);
 
 ValueNotifier<String> langNotifier = ValueNotifier('id');
+
+final Map<String, String> languages = {
+  "id": "Indonesia",
+  "en": "English",
+};
+
+final Map<String, String> currencies = {
+  "EUR": "Euro",
+  "IDR": "Indonesian Rupiah",
+  "MYR": "Malaysian Ringgit",
+  "PHP": "Philippine Peso",
+  "SGD": "Singapore Dollar",
+  "THB": "Thai Baht",
+  "USD": "US Dollar",
+  "VND": "Vietnamese Dong",
+};

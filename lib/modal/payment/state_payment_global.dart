@@ -11,6 +11,7 @@ import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
 import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
 import 'package:kreen_app_flutter/pages/order/waiting_order_event.dart';
@@ -94,6 +95,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
   late List<TextEditingController> answerControllers;
   
   int? selectedIndex;
+  Map<String, dynamic>? selectedPaymentItem;
   int? selectedIndexDebit;
 
   late final formatter = NumberFormat.currency(
@@ -102,7 +104,15 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     decimalDigits: currencyCode == "IDR" ? 0 : 2,
   );
   final ScrollController _scrollController = ScrollController();
+
+  final TextEditingController _cardNumberController = TextEditingController();
+  final TextEditingController _cvvController = TextEditingController();
   final TextEditingController expDateController = TextEditingController();
+
+  final TextEditingController _phoneItemController = TextEditingController();
+  final TextEditingController _idCardItemController = TextEditingController();
+
+  final TextEditingController phoneEwalletController = TextEditingController();
   bool _isEditing = false;
 
   bool isLoading = true;
@@ -159,6 +169,10 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
   final _phoneItemFocus = FocusNode();
   final _idCardItemFocus = FocusNode();
+  final _phoneEwalletFocus = FocusNode();
+
+  String? bankCodeDebit;
+  bool hasAttribute = false;
 
   @override
   void initState() {
@@ -475,6 +489,32 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             context,
             MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: id_order, formHistory: false, currency_session: currencyCode,)),
           );
+        // } else if (resultEventOrder['rc'] == 400) {
+        //   if (errorMessage.toLowerCase().contains("limit")) {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(builder: (_) => VoteLimit(
+        //         errorMessage: 
+        //           langCode == 'id' 
+        //             ? errorMessage
+        //             : "The transaction limit for this vote has been reached."
+        //       )),
+        //     );
+        //   } else {
+        //     AwesomeDialog(
+        //       context: context,
+        //       dialogType: DialogType.noHeader,
+        //       animType: AnimType.topSlide,
+        //       title: bahasa['maaf'],
+        //       desc: bahasa['error'],
+        //       btnOkOnPress: () {},
+        //       btnOkColor: Colors.red,
+        //       buttonsTextStyle: TextStyle(color: Colors.white),
+        //       headerAnimationLoop: false,
+        //       dismissOnTouchOutside: true,
+        //       showCloseIcon: true,
+        //     ).show();
+        //   }
         } else {
           AwesomeDialog(
             context: context,
@@ -508,7 +548,18 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     }
 
     void handleConfirm() async {
+      
       if (isConfirmLoading) return;
+
+      setState(() {
+        _showError = true;
+      });
+
+      final isValid = _validateAllForm();
+
+      if (!isValid) {
+        return;
+      }
 
       setState(() => isConfirmLoading = true);
 
@@ -658,6 +709,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                 roundedValueMax: roundedValueMax,
                                 limit_max: limit_max,
 
+                                cardNumberController: _cardNumberController,
+                                cvvController: _cvvController,
                                 expDateController: expDateController,
 
                                 onCardChanged: (val) => card_number = val,
@@ -694,6 +747,12 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = creditCard[idx]['id_metod'];
                                     currencySession = creditCard[idx]['currency_pg'];
                                     typePayment = "credit_card";
+
+                                    selectedPaymentItem = item;
+
+                                    _cardNumberController.clear();
+                                    _cvvController.clear();
+                                    expDateController.clear();
                                   });
 
                                   if (item['flag_client'] == "1") {
@@ -723,7 +782,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
                                 showError: _showError,
@@ -809,6 +869,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = virtualAkun[index]['id_metod'];
                                     currencySession = virtualAkun[index]['currency_pg'];
                                     typePayment = "virtual_akun";
+
+                                    selectedPaymentItem = item;
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -836,7 +898,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
                                 showError: _showError,
@@ -920,6 +983,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = paymentBank[index]['id_metod'];
                                     currencySession = paymentBank[index]['currency_pg'];
                                     typePayment = "payment_bank";
+
+                                    selectedPaymentItem = item;
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -947,7 +1012,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
                                 showError: _showError,
@@ -1032,16 +1098,20 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = eWallet[index]['id_metod'];
                                     currencySession = eWallet[index]['currency_pg'];
                                     typePayment = "e_wallet";
+
+                                    selectedPaymentItem = item;
                                   });
                                           
-                                  if (item['id'] != "6387457643547345") {
-                                    Future.delayed(const Duration(milliseconds: 200), () {
+                                  if (item['attribute'] == null) {
+                                    Future.delayed(const Duration(milliseconds: 1500), () {
                                       _scrollController.animateTo(
                                         _scrollController.position.maxScrollExtent,
-                                        duration: const Duration(milliseconds: 600),
+                                        duration: const Duration(milliseconds: 1500),
                                         curve: Curves.easeOut,
                                       );
                                     });
+                                  } else {
+                                    hasAttribute = true;
                                   }
   
                                   // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
@@ -1061,20 +1131,21 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
 
                                 onPhoneChanged: (val) {
                                   mobile_number = val;
 
-                                  if (item['id'] == "6387457643547345") {
+                                  if (item['attribute'] != null) {
                                     _phoneDebounce?.cancel();
-                                    _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                    _phoneDebounce = Timer(const Duration(milliseconds: 1500), () {
                                       if (val.length >= 12 && _scrollController.hasClients) {
                                         _scrollController.animateTo(
                                           _scrollController.position.maxScrollExtent,
-                                          duration: const Duration(milliseconds: 600),
+                                          duration: const Duration(milliseconds: 1500),
                                           curve: Curves.easeOut,
                                         );
                                       }
@@ -1082,6 +1153,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   }
                                 },
                                 showError: _showError,
+                                phoneEWalletFocus: _phoneEwalletFocus,
+                                phoneEwalletController: phoneEwalletController,
                               );
                             }).toList(),
                           ),
@@ -1164,6 +1237,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = retail[index]['id_metod'];
                                     currencySession = retail[index]['currency_pg'];
                                     typePayment = "retail";
+
+                                    selectedPaymentItem = item;
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1191,7 +1266,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
                                 showError: _showError,
@@ -1279,6 +1355,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = konter[index]['id_metod'];
                                     currencySession = konter[index]['currency_pg'];
                                     typePayment = "konter";
+
+                                    selectedPaymentItem = item;
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1306,7 +1384,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
                                 showError: _showError,
@@ -1394,6 +1473,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     id_payment_method = qrCode[index]['id_metod'];
                                     currencySession = qrCode[index]['currency_pg'];
                                     typePayment = "qr_code";
+
+                                    selectedPaymentItem = item;
                                   });
                                   
                                   Future.delayed(const Duration(milliseconds: 200), () {
@@ -1421,7 +1502,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
                                 showError: _showError,
@@ -1511,6 +1593,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                     currencySession = debit[index]['currency_pg'];
                                     typePayment = "debit";
                                     selectedIndexDebit = index;
+
+                                    selectedPaymentItem = item;
                                   });
 
                                   if (item['flag_client'] == "1") {
@@ -1540,7 +1624,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                    feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
 
@@ -1548,6 +1633,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   mobile_number = val;
 
                                   if (item['bank_code'] != "KTB") {
+                                    bankCodeDebit = item['bank_code'];
                                     _phoneDebounce?.cancel();
                                     _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
                                       if (val.length >= 12 && _scrollController.hasClients) {
@@ -1565,6 +1651,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   id_card_number = val;
 
                                   if (item['bank_code'] == "KTB") {
+                                    bankCodeDebit = item['bank_code'];
                                     _idCardDebounce?.cancel();
                                     _idCardDebounce = Timer(const Duration(milliseconds: 700), () {
                                       if (val.length == 13 && _scrollController.hasClients) {
@@ -1581,6 +1668,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
                                 phoneFocus: _phoneItemFocus,
                                 idCardFocus: _idCardItemFocus,
+                                phoneDebitController: _phoneItemController,
+                                idCardDebitController: _idCardItemController,
                               );
                             }).toList(),
                           ),
@@ -1648,6 +1737,20 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                   ? "$eventCurrency ${formatter.format(totalPayment)}"
                                   : "$currencyCode ${formatter.format(totalPayment)}",
                                 style: TextStyle(fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
+
+                          const SizedBox(height: 6,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(bahasa['payment_metode'], style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(
+                                selectedPaymentItem != null ? "${selectedPaymentItem?['category_name']}\n${selectedPaymentItem?['payment_name']}" : "-", 
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.right,
                               )
                             ],
                           ),
@@ -1723,6 +1826,68 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         ],
       ),
     );
+  }
+
+  bool _validateAllForm() {
+    bool isValid = true;
+    FocusNode? firstErrorFocus;
+
+    // validasi credit card jika dipilih
+    if (typePayment == 'credit_card' && selectedIndex != null) {
+      final selectedItem = creditCard.firstWhere(
+        (e) => e['id_metod'] == id_payment_method,
+        orElse: () => {},
+      );
+
+      if (selectedItem['flag_client'] == '0') {
+        if (_cardNumberController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _cardNumberFocus;
+        }
+        if (expDateController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _expiryDateFocus;
+        }
+        if (_cvvController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _cvvFocus;
+        }
+      }
+    } else if (typePayment == 'debit' && selectedIndex != null) {
+      final selectedItem = debit.firstWhere(
+        (e) => e['id_metod'] == id_payment_method,
+        orElse: () => {},
+      );
+
+      if (selectedItem['flag_client'] == '0') {
+        if (_phoneItemController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _phoneItemFocus;
+        }
+        if (bankCodeDebit == "KTB") {
+          if (_idCardItemController.text.trim().isEmpty) {
+            isValid = false;
+            firstErrorFocus ??= _idCardItemFocus;
+          }
+        }
+      }
+    } else if (typePayment == 'e_wallet' && selectedIndex != null) {
+      final selectedItem = eWallet.firstWhere(
+        (e) => e['id_metod'] == id_payment_method,
+        orElse: () => {},
+      );
+
+      if (hasAttribute) {
+        if (selectedItem['flag_client'] == '0') {
+          if (phoneEwalletController.text.trim().isEmpty) {
+            isValid = false;
+            firstErrorFocus ??= _phoneEwalletFocus;
+          }
+        }
+      }
+    }
+
+    return isValid;
   }
 
   void scrollTo(GlobalKey key) {

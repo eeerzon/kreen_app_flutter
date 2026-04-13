@@ -78,22 +78,6 @@ class _InfoPageState extends State<InfoPage> {
     });
   }
 
-  final Map<String, String> languages = {
-    "id": "Indonesia",
-    "en": "English"
-  };
-
-  final Map<String, String> currencies = {
-    "EUR" : "Euro\nEUR",
-    "IDR" : "Indonesia Rupiah\nIDR",
-    "MYR" : "Malaysia Ringgit\nMYR",
-    "PHP" : "Philippine Peso\nPHP",
-    "SGD" : "Singapore Dollar\nSGD",
-    "THB" : "Thai Baht\nTHB",
-    "USD" : "United States Dollar\nUSD",
-    "VND" : "Vietnamese Dong\nVND"
-  };
-
   Future<bool?> _showLanguageDialog() {
     return showDialog<bool>(
       context: context,

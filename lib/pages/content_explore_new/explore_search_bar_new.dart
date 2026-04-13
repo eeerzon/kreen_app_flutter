@@ -1,7 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/modal/modal_filter.dart';
+import 'package:kreen_app_flutter/modal/modal_filter_new.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
@@ -109,7 +109,7 @@ class _ExploreSearchBarState extends State<ExploreSearchBarNew> {
             SizedBox(width: 4,),
             IconButton(
               onPressed: () async {
-                final result = await ModalFilter.show(
+                final result = await ModalFilterNew.show(
                   context,
                   langCode!,
                   paramTime,

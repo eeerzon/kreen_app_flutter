@@ -1,12 +1,10 @@
-// ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously, unused_field
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/helper/session_manager.dart';
+import 'package:kreen_app_flutter/pages/language_currency_page.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
-import 'login_page.dart';
-import 'home_page.dart';
 import '/services/lang_service.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -23,12 +21,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final prefs = FlutterSecureStorage();
 
   List<Map<String, dynamic>> pages = [];
-  String? dialog_title;
   String? lewati;
   String? lanjut;
-  String? selesai;
-  String? login;
-  String? guest;
   String? langCode;
 
   String _selectedLang = langNotifier.value;
@@ -79,79 +73,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
     setState(() {
       pages = onboarding;
-      dialog_title = tempbahasa['pick_language'];
       lewati = tempbahasa['lewati'];
       lanjut = tempbahasa['lanjut'];
-      selesai = tempbahasa['selesai'];
-      login = tempbahasa['login'];
-      guest = tempbahasa['guest_login'];
     });
-  }
-
-  void _showLanguageDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        String tempLang = _selectedLang;
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(dialog_title ?? '-'),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: languages.entries.map((entry) {
-                    return RadioListTile<String>(
-                      value: entry.key,
-                      groupValue: tempLang,
-                      onChanged: (val) async {
-                        if (val == null) return;
-
-                        setStateDialog(() {
-                          tempLang = val;
-                        });
-
-                        await _loadLanguage(val);
-
-                        setState(() {
-                          _selectedLang = val;
-                          langNotifier.value = val;
-                        });
-
-                        Navigator.pop(context);
-                      },
-                      title: Row(
-                        children: [
-                          Image.asset(
-                            "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
-                            width: 28,
-                            height: 28,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(entry.value),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   Future<void> _finishOnboarding() async {
@@ -160,7 +84,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
+      MaterialPageRoute(builder: (_) => const LanguageCurrencyPage()),
     );
   }
 
@@ -173,36 +97,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
         curve: Curves.easeInOut,
       );
     }
-  }
-
-  Future<void> _setOnboardingDone() async {
-    await prefs.write(key: 'hasSeenOnboarding',value:  'true');
-  }
-
-  void _goToLogin() async {
-    await _setOnboardingDone();
-
-  SessionManager.isGuest = false;
-  SessionManager.checkingUserModalShown = false;
-  
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-    );
-  }
-
-  void _goToHome() async {
-    await _setOnboardingDone();
-
-  SessionManager.isGuest = true;
-  SessionManager.checkingUserModalShown = true;
-
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
   }
 
   @override
@@ -230,6 +124,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
                             pages[index]["image"]!,
@@ -251,40 +146,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 16, color: Colors.grey),
                           ),
-
-                          const Spacer(),
-                          if (index == pages.length - 1) ...[
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(double.infinity, 50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                              onPressed: _goToLogin,
-                              child: Text(
-                                login ?? "-",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(double.infinity, 50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                backgroundColor: Colors.white,
-                              ),
-                              onPressed: _goToHome,
-                              child: Text(
-                                guest ?? "-",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     );
@@ -294,80 +155,55 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
               // Bottom controls
               // Navigation bar bawah (hanya tampil kalau bukan halaman terakhir)
-              if (_currentPage != pages.length - 1)
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Lewati
-                      TextButton(
-                        onPressed: _finishOnboarding,
-                        child: Text(
-                          lewati ?? "-",
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
-                        ),
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Lewati
+                    TextButton(
+                      onPressed: _finishOnboarding,
+                      child: Text(
+                        lewati ?? "-",
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
+                    ),
 
-                      // Indicator
-                      Row(
-                        children: List.generate(
-                          pages.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? Colors.red
-                                  : Colors.grey.shade400,
-                              shape: BoxShape.circle,
-                            ),
+                    // Indicator
+                    Row(
+                      children: List.generate(
+                        pages.length,
+                        (index) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? Colors.red
+                                : Colors.grey.shade400,
+                            shape: BoxShape.circle,
                           ),
                         ),
                       ),
+                    ),
 
-                      // Lanjut
-                      TextButton(
-                        onPressed: _nextPage,
-                        child: Text(
-                          _currentPage == pages.length - 1 ? (selesai ?? "-") : (lanjut ?? "-"),
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                    // Lanjut
+                    TextButton(
+                      onPressed: _nextPage,
+                      child: Text(
+                        lanjut ?? "-",
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-
-              SizedBox(height: 20,),
-            ],
-          ),
-
-          
-          //bahasa
-          Positioned(
-            top: 16,
-            right: 20,
-            child: GestureDetector(
-              onTap: _showLanguageDialog,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                Image.asset("assets/flags/$_selectedLang.png",
-                    width: 24, height: 24),
-                const SizedBox(width: 4),
-                Text(
-                  _selectedLang.toUpperCase(),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
               ),
-            ),
+            ],
           ),
         ],
       ),

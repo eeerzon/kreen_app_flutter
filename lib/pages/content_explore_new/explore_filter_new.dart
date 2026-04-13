@@ -57,11 +57,6 @@ class ExploreFilterNew extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<String> filters = [];
 
-    // TYPE
-    if (selectedIndex != null) {
-      filters.add(getTypeLabel());
-    }
-
     // TIME -> gabung jadi satu
     if (timeFilter.isNotEmpty) {
       final timeLabel = timeFilter.map(mapTime).join(", ");
@@ -109,12 +104,13 @@ class ExploreFilterNew extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red),
             ),
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.red),
             ),
           );
         }).toList(),

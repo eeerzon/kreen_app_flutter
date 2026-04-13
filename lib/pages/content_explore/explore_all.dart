@@ -79,12 +79,18 @@ class _ExploreAllState extends State<ExploreAll> {
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";
     if (widget.timeFilter.isNotEmpty) {
-      filterTime = widget.timeFilter.join(",");
+      // filterTime = widget.timeFilter.join(",");
+      if (widget.timeFilter.length == 1) {
+        filterTime = widget.timeFilter.first;
+      }
     }
 
     String filterPrice = "";
     if (widget.priceFilter.isNotEmpty) {
-      filterPrice = widget.priceFilter.join(",");
+      // filterPrice = widget.priceFilter.join(",");
+      if (widget.priceFilter.length == 1) {
+        filterPrice = widget.priceFilter.first;
+      }
     }
 
     // final endpointAll = isFirst 

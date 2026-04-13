@@ -5,13 +5,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class StorageService {
   static final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  static Future<void> setOnboardingDone() async {
-    await _storage.write(key: 'hasSeenOnboarding', value: 'true');
+  static Future<bool> setOnboardingDone(bool value) async {
+    await _storage.write(key: 'hasSeenOnboarding', value: value.toString());
+    return value;
   }
 
-  static Future<bool> hasSeenOnboarding() async {
-    final value = await _storage.read(key: 'hasSeenOnboarding');
-    return value == 'true';
+  static Future<bool> getOnboardingDone() async {
+    // final value = await _storage.read(key: 'hasSeenOnboarding');
+    // return value == 'true';
+    return await _storage.read(key: 'hasSeenOnboarding') == 'true';
   }
 
   static Future<void> setLanguage(String langCode) async {

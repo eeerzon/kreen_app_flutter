@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously
 
 import 'dart:async';
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -53,6 +54,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   bool isExpired = false;
   bool _didMarkExpired = false;
+  bool _didRedirect = false;
 
   bool showErrorBar = false;
   String errorMessage = '';
@@ -61,6 +63,12 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   Timer? _paymentTimer;
   // bool _waitingPayment = true;
+
+  late final formatter = NumberFormat.currency(
+    locale: "en_US",
+    symbol: "",
+    decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
+  );
 
   @override
   void initState() {
@@ -88,10 +96,17 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     final difference = deadline.difference(now);
 
     setState(() {
+      // if (difference.isNegative) {
+      //   remaining = Duration.zero;
+      //   isExpired = true;
+      //   _timer?.cancel();
+      // } else {
+      //   remaining = difference;
+      // }
+
       if (difference.isNegative) {
-        remaining = Duration.zero;
-        isExpired = true;
         _timer?.cancel();
+        _handleExpiredFlow();
       } else {
         remaining = difference;
       }
@@ -168,11 +183,12 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
 
           // tambahkan 1 jam untuk durasi expired payment
-          var newDate = date.add(const Duration(hours: 1));
-          if (voteOder['payment_method_id'] == "6387457643547345") {
-            newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
-          }
-          // final newDate = date.add(Duration(milliseconds: paymentDetail['expired_duration'] ?? 0));
+          // var newDate = date.add(const Duration(hours: 1));
+          // if (voteOder['payment_method_id'] == "6387457643547345") {
+          //   newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
+          // }
+
+          final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive'] ?? 0));
           
           expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
         } else {
@@ -210,12 +226,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       await precacheImage(NetworkImage(url), context);
     }
   }
-
-  late final formatter = NumberFormat.currency(
-    locale: "en_US",
-    symbol: "",
-    decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
-  );
 
   void startPaymentStatusListener() {
     _paymentTimer?.cancel();
@@ -407,6 +417,12 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     } else if (voteOder['order_region'] == "VN"){
       currencyRegion = "VND";
     }
+
+    final formaterNumber = NumberFormat.currency(
+      locale: "en_US",
+      symbol: "",
+      decimalDigits: currencyRegion == "IDR" ? 0 : 2,
+    );
     
     num sum_amount = voteOder['total_amount'] * voteOder['currency_value_region'];
     num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
@@ -775,7 +791,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                '$currencyRegion ${formatter.format(displayTotalAmount)}',
+                                // '$currencyRegion ${formatter.format(displayTotalAmount)}',
+                                '$currencyRegion ${formaterNumber.format(displayTotalAmount)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
 
@@ -792,10 +809,13 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     ),
                                   ),
                                   onPressed: () async {
-                                    await CheckPaymentModal.show(
+                                    final didRedirect = await CheckPaymentModal.show(
                                       context,
                                       widget.id_order
                                     );
+                                    if (didRedirect == true) {
+                                      _didRedirect = true;
+                                    }
                                   },
                                   child: Text(
                                     bahasa['check_status'],
@@ -1148,6 +1168,87 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
       orderNeedRefresh.value = true;
     }
+  }
+
+  Future<void> _handleExpiredFlow() async {
+    // prevent multiple call
+    if (_didMarkExpired) return;
+
+    // refresh order dulu
+    await _loadOrder();
+
+    // kalau ternyata sudah bayar
+    if (voteOder['order_status'] == '1') {
+      await _handleSuccessRedirect();
+      return;
+    }
+
+    // kalau masih belum bayar → baru expired
+    if (!mounted) return;
+
+    setState(() {
+      remaining = Duration.zero;
+      isExpired = true;
+    });
+  }
+
+  Future<void> _handleSuccessRedirect() async {
+    if (_didRedirect) return;
+    _didRedirect = true;
+
+    int countdown = 3;
+
+    late AwesomeDialog dialog;
+    late void Function(void Function()) dialogSetState;
+
+    dialog = AwesomeDialog(
+      context: context,
+      dialogType: DialogType.noHeader,
+      animType: AnimType.scale,
+      dismissOnTouchOutside: false,
+      dismissOnBackKeyPress: false,
+      body: StatefulBuilder(
+        builder: (context, setDialogState) {
+          dialogSetState = setDialogState;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          );
+        },
+      ),
+    )..show();
+
+    for (int i = countdown; i > 0; i--) {
+      await Future.delayed(const Duration(seconds: 1));
+      countdown--;
+
+      if (mounted) {
+        dialogSetState(() {});
+      }
+    }
+
+    if (!mounted) return;
+
+    dialog.dismiss();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddSupportPage(
+          id_vote: vote['id_vote'],
+          id_order: voteOder['id_order'],
+          nama: voteOder['voter_name'],
+        ),
+      ),
+    );
   }
 
   Widget buildLinkKadaluarsa() {

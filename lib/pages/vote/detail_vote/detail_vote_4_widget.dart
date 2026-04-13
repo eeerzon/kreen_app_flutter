@@ -10,12 +10,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/vote_notification.dart';
 import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
-import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
-import 'package:kreen_app_flutter/pages/vote/detail_finalis_paket.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/infinite_sponsor.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:share_plus/share_plus.dart';
@@ -808,7 +807,9 @@ class LeaderboardSection_4 extends StatelessWidget {
                   idFinalis: item['id_finalis'].toString(),
                   remaining: remaining,
                   flag_hide_no_urut: data['flag_hide_nomor_urut'],
-                  flag_paket : data['flag_paket']
+                  flag_paket : data['flag_paket'],
+                  flag_verify_email: data['flag_verify_email'],
+                  langCode: langCode,
                 );
               } else{
                 return SizedBox.shrink();
@@ -929,15 +930,15 @@ class DukunganSection_4 extends StatelessWidget {
         Column(
           children: (support.isNotEmpty)
           ? support.map<Widget>((item) {
-            final dateStr = item['created_at'];
-            var hideNama = item['hide_name'];
-            var nama = item['nama'] ?? '-';
+            final dateStr = item['created_at']?.toString() ?? '';
+            var hideNama = item['hide_name']?.toString() ?? '0';
+            var nama = item['nama']?.toString() ?? '-';
     
             String formattedDate = '-';
   
             if (dateStr.isNotEmpty) {
               try {
-                final date = DateTime.parse(dateStr);
+                final date = DateTime.parse(dateStr.replaceAll(' ', 'T'));
 
                 if (langCode == 'id') {
                   // Bahasa Indonesia
@@ -1001,6 +1002,8 @@ Widget buildTopCard({
   required Duration remaining,
   required String flag_hide_no_urut,
   required String flag_paket,
+  required String flag_verify_email,
+  required String langCode,
 }) {
   String crownImage = '';
   switch (rank) {
@@ -1055,34 +1058,16 @@ Widget buildTopCard({
             ),
             const SizedBox(height: 6),
             ElevatedButton(
-              onPressed: () {
-                if (flag_paket == '0') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailFinalisPage(
-                        id_finalis: idFinalis,
-                        count: 0,
-                        indexWrap: null,
-                        flag_hide_no_urut: flag_hide_no_urut,
-                      ),
-                    ),
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailFinalisPaketPage(
-                        id_finalis: idFinalis,
-                        vote: 0,
-                        index: 0,
-                        total_detail: 0,
-                        id_paket_bw: null,
-                        flag_hide_no_urut: flag_hide_no_urut,
-                      ),
-                    ),
-                  );
-                }
+              onPressed: () async {
+                await handleVoteAction(
+                  context: context, 
+                  flagVerifyEmail: flag_verify_email, 
+                  idFinalis: idFinalis, 
+                  flagHideNoUrut: flag_hide_no_urut, 
+                  flagPaket: flag_paket,
+                  langCode: langCode, 
+                  tema: tema,
+                );
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 13),
@@ -1190,61 +1175,4 @@ Widget buildListCard({
       ],
     ),
   );
-}
-
-Widget CommentCard({
-  required String namaFinalis,
-  required String name,
-  required String time,
-  required String message,
-}) {
-  return Container(
-    width: double.infinity,
-    padding: kGlobalPadding,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.grey.shade300,),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start, // biar teks rata kiri
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            namaFinalis,
-            style: TextStyle(color: Colors.black,),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        Text(
-          message,
-          softWrap: true, // biar otomatis turun ke bawah
-        ),
-
-        const SizedBox(height: 12),
-
-        Divider(),
-
-        const SizedBox(height: 12),
-        
-        Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-
-        Text(
-          time,
-          style: const TextStyle(fontSize: 11, color: Colors.grey),
-        ),
-      ],
-    ),
-  );
-
 }

@@ -631,6 +631,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                             children: [
                               Checkbox(
                                 value: _isCheckedList[index],
+                                // visualDensity: VisualDensity(horizontal: -4),
                                 onChanged: (value) {
                                   setState(() {
                                     _isCheckedList[index] = value ?? false;
@@ -721,12 +722,6 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           decoration: InputDecoration(
                             hintText: bahasa['email_hint'],
                             hintStyle: TextStyle(color: Colors.grey.shade400),
-                            errorText: _emailTouched && !isValidEmail(emailControllers[index].text)
-                              ? bahasa['error_email_1']
-                              : (widget.flag_samakan_input_tiket_pertama == '0' &&
-                                  _duplicateEmailIndexes.contains(index))
-                                  ? bahasa['error_email_2']
-                                  : null,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -739,16 +734,36 @@ class _TiketEventPageState extends State<TiketEventPage> {
                             ),
                           ),
                         ),
+
+                        if (_emailTouched && !isValidEmail(emailControllers[index].text)) ...[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              bahasa['error_email_1'],
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
+                          ),
+                        ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                  _duplicateEmailIndexes.contains(index)) ...[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              bahasa['error_email_2'],
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
+                          ),
+                        ],
+
                         SizedBox(height: 4,),
                         Text(
                             bahasa['info_email'],
                           ),
                         if (_showError && emailControllers[index].text.trim().isEmpty)
                           Padding(
-                            padding: EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                             child: Text(
                               bahasa['error_email_3'],
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
                             ),
                           ),
 
@@ -789,10 +804,6 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           decoration: InputDecoration(
                             hintText: namaHint,
                             hintStyle: TextStyle(color: Colors.grey.shade400),
-                            errorText: (widget.flag_samakan_input_tiket_pertama == '0' &&
-                                  _duplicateNameIndexes.contains(index))
-                              ? bahasa['error_nama_1']
-                              : null,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -805,12 +816,24 @@ class _TiketEventPageState extends State<TiketEventPage> {
                             ),
                           ),
                         ),
+
+                        if (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                  _duplicateNameIndexes.contains(index)) ...[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              bahasa['error_nama_1'],
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
+                          ),
+                        ],
+
                         if (_showError && nameControllers[index].text.trim().isEmpty)
                           Padding(
-                            padding: EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                             child: Text(
                               bahasa['error_nama_2'],
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
                             ),
                           ),
 
@@ -890,10 +913,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
                               if (_showError && selectedGenders[index] == null)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 4),
+                                  padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                   child: Text(
                                     bahasa['gender_error'],
-                                    style: const TextStyle(color: Colors.red),
+                                    style: TextStyle(color: Colors.red[900], fontSize: 12),
                                   ),
                                 ),
                             ],
@@ -950,14 +973,6 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           decoration: InputDecoration(
                             hintText: nohpHint!,
                             hintStyle: TextStyle(color: Colors.grey.shade400),
-                            errorText: phoneControllers[index].text.isNotEmpty &&
-                                  !isValidPhone(phoneControllers[index].text) && _phoneTouched
-                              ? nohpError
-                              : (widget.flag_samakan_input_tiket_pertama == '0' &&
-                                  _duplicatePhoneIndexes.contains(index))
-                                  ? bahasa['error_nohp_1']
-                                  : null,
-                            errorMaxLines: 3,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -970,12 +985,33 @@ class _TiketEventPageState extends State<TiketEventPage> {
                             ),
                           ),
                         ),
+                        if (phoneControllers[index].text.isNotEmpty &&
+                            !isValidPhone(phoneControllers[index].text) && _phoneTouched) ...[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              nohpError!,
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
+                          )
+                        ]
+                        else if (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                  _duplicatePhoneIndexes.contains(index)) ...[
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              bahasa['error_nohp_1'],
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
+                          ),
+                        ],
+
                         if (_showError && phoneControllers[index].text.trim().isEmpty)
                           Padding(
-                            padding: EdgeInsets.only(top: 4),
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                             child: Text(
                               bahasa['error_nohp_2'],
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
                             ),
                           ),
 
@@ -1037,10 +1073,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                   ),
                                   if (formTiket[idx]['required'] == 1 && _showError && answerControllers[index][idx].text.trim().isEmpty)
                                     Padding(
-                                      padding: EdgeInsets.only(top: 4),
+                                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                       child: Text(
                                         bahasa['tiket_template_answer_error'],
-                                        style: TextStyle(color: Colors.red),
+                                        style: TextStyle(color: Colors.red[900], fontSize: 12),
                                       ),
                                     ),
                                 ] 
@@ -1128,10 +1164,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                             _showError &&
                                             answerControllers[index][idx].text.trim().isEmpty)
                                           Padding(
-                                            padding: EdgeInsets.only(top: 4),
+                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                             child: Text(
                                               bahasa['tiket_template_answer_error'],
-                                              style: TextStyle(color: Colors.red),
+                                              style: TextStyle(color: Colors.red[900], fontSize: 12),
                                             ),
                                           ),
                                       ],
@@ -1203,10 +1239,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                         _showError &&
                                         answerControllers[index][idx].text.trim().isEmpty)
                                       Padding(
-                                        padding: EdgeInsets.only(top: 4),
+                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                         child: Text(
                                           bahasa['tiket_template_answer_error'],
-                                          style: TextStyle(color: Colors.red),
+                                          style: TextStyle(color: Colors.red[900], fontSize: 12),
                                         ),
                                       ),
                                   ]
@@ -1240,10 +1276,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                               _showError &&
                                               answerControllers[index][idx].text.trim().isEmpty)
                                             Padding(
-                                              padding: EdgeInsets.only(top: 4),
+                                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                               child: Text(
                                                 bahasa['tiket_template_answer_error'],
-                                                style: TextStyle(color: Colors.red),
+                                                style: TextStyle(color: Colors.red[900], fontSize: 12),
                                               ),
                                             ),
                                         ],
@@ -1291,10 +1327,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                             _showError &&
                                             answerControllers[index][idx].text.trim().isEmpty)
                                           Padding(
-                                            padding: EdgeInsets.only(top: 4),
+                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                             child: Text(
                                               bahasa['tiket_template_answer_error'],
-                                              style: TextStyle(color: Colors.red),
+                                              style: TextStyle(color: Colors.red[900], fontSize: 12),
                                             ),
                                           ),
                                       ],
@@ -1360,10 +1396,10 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                             _showError &&
                                             answerControllers[index][idx].text.trim().isEmpty)
                                           Padding(
-                                            padding: EdgeInsets.only(top: 4),
+                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                             child: Text(
                                               bahasa['tiket_template_answer_error'],
-                                              style: TextStyle(color: Colors.red),
+                                              style: TextStyle(color: Colors.red[900], fontSize: 12),
                                             ),
                                           ),
                                       ],

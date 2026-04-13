@@ -44,6 +44,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   String? strAvatar, linkAvatar;
   bool isuploaded = false;
+  late TextEditingController fullNameController;
   late TextEditingController firstNameController;
   late TextEditingController lastNameController;
   late TextEditingController emailController;
@@ -65,10 +66,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String errorMessageBar = "";
   bool isImage = false;
 
+  bool _emailTouched = false;
+  bool _phoneTouched = false;
+
+  bool isConfirmLoading = false;
+  bool _showError = false;
+
+  bool _emailChanged = false;
+  String _originalEmail = '';
+
   @override
   void initState() {
     super.initState();
     strAvatar = widget.user['photo'];
+    fullNameController = TextEditingController(text: widget.user['full_name']);
     firstNameController = TextEditingController(text: widget.user['first_name']);
     lastNameController = TextEditingController(text: widget.user['last_name']);
     emailController = TextEditingController(text: widget.user['email']);
@@ -82,6 +93,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     igController = TextEditingController(text: widget.user['link_ig'] ?? '');
     twitterController = TextEditingController(text: widget.user['link_twitter'] ?? '');
     verifEmail = widget.user['verified_email'];
+
+    selectedGender = widget.user['gender'];
+
+    _originalEmail = widget.user['email'] ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
@@ -221,6 +236,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         errorMessage = result?['message'];
 
         isImage = true;
+        _showError = true;
       });
       return null;
     }
@@ -244,6 +260,85 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return url;
   }
 
+  bool _validateAllForm() {
+    bool isValid = true;
+    FocusNode? firstErrorFocus;
+
+    final email = emailController.text.trim();
+
+    if (email.isEmpty || !isValidEmail(email)) {
+      isValid = false;
+      firstErrorFocus ??= emailFocusNode;
+    }
+
+    final phone = phoneController.text.trim();
+
+    if (phone.isEmpty || !isValidPhone(phone)) {
+      isValid = false;
+      firstErrorFocus ??= phoneFocusNode;
+    }
+
+    if (selectedGender == null) {
+      isValid = false;
+    }
+
+    if (dobController.text.trim().isEmpty) {
+      isValid = false;
+      firstErrorFocus ??= dobFocusNode;
+    }
+
+    if (!isValid && firstErrorFocus != null) {
+      _scrollToFocus(firstErrorFocus);
+    }
+
+    return isValid;
+  }
+
+  void _scrollToFocus(FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      node.requestFocus();
+
+      final context = node.context;
+      if (context == null) return;
+
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.3,
+      );
+    });
+  }
+
+  void _handleSave() async {
+
+    if (isConfirmLoading) return;
+
+      setState(() {
+        _showError = true;
+      });
+
+    final isValid = _validateAllForm();
+
+    if (!isValid) {
+      return;
+    }
+
+    setState(() {
+      isConfirmLoading = true;
+    });
+
+    try {
+      await saveProfile(); 
+    } finally {
+      if (mounted) {
+        setState(() {
+          isConfirmLoading = false;
+        });
+      }
+    }
+  }
+
 
   Future<void> saveProfile() async {
 
@@ -257,11 +352,47 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } else {
       genderValue = ''; // handle error
     }
+
+    if (dobController.text.trim().isEmpty) {
+        setState(() {
+          _showError = true;
+        });
+
+        _scrollToFocus(dobFocusNode);
+        return;
+    }
+
+    if (emailController.text.trim().isEmpty && !isValidEmail(emailController.text.trim())) {
+      setState(() {
+        _showError = true;
+      });
+
+      _scrollToFocus(emailFocusNode);
+      return;
+    }
+
+    if (phoneController.text.trim().isEmpty && !isValidPhone(phoneController.text.trim())) {
+      setState(() {
+        _showError = true;
+      });
+
+      _scrollToFocus(phoneFocusNode);
+      return;
+    }
+
+    if (selectedGender == null) {
+      setState(() {
+        _showError = true;
+      });
+
+      return;
+    }
     
     String? token = await StorageService.getToken();
 
     final body = {
-      "first_name": "${firstNameController.text} ${lastNameController.text.isNotEmpty ? lastNameController.text : ''}",
+      // "first_name": "${firstNameController.text} ${lastNameController.text.isNotEmpty ? lastNameController.text : ''}",
+      "first_name": fullNameController.text,
       "last_name": null,
       "email": emailController.text,
       "date_of_birth": dob,
@@ -280,7 +411,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (resultSimpan?['rc'] == 200) {
       await StorageService.setUser(
         id: widget.user['id'],
-        first_name: "${firstNameController.text} ${lastNameController.text.isNotEmpty ? lastNameController.text : ''}",
+        // first_name: "${firstNameController.text} ${lastNameController.text.isNotEmpty ? lastNameController.text : ''}",
+        first_name: fullNameController.text,
         last_name: lastNameController.text.isNotEmpty ? lastNameController.text : null, 
         phone: phoneController.text, 
         email: emailController.text, 
@@ -291,7 +423,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         jobTitle: jobTitleController.text.isNotEmpty ? jobTitleController.text : null,
         link_linkedin: linkedinController.text.isNotEmpty ? linkedinController.text : null,
         link_ig: igController.text.isNotEmpty ? igController.text : null,
-        link_twitter: twitterController.text.isNotEmpty ? twitterController.text : null
+        link_twitter: twitterController.text.isNotEmpty ? twitterController.text : null,
+        verifEmail: _emailChanged ? '0' : (verifEmail ?? '0'),
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -548,7 +681,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     }
 
-    selectedGender = gender;
+    // selectedGender = gender;
     
     return Scaffold(
       appBar: AppBar(
@@ -640,13 +773,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Align(
                             alignment: AlignmentGeometry.centerLeft,
                             child: Text(
-                              bahasa['nama_depan_label']
+                              bahasa['nama_lengkap_label']
                             ),
                           ),
                           SizedBox(height: 8,),
                           TextField(
                             focusNode: firstNameFocusNode,
-                            controller: firstNameController,
+                            controller: fullNameController,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                 RegExp(r"[a-zA-Z\s]"),
@@ -665,43 +798,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           ),
                           if (errorCode == 422 && errorMessage.containsKey('first_name')) ... [
-                            SizedBox(height: 4,),
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
-                              child: Text(
-                                errorMessage['first_name'][0],
-                                style: TextStyle(color: Colors.red),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  errorMessage['first_name'][0],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
                               )
                             )
                           ],
 
-                          SizedBox(height: 20,),
-                          Align(
-                            alignment: AlignmentGeometry.centerLeft,
-                            child: Text(
-                              bahasa['nama_belakang_label']
-                            ),
-                          ),
-                          SizedBox(height: 8,),
-                          TextField(
-                            controller: lastNameController,
-                            onChanged: (_) => setState(() {}),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r"[a-zA-Z\s]"),
-                              ),
-                              NameInputFormatter(),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: bahasa['nama_belakang_hint'],
-                              hintStyle: TextStyle(color: Colors.grey.shade400),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                          ),
+                          // SizedBox(height: 20,),
+                          // Align(
+                          //   alignment: AlignmentGeometry.centerLeft,
+                          //   child: Text(
+                          //     bahasa['nama_belakang_label']
+                          //   ),
+                          // ),
+                          // SizedBox(height: 8,),
+                          // TextField(
+                          //   controller: lastNameController,
+                          //   onChanged: (_) => setState(() {}),
+                          //   inputFormatters: [
+                          //     FilteringTextInputFormatter.allow(
+                          //       RegExp(r"[a-zA-Z\s]"),
+                          //     ),
+                          //     NameInputFormatter(),
+                          //   ],
+                          //   decoration: InputDecoration(
+                          //     hintText: bahasa['nama_belakang_hint'],
+                          //     hintStyle: TextStyle(color: Colors.grey.shade400),
+                          //     border: OutlineInputBorder(
+                          //       borderRadius: BorderRadius.circular(8),
+                          //     ),
+                          //     filled: true,
+                          //     fillColor: Colors.white,
+                          //   ),
+                          // ),
 
                           SizedBox(height: 20,),
                           Align(
@@ -727,16 +862,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               suffixIcon: const Icon(Icons.calendar_today),
                             ),
                           ),
-                          if (errorCode == 422 && errorMessage.containsKey('date_of_birth')) ... [
-                            SizedBox(height: 4,),
+                          if (_showError && dobController.text.isEmpty)
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
-                              child: Text(
-                                errorMessage['date_of_birth'][0],
-                                style: TextStyle(color: Colors.red),
-                              )
-                            )
-                          ],
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                child: Text(
+                                  bahasa['dob_required'],
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ),
+                            ),
+                          // if (errorCode == 422 && errorMessage.containsKey('date_of_birth')) ... [
+                          //   Align(
+                          //     alignment: AlignmentGeometry.centerLeft,
+                          //     child: Padding(
+                          //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                          //       child: Text(
+                          //         errorMessage['date_of_birth'][0],
+                          //         style: TextStyle(color: Colors.red[900], fontSize: 12),
+                          //       ),
+                          //     )
+                          //   )
+                          // ],
 
                           SizedBox(height: 20,),
                           Align(
@@ -873,7 +1024,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             focusNode: emailFocusNode,
                             controller: emailController,
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (value) => setState(() {
+                              if (!_emailTouched) {
+                                setState(() {
+                                  _emailTouched = true;
+                                });
+                              } else {
+                                setState(() {
+                                  
+                                });
+                              }
+
+                              setState(() {
+                                _emailChanged = value.trim() != _originalEmail.trim();
+                              });
+                            }),
                             decoration: InputDecoration(
                               hintText: emailHint,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -884,24 +1049,68 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fillColor: Colors.white,
                             ),
                           ),
-                          if (verifEmail == "0") ... [
-                            SizedBox(height: 4,),
+
+                          if (_emailTouched && !isValidEmail(emailController.text))
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
-                              child: Text(
-                                bahasa['verified_email'], //"Email kamu belum diverifikasi. 
-                                style: TextStyle(color: Colors.red),
-                              )
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  bahasa['error_email_1'],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              ),
+                            ),
+
+                          if (errorCode == 422 && errorMessage.containsKey('email')) ... [
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  langCode == "en"
+                                    ? translateError(errorMessage['email'][0], langCode)
+                                    : errorMessage['email'][0],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              ),
                             )
                           ],
-                          if (errorCode == 422 && errorMessage.containsKey('email')) ... [
+
+                          if (verifEmail == "0" || _emailChanged) ... [
                             SizedBox(height: 4,),
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
-                              child: Text(
-                                errorMessage['email'][0],
-                                style: TextStyle(color: Colors.red),
-                              )
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  bahasa['verified_email'], //"Email kamu belum diverifikasi. ",
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                )
+                              ),
+                            )
+                          ] else ...[
+                            SizedBox(height: 4,),
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      bahasa['verified_email_done'] ?? "Email kamu sudah terverifikasi. ", //"Email kamu sudah terverifikasi. ",
+                                      style: TextStyle(color: Colors.green[900], fontSize: 12),
+                                    ),
+
+                                    Icon(
+                                      Icons.check_circle,
+                                      size: 14,
+                                      color: Colors.green[900],
+                                    ),
+                                  ],
+                                ),
+                              ),
                             )
                           ],
 
@@ -920,7 +1129,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) => setState(() {
+                              if (!_phoneTouched) {
+                                setState(() => _phoneTouched = true);
+                              } else {
+                                setState(() {});
+                              }
+                            }),
                             decoration: InputDecoration(
                               hintText: phoneHint,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -929,20 +1144,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               ),
                               filled: true,
                               fillColor: Colors.white,
-                              errorText: phoneController.text.isEmpty
-                                  ? null
-                                  : (!isValidPhone(phoneController.text)
-                                      ? phoneError //"Nomor HP harus 10-13 digit dan dimulai dengan 08",
-                                      : null),
                             ),
                           ),
-                          if (errorCode == 422 && errorMessage.containsKey('phone')) ... [
-                            SizedBox(height: 4,),
+
+                          if ((_phoneTouched && !isValidPhone(phoneController.text)) || !isValidPhone(phoneController.text))
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
-                              child: Text(
-                                errorMessage['phone'][0],
-                                style: TextStyle(color: Colors.red),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  phoneError!,
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              ),
+                            ),
+
+                          if (errorCode == 422 && errorMessage.containsKey('phone')) ... [
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  errorMessage['phone'][0],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
                               )
                             )
                           ],
@@ -1074,22 +1299,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           
                           SizedBox(height: 30,),
                           InkWell(
-                            onTap: () async {
-                              await saveProfile();
-                              // Navigator.pop(context, true);
-                            },
+                            // onTap: () async {
+                            //   await saveProfile();
+                            //   // Navigator.pop(context, true);
+                            // },
+                            onTap: isConfirmLoading
+                              ? null
+                              : _handleSave,
                             child: Container(
                               height: 48,
                               padding: EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.red,
+                                color: isConfirmLoading
+                                  ? Colors.grey.shade400 
+                                  : Colors.red,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
-                              child: Text(
-                                bahasa['simpan'],
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
+                              child: isConfirmLoading
+                                ? SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    bahasa['simpan'],
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
                             ),
                           ),
 
@@ -1156,6 +1395,39 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       },
     );
+  }
+
+
+
+  final Map<String, String> errorTranslationMap = {
+    'Email sudah terdaftar': 'Email is already registered',
+
+    'Email harus berupa email yang valid': 'Email must be a valid email',
+
+    'Password minimal 8 karakter': 'Password must be at least 8 characters',
+
+    'Password harus mengandung setidaknya satu huruf dan satu angka':
+        'Password must contain at least one letter and one number',
+
+    'Password tidak cocok': 'Password does not match',
+  };
+
+  String translateError(String message, String? langCode) {
+    if (langCode == 'id') {
+      return message;
+    }
+
+    final normalized = message.toLowerCase().trim();
+
+    for (final entry in errorTranslationMap.entries) {
+      final key = entry.key.toLowerCase().trim();
+
+      if (normalized.contains(key)) {
+        return entry.value;
+      }
+    }
+
+    return message;
   }
 }
 

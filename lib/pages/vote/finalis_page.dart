@@ -8,6 +8,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
+import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_manual.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -515,6 +517,10 @@ class _FinalisPageState extends State<FinalisPage> {
     if (vote['theme_name'] != null) {
       themeName = vote['theme_name'];
     }
+
+    if (themeName == "Default Kreen") {
+      themeName = "default";
+    }
     
     Color color = colorMap[themeName] ?? Colors.red;
     Color bgColor;
@@ -523,6 +529,8 @@ class _FinalisPageState extends State<FinalisPage> {
     } else {
       bgColor = color.withOpacity(0.1);
     }
+
+    final timerColor = remaining <= Duration.zero ? Colors.grey : color;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -620,34 +628,70 @@ class _FinalisPageState extends State<FinalisPage> {
                   onPressed: (vote['harga'] != 0 && totalHarga == 0) || totalCount == 0 
                     ? null 
                     : () async {
-                      final getUser = await StorageService.getUser();
+                      final storedToken = await StorageService.getToken() ?? '';
+                      var getUser = await StorageService.getUser();
 
                       String? idUser = getUser['id'];
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StatePaymentManual(
-                            id_vote: slctedIdVote!,
-                            ids_finalis: ids_finalis,
-                            names_finalis: names_finalis,
-                            counts_finalis: counts_finalis,
-                            totalHarga: totalHarga,
-                            totalHargaAsli: totalHargaAsli,
-                            price: vote['harga_asli'],
-                            fromDetail: false,
-                            idUser: idUser,
-                            flag_login: vote['flag_login'],
-                            rateCurrency: vote['rate_currency_vote'],
-                            rateCurrencyUser: vote['rate_currency_user'],
+                      await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+
+                      getUser = await StorageService.getUser();
+                      
+                      if (vote['flag_verify_email'] == '0') {
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StatePaymentManual(
+                              id_vote: slctedIdVote!,
+                              ids_finalis: ids_finalis,
+                              names_finalis: names_finalis,
+                              counts_finalis: counts_finalis,
+                              totalHarga: totalHarga,
+                              totalHargaAsli: totalHargaAsli,
+                              price: vote['harga_asli'],
+                              fromDetail: false,
+                              idUser: idUser,
+                              flag_login: vote['flag_login'],
+                              rateCurrency: vote['rate_currency_vote'],
+                              rateCurrencyUser: vote['rate_currency_user'],
+                            ),
                           ),
-                        ),
-                      );
-                  },
+                        );
+                      } else {
+                        final storedToken = await StorageService.getToken() ?? '';
+
+                        if (getUser['verifEmail'] == '0') {
+                          EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StatePaymentManual(
+                                id_vote: slctedIdVote!,
+                                ids_finalis: ids_finalis,
+                                names_finalis: names_finalis,
+                                counts_finalis: counts_finalis,
+                                totalHarga: totalHarga,
+                                totalHargaAsli: totalHargaAsli,
+                                price: vote['harga_asli'],
+                                fromDetail: false,
+                                idUser: idUser,
+                                flag_login: vote['flag_login'],
+                                rateCurrency: vote['rate_currency_vote'],
+                                rateCurrencyUser: vote['rate_currency_user'],
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
                   child: Text(
                     remaining.inSeconds == 0
                     ? endVote!
-                    : bayarText!,
+                      : vote['harga'] != 0 
+                        ? bayarText!
+                        : bahasa['lanjutkan'],
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -685,17 +729,17 @@ class _FinalisPageState extends State<FinalisPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _timeBox("$days", daysText!, color),
+                            _timeBox("$days", daysText!, timerColor),
                             const SizedBox(width: 20),
-                            _timeBox("$hours".padLeft(2, "0"), hoursText!, color),
+                            _timeBox("$hours".padLeft(2, "0"), hoursText!, timerColor),
                             const SizedBox(width: 10),
-                            _separator(color),
+                            _separator(timerColor),
                             const SizedBox(width: 10),
-                            _timeBox("$minutes".padLeft(2, "0"), minutesText!, color),
+                            _timeBox("$minutes".padLeft(2, "0"), minutesText!, timerColor),
                             const SizedBox(width: 10),
-                            _separator(color),
+                            _separator(timerColor),
                             const SizedBox(width: 10),
-                            _timeBox("$seconds".padLeft(2, "0"), secondsText!, color),
+                            _timeBox("$seconds".padLeft(2, "0"), secondsText!, timerColor),
                           ],
                         ),
                       ],

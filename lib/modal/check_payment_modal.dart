@@ -11,7 +11,7 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class CheckPaymentModal {
-  static Future<void> show(BuildContext context, String idOrder) async {
+  static Future<bool> show(BuildContext context, String idOrder) async {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> voteOrder = {};
@@ -29,6 +29,7 @@ class CheckPaymentModal {
     }
 
     bool isRedirecting = false;
+    bool redirected = false;
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
@@ -42,19 +43,19 @@ class CheckPaymentModal {
           vote = tempOrder['vote'] ?? {};
 
           if (voteOrder['order_status'] == '0'){
-            statusOrder = bahasa['status_order_0'];
+            statusOrder = bahasa['status_order_0']; //gagal
           } else if (voteOrder['order_status'] == '1'){
-            statusOrder = bahasa['status_order_1'];
+            statusOrder = bahasa['status_order_1']; // selesai
           } else if (voteOrder['order_status'] == '2'){
-            statusOrder = bahasa['status_order_2'];
+            statusOrder = bahasa['status_order_2']; // batal
           } else if (voteOrder['order_status'] == '3'){
-            statusOrder = bahasa['status_order_3'];
+            statusOrder = bahasa['status_order_3']; // menunggu
           } else if (voteOrder['order_status'] == '4'){
-            statusOrder = bahasa['status_order_4'];
+            statusOrder = bahasa['status_order_4']; // refund
           } else if (voteOrder['order_status'] == '20'){
-            statusOrder = bahasa['status_order_20'];
+            statusOrder = bahasa['status_order_20']; // expired
           } else if (voteOrder['order_status'] == '404'){
-            statusOrder = bahasa['status_order_404'];
+            statusOrder = bahasa['status_order_404']; // hidden
           }
         } else {
           AwesomeDialog(
@@ -104,7 +105,73 @@ class CheckPaymentModal {
       totalAmountPg = (totalAmountPg * 100).ceil() / 100;
     }
 
-    await showModalBottomSheet<void>(
+    Future<void> handleRedirectIfNeeded(BuildContext context, StateSetter setState) async {
+      if (voteOrder['order_status'] == '1' && !isRedirecting) {
+        setState(() {
+          isRedirecting = true;
+        });
+
+        int countdown = 3;
+
+        late AwesomeDialog dialog;
+        late void Function(void Function()) dialogSetState;
+
+        dialog = AwesomeDialog(
+          context: context,
+          dialogType: DialogType.noHeader,
+          animType: AnimType.scale,
+          dismissOnTouchOutside: false,
+          dismissOnBackKeyPress: false,
+          body: StatefulBuilder(
+            builder: (context, setDialogState) {
+              dialogSetState = setDialogState;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              );
+            },
+          ),
+        )..show();
+
+        for (int i = countdown; i > 0; i--) {
+          await Future.delayed(const Duration(seconds: 1));
+          countdown--;
+
+          if (context.mounted) {
+            dialogSetState(() {});
+          }
+        }
+
+        if (!context.mounted) return;
+
+        dialog.dismiss();
+
+        redirected = true;
+
+        Navigator.of(context).pop(true);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddSupportPage(
+              id_vote: vote['id_vote'],
+              id_order: voteOrder['id_order'],
+              nama: voteOrder['voter_name'],
+            ),
+          ),
+        );
+      }
+    }
+
+    await showModalBottomSheet<bool>(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
@@ -114,6 +181,11 @@ class CheckPaymentModal {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              handleRedirectIfNeeded(context, setState);
+            });
+            
             return SafeArea(
               child: SingleChildScrollView(
                 padding: kGlobalPadding,
@@ -263,66 +335,7 @@ class CheckPaymentModal {
                         await loadOrder();
                         setState(() {});
 
-                        if (voteOrder['order_status'] == '1') {
-                          setState(() {
-                            isRedirecting = true;
-                          });
-
-                          int countdown = 3;
-
-                          late AwesomeDialog dialog;
-                          late void Function(void Function()) dialogSetState;
-
-                          dialog = AwesomeDialog(
-                            context: context,
-                            dialogType: DialogType.noHeader,
-                            animType: AnimType.scale,
-                            dismissOnTouchOutside: false,
-                            dismissOnBackKeyPress: false,
-                            body: StatefulBuilder(
-                              builder: (context, setDialogState) {
-                                // simpan reference setState dialog
-                                dialogSetState = setDialogState;
-
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const CircularProgressIndicator(color: Colors.red,),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          )..show();
-
-                          for (int i = countdown; i > 0; i--) {
-                            await Future.delayed(const Duration(seconds: 1));
-                            countdown--;
-
-                            if (context.mounted) {
-                              dialogSetState(() {});
-                            }
-                          }
-
-                          if (!context.mounted) return;
-
-                          dialog.dismiss();
-
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddSupportPage(
-                                id_vote: vote['id_vote'],
-                                id_order: voteOrder['id_order'],
-                                nama: voteOrder['voter_name'],
-                              ),
-                            ),
-                          );
-                        }
+                        await handleRedirectIfNeeded(context, setState);
                       },
                     ),
 
@@ -335,10 +348,11 @@ class CheckPaymentModal {
         );
       },
     );
+    return redirected;
   }
 
 
-  static Future<void> showEvent(BuildContext context, String idOrder) async {
+  static Future<bool> showEvent(BuildContext context, String idOrder) async {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> eventOrder = {};
@@ -356,6 +370,7 @@ class CheckPaymentModal {
     }
 
     bool isRedirecting = false;
+    bool redirected = false;
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
@@ -413,7 +428,67 @@ class CheckPaymentModal {
       totalAmountPg = (totalAmountPg * 100).ceil() / 100;
     }
 
-    await showModalBottomSheet<void>(
+    Future<void> handleRedirectIfNeeded(BuildContext context, StateSetter setState) async {
+      if (eventOrder['order_status'] == '1' && !isRedirecting) {
+        setState(() {
+          isRedirecting = true;
+        });
+
+        int countdown = 3;
+
+        late AwesomeDialog dialog;
+        late void Function(void Function()) dialogSetState;
+
+        dialog = AwesomeDialog(
+          context: context,
+          dialogType: DialogType.noHeader,
+          animType: AnimType.scale,
+          dismissOnTouchOutside: false,
+          dismissOnBackKeyPress: false,
+          body: StatefulBuilder(
+            builder: (context, setDialogState) {
+              dialogSetState = setDialogState;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              );
+            },
+          ),
+        )..show();
+
+        for (int i = countdown; i > 0; i--) {
+          await Future.delayed(const Duration(seconds: 1));
+          countdown--;
+
+          if (context.mounted) {
+            dialogSetState(() {});
+          }
+        }
+
+        if (!context.mounted) return;
+
+        dialog.dismiss();
+
+        redirected = true;
+
+        Navigator.of(context).pop(true);
+
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOrder['id_order'], isSukses: true,)),
+        );
+      }
+    }
+
+    await showModalBottomSheet<bool>(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
@@ -442,6 +517,11 @@ class CheckPaymentModal {
         }
         return StatefulBuilder(
           builder: (context, setState) {
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              handleRedirectIfNeeded(context, setState);
+            });
+
             return SafeArea(
               child: SingleChildScrollView(
                 padding: kGlobalPadding,
@@ -584,61 +664,7 @@ class CheckPaymentModal {
                       : () async {
                         await loadOrder();
                         setState(() {});
-
-                        if (eventOrder['order_status'] == '1') {
-                          setState(() {
-                            isRedirecting = true;
-                          });
-
-                          int countdown = 3;
-
-                          late AwesomeDialog dialog;
-                          late void Function(void Function()) dialogSetState;
-
-                          dialog = AwesomeDialog(
-                            context: context,
-                            dialogType: DialogType.noHeader,
-                            animType: AnimType.scale,
-                            dismissOnTouchOutside: false,
-                            dismissOnBackKeyPress: false,
-                            body: StatefulBuilder(
-                              builder: (context, setDialogState) {
-                                // simpan reference setState dialog
-                                dialogSetState = setDialogState;
-
-                                return Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const CircularProgressIndicator(color: Colors.red,),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          )..show();
-
-                          for (int i = countdown; i > 0; i--) {
-                            await Future.delayed(const Duration(seconds: 1));
-                            countdown--;
-
-                            if (context.mounted) {
-                              dialogSetState(() {});
-                            }
-                          }
-
-                          if (!context.mounted) return;
-
-                          dialog.dismiss();
-
-                          Navigator.pushReplacement(
-                            context, 
-                            MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOrder['id_order'], isSukses: true,)),
-                          );
-                        }
+                        await handleRedirectIfNeeded(context, setState);
                       },
                     ),
 
@@ -651,5 +677,6 @@ class CheckPaymentModal {
         );
       },
     );
+    return redirected;
   }
 }

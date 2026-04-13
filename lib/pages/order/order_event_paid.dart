@@ -1,10 +1,11 @@
-// ignore_for_file: must_be_immutable, non_constant_identifier_names, prefer_typing_uninitialized_variables, deprecated_member_use
+// ignore_for_file: must_be_immutable, non_constant_identifier_names, prefer_typing_uninitialized_variables, deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -41,6 +42,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
   bool showErrorBar = false;
   String errorMessage = '';
+
+  bool _isGeneratingPdf = false;
 
   Future<void> _loadOrder() async {
 
@@ -752,41 +755,94 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                         }),
                       ),
 
-
                       const SizedBox(height: 20),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () async {
+                            setState(() => _isGeneratingPdf = true);
+                            await downloadTicket(
+                              context,
+                              setState,
+                              event,
+                              eventOder,
+                              detailEvent,
+                              dataEvents,
+                              eventOrderDetail,
+                              eventTiket,
+                              langCode!,
+                              bahasa,
+                            );
+                            setState(() => _isGeneratingPdf = false);
+                          },
+                          icon: _isGeneratingPdf
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.download_outlined, color: Colors.red),
+                          label: Text(
+                            _isGeneratingPdf
+                              ? bahasa['loading_pdf'] ?? 'Creating PDF...'
+                              : bahasa['unduh_tiket'] ?? 'Download Ticket(s)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
                           ),
                         ),
-                        onPressed: () {
-                          // Navigator.pushAndRemoveUntil(
-                          //   context, 
-                          //   MaterialPageRoute(builder: (context) => HomePage()), 
-                          //   (route) => false
-                          // );
+                      ),
 
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailEventPage(
-                                id_event: event['id_event'],
-                                currencyCode: currencyCode, 
-                                price: dataEvents['event_ticket'][0]['price'],
-                              ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            (route) => route.isFirst, // sisakan Home
-                          );
-                        },
-                        child: Text(
+                          ),
+                          onPressed: () {
+                            // Navigator.pushAndRemoveUntil(
+                            //   context, 
+                            //   MaterialPageRoute(builder: (context) => HomePage()), 
+                            //   (route) => false
+                            // );
+
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailEventPage(
+                                  id_event: event['id_event'],
+                                  currencyCode: currencyCode, 
+                                  price: dataEvents['event_ticket'][0]['price'],
+                                ),
+                              ),
+                              (route) => route.isFirst, // sisakan Home
+                            );
+                          },
+                          child: Text(
                           bahasa['selesai'], //"Selesai",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
+                        ),
                         ),
                       ),
                     ],

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/pages/content_explore_new/explore_all_new.dart';
-import 'package:kreen_app_flutter/pages/content_explore_new/explore_event_new.dart';
+import 'package:kreen_app_flutter/pages/content_explore/explore_all.dart';
+import 'package:kreen_app_flutter/pages/content_explore/explore_event.dart';
+import 'package:kreen_app_flutter/pages/content_explore/explore_filter.dart';
+import 'package:kreen_app_flutter/pages/content_explore/explore_search_bar.dart';
+import 'package:kreen_app_flutter/pages/content_explore/explore_vote.dart';
 import 'package:kreen_app_flutter/pages/content_explore_new/explore_filter_new.dart';
-import 'package:kreen_app_flutter/pages/content_explore_new/explore_search_bar_new.dart';
-import 'package:kreen_app_flutter/pages/content_explore_new/explore_vote_new.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
@@ -102,7 +103,7 @@ class _ExplorePageState extends State<ExplorePage> {
     Widget buildPage() {
       switch (_selectedIndex) {
         case 0:
-          return ExploreAllNew(
+          return ExploreAll(
             keyword: _keyword,
             timeFilter: timeFilter,
             priceFilter: priceFilter,
@@ -110,7 +111,7 @@ class _ExplorePageState extends State<ExplorePage> {
             onResetSearch: _resetSearch,
           );
         case 1:
-          return ExploreVoteNew(
+          return ExploreVote(
             keyword: _keyword,
             timeFilter: timeFilter,
             priceFilter: priceFilter,
@@ -118,7 +119,7 @@ class _ExplorePageState extends State<ExplorePage> {
             onResetSearch: _resetSearch,
           );
         case 2:
-          return ExploreEventNew(
+          return ExploreEvent(
             keyword: _keyword,
             timeFilter: timeFilter,
             priceFilter: priceFilter,
@@ -138,32 +139,49 @@ class _ExplorePageState extends State<ExplorePage> {
         child: Column(
           children: [
             
-            ExploreSearchBarNew(
+            ExploreSearchBar(
               key: ValueKey(_selectedIndex),
               controller: _searchController, 
               onChanged: onSearch,
               initialTime: timeFilter,
               initialPrice: priceFilter,
-              onFilterApply: (time, price, type) {
+              onFilterApply: (time, price) {
                 setState(() {
                   timeFilter = time;
                   priceFilter = price;
-                  _selectedIndex = type;
                 });
               },
               selectedIndex: _selectedIndex,
-              onTypeChange: (type) {
-                setState(() {
-                  _selectedIndex = type;
-                });
-              },
+            ),
+
+            // ExploreSearchBarNew(
+            //   key: ValueKey(_selectedIndex),
+            //   controller: _searchController, 
+            //   onChanged: onSearch,
+            //   initialTime: timeFilter,
+            //   initialPrice: priceFilter,
+            //   onFilterApply: (time, price, type) {
+            //     setState(() {
+            //       timeFilter = time;
+            //       priceFilter = price;
+            //       _selectedIndex = type;
+            //     });
+            //   },
+            //   selectedIndex: _selectedIndex,
+            //   onTypeChange: (type) {
+            //     setState(() {
+            //       _selectedIndex = type;
+            //     });
+            //   },
+            // ),
+
+            const SizedBox(height: 16),
+            ExploreFilter(
+              selectedIndex: _selectedIndex,
+              onChanged: onFilterChanged,
             ),
 
             const SizedBox(height: 16),
-            // ExploreFilter(
-            //   selectedIndex: _selectedIndex,
-            //   onChanged: onFilterChanged,
-            // ),
             ExploreFilterNew(
               bahasa: bahasa!,
               selectedIndex: _selectedIndex,

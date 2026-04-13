@@ -12,6 +12,7 @@ import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/get_login_user.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
 import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
@@ -95,6 +96,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   List<String> ids_indikator = [];
 
   int? selectedIndex;
+  Map<String, dynamic>? selectedPaymentItem;
   int? selectedIndexDebit;
 
   late final formatter = NumberFormat.currency(
@@ -104,7 +106,14 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   );
   final ScrollController _scrollController = ScrollController();
 
+  final TextEditingController _cardNumberController = TextEditingController();
+  final TextEditingController _cvvController = TextEditingController();
   final TextEditingController expDateController = TextEditingController();
+
+  final TextEditingController _phoneItemController = TextEditingController();
+  final TextEditingController _idCardItemController = TextEditingController();
+
+  final TextEditingController phoneEwalletController = TextEditingController();
   bool _isEditing = false;
 
   bool isLoading = true;
@@ -123,6 +132,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   
   bool _emailTouched = false;
   bool _phoneTouched = false;
+  List<bool> _answerTouched = [];
 
   bool creditCardClicked = false;
   bool virtualAkunClicked = false;
@@ -168,6 +178,10 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
   final _phoneItemFocus = FocusNode();
   final _idCardItemFocus = FocusNode();
+  final _phoneEwalletFocus = FocusNode();
+
+  String? bankCodeDebit;
+  bool hasAttribute = false;
   
   @override
   void initState() {
@@ -312,10 +326,9 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       indikator.length,
       (index) => TextEditingController(),
     );
-    indikatorFocus = List.generate(
-      indikator.length,
-      (_) => FocusNode(),
-    );
+    indikatorFocus = List.generate(indikator.length, (_) => FocusNode());
+
+    _answerTouched = List.generate(indikator.length, (_) => false);
   }
 
   double ceil2(num value) {
@@ -574,7 +587,34 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               context,
               MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: id_order, formHistory: false, currency_session: currencyCode,)),
             );
-          } else {
+          } else if (resultVoteOrder['rc'] == 400) {
+            if (errorMessage.toLowerCase().contains("limit")) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => VoteLimit(
+                  errorMessage: 
+                    langCode == 'id' 
+                      ? errorMessage
+                      : "The transaction limit for this vote has been reached.",
+                  id_event: widget.id_vote,
+                )),
+              );
+            } else {
+              AwesomeDialog(
+                context: context,
+                dialogType: DialogType.noHeader,
+                animType: AnimType.topSlide,
+                title: bahasa['maaf'],
+                desc: bahasa['error'],
+                btnOkOnPress: () {},
+                btnOkColor: Colors.red,
+                buttonsTextStyle: TextStyle(color: Colors.white),
+                headerAnimationLoop: false,
+                dismissOnTouchOutside: true,
+                showCloseIcon: true,
+              ).show();
+            }
+          }  else {
             AwesomeDialog(
               context: context,
               dialogType: DialogType.noHeader,
@@ -658,7 +698,34 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               context,
               MaterialPageRoute(builder: (_) => AddSupportPage(id_order: id_order, id_vote: widget.id_vote, nama: _nameController.text,)),
             );
-          } else {
+          } else if (resultVoteOrder['rc'] == 400) {
+            if (errorMessage.toLowerCase().contains("limit")) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => VoteLimit(
+                  errorMessage: 
+                    langCode == 'id' 
+                      ? errorMessage
+                      : "The transaction limit for this vote has been reached.",
+                  id_event: widget.id_vote,
+                )),
+              );
+            } else {
+              AwesomeDialog(
+                context: context,
+                dialogType: DialogType.noHeader,
+                animType: AnimType.topSlide,
+                title: bahasa['maaf'],
+                desc: bahasa['error'],
+                btnOkOnPress: () {},
+                btnOkColor: Colors.red,
+                buttonsTextStyle: TextStyle(color: Colors.white),
+                headerAnimationLoop: false,
+                dismissOnTouchOutside: true,
+                showCloseIcon: true,
+              ).show();
+            }
+          }  else {
             AwesomeDialog(
               context: context,
               dialogType: DialogType.noHeader,
@@ -897,10 +964,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                           ),
                           if (_showError && _nameController.text.trim().isEmpty)
                             Padding(
-                              padding: EdgeInsets.only(top: 4),
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
                               child: Text(
                                 bahasa['nama_lengkap_error'],
-                                style: TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontSize: 12
+                                ),
                               ),
                             ),
 
@@ -978,13 +1048,16 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               );
                             }
                           ),
-
+            
                           if (_showError && selectedGender == null)
                             Padding(
-                              padding: EdgeInsets.only(top: 4),
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
                               child: Text(
                                 bahasa['gender_error'],
-                                style: TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontSize: 12
+                                ),
                               ),
                             ),
                             
@@ -1022,142 +1095,188 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               ),
                               enabledBorder: _border(_emailController.text.isNotEmpty),
                               focusedBorder: _border(true),
-                              errorText: _emailTouched && !isValidEmail(_emailController.text)
-                                ? bahasa['error_email_1']
-                                : null,
                             ),
                           ),
 
-                          if (_showError && indikator.any((e) => e['id_indikator_vote'] == 12) && _emailController.text.trim().isEmpty)
+                          if (_emailTouched && !isValidEmail(_emailController.text))
                             Padding(
-                              padding: EdgeInsets.only(top: 4),
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
                               child: Text(
-                                bahasa['error_email_3'],
-                                style: TextStyle(color: Colors.red),
+                                bahasa['error_email_1'],
+                                style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontSize: 12
+                                ),
                               ),
                             ),
-
-                          const SizedBox(height: 12),
-                          ...List.generate(indikator.length, (idx) {
-                            final item = indikator[idx];
-                            final label = item['indikator_vote'] ?? '';
-                            final typeInput = item['type_input'] ?? 'text';
-                            final isPhoneField = label.toLowerCase().contains('hp');
-                            final isEmailField = label.toLowerCase().contains('email');
-                            final id_indikator_vote = item['id_indikator_vote'];
-                            ids_indikator[idx] = id_indikator_vote.toString();
-                            if (ids_indikator[idx] == '1') {
-                              answers[idx] = _phoneController.text;
-                            } else if (ids_indikator[idx] == '12') {
-                              answers[idx] = _emailController.text;
-                            }
-
-                            if (id_indikator_vote == 12) {
-                              return const SizedBox.shrink();
-                            }
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(label),
-                                    const Text(
-                                      "*",
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ],
+            
+                          if (_showError && indikator.any((e) => e['id_indikator_vote'] == 12) && _emailController.text.trim().isEmpty)
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                              child: Text(
+                                bahasa['error_email_3'],
+                                style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontSize: 12
                                 ),
+                              ),
+                            ),
+            
+                          if (indikator.isEmpty || indikatorFocus.length != indikator.length) ... [
+                            SizedBox(),
+                          ] else ... [
+                            const SizedBox(height: 12),
+                            ...List.generate(indikator.length, (idx) {
+                              final item = indikator[idx];
+                              final label = item['indikator_vote'] ?? '';
+                              final typeInput = item['type_input'] ?? 'text';
+                              final isPhoneField = label.toLowerCase().contains('hp');
+                              final isEmailField = label.toLowerCase().contains('email');
+                              final id_indikator_vote = item['id_indikator_vote'];
+                              ids_indikator[idx] = id_indikator_vote.toString();
+                              if (ids_indikator[idx] == '1') {
+                                answers[idx] = _phoneController.text;
+                              } else if (ids_indikator[idx] == '12') {
+                                answers[idx] = _emailController.text;
+                              }
 
-                                const SizedBox(height: 4),
-                                TextField(
-                                  autofocus: false,
-                                  controller: isPhoneField 
-                                    ? _phoneController 
-                                    : isEmailField 
-                                      ? _emailController 
-                                      : answerControllers[idx],
-                                  focusNode: isPhoneField 
-                                    ? _phoneFocus 
-                                    : isEmailField 
-                                      ? _emailFocus 
-                                      : indikatorFocus[idx],
-                                  onChanged: (value) {
-                                    if (isPhoneField) {
-                                      if (!_phoneTouched) {
-                                        setState(() => _phoneTouched = true);
-                                      } else {
-                                        setState(() {});
-                                      }
-                                    }
-                                    // answerControllers[idx].text = value;
-                                    answers[idx] = value;
-                                  },
-                                  keyboardType: typeInput == 'number'
-                                      ? TextInputType.number
-                                      : TextInputType.text,
-                                  decoration: InputDecoration(
-                                    hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
-                                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    enabledBorder: _border(isPhoneField 
-                                      ? _phoneController.text.isNotEmpty 
-                                      : isEmailField 
-                                        ? _emailController.text.isNotEmpty 
-                                        : answerControllers[idx].text.isNotEmpty
-                                    ),
-                                    focusedBorder: _border(true),
-                                    errorText: isPhoneField
-                                      ? (!isValidPhone(_phoneController.text)
-                                        ? bahasa['nomor_hp_error']
-                                        : null)
-                                      : null,
-                                  ),
-                                ),
+                              if (id_indikator_vote == 12) {
+                                return const SizedBox.shrink();
+                              }
 
-                                if (isPhoneField) ... [
-                                  const SizedBox(height: 4),
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.info_outline, color: Colors.blue,),
-                                      Text(
-                                        bahasa['warning_indikator_phone'],
-                                        style: TextStyle(color: Colors.blue),
-                                      )
+                                      Text(label),
+                                      const Text(
+                                        "*",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
                                     ],
                                   ),
-                                  if (_showError && _phoneController.text.trim().isEmpty)
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        bahasa['error_indikator_phone'],
-                                        style: TextStyle(color: Colors.red),
+
+                                  const SizedBox(height: 4),
+                                  TextField(
+                                    autofocus: false,
+                                    controller: isPhoneField 
+                                      ? _phoneController 
+                                      : isEmailField 
+                                        ? _emailController 
+                                        : answerControllers[idx],
+                                    focusNode: isPhoneField 
+                                      ? _phoneFocus 
+                                      : isEmailField 
+                                        ? _emailFocus 
+                                        : indikatorFocus[idx],
+                                    onChanged: (value) {
+                                      if (isPhoneField) {
+                                        if (!_phoneTouched) {
+                                          setState(() => _phoneTouched = true);
+                                        } else {
+                                          setState(() {});
+                                        }
+                                      }
+                                      // answerControllers[idx].text = value;
+                                      answers[idx] = value;
+                                    },
+                                    keyboardType: typeInput == 'number'
+                                        ? TextInputType.number
+                                        : TextInputType.text,
+                                    decoration: InputDecoration(
+                                      hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
+                                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ),
-                                ] else if (isEmailField) ... [
-                                  if (_showError && _emailController.text.trim().isEmpty)
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        bahasa['error_email_3'],
-                                        style: TextStyle(color: Colors.red),
+                                      enabledBorder: _border(isPhoneField 
+                                        ? _phoneController.text.isNotEmpty 
+                                        : isEmailField 
+                                          ? _emailController.text.isNotEmpty 
+                                          : answerControllers[idx].text.isNotEmpty
                                       ),
-                                  )                    
-                                ] else ... [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      bahasa['tiket_template_answer_error'],
-                                      style: const TextStyle(color: Colors.red),
+                                      focusedBorder: _border(true),
                                     ),
-                                  )
-                                ]
-                              ],
-                            );
-                          }),
+                                  ),
+
+                                  if (isPhoneField) ... [
+                                    if (!isValidPhone(_phoneController.text) && _phoneTouched)
+                                      Padding(
+                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                        child: Text(
+                                          bahasa['nomor_hp_error'],
+                                          style: TextStyle(
+                                            color: Colors.red[900],
+                                            fontSize: 12
+                                          ),
+                                        ),
+                                      ),
+
+                                    const SizedBox(height: 4),
+                                    if (_showError && _phoneController.text.trim().isEmpty)
+                                      Padding(
+                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                        child: Text(
+                                          bahasa['error_indikator_phone'],
+                                          style: TextStyle(
+                                            color: Colors.red[900],
+                                            fontSize: 12
+                                          ),
+                                        ),
+                                      ),
+
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.info_outline, color: Colors.blue, size: 16,),
+                                        Text(
+                                          bahasa['warning_indikator_phone'],
+                                          style: TextStyle(color: Colors.blue),
+                                        )
+                                      ],
+                                    ),
+                                  ] else if (isEmailField) ... [
+                                    if (!isValidEmail(_emailController.text) && _emailTouched)
+                                      Padding(
+                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                        child: Text(
+                                          bahasa['error_email_1'],
+                                          style: TextStyle(
+                                            color: Colors.red[900],
+                                            fontSize: 12
+                                          ),
+                                        ),
+                                      ),
+                                    if (_showError && _emailController.text.trim().isEmpty)
+                                      Padding(
+                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                        child: Text(
+                                          bahasa['error_email_3'],
+                                          style: TextStyle(
+                                            color: Colors.red[900],
+                                            fontSize: 12
+                                          ),
+                                        ),
+                                    )                    
+                                  ] else ... [
+                                    if (_showError && answerControllers[idx].text.trim().isEmpty)
+                                      Padding(
+                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                        child: Text(
+                                          bahasa['tiket_template_answer_error'],
+                                          style: TextStyle(
+                                            color: Colors.red[900],
+                                            fontSize: 12
+                                          ),
+                                        ),
+                                      ),
+                                  ]
+                                ],
+                              );
+                            }),
+                          ],
 
                           const SizedBox(height: 20,),
                           const Divider(
@@ -1260,6 +1379,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                         roundedValueMax: roundedValueMax,
                                         limit_max: limit_max,
 
+                                        cardNumberController: _cardNumberController,
+                                        cvvController: _cvvController,
                                         expDateController: expDateController,
 
                                         onCardChanged: (val) => card_number = val,
@@ -1268,21 +1389,21 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
                                           _cvvDebounce?.cancel();
                                           if (isAMEX) {
-                                            _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            _cvvDebounce = Timer(const Duration(milliseconds: 1500), () {
                                               if (val.length == 4 && _scrollController.hasClients) {
                                                 _scrollController.animateTo(
                                                   _scrollController.position.maxScrollExtent,
-                                                  duration: const Duration(milliseconds: 600),
+                                                  duration: const Duration(milliseconds: 1500),
                                                   curve: Curves.easeOut,
                                                 );
                                               }
                                             });
                                           } else {
-                                            _cvvDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            _cvvDebounce = Timer(const Duration(milliseconds: 1500), () {
                                               if (val.length == 3 && _scrollController.hasClients) {
                                                 _scrollController.animateTo(
                                                   _scrollController.position.maxScrollExtent,
-                                                  duration: const Duration(milliseconds: 600),
+                                                  duration: const Duration(milliseconds: 1500),
                                                   curve: Curves.easeOut,
                                                 );
                                               }
@@ -1296,13 +1417,19 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = creditCard[idx]['id_metod'];
                                             currencySession = creditCard[idx]['currency_pg'];
                                             typePayment = "credit_card";
+
+                                            selectedPaymentItem = item;
+
+                                            _cardNumberController.clear();
+                                            _cvvController.clear();
+                                            expDateController.clear();
                                           });
 
                                           if (item['flag_client'] == "1") {
-                                            Future.delayed(const Duration(milliseconds: 200), () {
+                                            Future.delayed(const Duration(milliseconds: 1500), () {
                                               _scrollController.animateTo(
                                                 _scrollController.position.maxScrollExtent,
-                                                duration: const Duration(milliseconds: 600),
+                                                duration: const Duration(milliseconds: 1500),
                                                 curve: Curves.easeOut,
                                               );
                                             });
@@ -1325,7 +1452,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
                                         showError: _showError,
@@ -1411,12 +1539,14 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = virtualAkun[index]['id_metod'];
                                             currencySession = virtualAkun[index]['currency_pg'];
                                             typePayment = "virtual_akun";
+
+                                            selectedPaymentItem = item;
                                           });
                                           
-                                          Future.delayed(const Duration(milliseconds: 200), () {
+                                          Future.delayed(const Duration(milliseconds: 1500), () {
                                             _scrollController.animateTo(
                                               _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
+                                              duration: const Duration(milliseconds: 1500),
                                               curve: Curves.easeOut,
                                             );
                                           });
@@ -1438,7 +1568,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
                                         showError: _showError,
@@ -1522,12 +1653,14 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = paymentBank[index]['id_metod'];
                                             currencySession = paymentBank[index]['currency_pg'];
                                             typePayment = "payment_bank";
+
+                                            selectedPaymentItem = item;
                                           });
                                           
-                                          Future.delayed(const Duration(milliseconds: 200), () {
+                                          Future.delayed(const Duration(milliseconds: 1500), () {
                                             _scrollController.animateTo(
                                               _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
+                                              duration: const Duration(milliseconds: 1500),
                                               curve: Curves.easeOut,
                                             );
                                           });
@@ -1549,7 +1682,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
                                         showError: _showError,
@@ -1634,16 +1768,20 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = eWallet[index]['id_metod'];
                                             currencySession = eWallet[index]['currency_pg'];
                                             typePayment = "e_wallet";
+
+                                            selectedPaymentItem = item;
                                           });
                                           
-                                          if (item['id'] != "6387457643547345") {
-                                            Future.delayed(const Duration(milliseconds: 200), () {
+                                          if (item['attribute'] == null) {
+                                            Future.delayed(const Duration(milliseconds: 1500), () {
                                               _scrollController.animateTo(
                                                 _scrollController.position.maxScrollExtent,
-                                                duration: const Duration(milliseconds: 600),
+                                                duration: const Duration(milliseconds: 1500),
                                                 curve: Curves.easeOut,
                                               );
                                             });
+                                          } else {
+                                            hasAttribute = true;
                                           }
           
                                           // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
@@ -1663,20 +1801,21 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
 
                                         onPhoneChanged: (val) {
                                           mobile_number = val;
 
-                                          if (item['id'] == "6387457643547345") {
+                                          if (item['attribute'] != null) {
                                             _phoneDebounce?.cancel();
-                                            _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            _phoneDebounce = Timer(const Duration(milliseconds: 1500), () {
                                               if (val.length >= 12 && _scrollController.hasClients) {
                                                 _scrollController.animateTo(
                                                   _scrollController.position.maxScrollExtent,
-                                                  duration: const Duration(milliseconds: 600),
+                                                  duration: const Duration(milliseconds: 1500),
                                                   curve: Curves.easeOut,
                                                 );
                                               }
@@ -1684,6 +1823,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           }
                                         },
                                         showError: _showError,
+                                        phoneEWalletFocus: _phoneEwalletFocus,
+                                        phoneEwalletController: phoneEwalletController,
                                       );
                                     }).toList(),
                                   ),
@@ -1766,12 +1907,14 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = retail[index]['id_metod'];
                                             currencySession = retail[index]['currency_pg'];
                                             typePayment = "retail";
+
+                                            selectedPaymentItem = item;
                                           });
                                           
-                                          Future.delayed(const Duration(milliseconds: 200), () {
+                                          Future.delayed(const Duration(milliseconds: 1500), () {
                                             _scrollController.animateTo(
                                               _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
+                                              duration: const Duration(milliseconds: 1500),
                                               curve: Curves.easeOut,
                                             );
                                           });
@@ -1793,7 +1936,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
                                         showError: _showError,
@@ -1881,12 +2025,14 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = konter[index]['id_metod'];
                                             currencySession = konter[index]['currency_pg'];
                                             typePayment = "konter";
+
+                                            selectedPaymentItem = item;
                                           });
                                           
-                                          Future.delayed(const Duration(milliseconds: 200), () {
+                                          Future.delayed(const Duration(milliseconds: 1500), () {
                                             _scrollController.animateTo(
                                               _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
+                                              duration: const Duration(milliseconds: 1500),
                                               curve: Curves.easeOut,
                                             );
                                           });
@@ -1908,7 +2054,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
                                         showError: _showError,
@@ -1996,12 +2143,14 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             id_payment_method = qrCode[index]['id_metod'];
                                             currencySession = qrCode[index]['currency_pg'];
                                             typePayment = "qr_code";
+
+                                            selectedPaymentItem = item;
                                           });
                                           
-                                          Future.delayed(const Duration(milliseconds: 200), () {
+                                          Future.delayed(const Duration(milliseconds: 1500), () {
                                             _scrollController.animateTo(
                                               _scrollController.position.maxScrollExtent,
-                                              duration: const Duration(milliseconds: 600),
+                                              duration: const Duration(milliseconds: 1500),
                                               curve: Curves.easeOut,
                                             );
                                           });
@@ -2023,7 +2172,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
                                         showError: _showError,
@@ -2113,13 +2263,15 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                             currencySession = debit[index]['currency_pg'];
                                             typePayment = "debit";
                                             selectedIndexDebit = index;
+
+                                            selectedPaymentItem = item;
                                           });
 
                                           if (item['flag_client'] == "1") {
-                                            Future.delayed(const Duration(milliseconds: 200), () {
+                                            Future.delayed(const Duration(milliseconds: 1500), () {
                                               _scrollController.animateTo(
                                                 _scrollController.position.maxScrollExtent,
-                                                duration: const Duration(milliseconds: 600),
+                                                duration: const Duration(milliseconds: 1500),
                                                 curve: Curves.easeOut,
                                               );
                                             });
@@ -2142,7 +2294,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
+                                            feeLayanan = resultFee['fee_layanan'];
                                           });
                                         },
 
@@ -2150,12 +2303,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           mobile_number = val;
 
                                           if (item['bank_code'] != "KTB") {
+                                            bankCodeDebit = item['bank_code'];
                                             _phoneDebounce?.cancel();
-                                            _phoneDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            _phoneDebounce = Timer(const Duration(milliseconds: 1500), () {
                                               if (val.length >= 12 && _scrollController.hasClients) {
                                                 _scrollController.animateTo(
                                                   _scrollController.position.maxScrollExtent,
-                                                  duration: const Duration(milliseconds: 600),
+                                                  duration: const Duration(milliseconds: 1500),
                                                   curve: Curves.easeOut,
                                                 );
                                               }
@@ -2167,12 +2321,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           id_card_number = val;
 
                                           if (item['bank_code'] == "KTB") {
+                                            bankCodeDebit = item['bank_code'];
                                             _idCardDebounce?.cancel();
-                                            _idCardDebounce = Timer(const Duration(milliseconds: 700), () {
+                                            _idCardDebounce = Timer(const Duration(milliseconds: 1500), () {
                                               if (val.length == 13 && _scrollController.hasClients) {
                                                 _scrollController.animateTo(
                                                   _scrollController.position.maxScrollExtent,
-                                                  duration: const Duration(milliseconds: 600),
+                                                  duration: const Duration(milliseconds: 1500),
                                                   curve: Curves.easeOut,
                                                 );
                                               }
@@ -2183,6 +2338,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
                                         phoneFocus: _phoneItemFocus,
                                         idCardFocus: _idCardItemFocus,
+                                        phoneDebitController: _phoneItemController,
+                                        idCardDebitController: _idCardItemController,
                                       );
                                     }).toList(),
                                   ),
@@ -2241,6 +2398,20 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                     ? "$voteCurrency ${formatter.format(totalPayment)}"
                                     : "$currencyCode ${formatter.format(totalPayment)}", 
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  )
+                                ],
+                              ),
+
+                              const SizedBox(height: 6,),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(bahasa['payment_metode'], style: TextStyle(fontWeight: FontWeight.bold),),
+                                  Text(
+                                    selectedPaymentItem != null ? "${selectedPaymentItem?['category_name']}\n${selectedPaymentItem?['payment_name']}" : "-", 
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.right,
                                   )
                                 ],
                               ),
@@ -2445,11 +2616,13 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               const SizedBox(height: 4),
                               if (_showError && !_isChecked3)
                                 Padding(
-                                  padding: EdgeInsets.only(bottom: 8),
+                                  padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
                                   child: Text(
                                     bahasa['checkbox_error'],
                                     style: TextStyle(
-                                        color: Colors.red),
+                                      color: Colors.red[900],
+                                      fontSize: 12
+                                    ),
                                   ),
                                 ),
                                 
@@ -2541,17 +2714,21 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                             ),
                             // dulunya posisi button confirm disini
                           ],
-
+            
                           const SizedBox(height: 4),
-                          if (_showError && selectedIndex == null)
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 8),
-                              child: Text(
-                                bahasa['checkbox_error'],
-                                style: TextStyle(
-                                    color: Colors.red),
+                          if (widget.totalHargaAsli != 0) ... [
+                            if (_showError && selectedIndex == null)
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                child: Text(
+                                  bahasa['checkbox_error'],
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12
+                                  ),
+                                ),
                               ),
-                            ),
+                          ]
                         ],
                       ),
                     ),
@@ -2611,25 +2788,26 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     }
     
 
-    if (indikator.isNotEmpty) {
+    // if (indikator.isNotEmpty) {
 
-      // email
-      if (_emailController.text.trim().isEmpty ||
-          !isValidEmail(_emailController.text)) {
-        isValid = false;
-        firstErrorFocus ??= _emailFocus;
-      }
+    //   // email
+    //   if (_emailController.text.trim().isEmpty ||
+    //       !isValidEmail(_emailController.text)) {
+    //     isValid = false;
+    //     firstErrorFocus ??= _emailFocus;
+    //   }
 
-      // phone
-      if (_phoneController.text.trim().isEmpty ||
-          !isValidPhone(_phoneController.text)) {
-        isValid = false;
-        firstErrorFocus ??= _phoneFocus;
-      }
-    }
+    //   // phone
+    //   if (_phoneController.text.trim().isEmpty ||
+    //       !isValidPhone(_phoneController.text)) {
+    //     isValid = false;
+    //     firstErrorFocus ??= _phoneFocus;
+    //   }
+    // }
 
+    //email
     final bool isEmailRequired =
-    indikator.any((e) => e['id_indikator_vote'] == 12);
+      indikator.any((e) => e['id_indikator_vote'] == 12);
 
     final email = _emailController.text.trim();
 
@@ -2645,13 +2823,95 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       firstErrorFocus ??= _emailFocus;
     }
 
-    // form indokator
+    //phone
+    final bool isPhoneRequired =
+      indikator.any((e) => e['id_indikator_vote'] == 1);
+
+    final phone = _phoneController.text.trim();
+
+    if (phone.isNotEmpty && !isValidPhone(phone)) {
+      // format salah
+      isValid = false;
+      firstErrorFocus ??= _phoneFocus;
+    }
+
+    if (isPhoneRequired && phone.isEmpty) {
+      // wajib tapi kosong
+      isValid = false;
+      firstErrorFocus ??= _phoneFocus;
+    }
+
+    // form indikator
     for (int j = 0; j < indikator.length; j++) {
-      if (indikator[j]['required'] == 1 &&
-          answers[j].toString().trim().isEmpty) {
+      final item = indikator[j];
+      final label = (item['indikator_vote'] ?? '').toString().toLowerCase();
+      final isPhoneField = label.contains('hp');
+      final isEmailField = label.contains('email');
+
+      // skip phone & email — sudah divalidasi di atas
+      if (isPhoneField || isEmailField) continue;
+
+      if (answers[j].toString().trim().isEmpty) {
         isValid = false;
+        // tandai field ini sudah "disentuh" supaya error muncul di UI
+        setState(() => _answerTouched[j] = true);
         firstErrorFocus ??= indikatorFocus[j];
         break;
+      }
+    }
+
+    // validasi credit card jika dipilih
+    if (typePayment == 'credit_card' && selectedIndex != null) {
+      final selectedItem = creditCard.firstWhere(
+        (e) => e['id_metod'] == id_payment_method,
+        orElse: () => {},
+      );
+
+      if (selectedItem['flag_client'] == '0') {
+        if (_cardNumberController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _cardNumberFocus;
+        }
+        if (expDateController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _expiryDateFocus;
+        }
+        if (_cvvController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _cvvFocus;
+        }
+      }
+    } else if (typePayment == 'debit' && selectedIndex != null) {
+      final selectedItem = debit.firstWhere(
+        (e) => e['id_metod'] == id_payment_method,
+        orElse: () => {},
+      );
+
+      if (selectedItem['flag_client'] == '0') {
+        if (_phoneItemController.text.trim().isEmpty) {
+          isValid = false;
+          firstErrorFocus ??= _phoneItemFocus;
+        }
+        if (bankCodeDebit == "KTB") {
+          if (_idCardItemController.text.trim().isEmpty) {
+            isValid = false;
+            firstErrorFocus ??= _idCardItemFocus;
+          }
+        }
+      }
+    } else if (typePayment == 'e_wallet' && selectedIndex != null) {
+      final selectedItem = eWallet.firstWhere(
+        (e) => e['id_metod'] == id_payment_method,
+        orElse: () => {},
+      );
+
+      if (hasAttribute) {
+        if (selectedItem['flag_client'] == '0') {
+          if (phoneEwalletController.text.trim().isEmpty) {
+            isValid = false;
+            firstErrorFocus ??= _phoneEwalletFocus;
+          }
+        }
       }
     }
 
@@ -2698,16 +2958,19 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
   }
 
   void _scrollToFocus(FocusNode node) {
-    node.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      node.requestFocus();
 
-    final context = node.context;
-    if (context != null) {
+      final context = node.context;
+      if (context == null) return;
+
       Scrollable.ensureVisible(
         context,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
+        alignment: 0.3,
       );
-    }
+    });
   }
 
   void scrollTo(GlobalKey key) {

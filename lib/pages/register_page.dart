@@ -28,7 +28,7 @@ class _RegisPageState extends State<RegisPage> {
   final prefs = FlutterSecureStorage();
 
   final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  // final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -73,7 +73,8 @@ class _RegisPageState extends State<RegisPage> {
 
     final body = {
       "email": _emailController.text,
-      "name": "${_firstNameController.text} ${_lastNameController.text}",
+      // "name": "${_firstNameController.text} ${_lastNameController.text}",
+      "name": _firstNameController.text,
       "phone": _phoneController.text,
       "password": _passwordController.text,
       "password_confirmation": _confirmpasswordController.text
@@ -346,7 +347,7 @@ class _RegisPageState extends State<RegisPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text(firstNameLabel ?? "..."),
+                      Text(bahasa['nama_lengkap_label'] ?? "..."),
                       Text("*", style: TextStyle(color: Colors.red),),
                     ],
                   ),
@@ -373,32 +374,32 @@ class _RegisPageState extends State<RegisPage> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
-                Align(
-                  alignment: AlignmentGeometry.centerLeft,
-                  child: Text(lastNameLabel ?? "..."), // nama belakang
-                ),
-                TextField(
-                  controller: _lastNameController,
-                  onChanged: (_) => setState(() {}),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r"[a-zA-Z\s]"),
-                    ),
-                    LastNameInputFormatter(),
-                  ],
-                  decoration: InputDecoration(
-                    hintText: lastName!,
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    enabledBorder: _border(_lastNameController.text.isNotEmpty),
-                    focusedBorder: _border(true),
-                  ),
-                ),
+                // const SizedBox(height: 16),
+                // Align(
+                //   alignment: AlignmentGeometry.centerLeft,
+                //   child: Text(lastNameLabel ?? "..."), // nama belakang
+                // ),
+                // TextField(
+                //   controller: _lastNameController,
+                //   onChanged: (_) => setState(() {}),
+                //   inputFormatters: [
+                //     FilteringTextInputFormatter.allow(
+                //       RegExp(r"[a-zA-Z\s]"),
+                //     ),
+                //     LastNameInputFormatter(),
+                //   ],
+                //   decoration: InputDecoration(
+                //     hintText: lastName!,
+                //     hintStyle: TextStyle(color: Colors.grey.shade400),
+                //     border: OutlineInputBorder(
+                //       borderRadius: BorderRadius.circular(8),
+                //     ),
+                //     filled: true,
+                //     fillColor: Colors.white,
+                //     enabledBorder: _border(_lastNameController.text.isNotEmpty),
+                //     focusedBorder: _border(true),
+                //   ),
+                // ),
 
                 //email 
                 const SizedBox(height: 16),
@@ -431,25 +432,33 @@ class _RegisPageState extends State<RegisPage> {
                     fillColor: Colors.white,
                     enabledBorder: _border(_emailController.text.isNotEmpty),
                     focusedBorder: _border(true),
-                    errorText: _emailTouched &&  !isValidEmail(_emailController.text)
-                      ? bahasa['error_email_1']
-                      : null,
                   ),
                 ),
-                if (errorCode == 422 && errorMessage['email'] != null) ... [
-                  SizedBox(height: 4),
+                if (_emailTouched && !isValidEmail(_emailController.text))
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      langCode == "en"
-                        ? translateError(errorMessage['email'][0], langCode)
-                        : errorMessage['email'][0],
-                      style: TextStyle(
-                        color: Colors.red,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      child: Text(
+                        bahasa['error_email_1'],
+                        style: TextStyle(color: Colors.red[900], fontSize: 12),
                       ),
                     ),
-                  )
-                ],
+                  ),
+
+                if (errorCode == 422 && errorMessage['email'] != null)
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(errorMessage['email'][0], langCode)
+                            : errorMessage['email'][0],
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
 
                 //phone
                 const SizedBox(height: 16),
@@ -484,13 +493,14 @@ class _RegisPageState extends State<RegisPage> {
                 ),
                 if (_phoneController.text.isNotEmpty &&
                     !isValidPhone(_phoneController.text))
-                  Padding(
-                    padding: EdgeInsets.only(top: 4),
-                    child: Text(
-                      phoneError ?? '',
-                      style: const TextStyle(
-                        color: Colors.red,
-                      ),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                     child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          phoneError!,
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
                     ),
                   ),
 
@@ -545,30 +555,34 @@ class _RegisPageState extends State<RegisPage> {
                     ),
                   ),
                 ),
-                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password minimal 8 karakter'))) ... [
-                  SizedBox(height: 4,),
+
+                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password minimal 8 karakter')))
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      langCode == "en"
-                        ? translateError(PasswordError!, langCode)
-                        : PasswordError!,
-                      style: const TextStyle(color: Colors.red),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(PasswordError!, langCode)
+                            : PasswordError!,
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
                     ),
                   ),
-                ],
-                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password harus mengandung setidaknya satu huruf dan satu angka'))) ...[
-                  SizedBox(height: 4,),
-                  Align(
+                  
+                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password harus mengandung setidaknya satu huruf dan satu angka')))
+                   Align(
                     alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      langCode == "en"
-                        ? translateError(PasswordError2!, langCode)
-                        : PasswordError2!,
-                      style: const TextStyle(color: Colors.red),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(PasswordError2!, langCode)
+                            : PasswordError2!,
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
                     ),
                   ),
-                ],
 
                 //confirm password
                 const SizedBox(height: 16),
@@ -619,18 +633,19 @@ class _RegisPageState extends State<RegisPage> {
                     ),
                   ),
                 ),
-                if (errorCode == 422) ... [
-                  SizedBox(height: 4,),
+                if (errorCode == 422)
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
-                    child: Text(
-                      langCode == "en"
-                        ? translateError(confirmPasswordError!, langCode)
-                        : confirmPasswordError!,
-                      style: const TextStyle(color: Colors.red),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(confirmPasswordError!, langCode)
+                            : confirmPasswordError!,
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
                     ),
                   ),
-                ],
 
                 // tombol Login
                 const SizedBox(height: 30),
@@ -768,6 +783,8 @@ class _RegisPageState extends State<RegisPage> {
 
   final Map<String, String> errorTranslationMap = {
     'Email sudah terdaftar': 'Email is already registered',
+
+    'Email harus berupa email yang valid': 'Email must be a valid email',
 
     'Password minimal 8 karakter': 'Password must be at least 8 characters',
 

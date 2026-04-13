@@ -1,6 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously
 
 import 'dart:async';
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/stripe_pay.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
+import 'package:kreen_app_flutter/pages/order/order_event_paid.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -43,6 +45,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
   bool isExpired = false;
   bool _didMarkExpired = false;
+  bool _didRedirect = false;
 
   bool showErrorBar = false;
   String errorMessage = '';
@@ -73,14 +76,96 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     final difference = deadline.difference(now);
 
     setState(() {
+      // if (difference.isNegative) {
+      //   remaining = Duration.zero;
+      //   isExpired = true;
+      //   _timer?.cancel();
+      // } else {
+      //   remaining = difference;
+      // }
+
       if (difference.isNegative) {
-        remaining = Duration.zero;
-        isExpired = true;
         _timer?.cancel();
+        _handleExpiredFlow();
       } else {
         remaining = difference;
       }
     });
+  }
+
+  Future<void> _handleExpiredFlow() async {
+    // prevent multiple call
+    if (_didMarkExpired) return;
+
+    // refresh order dulu
+    await _loadOrder();
+
+    // kalau ternyata sudah bayar
+    if (eventOder['order_status'] == '1') {
+      await _handleSuccessRedirect();
+      return;
+    }
+
+    // kalau masih belum bayar → baru expired
+    if (!mounted) return;
+
+    setState(() {
+      remaining = Duration.zero;
+      isExpired = true;
+    });
+  }
+
+  Future<void> _handleSuccessRedirect() async {
+    if (_didRedirect) return;
+    _didRedirect = true;
+
+    int countdown = 3;
+
+    late AwesomeDialog dialog;
+    late void Function(void Function()) dialogSetState;
+
+    dialog = AwesomeDialog(
+      context: context,
+      dialogType: DialogType.noHeader,
+      animType: AnimType.scale,
+      dismissOnTouchOutside: false,
+      dismissOnBackKeyPress: false,
+      body: StatefulBuilder(
+        builder: (context, setDialogState) {
+          dialogSetState = setDialogState;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          );
+        },
+      ),
+    )..show();
+
+    for (int i = countdown; i > 0; i--) {
+      await Future.delayed(const Duration(seconds: 1));
+      countdown--;
+
+      if (mounted) {
+        dialogSetState(() {});
+      }
+    }
+
+    if (!mounted) return;
+
+    dialog.dismiss();
+
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOder['id_order'], isSukses: true,)),
+    );
   }
 
   Map<String, dynamic> bahasa = {};
@@ -155,11 +240,13 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
         if (rawExpires != null && rawExpires.toString().isNotEmpty) {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
 
-          // tambahkan 1 jam
-          var newDate = date.add(const Duration(hours: 1));
-          if (eventOder['payment_method_id'] == "6387457643547345") {
-            newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
-          }
+          // tambahkan 1 jam untuk durasi expired payment
+          // var newDate = date.add(const Duration(hours: 1));
+          // if (eventOder['payment_method_id'] == "6387457643547345") {
+          //   newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
+          // }
+
+          final newDate = date.add(Duration(seconds: paymentDetail['expired_duration'] ?? 0));
           
           expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
         } else {
@@ -763,10 +850,13 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     ),
                                   ),
                                   onPressed: () async {
-                                    await CheckPaymentModal.showEvent(
+                                    final didRedirect = await CheckPaymentModal.showEvent(
                                       context,
                                       widget.id_order
                                     );
+                                    if (didRedirect == true) {
+                                      _didRedirect = true;
+                                    }
                                   },
                                   child: Text(
                                     bahasa['check_status'],

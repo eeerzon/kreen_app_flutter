@@ -102,7 +102,7 @@ class _HomePageState extends State<HomePage> {
         SessionManager.checkingUserModalShown = true;
 
         Future.microtask(() {
-          CheckingUserModal.show(context, langCode!);
+          CheckingUserModal.show(context, langCode!, false);
         });
       }
     }

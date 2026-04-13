@@ -170,24 +170,25 @@ class _ChangePasswordState extends State<ChangePassword> {
                           ),
                         ),
                         if (errorCode == 500) ... [
-                          SizedBox(height: 4,),
-                          Text(
-                            errorMessage500,
-                            style: TextStyle(color: Colors.red),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              errorMessage500,
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
                           ),
                         ]
                         else if (errorCode == 422) ... [
-                          const SizedBox(height: 4),
                           if (errorMessage['current_password'] != null)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 for (var err in errorMessage['current_password'])
                                   Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
+                                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                     child: Text(
                                       translateError(err.toString(), langCode),
-                                      style: const TextStyle(color: Colors.red),
+                                      style: TextStyle(color: Colors.red[900], fontSize: 12),
                                     ),
                                   ),
                               ],
@@ -243,18 +244,22 @@ class _ChangePasswordState extends State<ChangePassword> {
                           ),
                         ),
                         if (errorCode == 500) ... [
-                          SizedBox(height: 4,),
-                          Text(
-                            errorMessage500,
-                            style: TextStyle(color: Colors.red),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              errorMessage500,
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
                           ),
                         ]
                         else if (errorCode == 422) ... [
-                          const SizedBox(height: 4),
                           if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('New')))
-                            Text(
-                              newPasswordError!,
-                              style: const TextStyle(color: Colors.red),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                              child: Text(
+                                newPasswordError ?? '',
+                                style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              ),
                             ),
                         ],
 
@@ -307,19 +312,23 @@ class _ChangePasswordState extends State<ChangePassword> {
                           ),
                         ),
                         if (errorCode == 500) ... [
-                          SizedBox(height: 4,),
-                          Text(
-                            errorMessage500,
-                            style: TextStyle(color: Colors.red),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            child: Text(
+                              errorMessage500,
+                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                            ),
                           ),
                         ]
                         else if (errorCode == 422) ...[
-                          const SizedBox(height: 4),
                           if (confirmPasswordError != null)
-                            Text(
-                              confirmPasswordError!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                              child: Text(
+                                confirmPasswordError ?? '',
+                                style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              ),
+                            )
                         ],
 
                         SizedBox(height: 30),

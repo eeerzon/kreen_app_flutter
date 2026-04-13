@@ -32,6 +32,7 @@ class _ProfileState extends State<Profile> {
   String? token;
 
   String? id;
+  String? fullName;
   String? first_name, last_name;
   String? email, phone;
   String? gender;
@@ -74,15 +75,15 @@ class _ProfileState extends State<Profile> {
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
     final storeUser = await StorageService.getUser();
-    final fullName = storeUser['first_name']?.toString().trim() ?? '';
+    fullName = storeUser['first_name']?.toString().trim() ?? '';
     if (mounted) {
       setState(() {
         token = storedToken;
 
-        if (fullName.isNotEmpty) {
-          final parts = fullName.split(' ');
-          first_name = parts.first;
-          last_name = parts.length > 1 
+        if (fullName!.isNotEmpty) {
+          final parts = fullName?.split(' ');
+          first_name = parts?.first;
+          last_name = parts!.length > 1 
               ? parts.sublist(1).join(' ') 
               : '';
         }
@@ -317,6 +318,8 @@ class _ProfileState extends State<Profile> {
         actions: [
           InkWell(
             onTap: () async {
+              await _refreshAfterVerification();
+
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -324,6 +327,7 @@ class _ProfileState extends State<Profile> {
                     user: {
                       'id': id,
                       'photo': photo,
+                      'full_name': fullName,
                       'first_name': first_name,
                       'last_name': last_name,
                       'email': email,
@@ -342,6 +346,7 @@ class _ProfileState extends State<Profile> {
               );
 
               if (result == true) {
+                await _refreshAfterVerification();
                 _fetchUserProfile(); 
                 setState(() {
                   isEdit = true;
@@ -365,50 +370,23 @@ class _ProfileState extends State<Profile> {
         ],
       ),
 
-      body: Padding(
-        padding: kGlobalPadding,
-        child: SingleChildScrollView(
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  child: ClipOval(
-                    child: photo != null 
-                      ?
-                        isSvg
-                          ? SvgPicture.network(
-                              '$baseUrl/user/$photo',
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.fill,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.network(
-                                  "$baseUrl/noimage_finalis.png",
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.fill,
-                                );
-                              },
-                            )
-                          : isHttp
-                            ? Image.network(
-                                photo!,
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.fill,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Image.network(
-                                    "$baseUrl/noimage_finalis.png",
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.fill,
-                                  );
-                                },
-                              )
-                            : Image.network(
+      body: RefreshIndicator(
+        onRefresh: _refreshAfterVerification,
+        child: Padding(
+          padding: kGlobalPadding,
+          child: SingleChildScrollView(
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    child: ClipOval(
+                      child: photo != null 
+                        ?
+                          isSvg
+                            ? SvgPicture.network(
                                 '$baseUrl/user/$photo',
                                 width: 120,
                                 height: 120,
@@ -422,577 +400,608 @@ class _ProfileState extends State<Profile> {
                                   );
                                 },
                               )
-                      : Image.network(
-                          "$baseUrl/noimage_finalis.png",
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.fill,
-                        )
+                            : isHttp
+                              ? Image.network(
+                                  photo!,
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.fill,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.network(
+                                      "$baseUrl/noimage_finalis.png",
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.fill,
+                                    );
+                                  },
+                                )
+                              : Image.network(
+                                  '$baseUrl/user/$photo',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.fill,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.network(
+                                      "$baseUrl/noimage_finalis.png",
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.fill,
+                                    );
+                                  },
+                                )
+                        : Image.network(
+                            "$baseUrl/noimage_finalis.png",
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.fill,
+                          )
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 20,),
-                Text(
-                  "$first_name $last_name",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
+                  SizedBox(height: 20,),
+                  Text(
+                    // "$first_name $last_name",
+                    fullName ?? '-',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
 
-                SizedBox(height: 20,),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bahasa['informasi_utama'] ?? "", //'Informasi Utama',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    SizedBox(height: 10,),
-                    Container(
-                      padding: EdgeInsets.all(14),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300,),
+                  SizedBox(height: 20,),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bahasa['informasi_utama'] ?? "", //'Informasi Utama',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
 
-                          //tanggal lahir
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(FontAwesomeIcons.cakeCandles, color: Colors.red,),
+                      SizedBox(height: 10,),
+                      Container(
+                        padding: EdgeInsets.all(14),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300,),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
 
-                              SizedBox(width: 12,),
-                              Text(
-                                formattedDate
-                              )
-                            ],
-                          ),
-
-                          //gender
-                          if (gender != null) ... [
-
-                            SizedBox(height: 10,),
-                            Divider(),
-                            
+                            //tanggal lahir
                             SizedBox(height: 10,),
                             Row(
                               children: [
-                                Icon(FontAwesomeIcons.marsAndVenus, color: Colors.red,),
+                                Icon(FontAwesomeIcons.cakeCandles, color: Colors.red,),
 
                                 SizedBox(width: 12,),
                                 Text(
-                                  gender ?? '-'
+                                  formattedDate
                                 )
                               ],
                             ),
-                          ],
 
-                          //company
-                          if (company != null) ... [
+                            //gender
+                            if (gender != null) ... [
 
-                            SizedBox(height: 10,),
-                            Divider(),
-
-                            SizedBox(height: 10,),
-                            Row(
-                              children: [
-                                Icon(FontAwesomeIcons.building, color: Colors.red,),
-
-                                SizedBox(width: 12,),
-                                Text(
-                                  company ?? '-'
-                                )
-                              ],
-                            ),
-                          ],
-
-                          //jobTitle
-                          if (jobTitle != null) ... [
-
-                            SizedBox(height: 10,),
-                            Divider(),
-
-                            SizedBox(height: 10,),
-                            Row(
-                              children: [
-                                Icon(FontAwesomeIcons.briefcase, color: Colors.red,),
-
-                                SizedBox(width: 12,),
-                                Text(
-                                  jobTitle ?? '-'
-                                )
-                              ],
-                            ),
-                          ],
-                        ],
-                      )
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 20,),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bahasa['informasi_akun'] ?? "", //'Informasi Akun',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    SizedBox(height: 10,),
-                    Container(
-                      padding: EdgeInsets.all(14),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300,),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          //email
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(Icons.email_outlined, color: Colors.red,),
-
-                              SizedBox(width: 12,),
-                              Text(
-                                email ?? '-'
-                              )
-                            ],
-                          ),
-
-                          SizedBox(height: 10,),
-                          Divider(),
-
-                          //nomor telepon
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(Icons.phone, color: Colors.red,),
-
-                              SizedBox(width: 12,),
-                              Text(
-                                phone != '' && phone!.isNotEmpty
-                                  ? phone!
-                                  : '-',
-                              )
-                            ],
-                          ),
-                        ],
-                      )
-                    ),
-                  ],
-                ),
-
-
-
-                SizedBox(height: 20,),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bahasa['media_sosial'] ?? "", //'Media Sosial',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    SizedBox(height: 10,),
-                    Container(
-                      padding: EdgeInsets.all(14),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300,),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          //linked in
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(FontAwesomeIcons.linkedinIn, color: Colors.red,),
-
-                              SizedBox(width: 12,),
-                              Text(
-                                link_linkedin != null && link_linkedin!.isNotEmpty
-                                    ? extractUsername(link_linkedin)
-                                    : '-',
-                              )
-                            ],
-                          ),
-
-                          SizedBox(height: 10,),
-                          Divider(),
-
-                          //instagram
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(FontAwesomeIcons.instagram, color: Colors.red,),
-
-                              SizedBox(width: 12,),  
-                              Text(
-                                link_ig != null && link_ig!.isNotEmpty
-                                    ? extractUsername(link_ig)
-                                    : '-',
-                              )
-                            ],
-                          ),
-
-                          SizedBox(height: 10,),
-                          Divider(),
-
-                          //twitter
-                          SizedBox(height: 10,),
-                          Row(
-                            children: [
-                              Icon(FontAwesomeIcons.twitter, color: Colors.red,),
-
-                              SizedBox(width: 12,),
-                              Text(
-                                link_twitter != null && link_twitter!.isNotEmpty
-                                    ? extractUsername(link_twitter)
-                                    : '-',
-                              )
-                            ],
-                          ),
-                        ],
-                      )
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 20,),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      bahasa['keamanan'] ?? "", //'Keamanan & Regulasi',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    SizedBox(height: 10,),
-                    Container(
-                      padding: EdgeInsets.all(14),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300,),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          //password
-                          SizedBox(height: 10,),
-                          SizedBox(
-                            width: double.infinity,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ChangePassword(),
-                                  ),
-                                );
-                              },
-                              child: Row(
+                              SizedBox(height: 10,),
+                              Divider(),
+                              
+                              SizedBox(height: 10,),
+                              Row(
                                 children: [
-                                  Icon(Icons.lock, color: Colors.red,),
+                                  Icon(FontAwesomeIcons.marsAndVenus, color: Colors.red,),
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
+                                    gender ?? '-'
                                   )
                                 ],
                               ),
-                            ),
-                          ),
+                            ],
 
-                          if (verifEmail == '0') ... [
+                            //company
+                            if (company != null) ... [
+
+                              SizedBox(height: 10,),
+                              Divider(),
+
+                              SizedBox(height: 10,),
+                              Row(
+                                children: [
+                                  Icon(FontAwesomeIcons.building, color: Colors.red,),
+
+                                  SizedBox(width: 12,),
+                                  Text(
+                                    company ?? '-'
+                                  )
+                                ],
+                              ),
+                            ],
+
+                            //jobTitle
+                            if (jobTitle != null) ... [
+
+                              SizedBox(height: 10,),
+                              Divider(),
+
+                              SizedBox(height: 10,),
+                              Row(
+                                children: [
+                                  Icon(FontAwesomeIcons.briefcase, color: Colors.red,),
+
+                                  SizedBox(width: 12,),
+                                  Text(
+                                    jobTitle ?? '-'
+                                  )
+                                ],
+                              ),
+                            ],
+                          ],
+                        )
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 20,),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bahasa['informasi_akun'] ?? "", //'Informasi Akun',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+
+                      SizedBox(height: 10,),
+                      Container(
+                        padding: EdgeInsets.all(14),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300,),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+
+                            //email
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(Icons.email_outlined, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  email ?? '-'
+                                )
+                              ],
+                            ),
+
                             SizedBox(height: 10,),
                             Divider(),
 
+                            //nomor telepon
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(Icons.phone, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  phone != '' && phone!.isNotEmpty
+                                    ? phone!
+                                    : '-',
+                                )
+                              ],
+                            ),
+                          ],
+                        )
+                      ),
+                    ],
+                  ),
+
+
+
+                  SizedBox(height: 20,),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bahasa['media_sosial'] ?? "", //'Media Sosial',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+
+                      SizedBox(height: 10,),
+                      Container(
+                        padding: EdgeInsets.all(14),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300,),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+
+                            //linked in
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(FontAwesomeIcons.linkedinIn, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  link_linkedin != null && link_linkedin!.isNotEmpty
+                                      ? extractUsername(link_linkedin)
+                                      : '-',
+                                )
+                              ],
+                            ),
+
+                            SizedBox(height: 10,),
+                            Divider(),
+
+                            //instagram
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(FontAwesomeIcons.instagram, color: Colors.red,),
+
+                                SizedBox(width: 12,),  
+                                Text(
+                                  link_ig != null && link_ig!.isNotEmpty
+                                      ? extractUsername(link_ig)
+                                      : '-',
+                                )
+                              ],
+                            ),
+
+                            SizedBox(height: 10,),
+                            Divider(),
+
+                            //twitter
+                            SizedBox(height: 10,),
+                            Row(
+                              children: [
+                                Icon(FontAwesomeIcons.twitter, color: Colors.red,),
+
+                                SizedBox(width: 12,),
+                                Text(
+                                  link_twitter != null && link_twitter!.isNotEmpty
+                                      ? extractUsername(link_twitter)
+                                      : '-',
+                                )
+                              ],
+                            ),
+                          ],
+                        )
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 20,),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bahasa['keamanan'] ?? "", //'Keamanan & Regulasi',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+
+                      SizedBox(height: 10,),
+                      Container(
+                        padding: EdgeInsets.all(14),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300,),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+
+                            //password
                             SizedBox(height: 10,),
                             SizedBox(
+                              width: double.infinity,
                               child: InkWell(
-                                onTap: () async {
-
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: Text(langCode == 'id' ? "Konfirmasi" : "Confirmation"),
-                                        content: Text(
-                                          langCode == 'id'
-                                            ? "Kirim email verifikasi ke $email ?"
-                                            : "Send verification email to $email ?"
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, false),
-                                            child: Text(langCode == 'id' ? "Batal" : "Cancel"),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.red,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                            onPressed: () => Navigator.pop(context, true),
-                                            child: Text(
-                                              langCode == 'id' ? "Kirim" : "Send",
-                                              style: const TextStyle(color: Colors.white),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ChangePassword(),
+                                    ),
                                   );
-
-                                  if (confirm != true) return;
-                                  
-                                  final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null, xLanguage: langCode);
-
-                                  if (resultVerifEmail?['rc'] == 200) {
-                                    AwesomeDialog(
-                                      context: context,
-                                      dialogType: DialogType.success,
-                                      title: langCode == 'id' ? 'Berhasil' : 'Success',
-                                      desc:
-                                        "${bahasa['desc_email_1']}\n"
-                                        "${bahasa['desc_email_2']} $email\n"
-                                        "${bahasa['desc_email_3']}",
-                                      transitionAnimationDuration: const Duration(milliseconds: 1000),
-                                      btnOkText: "OK",
-                                      btnOkColor: Colors.red,
-                                      btnOkOnPress: () {},
-                                    ).show();
-                                  } else {
-                                    AwesomeDialog(
-                                      context: context,
-                                      dialogType: DialogType.noHeader,
-                                      animType: AnimType.topSlide,
-                                      title: bahasa['maaf'],
-                                      desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-                                      btnOkOnPress: () {},
-                                      btnOkColor: Colors.red,
-                                      buttonsTextStyle: TextStyle(color: Colors.white),
-                                      headerAnimationLoop: false,
-                                      dismissOnTouchOutside: true,
-                                      showCloseIcon: true,
-                                    ).show();
-                                  }
                                 },
                                 child: Row(
                                   children: [
-                                    Icon(Icons.email, color: Colors.red,),
+                                    Icon(Icons.lock, color: Colors.red,),
 
                                     SizedBox(width: 12,),
                                     Text(
-                                      bahasa['verif_email'] ?? "", //']'Verifikasi Email',
+                                      bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            if (verifEmail == '0') ... [
+                              SizedBox(height: 10,),
+                              Divider(),
+
+                              SizedBox(height: 10,),
+                              SizedBox(
+                                child: InkWell(
+                                  onTap: () async {
+
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: Text(langCode == 'id' ? "Konfirmasi" : "Confirmation"),
+                                          content: Text(
+                                            langCode == 'id'
+                                              ? "Kirim email verifikasi ke $email ?"
+                                              : "Send verification email to $email ?"
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, false),
+                                              child: Text(langCode == 'id' ? "Batal" : "Cancel"),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                              onPressed: () => Navigator.pop(context, true),
+                                              child: Text(
+                                                langCode == 'id' ? "Kirim" : "Send",
+                                                style: const TextStyle(color: Colors.white),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+
+                                    if (confirm != true) return;
+                                    
+                                    final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null, xLanguage: langCode);
+
+                                    if (resultVerifEmail?['rc'] == 200) {
+                                      AwesomeDialog(
+                                        context: context,
+                                        dialogType: DialogType.success,
+                                        title: langCode == 'id' ? 'Berhasil' : 'Success',
+                                        desc:
+                                          "${bahasa['desc_email_1']}\n"
+                                          "${bahasa['desc_email_2']} $email\n"
+                                          "${bahasa['desc_email_3']}",
+                                        transitionAnimationDuration: const Duration(milliseconds: 1000),
+                                        btnOkText: "OK",
+                                        btnOkColor: Colors.red,
+                                        btnOkOnPress: () {},
+                                      ).show();
+                                    } else {
+                                      AwesomeDialog(
+                                        context: context,
+                                        dialogType: DialogType.noHeader,
+                                        animType: AnimType.topSlide,
+                                        title: bahasa['maaf'],
+                                        desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+                                        btnOkOnPress: () {},
+                                        btnOkColor: Colors.red,
+                                        buttonsTextStyle: TextStyle(color: Colors.white),
+                                        headerAnimationLoop: false,
+                                        dismissOnTouchOutside: true,
+                                        showCloseIcon: true,
+                                      ).show();
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.email, color: Colors.red,),
+
+                                      SizedBox(width: 12,),
+                                      Text(
+                                        bahasa['verif_email'] ?? "", //']'Verifikasi Email',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            SizedBox(height: 10,),
+                            Divider(),
+
+                            //pusat bantuan
+                            SizedBox(height: 10,),
+                            SizedBox(
+                              width: double.infinity,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const HelpCenterPage(),
                                     ),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.help_center, color: Colors.red,),
+
+                                    SizedBox(width: 12,),
+                                    Text(
+                                      bahasa['pusat_bantuan'] ?? "", //'Pusat Bantuan',
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 10,),
+                            Divider(),
+
+                            //kebijakan privasi
+                            SizedBox(height: 10,),
+                            SizedBox(
+                              width: double.infinity,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PrivacyPolicyPage(),
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.privacy_tip, color: Colors.red,),
+
+                                    SizedBox(width: 12,),
+                                    Text(
+                                      bahasa['kebijakan_privasi'] ?? "", //'Kebijakan Privasi',
+                                    )
                                   ],
                                 ),
                               ),
                             ),
                           ],
-
-                          SizedBox(height: 10,),
-                          Divider(),
-
-                          //pusat bantuan
-                          SizedBox(height: 10,),
-                          SizedBox(
-                            width: double.infinity,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const HelpCenterPage(),
-                                  ),
-                                );
-                              },
-                              child: Row(
-                                children: [
-                                  Icon(Icons.help_center, color: Colors.red,),
-
-                                  SizedBox(width: 12,),
-                                  Text(
-                                    bahasa['pusat_bantuan'] ?? "", //'Pusat Bantuan',
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: 10,),
-                          Divider(),
-
-                          //kebijakan privasi
-                          SizedBox(height: 10,),
-                          SizedBox(
-                            width: double.infinity,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PrivacyPolicyPage(),
-                                  ),
-                                );
-                              },
-                              child: Row(
-                                children: [
-                                  Icon(Icons.privacy_tip, color: Colors.red,),
-
-                                  SizedBox(width: 12,),
-                                  Text(
-                                    bahasa['kebijakan_privasi'] ?? "", //'Kebijakan Privasi',
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    ),
-                  ],
-                ),
-                
-                SizedBox(height: 20,),
-                InkWell(
-                  onTap: () async {
-
-                    AwesomeDialog(
-                      context: context,
-                      dialogType: DialogType.noHeader,
-                      animType: AnimType.topSlide,
-                      dismissOnTouchOutside: false,
-                      body: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-
-                            Text(
-                              bahasa['ingin_keluar'] ?? "", // yakin untuk logout
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            /// BUTTON Ya, logout
-                            SizedBox(
-                              width: double.infinity,
-                              height: 45,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  final loginMethod = await StorageService.getLoginMethod();
-
-                                  if (loginMethod == 'google') {
-                                    final googleSignIn = GoogleSignIn();
-
-                                    await googleSignIn.disconnect();
-                                    await googleSignIn.signOut();
-                                    await FirebaseAuth.instance.signOut();
-                                  }
-
-                                  await StorageService.clearUser();
-                                  await StorageService.clearToken();
-                                  await StorageService.clearLoginMethod();
-                                  
-                                  setState(() {
-
-                                    SessionManager.isGuest = true;
-                                    SessionManager.checkingUserModalShown = true;
-                                  });
-                                    
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => HomePage(
-                                        fromLogout: true,
-                                      )
-                                    ),
-                                    (Route<dynamic> route) => false,
-                                  );
-                                },
-                                child: Text(
-                                  "${bahasa['ya']}, ${bahasa['keluar']}",
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            /// BUTTON Kembali
-                            SizedBox(
-                              width: double.infinity,
-                              height: 45,
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: Colors.grey.shade400),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text(
-                                  bahasa['kembali'] ?? "",
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        )
                       ),
-                    ).show();
-                  },
-                  child: Container(
-                    height: 48,
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      keluar!, //"Keluar",
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ],
+                  ),
+                  
+                  SizedBox(height: 20,),
+                  InkWell(
+                    onTap: () async {
+
+                      AwesomeDialog(
+                        context: context,
+                        dialogType: DialogType.noHeader,
+                        animType: AnimType.topSlide,
+                        dismissOnTouchOutside: false,
+                        body: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+
+                              Text(
+                                bahasa['ingin_keluar'] ?? "", // yakin untuk logout
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              /// BUTTON Ya, logout
+                              SizedBox(
+                                width: double.infinity,
+                                height: 45,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    final loginMethod = await StorageService.getLoginMethod();
+
+                                    if (loginMethod == 'google') {
+                                      final googleSignIn = GoogleSignIn();
+
+                                      await googleSignIn.disconnect();
+                                      await googleSignIn.signOut();
+                                      await FirebaseAuth.instance.signOut();
+                                    }
+
+                                    await StorageService.clearUser();
+                                    await StorageService.clearToken();
+                                    await StorageService.clearLoginMethod();
+                                    
+                                    setState(() {
+
+                                      SessionManager.isGuest = true;
+                                      SessionManager.checkingUserModalShown = true;
+                                    });
+                                      
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => HomePage(
+                                          fromLogout: true,
+                                        )
+                                      ),
+                                      (Route<dynamic> route) => false,
+                                    );
+                                  },
+                                  child: Text(
+                                    "${bahasa['ya']}, ${bahasa['keluar']}",
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              /// BUTTON Kembali
+                              SizedBox(
+                                width: double.infinity,
+                                height: 45,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: Colors.grey.shade400),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    bahasa['kembali'] ?? "",
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ).show();
+                    },
+                    child: Container(
+                      height: 48,
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        keluar!, //"Keluar",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
-                ),
 
-                SizedBox(height: 40,),
-              ],
+                  SizedBox(height: 40,),
+                ],
+              ),
             ),
           ),
         ),
@@ -1054,4 +1063,35 @@ class _ProfileState extends State<Profile> {
     return lastSegment;
   }
 
+  Future<void> _refreshAfterVerification() async {
+
+    final result = await ApiService.getLoginUser("/me", token: token, xLanguage: langCode);
+
+    if (result != null && result['success'] == true && result['rc'] == 200) {
+    final user = result['data'];
+
+      // simpan ke secure storage
+      await StorageService.setUser(
+        id: user['id'], 
+        first_name: user['first_name'], 
+        last_name: user['last_name'], 
+        phone: user['phone'], 
+        email: user['email'], 
+        gender: user['gender'], 
+        photo: user['photo'],
+        DOB: user['date_of_birth'],
+        verifEmail: user['verified_email'],
+        company: user['company'],
+        jobTitle: user['job_title'],
+        link_linkedin: user['link_linkedin'],
+        link_ig: user['link_ig'],
+        link_twitter: user['link_twitter'],
+      );
+
+      await _checkToken();
+      setState(() {
+        
+      });
+    }
+  }
 }

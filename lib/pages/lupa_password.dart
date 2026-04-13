@@ -121,11 +121,17 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          errorText: _emailTouched && !isValidEmail(_emailController.text)
-                            ? bahasa['error_email_1']
-                            : null,
                         ),
                       ),
+
+                      if (_emailTouched && !isValidEmail(_emailController.text))
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                          child: Text(
+                            bahasa['error_email_1'],
+                            style: TextStyle(color: Colors.red[900], fontSize: 12),
+                          ),
+                        ),
 
                       SizedBox(height: 30),
                       SizedBox(

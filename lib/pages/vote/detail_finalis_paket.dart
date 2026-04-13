@@ -10,7 +10,9 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
+import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
 import 'package:kreen_app_flutter/modal/paket_vote_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_paket.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
@@ -482,6 +484,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     String themeName = 'Red';
     if (detailvote['theme_name'] != null) {
       themeName = detailvote['theme_name'];
+    }
+
+    if (themeName == "Default Kreen") {
+      themeName = "default";
     }
 
     Color color = colorMap[themeName] ?? Colors.red;
@@ -1149,36 +1155,69 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                 onPressed: (harga != 0 && totalHarga == 0) || counts == 0 
                 ? null 
                 : () async {
-                  final getUser = await StorageService.getUser();
-
+                  final storedToken = await StorageService.getToken() ?? '';
+                  var getUser = await StorageService.getUser();
                   String? idUser = getUser['id'];
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => StatePaymentPaket(
-                        id_vote: detailFinalis['id_vote'],
-                        id_finalis: detailFinalis['id_finalis'],
-                        nama_finalis: detailFinalis['nama_finalis'],
-                        counts: counts,
-                        totalHarga: totalHarga,
-                        totalHargaAsli: harga_akhir_asli,
-                        id_paket: id_paket!,
-                        fromDetail: true,
-                        idUser: idUser,
-                        flag_login: detailvote['flag_login'],
-                        rateCurrency: detailvote['rate_currency_vote'],
-                        rateCurrencyUser: detailvote['rate_currency_user'],
-                      ),
-                    ),
-                  );
+                  await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
-                  
+                  getUser = await StorageService.getUser();
+
+                  if (detailvote['flag_verify_email'] == '0') {
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StatePaymentPaket(
+                          id_vote: detailFinalis['id_vote'],
+                          id_finalis: detailFinalis['id_finalis'],
+                          nama_finalis: detailFinalis['nama_finalis'],
+                          counts: counts,
+                          totalHarga: totalHarga,
+                          totalHargaAsli: harga_akhir_asli,
+                          id_paket: id_paket!,
+                          fromDetail: true,
+                          idUser: idUser,
+                          flag_login: detailvote['flag_login'],
+                          rateCurrency: detailvote['rate_currency_vote'],
+                          rateCurrencyUser: detailvote['rate_currency_user'],
+                        ),
+                      ),
+                    );
+                  } else {
+                    final storedToken = await StorageService.getToken() ?? '';
+
+                    if (getUser['verifEmail'] == '0') {
+                      EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                    }  else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatePaymentPaket(
+                            id_vote: detailFinalis['id_vote'],
+                            id_finalis: detailFinalis['id_finalis'],
+                            nama_finalis: detailFinalis['nama_finalis'],
+                            counts: counts,
+                            totalHarga: totalHarga,
+                            totalHargaAsli: harga_akhir_asli,
+                            id_paket: id_paket!,
+                            fromDetail: true,
+                            idUser: idUser,
+                            flag_login: detailvote['flag_login'],
+                            rateCurrency: detailvote['rate_currency_vote'],
+                            rateCurrencyUser: detailvote['rate_currency_user'],
+                          ),
+                        ),
+                      );
+                    }
+                  }
                 },
                 child: Text(
                   isTutup
                   ? endVote!
-                  : bayarText!,
+                  : harga != 0 
+                    ? bayarText!
+                    : bahasa['lanjutkan'],
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),

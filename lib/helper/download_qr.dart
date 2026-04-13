@@ -35,7 +35,6 @@ Future<void> downloadQrImage(
       '${tempDir.path}/QR_${DateTime.now().millisecondsSinceEpoch}.png';
 
     final file = File(filePath);
-    // await file.writeAsBytes(response.bodyBytes);
     await file.writeAsBytes(borderedQr);
     
     Directory dir; 
@@ -44,7 +43,6 @@ Future<void> downloadQrImage(
       // Public Download folder 
       dir = Directory('/storage/emulated/0/Download'); 
       final outFile = File('${dir.path}/${file.uri.pathSegments.last}');
-      // await outFile.writeAsBytes(response.bodyBytes);
       await outFile.writeAsBytes(borderedQr);
 
       _showSnack( context, downloadScanBerhasil, ); 

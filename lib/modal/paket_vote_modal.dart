@@ -210,7 +210,7 @@ class PaketVoteModal {
                                                   ),
                                                 ),
                                               Text(
-                                                "$currency ${formatter.format(hargaAkhir)}",
+                                                "$currency ${formatter.format(hargaAkhirAsli)}",
                                                 style: TextStyle(
                                                   color: Colors.green.shade700,
                                                   fontWeight: FontWeight.bold,
@@ -280,7 +280,7 @@ class PaketVoteModal {
                                             ),
                                           ),
                                           Text(
-                                            "$currency ${formatter.format(harga)}",
+                                            "$currency ${formatter.format(hargaAsli)}",
                                             style: TextStyle(
                                               color: Colors.red.shade700,
                                               fontWeight: FontWeight.bold,

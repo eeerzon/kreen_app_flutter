@@ -125,7 +125,40 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
                   widget.onFilterApply(paramTime, paramPrice);
                 }
               },
-              icon: const Icon(Icons.filter_alt_outlined, size: 34,),
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.filter_alt_outlined, size: 34),
+                  // Hitung total filter aktif
+                  Builder(
+                    builder: (context) {
+                      final totalFilter = paramTime.length + paramPrice.length;
+                      if (totalFilter == 0) return const SizedBox.shrink();
+                      return Positioned(
+                        top: -6,
+                        right: -6,
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$totalFilter',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         );
