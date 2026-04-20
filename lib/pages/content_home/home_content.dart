@@ -751,12 +751,6 @@ class _HomeContentState extends State<HomeContent> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // SvgPicture.network(
-                            //   '$baseUrl/image/home/vote-populer.png',
-                            //   width: 30,
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
 
                             Image.network(
                               '$baseUrl/image/home/vote-populer.png',

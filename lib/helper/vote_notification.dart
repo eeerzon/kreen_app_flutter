@@ -99,7 +99,7 @@ class _VoteNotifStackState extends State<VoteNotifStack> {
           _visibleNotifs.clear();
         });
 
-        await Future.delayed(const Duration(seconds: 1)); // jeda halus
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
   }

@@ -27,7 +27,7 @@ Future<void> downloadQrImage(
 
     final borderedQr = await addBorderToQr(
       response.bodyBytes,
-      borderSize: 50, // tebal border
+      borderSize: 50,
     );
     
     final tempDir = await getTemporaryDirectory();
@@ -60,9 +60,6 @@ Future<void> downloadQrImage(
     }
 
     if (!context.mounted) return;
-    
-    // OPTIONAL: langsung buka file 
-    //// await OpenFile.open(file.path); 
   } catch (e) { 
     if (!context.mounted) return; 
     _showSnack(
@@ -118,8 +115,7 @@ Future<Uint8List> addBorderToQr(
     ),
     paintBg,
   );
-
-  // draw QR
+  
   canvas.drawImage(
     qrImage,
     Offset(borderSize, borderSize),

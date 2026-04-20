@@ -20,14 +20,11 @@ class _WidgetWebViewState extends State<WidgetWebView> {
 
   late final WebViewController controller;
 
-  // String? langCode, artikel;
-
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // await _getBahasa();
       isLoading = false;
     });
 
@@ -62,17 +59,6 @@ class _WidgetWebViewState extends State<WidgetWebView> {
       )
       ..loadRequest(Uri.parse(url));
   }
-
-  // Future<void> _getBahasa() async {
-  //   final code = await StorageService.getLanguage();
-  //   setState(() => langCode = code);
-
-  //   final tempArtikel = await LangService.getJsonData(langCode!, "bahasa");
-  //   setState(() {
-  //     artikel = tempArtikel['artikel'];
-  //     isLoading = false;
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {

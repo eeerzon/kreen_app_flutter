@@ -3,9 +3,11 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/loading_page.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
@@ -48,8 +50,12 @@ class _ChangePasswordState extends State<ChangePassword> {
   bool _lockNewPasswordField = false;
   bool _lockConfirmPasswordField = false;
   
+  String? currentPasswordError;
+  String? currentPasswordErrorTemp;
   String? newPasswordError;
+  String? newPasswordErrorTemp;
   String? confirmPasswordError;
+  String? confirmPasswordErrorTemp;
 
   String? langCode;
   Map<String, dynamic> bahasa = {};
@@ -133,7 +139,18 @@ class _ChangePasswordState extends State<ChangePassword> {
                           focusNode: _currentPasswordFocus,
                           readOnly: _lockCurrentPasswordField,
                           keyboardType: TextInputType.visiblePassword,
-                          onChanged: (_) => setState(() {}),
+                          onChanged: (val) {
+                            setState(() {
+                              if (val.length >= 8) {
+                                currentPasswordError = null;
+                              } else {
+                                currentPasswordError = currentPasswordErrorTemp;
+                              }
+                            });
+                          },
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                           obscureText: _obscurePasswordCurrent,
                           decoration: InputDecoration(
                             hintText: bahasa['old_password_hint'], //'Masukkan kata sandi lama',
@@ -169,30 +186,15 @@ class _ChangePasswordState extends State<ChangePassword> {
                             )
                           ),
                         ),
-                        if (errorCode == 500) ... [
+
+                        if (currentPasswordError != null ) ... [
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                             child: Text(
-                              errorMessage500,
+                              currentPasswordError!,
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
                             ),
                           ),
-                        ]
-                        else if (errorCode == 422) ... [
-                          if (errorMessage['current_password'] != null)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (var err in errorMessage['current_password'])
-                                  Padding(
-                                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                                    child: Text(
-                                      translateError(err.toString(), langCode),
-                                      style: TextStyle(color: Colors.red[900], fontSize: 12),
-                                    ),
-                                  ),
-                              ],
-                            )
                         ],
 
                         SizedBox(height: 20),
@@ -207,7 +209,20 @@ class _ChangePasswordState extends State<ChangePassword> {
                           focusNode: _newPasswordFocus,
                           readOnly: _lockNewPasswordField,
                           keyboardType: TextInputType.visiblePassword,
-                          onChanged: (_) => setState(() {}),
+                          onChanged: (val) {
+                            setState(() {
+                              if (val.length >= 8) {
+                                newPasswordError = null;
+                              } else {
+                                newPasswordError = newPasswordErrorTemp;
+                              }
+                            });
+
+                            _validatePasswordMatch();
+                          },
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                           obscureText: _obscurePasswordNew,
                           decoration: InputDecoration(
                             hintText: bahasa['new_password_hint'], //'Masukkan kata sandi baru',
@@ -243,24 +258,34 @@ class _ChangePasswordState extends State<ChangePassword> {
                             )
                           ),
                         ),
-                        if (errorCode == 500) ... [
+                        // if (errorCode == 500) ... [
+                        //   Padding(
+                        //     padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        //     child: Text(
+                        //       errorMessage500,
+                        //       style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        //     ),
+                        //   ),
+                        // ]
+                        // else if (errorCode == 422) ... [
+                        //   if (errorMessage['password'] != null)
+                        //     Padding(
+                        //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        //       child: Text(
+                        //         newPasswordError ?? '',
+                        //         style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        //       ),
+                        //     ),
+                        // ],
+
+                        if (newPasswordError != null) ... [
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                             child: Text(
-                              errorMessage500,
+                              newPasswordError!,
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
                             ),
                           ),
-                        ]
-                        else if (errorCode == 422) ... [
-                          if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('New')))
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                              child: Text(
-                                newPasswordError ?? '',
-                                style: TextStyle(color: Colors.red[900], fontSize: 12),
-                              ),
-                            ),
                         ],
 
                         SizedBox(height: 20),
@@ -275,7 +300,10 @@ class _ChangePasswordState extends State<ChangePassword> {
                           focusNode: _confirmPasswordFocus,
                           readOnly: _lockConfirmPasswordField,
                           keyboardType: TextInputType.visiblePassword,
-                          onChanged: (_) => setState(() {}),
+                          onChanged: (_) => _validatePasswordMatch(),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                           obscureText: _obscurePasswordConfirm,
                           decoration: InputDecoration(
                             hintText: bahasa['konfirmasi_password'], //'konfirmasi kata sandi',
@@ -311,24 +339,34 @@ class _ChangePasswordState extends State<ChangePassword> {
                             )
                           ),
                         ),
-                        if (errorCode == 500) ... [
+                        // if (errorCode == 500) ... [
+                        //   Padding(
+                        //     padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        //     child: Text(
+                        //       errorMessage500,
+                        //       style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        //     ),
+                        //   ),
+                        // ]
+                        // else if (errorCode == 422) ...[
+                        //   if (confirmPasswordError != null)
+                        //     Padding(
+                        //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        //       child: Text(
+                        //         confirmPasswordError ?? '',
+                        //         style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        //       ),
+                        //     )
+                        // ],
+
+                        if (confirmPasswordError != null) ... [
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                             child: Text(
-                              errorMessage500,
+                              confirmPasswordError!,
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
                             ),
                           ),
-                        ]
-                        else if (errorCode == 422) ...[
-                          if (confirmPasswordError != null)
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                              child: Text(
-                                confirmPasswordError ?? '',
-                                style: TextStyle(color: Colors.red[900], fontSize: 12),
-                              ),
-                            )
                         ],
 
                         SizedBox(height: 30),
@@ -374,29 +412,30 @@ class _ChangePasswordState extends State<ChangePassword> {
     );
   }
 
-  final Map<String, String> errorTranslationMap = {
-    // current password
-    'current password minimal 8 karakter':
-        'Current password must be at least 8 characters',
-
-    // new password
-    'new password minimal 8 karakter':
-        'New password must be at least 8 characters',
-
-    // confirm password
-    'konfirmasi password tidak cocok':
-        'Password confirmation does not match',
-  };
-
   String translateError(String message, String? langCode) {
+    final normalized = message.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+
     if (langCode == 'id') {
+      // Sort by key length descending — lebih spesifik duluan
+      final sortedEntries = idNormalizationMap.entries.toList()
+        ..sort((a, b) => b.key.length.compareTo(a.key.length));
+
+      for (final entry in sortedEntries) {
+        final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+        if (normalized.contains(key) || key.contains(normalized)) {
+          return entry.value;
+        }
+      }
       return message;
     }
 
-    final lower = message.toLowerCase().trim();
+    // Sort by key length descending — more specific first
+    final sortedEntries = errorTranslationMap.entries.toList()
+      ..sort((a, b) => b.key.length.compareTo(a.key.length));
 
-    for (final entry in errorTranslationMap.entries) {
-      if (lower.contains(entry.key)) {
+    for (final entry in sortedEntries) {
+      final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+      if (normalized.contains(key) || key.contains(normalized)) {
         return entry.value;
       }
     }
@@ -405,6 +444,9 @@ class _ChangePasswordState extends State<ChangePassword> {
   }
 
   void _doChangePassword() async {
+    
+    showLoadingDialog(context, bahasa['saving'] ?? "Saving changes...");
+
     String? token = await StorageService.getToken();
     
     final body = {
@@ -422,6 +464,7 @@ class _ChangePasswordState extends State<ChangePassword> {
         SnackBar(content: Text(bahasa['sukses_info'])), //'Kata sandi berhasil diubah'
       );
       errorCode = 200;
+      hideLoadingDialog(context);
       Navigator.pop(context);
 
     } else if (response['rc'] == 401) {
@@ -533,13 +576,18 @@ class _ChangePasswordState extends State<ChangePassword> {
             ],
           ),
         ),
-      ).show();
-    } else {
+      ).show().then((_) {
+        hideLoadingDialog(context);
+      });
+    } else if (response['rc'] == 422) {
       final data = response['data'];
       String desc = '';
 
+      currentPasswordError = null;
+      currentPasswordErrorTemp = null;
       newPasswordError = null;
       confirmPasswordError = null;
+      confirmPasswordErrorTemp = null;
 
       if (data is Map) {
         // final errorMessages = data.values
@@ -556,18 +604,40 @@ class _ChangePasswordState extends State<ChangePassword> {
           .toList();
 
         desc = errorMessages.join('\n');
-        if (data['password'] is List) {
-          for (var msg in data['password']) {
-
+        if (data['current_password'] is List) {
+          for (var msg in data['current_password']) {
             final translated = translateError(msg.toString(), langCode);
             final lower = translated.toLowerCase();
-
-            if (lower.contains('new password') || lower.contains('password baru')) {
-              newPasswordError = translated;
-            } else if (lower.contains('confirmation') || lower.contains('konfirmasi')) {
-              confirmPasswordError = translated;
+            if (lower.contains('current password') || lower.contains('kata sandi lama')) {
+              currentPasswordError = translated;
+              currentPasswordErrorTemp = translated;
             }
           }
+        }
+
+        if (data['password'] is List) {
+          for (var msg in data['password']) {
+          if (msg == null || msg.toString().trim().isEmpty) continue;
+
+          final translated = translateError(msg.toString(), langCode);
+          final lower = translated.toLowerCase();
+
+          if (lower.contains('konfirmasi') || 
+              lower.contains('confirmation') || 
+              lower.contains('cocok') || 
+              lower.contains('match')) {
+
+            confirmPasswordError = translated;
+            confirmPasswordErrorTemp = translated;
+
+          } else {
+            newPasswordError = newPasswordError == null
+                ? translated
+                : '$newPasswordError\n$translated';
+
+            newPasswordErrorTemp = newPasswordError;
+          }
+        }
         }
       } else {
         desc = response['message'] ?? data?.toString() ?? '';
@@ -581,7 +651,7 @@ class _ChangePasswordState extends State<ChangePassword> {
         dialogType: DialogType.noHeader,
         animType: AnimType.topSlide,
         title: bahasa['maaf'],
-        desc: bahasa['error'] + '\n' + desc,
+        desc: desc,
         btnOkOnPress: () {
           setState(() {});
         },
@@ -590,11 +660,51 @@ class _ChangePasswordState extends State<ChangePassword> {
         headerAnimationLoop: false,
         dismissOnTouchOutside: true,
         showCloseIcon: true,
-      ).show();
+      ).show().then((_) {
+        hideLoadingDialog(context);
+      });
+    } else {
+      errorCode = response['rc'] ?? 0;
+      if (response['rc'] == 500 && response['message'].toString().toLowerCase().contains('saat ini salah')) {
+        setState(() {
+          currentPasswordError = translateError(response['message'].toString(), langCode);
+          // errorMessage500 = translated;
+        });
+      }
+      
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: bahasa['maaf'],
+        desc: translateError(response['message'].toString(), langCode),
+        btnOkOnPress: () {
+          setState(() {});
+        },
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show().then((_) {
+        hideLoadingDialog(context);
+      });
     }
   }
 
   void _unfocusAll(BuildContext context) {
     FocusScope.of(context).unfocus();
+  }
+
+  void _validatePasswordMatch() {
+    if (_newPasswordController.text == _confirmPasswordController.text) {
+      setState(() {
+        confirmPasswordError = null;
+      });
+    } else {
+      setState(() {
+        confirmPasswordError = confirmPasswordErrorTemp;
+      });
+    }
   }
 }

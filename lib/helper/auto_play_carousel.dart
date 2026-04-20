@@ -28,8 +28,7 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
   @override
   void initState() {
     super.initState();
-
-    // viewportFraction bikin before-after peek
+    
     controller = PageController(viewportFraction: 1.0);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -143,8 +142,6 @@ class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
         ),
 
         SizedBox(height: 10, child: Container(color: Colors.white,),),
-
-        // ==== BULIR INDIKATOR ====
         Container(
           color: Colors.white,
           child: Row(

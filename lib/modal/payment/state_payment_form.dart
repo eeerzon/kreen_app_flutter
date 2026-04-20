@@ -11,7 +11,6 @@ import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
-import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
 import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
 import 'package:kreen_app_flutter/pages/order/waiting_order_event.dart';

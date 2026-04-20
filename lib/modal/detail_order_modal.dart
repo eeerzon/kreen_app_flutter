@@ -1310,22 +1310,33 @@ class DetailOrderModal {
                                   defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                                   children: eventOrderDetail[index]['order_form_answers'].map<TableRow>((answer) {
                                     bool isFile = answer["type_form"] == "file";
+                                    bool isFileAnswered = false;
+                                    
+                                    if (isFile) {
+                                      final answerValue = answer['answer'] ?? '';
+                                      if (hasFile(answerValue)) {
+                                        isFileAnswered = true;
+                                      }
+                                    }
 
                                     return TableRow(children: [
                                       Text(answer["question"], style: const TextStyle(color: Colors.grey)),
                                       const Text(" : "),
-                                      isFile
-                                          ? GestureDetector(
-                                              onTap: () {
-                                                final url = answer['answer'];
-                                                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                                              },
-                                              child: Text(
-                                                bahasa['lihat_file'] ?? "", //"Lihat File",
-                                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                              ),
-                                            )
-                                          : Text(answer["answer"], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      isFile && isFileAnswered
+                                        ? GestureDetector(
+                                            onTap: () {
+                                              final url = answer['answer'];
+                                              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                            },
+                                            child: Text(
+                                              bahasa['lihat_file'] ?? "", //"Lihat File",
+                                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                            ),
+                                          )
+                                        : Text(
+                                            isFile ? '-' : answer["answer"],
+                                            style: const TextStyle(fontWeight: FontWeight.bold)
+                                          ),
                                     ]);
                                   }).toList(),
                                 ),

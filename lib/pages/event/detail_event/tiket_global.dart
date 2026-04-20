@@ -708,6 +708,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             }
                           },
                           autofocus: false,
+                          inputFormatters: [
+                            EmailInputFormatter(),
+                          ],
                           decoration: InputDecoration(
                             hintText: bahasa['email_hint'],
                             hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -1037,6 +1040,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       ...List.generate(formTiket.length, (idx) {
                         ids_order_form_detail.add(formTiket[idx]['id_order_form_detail']);
                         ids_order_form_master.add(formTiket[idx]['id_order_form_master']);
+                          
                         return Padding(
                           padding: EdgeInsets.only(bottom: 20),
                           child: Column(
@@ -1312,7 +1316,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                             value: value,
                                             child: Text(value),
                                           );
-                                        }).toList(),
+                                        })
+                                        .toSet()
+                                        .toList(),
                                         onChanged: (value) {
                                           setState(() {
                                             answerControllers[idx].text = value ?? '';
@@ -1567,34 +1573,18 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                             var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
 
-                            if (resultEventOrder != null) {
-                              if (resultEventOrder['rc'] == 200) {
-                                var tempOrder = resultEventOrder['data'];
+                            if (resultEventOrder != null && resultEventOrder['rc'] == 200) {
+                              var tempOrder = resultEventOrder['data'];
 
-                                var id_order = tempOrder['id_order'];
-                                Navigator.pop(context);
+                              var id_order = tempOrder['id_order'];
+                              Navigator.pop(context);
 
-                                Navigator.pop(context);
+                              Navigator.pop(context);
 
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
-                                );
-                              } else {
-                                AwesomeDialog(
-                                  context: context,
-                                  dialogType: DialogType.noHeader,
-                                  animType: AnimType.topSlide,
-                                  title: bahasa['maaf'],
-                                  desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-                                  btnOkOnPress: () {},
-                                  btnOkColor: Colors.red,
-                                  buttonsTextStyle: TextStyle(color: Colors.white),
-                                  headerAnimationLoop: false,
-                                  dismissOnTouchOutside: true,
-                                  showCloseIcon: true,
-                                ).show();
-                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: id_order, isSukses: true,)),
+                              );
                             } else {
                               AwesomeDialog(
                                 context: context,
@@ -1611,6 +1601,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               ).show();
                             }
                           } else {
+                            
                             Navigator.push(
                               context,
                               MaterialPageRoute(

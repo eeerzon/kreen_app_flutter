@@ -1,12 +1,22 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 
 class EmailVerifModal {
-  static Future<void> show(BuildContext context, String token, String langCode, Map<String, dynamic> bahasa, String email, Color color) async {
+  static Future<void> show(
+    BuildContext context, 
+    String token, 
+    String langCode, 
+    Map<String, dynamic> bahasa, 
+    String email, 
+    Color color
+  ) async {
     
     await showDialog(
       context: context,
@@ -101,5 +111,94 @@ class EmailVerifModal {
         );
       }
     );
+  }
+
+  static Future<bool> showLogin(
+    BuildContext context,
+    Map<String, dynamic> bahasa,
+    Color color,
+    {
+      VoidCallback? onLoginSuccess,  // <-- tambah ini
+    }
+  ) async {
+    final completer = Completer<bool>();
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: kGlobalPadding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  "assets/images/img_ovo30d.png",
+                  width: 200,
+                  fit: BoxFit.contain,
+                ),
+
+                const SizedBox(height: 24),
+                Text(
+                  bahasa['notLogin'],
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 12),
+                Text(
+                  bahasa['notLoginDesc'],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                ),
+
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(dialogContext);
+
+                    final loginResult = await Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (_) => const LoginPage(notLog: true,)),
+                    );
+
+                    final success = loginResult == true;
+                    if (success) onLoginSuccess?.call();
+
+                    if (!completer.isCompleted) completer.complete(success);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                    elevation: 2,
+                  ),
+                  child: Text(
+                    bahasa['login'],
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      }
+    );
+    
+    if (!completer.isCompleted) completer.complete(false);
+
+    return completer.future;
   }
 }

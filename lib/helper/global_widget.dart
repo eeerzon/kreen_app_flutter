@@ -19,12 +19,14 @@ import 'package:printing/printing.dart';
 
 Future<void> handleVoteAction({
   required BuildContext context,
+  required String flagLogin,
   required String flagVerifyEmail,
   required String flagPaket,
   required String idFinalis,
   required String flagHideNoUrut,
   required String langCode,
   required Color tema,
+  required VoidCallback onAfterLogin,
 }) async {
 
   final storedToken = await StorageService.getToken() ?? '';
@@ -34,24 +36,48 @@ Future<void> handleVoteAction({
 
   storeUser = await StorageService.getUser();
 
-  if (flagVerifyEmail == '0') {
-    if (flagPaket == '0') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DetailFinalisPage(
+  final bahasa = DetailVoteLang.of(context).values;
+
+  if (flagLogin == '1' && storedToken.isEmpty) {
+    await EmailVerifModal.showLogin(context, bahasa, tema, onLoginSuccess: onAfterLogin);
+    return;
+  }
+
+  // Tidak perlu login tapi perlu verif -> anggap perlu login dulu
+  if (flagLogin == '0' && flagVerifyEmail == '1' && storedToken.isEmpty) {
+    await EmailVerifModal.showLogin(context, bahasa, tema, onLoginSuccess: onAfterLogin);
+    return;
+  }
+
+  // Sudah login, tapi email belum diverifikasi
+  if (flagVerifyEmail == '1' && storeUser['verifEmail'] == '0') {
+    await EmailVerifModal.show(context, storedToken, langCode, bahasa, storeUser['email'] ?? '', tema);
+    return;
+  }
+
+  // Semua lolos -> navigate
+  if (context.mounted) {
+    _navigateToFinalis(context, flagPaket, idFinalis, flagHideNoUrut);
+  }
+}
+
+void _navigateToFinalis(
+  BuildContext context,
+  String flagPaket,
+  String idFinalis,
+  String flagHideNoUrut,
+) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => flagPaket == '0'
+        ? DetailFinalisPage(
             id_finalis: idFinalis,
             count: 0,
             indexWrap: null,
             flag_hide_no_urut: flagHideNoUrut,
-          ),
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DetailFinalisPaketPage(
+          )
+        : DetailFinalisPaketPage(
             id_finalis: idFinalis,
             vote: 0,
             index: 0,
@@ -59,45 +85,8 @@ Future<void> handleVoteAction({
             id_paket_bw: null,
             flag_hide_no_urut: flagHideNoUrut,
           ),
-        ),
-      );
-    }
-  } else {
-
-    final bahasa = DetailVoteLang.of(context).values;
-
-    if (storeUser['verifEmail'] == '0') {
-      EmailVerifModal.show(context, storedToken, langCode, bahasa, storeUser['email'] ?? '', tema);
-    } else {
-      if (flagPaket == '0') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailFinalisPage(
-              id_finalis: idFinalis,
-              count: 0,
-              indexWrap: null,
-              flag_hide_no_urut: flagHideNoUrut,
-            ),
-          ),
-        );
-      } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DetailFinalisPaketPage(
-              id_finalis: idFinalis,
-              vote: 0,
-              index: 0,
-              total_detail: 0,
-              id_paket_bw: null,
-              flag_hide_no_urut: flagHideNoUrut,
-            ),
-          ),
-        );
-      }
-    }
-  }
+    ),
+  );
 }
 
 Future<void> refreshAfterVerification(String token, String email, String lang) async {
@@ -106,8 +95,7 @@ Future<void> refreshAfterVerification(String token, String email, String lang) a
 
   if (result != null && result['success'] == true && result['rc'] == 200) {
     final user = result['data'];
-
-    // simpan ke secure storage
+    
     await StorageService.setUser(
       id: user['id'], 
       first_name: user['first_name'], 
@@ -142,7 +130,7 @@ Widget CommentCard({
       border: Border.all(color: Colors.grey.shade300,),
     ),
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start, // biar teks rata kiri
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(
           spacing: 6,
@@ -166,7 +154,7 @@ Widget CommentCard({
 
         Text(
           message,
-          softWrap: true, // biar otomatis turun ke bawah
+          softWrap: true,
         ),
 
         const SizedBox(height: 12),
@@ -232,7 +220,7 @@ class _VoteLimitState extends State<VoteLimit> {
               const Spacer(),
               
               Image.asset(
-                'assets/images/img_vote_limit.png', // ganti sesuai asset kamu
+                'assets/images/img_vote_limit.png',
                 height: 200,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => const Icon(Icons.language, size: 100, color: Colors.grey),

@@ -63,9 +63,11 @@ class _RegisPageState extends State<RegisPage> {
   bool _lockConfirmPasswordField = false;
 
   int errorCode = 0;
+  int errorCodeEmail = 0;
   Map<String, dynamic> errorMessage = {};
   
-  String? PasswordError, PasswordError2;
+  String? emailError, emailError2, emailError3;
+  String? PasswordError, PasswordError2, PasswordError3;
   String? confirmPasswordError;
 
   void _doRegis() async {
@@ -99,14 +101,12 @@ class _RegisPageState extends State<RegisPage> {
       String desc = '';
       if (data is Map<String, dynamic>) {
 
-        final errorMessages = data.values
-          .whereType<List>()
-          .expand((e) => e)
-          .whereType<String>()
-          .map((e) => translateError(e, langCode))
-          .toList();
-
-        desc = errorMessages.join('\n');
+        PasswordError = null;
+        PasswordError2 = null;
+        PasswordError3 = null;
+        confirmPasswordError = null;
+        emailError = null;
+        emailError2 = null;
         if (data['password'] is List) {
           for (var msg in data['password']) {
             // final message = msg.toString();
@@ -120,18 +120,56 @@ class _RegisPageState extends State<RegisPage> {
 
             final translated = translateError(msg.toString(), langCode);
             final lower = translated.toLowerCase();
-
-            if (lower.contains('minimal 8 karakter') || lower.contains('must be at least 8 characters')) {
+            if (lower.contains('diperlukan') || lower.contains('required')) {
               PasswordError = translated;
-            } else if (lower.contains('mengandung setidaknya satu huruf dan satu angka') || lower.contains('must contain at least one letter and one number')) {
+            } else if (lower.contains('minimal 8 karakter') || lower.contains('must be at least 8 characters')) {
               PasswordError2 = translated;
+            } else if (lower.contains('mengandung setidaknya satu huruf dan satu angka') || lower.contains('must contain at least one letter and one number')) {
+              PasswordError3 = translated;
             } else if (lower.contains('tidak cocok') || lower.contains('does not match')) {
               confirmPasswordError = translated;
             }
           }
+        } 
+        
+        if (data['email'] is List) {
+          for (var msg in data['email']) {
+            final translated = translateError(msg.toString(), langCode);
+            final lower = translated.toLowerCase();
+
+            if (lower.contains('diperlukan') || lower.contains('required')) {
+              emailError = translated;
+            } else if (lower.contains('terdaftar') || lower.contains('registered')) {
+              emailError2 = translated;
+            } else if (lower.contains('valid domain') || lower.contains('domain yang valid')) {
+              emailError3 = translated;
+            }
+          }
         }
+
+        if (data['phone'] is List) {
+          for (var msg in data['phone']) {
+            final translated = translateError(msg.toString(), langCode);
+            final lower = translated.toLowerCase();
+            if (lower.contains('minimal 7 karakter') || lower.contains('at least 7 characters')) {
+              phoneError = translated;
+            } else if (lower.contains('diperlukan') || lower.contains('required')) {
+              phoneError = translated;
+            }
+          }
+        }
+
+        final errorMessages = data.values
+          .whereType<List>()
+          .expand((e) => e)
+          .whereType<String>()
+          .map((e) => translateError(e, langCode))
+          .toList();
+
+        desc = errorMessages.join('\n');
       }
       errorCode = result['rc'] ?? 0;
+      errorCodeEmail = result['rc'] ?? 0;
       errorMessage = data;
 
       AwesomeDialog(
@@ -139,7 +177,7 @@ class _RegisPageState extends State<RegisPage> {
         dialogType: DialogType.noHeader,
         animType: AnimType.topSlide,
         title: bahasa['maaf'],
-        desc: bahasa['error'] + '\n' + desc,
+        desc: desc,
         btnOkOnPress: () {
           setState(() {});
         },
@@ -201,6 +239,7 @@ class _RegisPageState extends State<RegisPage> {
           final token = result['data']['token'];
 
           // simpan ke secure storage
+          await StorageService.setLoginMethod('google');
           await StorageService.setToken(token);
           await StorageService.setUser(
             id: user['id'], 
@@ -277,7 +316,7 @@ class _RegisPageState extends State<RegisPage> {
       email = tempbahasa['input_email'];
       phoneLabel = tempbahasa['nomor_hp_label'];
       phone = tempbahasa['nomor_hp'];
-      phoneError = tempbahasa['nomor_hp_error'];
+      phoneError = tempbahasa['nomor_hp_error_login'];
       passwordLabel = tempbahasa['password_label'];
       password = tempbahasa['input_password'];
       confirmPasswordLabel = tempbahasa['konfirmasi_password_label'];
@@ -357,12 +396,13 @@ class _RegisPageState extends State<RegisPage> {
                   onChanged: (_) => setState(() {}),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(
-                      RegExp(r"[a-zA-Z\s]"),
+                      RegExp(r"[a-zA-Z\u00C0-\u017F\s]"),
                     ),
-                    NameInputFormatter(),
+                    // NameInputFormatter(),
+                    LastNameInputFormatter(),
                   ],
                   decoration: InputDecoration(
-                    hintText: firstName!,
+                    hintText: bahasa['nama_lengkap'],
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -417,11 +457,19 @@ class _RegisPageState extends State<RegisPage> {
                   controller: _emailController,
                   onChanged: (_) => setState(() {
                     if (!_emailTouched) {
-                      setState(() => _emailTouched = true);
+                      setState(() {
+                        _emailTouched = true;
+                        errorCodeEmail = 0;
+                      });
                     } else {
-                      setState(() {});
+                      setState(() {
+                        errorCodeEmail = 0;
+                      });
                     }
                   }),
+                  inputFormatters: [
+                    EmailInputFormatter(),
+                  ],
                   decoration: InputDecoration(
                     hintText: email!,
                     hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -434,11 +482,12 @@ class _RegisPageState extends State<RegisPage> {
                     focusedBorder: _border(true),
                   ),
                 ),
+
                 if (_emailTouched && !isValidEmail(_emailController.text))
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                       child: Text(
                         bahasa['error_email_1'],
                         style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -446,19 +495,52 @@ class _RegisPageState extends State<RegisPage> {
                     ),
                   ),
 
-                if (errorCode == 422 && errorMessage['email'] != null)
-                  Align(
-                    alignment: AlignmentGeometry.centerLeft,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                  if (errorCodeEmail == 422 && errorMessage['email'] != null)
+                    ...((errorMessage['email'] as List).map((e) => Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
-                          langCode == "en"
-                            ? translateError(errorMessage['email'][0], langCode)
-                            : errorMessage['email'][0],
+                          translateError(e.toString(), langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
-                    ),
-                  ),
+                      ),
+                    ))),
+                  
+                // if ((_emailTouched || errorCodeEmail == 422) 
+                //     && !isValidEmail(_emailController.text))
+                //   Align(
+                //     alignment: AlignmentGeometry.centerLeft,
+                //     child: Padding(
+                //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                //       child: Text(
+                //         errorCodeEmail == 422 && errorMessage['email'] != null
+                //           ? (langCode == "en"
+                //               ? translateError(errorMessage['email'][0], langCode)
+                //               : errorMessage['email'][0])
+                //           : bahasa['error_email_1'],
+                //         style: TextStyle(color: Colors.red[900], fontSize: 12),
+                //       ),
+                //     ),
+                //   ),
+
+                // if (errorCodeEmail == 422 && 
+                //     errorMessage['email'] != null &&
+                //     (errorMessage['email'] as List).any((e) => 
+                //       e.toString().toLowerCase().contains('registered') || 
+                //       e.toString().toLowerCase().contains('terdaftar')))
+                //   Align(
+                //     alignment: AlignmentGeometry.centerLeft,
+                //     child: Padding(
+                //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                //         child: Text(
+                //           langCode == "en"
+                //             ? translateError(errorMessage['email'][0], langCode)
+                //             : errorMessage['email'][0],
+                //           style: TextStyle(color: Colors.red[900], fontSize: 12),
+                //         ),
+                //     ),
+                //   ),
 
                 //phone
                 const SizedBox(height: 16),
@@ -491,8 +573,11 @@ class _RegisPageState extends State<RegisPage> {
                     focusedBorder: _border(true),
                   ),
                 ),
-                if (_phoneController.text.isNotEmpty &&
-                    !isValidPhone(_phoneController.text))
+                if ((_phoneController.text.isNotEmpty 
+                      || errorCode == 422 
+                      && errorMessage['phone'] != null ) &&
+                    !isValidPhone(_phoneController.text)
+                    && _phoneController.text.length < 7)
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                      child: Padding(
@@ -556,7 +641,19 @@ class _RegisPageState extends State<RegisPage> {
                   ),
                 ),
 
-                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password minimal 8 karakter')))
+                Align(
+                  alignment: AlignmentGeometry.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      child: Text(
+                        bahasa['password_min']!,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      ),
+                  ),
+                ),
+
+                if (errorMessage['password'] != null 
+                    && (errorMessage['password'] as List).any((e) => e.toString().contains('Password diperlukan')))
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
@@ -564,21 +661,39 @@ class _RegisPageState extends State<RegisPage> {
                         child: Text(
                           langCode == "en"
                             ? translateError(PasswordError!, langCode)
-                            : PasswordError!,
+                            : PasswordError ?? '',
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
                   ),
-                  
-                if (errorMessage['password'] != null && (errorMessage['password'] as List).any((e) => e.toString().contains('Password harus mengandung setidaknya satu huruf dan satu angka')))
-                   Align(
+
+                if (errorMessage['password'] != null 
+                    && (errorMessage['password'] as List).any((e) => e.toString().contains('Password minimal 8 karakter')) 
+                    && _passwordController.text.length < 8)
+                  Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
                           langCode == "en"
                             ? translateError(PasswordError2!, langCode)
-                            : PasswordError2!,
+                            : PasswordError2 ?? '',
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
+                  
+                if (errorMessage['password'] != null 
+                    && (errorMessage['password'] as List).any((e) => e.toString().contains('Password harus mengandung setidaknya satu huruf dan satu angka'))
+                    && !RegExp(r'^(?=.*[a-zA-Z])(?=.*[0-9])').hasMatch(_passwordController.text))
+                   Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(PasswordError3!, langCode)
+                            : PasswordError3 ?? '',
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -633,15 +748,15 @@ class _RegisPageState extends State<RegisPage> {
                     ),
                   ),
                 ),
-                if (errorCode == 422)
+                if (errorCode == 422 && _confirmpasswordController.text != _passwordController.text)
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
                           langCode == "en"
-                            ? translateError(confirmPasswordError!, langCode)
-                            : confirmPasswordError!,
+                            ? translateError(confirmPasswordError ?? 'Passwords do not match', langCode)
+                            : confirmPasswordError ?? '',
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -781,28 +896,22 @@ class _RegisPageState extends State<RegisPage> {
     FocusScope.of(context).unfocus();
   }
 
-  final Map<String, String> errorTranslationMap = {
-    'Email sudah terdaftar': 'Email is already registered',
-
-    'Email harus berupa email yang valid': 'Email must be a valid email',
-
-    'Password minimal 8 karakter': 'Password must be at least 8 characters',
-
-    'Password harus mengandung setidaknya satu huruf dan satu angka':
-        'Password must contain at least one letter and one number',
-
-    'Password tidak cocok': 'Password does not match',
-  };
-
   String translateError(String message, String? langCode) {
+
+    final normalized = message.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+
     if (langCode == 'id') {
+      for (final entry in idNormalizationMap.entries) {
+        final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+        if (normalized.contains(key) || key.contains(normalized)) {
+          return entry.value;
+        }
+      }
       return message;
     }
 
-    final normalized = message.toLowerCase().trim();
-
     for (final entry in errorTranslationMap.entries) {
-      final key = entry.key.toLowerCase().trim();
+      final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
 
       if (normalized.contains(key)) {
         return entry.value;
@@ -810,27 +919,6 @@ class _RegisPageState extends State<RegisPage> {
     }
 
     return message;
-  }
-}
-
-class NameInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    String text = newValue.text;
-
-    // Hapus spasi di awal & akhir
-    text = text.trim();
-
-    // Ubah multiple space jadi satu
-    text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
-
-    return TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: text.length),
-    );
   }
 }
 
@@ -847,6 +935,13 @@ class LastNameInputFormatter extends TextInputFormatter {
 
     // Hilangkan spasi ganda
     text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
+
+    // Hilangkan spasi di akhir HANYA jika user sedang menghapus
+    // (panjang newValue lebih pendek dari oldValue)
+    final isDeleting = newValue.text.length < oldValue.text.length;
+    if (isDeleting) {
+      text = text.replaceAll(RegExp(r'\s+$'), '');
+    }
 
     return TextEditingValue(
       text: text,

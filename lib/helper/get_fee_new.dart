@@ -75,10 +75,10 @@ Map<String, dynamic> convertCurrency({
   num formatted;
 
   if (toCurrency == 'IDR') {
-    // IDR → ceil ke integer
+    // IDR -> ceil ke integer
     formatted = convertedFixed5.ceil();
   } else {
-    // selain IDR → ceil 2 desimal
+    // selain IDR -> ceil 2 desimal
     formatted = (convertedFixed5 * 100).ceil() / 100;
   }
 
@@ -129,7 +129,7 @@ Map<String, dynamic> getPriceCurrency ({
   if (currencyCode == "IDR") {
     calculatedFee = calculatedFee.ceil();
   } else {
-    int scaled = (calculatedFee * 100000).round(); // fix 5 decimal → int
+    int scaled = (calculatedFee * 100000).round(); // fix 5 decimal -> int
     int resultScaled = (scaled / 1000).ceil();     // jadi 2 decimal (ceil)
     calculatedFee = resultScaled / 100;
   }

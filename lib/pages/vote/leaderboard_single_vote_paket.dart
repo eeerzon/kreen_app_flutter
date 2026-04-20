@@ -132,8 +132,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   late YoutubePlayerController _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
-  bool _videoReady = false;
-  final bool _isTopVideo = true;
 
   void onFullscreenChanged(bool value) {
     setState(() {
@@ -147,6 +145,18 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     _initData();
   }
 
+  // ignore: unused_field
+  String _storedToken = '';
+  Future<void> _loadToken() async {
+    final token = await StorageService.getToken() ?? '';
+    if (mounted) setState(() => _storedToken = token);
+  }
+
+  // Dipanggil setelah login sukses dari modal
+  Future<void> _onAfterLogin() async {
+    await _loadToken();
+  }
+
   Future<void> _initData() async {
     await _getBahasa();
     await _getCurrency();
@@ -158,10 +168,14 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
     });
 
-    final videoId =
-      YoutubePlayer.convertUrlToId(detailFinalis['video_profile'])!;
+    final rawUrl = detailFinalis['video_profile'] ?? "";
+    final cleanedUrl = cleanYoutubeUrl(rawUrl);
 
-    if (mounted) {
+    final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+
+    // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
+
+    if (videoId != null && mounted) {
       setState(() {
         _ytTopController = YoutubePlayerController(
           initialVideoId: videoId,
@@ -178,7 +192,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
             forceHD: false,
           ),
         );
-        _videoReady = true;
       });
     }
   }
@@ -698,7 +711,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                             // onFullscreenChanged: onFullscreenChanged,
                                             // controller: _ytController,
                                           // ),
-                                          buildVideo()
+                                          buildTopVideo()
                                         ),
                                       ),
                                     ),
@@ -1126,8 +1139,8 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                               const SizedBox(height: 12),
                               Align(
                                 alignment: Alignment.center,
-                                child: SizedBox(
-                                  child: 
+                                // child: SizedBox(
+                                //   child: 
                                   // VideoSection(
                                   //   // link: detailFinalis['video_profile'],
                                   //   // headerText: videoProfilText!, 
@@ -1135,8 +1148,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                   //   // onFullscreenChanged: onFullscreenChanged,
                                   //   controller: _ytController,
                                   // ),
-                                  buildVideo()
-                                ),
+                                //   buildVideo()
+                                // ),
+                                child: AspectRatio(
+                                  aspectRatio: 16 / 9,
+                                  child: buildBottomVideo(),
+                                )
                               ),
                             ],
                           ),
@@ -1617,14 +1634,29 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                 : () async {
                   final storedToken = await StorageService.getToken() ?? '';
                   var getUser = await StorageService.getUser();
+
                   String? idUser = getUser['id'];
 
                   await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
                   getUser = await StorageService.getUser();
-                  
-                  if (detailvote['flag_verify_email'] == '0') {
 
+                  if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
+                    await EmailVerifModal.showLogin(context, bahasa!, color, onLoginSuccess: _onAfterLogin);
+                    return;
+                  }
+
+                  if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                    await EmailVerifModal.showLogin(context, bahasa!, color, onLoginSuccess: _onAfterLogin);
+                    return;
+                  }
+
+                  if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                    await EmailVerifModal.show(context, storedToken, langCode!, bahasa!, getUser['email'] ?? '', color);
+                    return;
+                  }
+
+                  if (mounted) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1644,32 +1676,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                         ),
                       ),
                     );
-                  } else {
-                    final storedToken = await StorageService.getToken() ?? '';
-
-                    if (getUser['verifEmail'] == '0') {
-                      EmailVerifModal.show(context, storedToken, langCode!, bahasa!, getUser['email'] ?? '', color);
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StatePaymentPaket(
-                            id_vote: detailFinalis['id_vote'],
-                            id_finalis: detailFinalis['id_finalis'],
-                            nama_finalis: detailFinalis['nama_finalis'],
-                            counts: counts,
-                            totalHarga: totalHarga,
-                            totalHargaAsli: harga_akhir_asli,
-                            id_paket: id_paket!,
-                            fromDetail: true,
-                            idUser: idUser,
-                            flag_login: detailvote['flag_login'],
-                            rateCurrency: detailvote['rate_currency_vote'],
-                            rateCurrencyUser: detailvote['rate_currency_user'],
-                          ),
-                        ),
-                      );
-                    }
                   }
                 },
                 child: Text(
@@ -1762,18 +1768,17 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     }
   }
 
-  Widget buildVideo() {
-    if (!_videoReady) {
-      return const AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Center(child: CircularProgressIndicator(color: Colors.red)),
-      );
-    }
+  Widget buildTopVideo() {
+    return VideoSection(
+      key: const ValueKey("top_video"),
+      controller: _ytTopController,
+    );
+  }
 
-    if (_isTopVideo) {
-      return VideoSection(controller: _ytTopController);
-    } else {
-      return VideoSection(controller: _ytBottomController);
-    }
+  Widget buildBottomVideo() {
+    return VideoSection(
+      key: const ValueKey("bottom_video"),
+      controller: _ytBottomController,
+    );
   }
 }

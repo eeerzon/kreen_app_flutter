@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
@@ -1182,8 +1183,17 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                       answers[idx] = value;
                                     },
                                     keyboardType: typeInput == 'number'
-                                        ? TextInputType.number
-                                        : TextInputType.text,
+                                      ? TextInputType.number
+                                      : TextInputType.text,
+                                    inputFormatters: [
+                                      isPhoneField
+                                        ? FilteringTextInputFormatter.digitsOnly
+                                        : FilteringTextInputFormatter.singleLineFormatter,
+
+                                      isPhoneField
+                                        ? LengthLimitingTextInputFormatter(16)
+                                        : FilteringTextInputFormatter.singleLineFormatter,
+                                      ],
                                     decoration: InputDecoration(
                                       hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
                                       hintStyle: TextStyle(color: Colors.grey.shade400),

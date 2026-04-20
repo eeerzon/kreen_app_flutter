@@ -17,6 +17,7 @@ import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/infinite_sponsor.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DeskripsiSection_5 extends StatefulWidget {
@@ -674,11 +675,35 @@ class DeskripsiSection_5 extends StatefulWidget {
 }
 
 
-class LeaderboardSection_5 extends StatelessWidget {
+class LeaderboardSection_5 extends StatefulWidget {
   final List<dynamic> ranking;
   final Map<String, dynamic> data;
   final String langCode;
   const LeaderboardSection_5({super.key, required this.ranking, required this.data, required this.langCode});
+
+  @override
+  State<LeaderboardSection_5> createState() => _LeaderboardSection_5State();
+}
+
+class _LeaderboardSection_5State extends State<LeaderboardSection_5> {
+  // ignore: unused_field
+  String _storedToken = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadToken();
+  }
+
+  Future<void> _loadToken() async {
+    final token = await StorageService.getToken() ?? '';
+    if (mounted) setState(() => _storedToken = token);
+  }
+
+  // Dipanggil setelah login sukses dari modal
+  Future<void> _onAfterLogin() async {
+    await _loadToken();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -697,8 +722,8 @@ class LeaderboardSection_5 extends StatelessWidget {
     };
 
     String themeName = 'Red';
-    if (data['theme_name'] != null) {
-      themeName = data['theme_name'];
+    if (widget.data['theme_name'] != null) {
+      themeName = widget.data['theme_name'];
     }
     Color color = colorMap[themeName] ?? Colors.red;
 
@@ -711,17 +736,17 @@ class LeaderboardSection_5 extends StatelessWidget {
 
     final List<int> customOrder = [2, 1, 3];
 
-    final List<dynamic> topThree = ranking
+    final List<dynamic> topThree = widget.ranking
         .where((item) => customOrder.contains(item['rank']))
         .toList()
       ..sort((a, b) => customOrder.indexOf(a['rank']).compareTo(customOrder.indexOf(b['rank'])));
 
-    final List<dynamic> others = ranking
+    final List<dynamic> others = widget.ranking
         .where((item) => item['rank'] >= 4)
         .toList()
       ..sort((a, b) => (a['rank'] as int).compareTo(b['rank'] as int));
 
-    DateTime deadline = DateTime.parse(data['tanggal_tutup_vote']);
+    DateTime deadline = DateTime.parse(widget.data['tanggal_tutup_vote']);
     Duration remaining = Duration.zero;
     final now = DateTime.now();
     final difference = deadline.difference(now);
@@ -766,7 +791,7 @@ class LeaderboardSection_5 extends StatelessWidget {
 
               const SizedBox(height: 12,),
               Text(
-                data['judul_vote'],
+                widget.data['judul_vote'],
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white),
               )
@@ -775,7 +800,7 @@ class LeaderboardSection_5 extends StatelessWidget {
         ),
 
         // konten data dari data api
-        if (ranking.isNotEmpty) ... [
+        if (widget.ranking.isNotEmpty) ... [
           const SizedBox(height: 60,),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -805,10 +830,12 @@ class LeaderboardSection_5 extends StatelessWidget {
                   tema: color, 
                   idFinalis: item['id_finalis'].toString(),
                   remaining: remaining,
-                  flag_hide_no_urut: data['flag_hide_nomor_urut'],
-                  flag_paket : data['flag_paket'],
-                  flag_verify_email: data['flag_verify_email'],
-                  langCode: langCode,
+                  flag_hide_no_urut: widget.data['flag_hide_nomor_urut'],
+                  flag_paket : widget.data['flag_paket'],
+                  flag_login: widget.data['flag_login'],
+                  flag_verify_email: widget.data['flag_verify_email'],
+                  langCode: widget.langCode,
+                  onAfterLogin: _onAfterLogin,
                 );
               } else{
                 return SizedBox.shrink();
@@ -817,7 +844,7 @@ class LeaderboardSection_5 extends StatelessWidget {
             }).toList(),
           ),
 
-          if (data['leaderboard_limit_tampil'] > 3) ... [
+          if (widget.data['leaderboard_limit_tampil'] > 3) ... [
             const SizedBox(height: 20),
             Column(
               children: others.map((item) {
@@ -1003,8 +1030,10 @@ Widget buildTopCard({
   required Duration remaining,
   required String flag_hide_no_urut,
   required String flag_paket,
+  required String flag_login,
   required String flag_verify_email,
   required String langCode,
+  required VoidCallback onAfterLogin,
 }) {
   String crownImage = '';
   switch (rank) {
@@ -1066,12 +1095,14 @@ Widget buildTopCard({
               onPressed: () async {
                 await handleVoteAction(
                   context: context,
+                  flagLogin: flag_login,
                   flagVerifyEmail: flag_verify_email,
                   idFinalis: idFinalis,
                   flagHideNoUrut: flag_hide_no_urut,
                   flagPaket: flag_paket,
                   langCode: langCode,
                   tema: tema,
+                  onAfterLogin: onAfterLogin,
                 );
               },
               style: ElevatedButton.styleFrom(

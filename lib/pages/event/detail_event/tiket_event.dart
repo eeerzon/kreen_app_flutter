@@ -1305,7 +1305,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                 value: value.trim(),
                                                 child: Text(value.trim()),
                                               );
-                                            }).toList(),
+                                            }).toSet().toList(),
                                           onChanged: (value) {
                                             setState(() {
                                               answerControllers[index][idx].text = value ?? '';

@@ -444,13 +444,44 @@ class _EditProfilePageState extends State<EditProfilePage> {
       
     } else if (resultSimpan?['rc'] == 422) {
       setState(() {
-        showErrorBar = true;
+        showErrorBar = false;
         errorCode = resultSimpan?['rc'] ?? 0;
         errorMessage = resultSimpan?['data'] ?? {};
         errorMessageBar = resultSimpan?['message'];
 
         isImage = false;
+
+        isConfirmLoading = false;
       });
+
+      final data = resultSimpan?['data'];
+      String desc = '';
+      if (data is Map<String, dynamic>) {
+        final errorMessages = data.values
+          .whereType<List>()
+          .expand((e) => e)
+          .whereType<String>()
+          .map((e) => translateError(e, langCode))
+          .toList();
+
+        desc = errorMessages.join('\n');
+      }
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: bahasa['maaf'],
+        desc: desc,
+        btnOkOnPress: () {
+          setState(() {});
+        },
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show();
 
       if (resultSimpan?['data'].containsKey('first_name')) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -458,15 +489,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       }
 
-      if (resultSimpan?['data'].containsKey('email')) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          emailFocusNode.requestFocus();
-        });
-      }
-
       if (resultSimpan?['data'].containsKey('date_of_birth')) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           dobFocusNode.requestFocus();
+        });
+      }
+
+      if (resultSimpan?['data'].containsKey('email')) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          emailFocusNode.requestFocus();
         });
       }
 
@@ -610,6 +641,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       helpText: bahasa['pilih_dob'],
+      locale: Locale(langCode ?? 'en'),
     );
 
     if (picked != null) {
@@ -643,6 +675,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  bool isEmailAlreadyRegistered() {
+    if (errorCode != 422) return false;
+    if (!errorMessage.containsKey('email')) return false;
+
+    final msg = errorMessage['email'][0].toString().toLowerCase();
+
+    return msg.contains('terdaftar') || msg.contains('registered');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -782,13 +822,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             controller: fullNameController,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                RegExp(r"[a-zA-Z\s]"),
+                                RegExp(r"[a-zA-Z\u00C0-\u017F\s]"),
                               ),
                               NameInputFormatter(),
+                              LengthLimitingTextInputFormatter(50),
                             ],
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
-                              hintText: bahasa['nama_depan_hint'],
+                              hintText: bahasa['nama_lengkap'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -803,7 +844,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               child: Padding(
                                 padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                 child: Text(
-                                  errorMessage['first_name'][0],
+                                  // errorMessage['first_name'][0],
+                                  bahasa['nama_lengkap_req'],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
                                 ),
                               )
@@ -972,6 +1014,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: companyController,
                             onChanged: (_) => setState(() {}),
+                            inputFormatters: [
+                              //batasi emoji
+                              FilteringTextInputFormatter.deny(
+                                RegExp(
+                                  r'[\u{1F600}-\u{1F64F}'
+                                  r'\u{1F300}-\u{1F5FF}'
+                                  r'\u{1F680}-\u{1F6FF}'
+                                  r'\u{1F700}-\u{1F77F}'
+                                  r'\u{1F780}-\u{1F7FF}'
+                                  r'\u{1F800}-\u{1F8FF}'
+                                  r'\u{1F900}-\u{1F9FF}'
+                                  r'\u{1FA00}-\u{1FA6F}'
+                                  r'\u{1FA70}-\u{1FAFF}'
+                                  r'\u{2600}-\u{26FF}'
+                                  r'\u{2700}-\u{27BF}'
+                                  r'\u200D'
+                                  r']',
+                                  unicode: true,
+                                ),
+                              ),
+
+                              LengthLimitingTextInputFormatter(100),
+                            ],
                             decoration: InputDecoration(
                               hintText: bahasa['company_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -994,6 +1059,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: jobTitleController,
                             onChanged: (_) => setState(() {}),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.deny(
+                                RegExp(
+                                  r'[\u{1F600}-\u{1F64F}'
+                                  r'\u{1F300}-\u{1F5FF}'
+                                  r'\u{1F680}-\u{1F6FF}'
+                                  r'\u{1F700}-\u{1F77F}'
+                                  r'\u{1F780}-\u{1F7FF}'
+                                  r'\u{1F800}-\u{1F8FF}'
+                                  r'\u{1F900}-\u{1F9FF}'
+                                  r'\u{1FA00}-\u{1FA6F}'
+                                  r'\u{1FA70}-\u{1FAFF}'
+                                  r'\u{2600}-\u{26FF}'
+                                  r'\u{2700}-\u{27BF}'
+                                  r'\u200D'
+                                  r']',
+                                  unicode: true,
+                                ),
+                              ),
+
+                              LengthLimitingTextInputFormatter(100),
+                            ],
                             decoration: InputDecoration(
                               hintText: bahasa['job_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -1077,41 +1164,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             )
                           ],
 
-                          if (verifEmail == "0" || _emailChanged) ... [
-                            SizedBox(height: 4,),
-                            Align(
-                              alignment: AlignmentGeometry.centerLeft,
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                                child: Text(
-                                  bahasa['verified_email'], //"Email kamu belum diverifikasi. ",
-                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
-                                )
-                              ),
-                            )
-                          ] else ...[
-                            SizedBox(height: 4,),
-                            Align(
-                              alignment: AlignmentGeometry.centerLeft,
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      bahasa['verified_email_done'] ?? "Email kamu sudah terverifikasi. ", //"Email kamu sudah terverifikasi. ",
-                                      style: TextStyle(color: Colors.green[900], fontSize: 12),
-                                    ),
+                          if (!isEmailAlreadyRegistered()) ... [
 
-                                    Icon(
-                                      Icons.check_circle,
-                                      size: 14,
-                                      color: Colors.green[900],
-                                    ),
-                                  ],
+                            if (verifEmail == "0" || _emailChanged) ... [
+                              SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                                  child: Text(
+                                    bahasa['verified_email'],
+                                    style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                  ),
                                 ),
-                              ),
-                            )
+                              )
+                            ] else ... [
+                              SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        bahasa['verified_email_done'] ?? "",
+                                        style: TextStyle(color: Colors.green[900], fontSize: 12),
+                                      ),
+                                      Icon(
+                                        Icons.check_circle,
+                                        size: 14,
+                                        color: Colors.green[900],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            ]
+
                           ],
 
                           SizedBox(height: 20,),
@@ -1147,7 +1236,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           ),
 
-                          if ((_phoneTouched && !isValidPhone(phoneController.text)) || !isValidPhone(phoneController.text))
+                          if ((_phoneTouched && !isValidPhone(phoneController.text)) 
+                            || !isValidPhone(phoneController.text)
+                            && phoneController.text.length < 7)
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
@@ -1191,6 +1282,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: linkedinController,
                             onChanged: (_) => setState(() {}),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
+                              ),
+                            ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_linkedin_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -1201,15 +1297,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fillColor: Colors.white,
 
                               prefixIcon: !linkedinController.text.contains("https")
-                                ? Container(
-                                    width: 125,
-                                    padding: EdgeInsets.only(left: 16, right: 0),
-                                    alignment: Alignment.centerLeft,
-                                    child: const Text(
-                                      "linkedin.com/in/",
-                                      style: TextStyle(color: Colors.grey),
+                                ? Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Container(
+                                      color: Colors.grey[200],
+                                      padding: EdgeInsets.all(8),
+                                      width: 130,
+                                      alignment: Alignment.centerLeft,
+                                      child: const Text(
+                                        "linkedin.com/in/",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                     ),
-                                  )
+                                  ) 
                                 : null,
 
                               prefixIconConstraints: const BoxConstraints(
@@ -1230,6 +1330,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: igController,
                             onChanged: (_) => setState(() {}),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
+                              ),
+                            ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_instagram_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -1240,15 +1345,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fillColor: Colors.white,
 
                               prefixIcon: !igController.text.contains("https")
-                                ? Container(
-                                    width: 125,
-                                    padding: EdgeInsets.only(left: 16, right: 0),
-                                    alignment: Alignment.centerLeft,
-                                    child: const Text(
-                                      "instagram.com/",
-                                      style: TextStyle(color: Colors.grey),
+                                ? Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Container(
+                                      padding: EdgeInsets.all(10),
+                                      color: Colors.grey[200],
+                                      width: 130,
+                                      alignment: Alignment.centerLeft,
+                                      child: const Text(
+                                        "instagram.com/",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                     ),
-                                  )
+                                  ) 
                                 : null,
 
                               prefixIconConstraints: const BoxConstraints(
@@ -1269,6 +1378,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: twitterController,
                             onChanged: (_) => setState(() {}),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
+                              ),
+                            ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_twitter_hint'],
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -1279,13 +1393,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fillColor: Colors.white,
 
                               prefixIcon: !twitterController.text.contains("https")
-                                ? Container(
-                                    width: 100,
-                                    padding: EdgeInsets.only(left: 16, right: 0),
-                                    alignment: Alignment.centerLeft,
-                                    child: const Text(
-                                      "twitter.com/",
-                                      style: TextStyle(color: Colors.grey),
+                                ? Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Container(
+                                      padding: EdgeInsets.all(10),
+                                      color: Colors.grey[200],
+                                      width: 75,
+                                      alignment: Alignment.centerLeft,
+                                      child: const Text(
+                                        "x.com/",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                     ),
                                   )
                                 : null,
@@ -1439,10 +1557,10 @@ class NameInputFormatter extends TextInputFormatter {
   ) {
     String text = newValue.text;
 
-    // Hapus spasi di awal & akhir
-    text = text.trim();
+    // Hapus spasi di AWAL saja
+    text = text.replaceFirst(RegExp(r'^\s+'), '');
 
-    // Ubah multiple space jadi satu
+    // Rapikan multiple space jadi satu
     text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
 
     return TextEditingValue(

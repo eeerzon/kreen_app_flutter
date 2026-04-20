@@ -28,9 +28,6 @@ class TicketPdfGenerator {
     _cachedFont ??= await PdfGoogleFonts.robotoRegular();
     _cachedFontBold ??= await PdfGoogleFonts.robotoBold();
 
-    // final ttf = await PdfGoogleFonts.robotoRegular();
-    // final ttfBold = await PdfGoogleFonts.robotoBold();
-
     final ttf = _cachedFont!;
     final ttfBold = _cachedFontBold!;
 
@@ -42,10 +39,9 @@ class TicketPdfGenerator {
         headers: {'Accept': 'image/jpeg'},
       );
       if (response.statusCode == 200) {
-        // Decode dan resize
         final codec = await ui.instantiateImageCodec(
           response.bodyBytes,
-          targetWidth: 200,  //resize ke 200px saja
+          targetWidth: 200,
           targetHeight: 200,
         );
         final frame = await codec.getNextFrame();
@@ -55,8 +51,7 @@ class TicketPdfGenerator {
         bannerBytes = byteData?.buffer.asUint8List();
       }
     } catch (_) {}
-
-    // Format helper
+    
     final formatter = NumberFormat.decimalPattern("en_US");
 
     String formatDate(String dateStr) {
@@ -87,8 +82,7 @@ class TicketPdfGenerator {
         return time;
       }
     }
-
-    // Generate QR image per tiket dari API
+    
     Future<Uint8List?> fetchQr(String data) async {
       try {
         final uri = Uri.parse(
@@ -98,13 +92,11 @@ class TicketPdfGenerator {
       } catch (_) {}
       return null;
     }
-
-    // Ambil semua QR sekaligus
+    
     final qrImages = await Future.wait(
       eventOrderDetail.map((order) => fetchQr(order['id_order_detail'])),
     );
-
-    // Expired date
+    
     final endRaw = dataEvents['event_datetime'][0]['datetime_end_plus_diff'];
     final endDate = DateTime.parse(endRaw);
 
@@ -179,8 +171,6 @@ class TicketPdfGenerator {
             ),
 
             pw.SizedBox(height: 16),
-
-            // Total
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -261,8 +251,7 @@ class TicketPdfGenerator {
                         ],
                       ),
                     ),
-
-                    // QR Code (kanan)
+                    
                     if (qrBytes != null)
                       pw.Column(
                         children: [

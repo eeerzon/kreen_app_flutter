@@ -50,6 +50,8 @@ class _ProfileState extends State<Profile> {
 
   bool isEdit = false;
 
+  String? loginMethod;
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +78,7 @@ class _ProfileState extends State<Profile> {
     final storedToken = await StorageService.getToken();
     final storeUser = await StorageService.getUser();
     fullName = storeUser['first_name']?.toString().trim() ?? '';
+    loginMethod = await StorageService.getLoginMethod();
     if (mounted) {
       setState(() {
         token = storedToken;
@@ -493,7 +496,7 @@ class _ProfileState extends State<Profile> {
 
                                   SizedBox(width: 12,),
                                   Text(
-                                    gender ?? '-'
+                                    gender.toString().toLowerCase() == 'male' ? bahasa['gender_1'] : bahasa['gender_2'] ?? '-'
                                   )
                                 ],
                               ),
@@ -571,9 +574,26 @@ class _ProfileState extends State<Profile> {
                                 Icon(Icons.email_outlined, color: Colors.red,),
 
                                 SizedBox(width: 12,),
-                                Text(
-                                  email ?? '-'
-                                )
+                                Expanded(
+                                  child: Text(email ?? '-'),
+                                ),
+
+                                SizedBox(width: 12),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 80),
+                                  child: Text(
+                                    verifEmail == '1'
+                                      ? "${bahasa['verified']}"
+                                      : "${bahasa['not_verified']}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: verifEmail == '1' ? Colors.green[900] : Colors.red[900],
+                                    ),
+                                    softWrap: true,
+                                    maxLines: 2,
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
                               ],
                             ),
 
@@ -664,7 +684,7 @@ class _ProfileState extends State<Profile> {
                             SizedBox(height: 10,),
                             Row(
                               children: [
-                                Icon(FontAwesomeIcons.twitter, color: Colors.red,),
+                                Icon(FontAwesomeIcons.xTwitter, color: Colors.red,),
 
                                 SizedBox(width: 12,),
                                 Text(
@@ -701,126 +721,127 @@ class _ProfileState extends State<Profile> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            //password
-                            SizedBox(height: 10,),
-                            SizedBox(
-                              width: double.infinity,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const ChangePassword(),
-                                    ),
-                                  );
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.lock, color: Colors.red,),
-
-                                    SizedBox(width: 12,),
-                                    Text(
-                                      bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
-                                    )
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            if (verifEmail == '0') ... [
-                              SizedBox(height: 10,),
-                              Divider(),
-
+                            
+                            if (loginMethod != null && loginMethod == 'email') ... [
+                              //password
                               SizedBox(height: 10,),
                               SizedBox(
+                                width: double.infinity,
                                 child: InkWell(
-                                  onTap: () async {
-
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(langCode == 'id' ? "Konfirmasi" : "Confirmation"),
-                                          content: Text(
-                                            langCode == 'id'
-                                              ? "Kirim email verifikasi ke $email ?"
-                                              : "Send verification email to $email ?"
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, false),
-                                              child: Text(langCode == 'id' ? "Batal" : "Cancel"),
-                                            ),
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.red,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                              onPressed: () => Navigator.pop(context, true),
-                                              child: Text(
-                                                langCode == 'id' ? "Kirim" : "Send",
-                                                style: const TextStyle(color: Colors.white),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const ChangePassword(),
+                                      ),
                                     );
-
-                                    if (confirm != true) return;
-                                    
-                                    final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null, xLanguage: langCode);
-
-                                    if (resultVerifEmail?['rc'] == 200) {
-                                      AwesomeDialog(
-                                        context: context,
-                                        dialogType: DialogType.success,
-                                        title: langCode == 'id' ? 'Berhasil' : 'Success',
-                                        desc:
-                                          "${bahasa['desc_email_1']}\n"
-                                          "${bahasa['desc_email_2']} $email\n"
-                                          "${bahasa['desc_email_3']}",
-                                        transitionAnimationDuration: const Duration(milliseconds: 1000),
-                                        btnOkText: "OK",
-                                        btnOkColor: Colors.red,
-                                        btnOkOnPress: () {},
-                                      ).show();
-                                    } else {
-                                      AwesomeDialog(
-                                        context: context,
-                                        dialogType: DialogType.noHeader,
-                                        animType: AnimType.topSlide,
-                                        title: bahasa['maaf'],
-                                        desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-                                        btnOkOnPress: () {},
-                                        btnOkColor: Colors.red,
-                                        buttonsTextStyle: TextStyle(color: Colors.white),
-                                        headerAnimationLoop: false,
-                                        dismissOnTouchOutside: true,
-                                        showCloseIcon: true,
-                                      ).show();
-                                    }
                                   },
                                   child: Row(
                                     children: [
-                                      Icon(Icons.email, color: Colors.red,),
+                                      Icon(Icons.lock, color: Colors.red,),
 
                                       SizedBox(width: 12,),
                                       Text(
-                                        bahasa['verif_email'] ?? "", //']'Verifikasi Email',
-                                      ),
+                                        bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
+                                      )
                                     ],
                                   ),
                                 ),
                               ),
-                            ],
 
-                            SizedBox(height: 10,),
-                            Divider(),
+                              if (verifEmail == '0') ... [
+                                SizedBox(height: 10,),
+                                Divider(),
+
+                                SizedBox(height: 10,),
+                                SizedBox(
+                                  child: InkWell(
+                                    onTap: () async {
+
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: Text(langCode == 'id' ? "Konfirmasi" : "Confirmation"),
+                                            content: Text(
+                                              langCode == 'id'
+                                                ? "Kirim email verifikasi ke $email ?"
+                                                : "Send verification email to $email ?"
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context, false),
+                                                child: Text(langCode == 'id' ? "Batal" : "Cancel"),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.red,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                ),
+                                                onPressed: () => Navigator.pop(context, true),
+                                                child: Text(
+                                                  langCode == 'id' ? "Kirim" : "Send",
+                                                  style: const TextStyle(color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+
+                                      if (confirm != true) return;
+                                      
+                                      final resultVerifEmail = await ApiService.postSetProfil('$baseapiUrl/send-email-verification',token: token, body: null, xLanguage: langCode);
+
+                                      if (resultVerifEmail?['rc'] == 200) {
+                                        AwesomeDialog(
+                                          context: context,
+                                          dialogType: DialogType.noHeader,
+                                          title: langCode == 'id' ? 'Berhasil' : 'Success',
+                                          desc:
+                                            "${bahasa['desc_email_1']}\n"
+                                            "${bahasa['desc_email_2']} $email\n"
+                                            "${bahasa['desc_email_3']}",
+                                          btnOkText: "OK",
+                                          btnOkColor: Colors.red,
+                                          btnOkOnPress: () {},
+                                        ).show();
+                                      } else {
+                                        AwesomeDialog(
+                                          context: context,
+                                          dialogType: DialogType.noHeader,
+                                          animType: AnimType.topSlide,
+                                          title: bahasa['maaf'],
+                                          desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+                                          btnOkOnPress: () {},
+                                          btnOkColor: Colors.red,
+                                          buttonsTextStyle: TextStyle(color: Colors.white),
+                                          headerAnimationLoop: false,
+                                          dismissOnTouchOutside: true,
+                                          showCloseIcon: true,
+                                        ).show();
+                                      }
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.email, color: Colors.red,),
+
+                                        SizedBox(width: 12,),
+                                        Text(
+                                          bahasa['verif_email'] ?? "", //']'Verifikasi Email',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+
+                              SizedBox(height: 10,),
+                              Divider(),
+                            ],
 
                             //pusat bantuan
                             SizedBox(height: 10,),

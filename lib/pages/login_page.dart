@@ -1,11 +1,13 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use, prefer_interpolation_to_compose_strings
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/pages/lupa_password.dart';
+import 'package:kreen_app_flutter/pages/register_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -14,7 +16,6 @@ import 'package:kreen_app_flutter/helper/loading_page.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import '/services/lang_service.dart';
 import 'home_page.dart';
-import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   final bool notLog;
@@ -50,6 +51,13 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _lockPasswordField = false;
 
+  int errorCode = 0;
+  int errorCodeEmail = 0;
+  Map<String, dynamic> errorMessage = {};
+  
+  String? PasswordError, PasswordError2, PasswordError3;
+  String? confirmPasswordError;
+
   OutlineInputBorder _border(bool isFilled) {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
@@ -80,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
 
       // simpan ke secure storage
       await StorageService.setToken(token);
-      await StorageService.setLoginMethod('password');
+      await StorageService.setLoginMethod('email');
       await StorageService.setUser(
         id: user['id'], 
         first_name: user['first_name'], 
@@ -112,6 +120,93 @@ class _LoginPageState extends State<LoginPage> {
           (route) => false,
         );
       }
+    } else if (result!['rc'] == 422) {
+      final data = result['data'];
+      String desc = '';
+
+      if (data is Map<String, dynamic>) {
+
+        final errorMessages = data.values
+          .whereType<List>()
+          .expand((e) => e)
+          .whereType<String>()
+          .map((e) => translateError(e, langCode))
+          .toList();
+
+        desc = errorMessages.join('\n');
+        if (data['password'] is List) {
+          for (var msg in data['password']) {
+
+            final translated = translateError(msg.toString(), langCode);
+            final lower = translated.toLowerCase();
+
+            if (lower.contains('diperlukan') || lower.contains('required')) {
+              PasswordError = translated;
+            } else if (lower.contains('minimal 8 karakter') || lower.contains('must be at least 8 characters')) {
+              PasswordError2 = translated;
+            } else if (lower.contains('mengandung setidaknya satu huruf dan satu angka') || lower.contains('must contain at least one letter and one number')) {
+              PasswordError3 = translated;
+            } else if (lower.contains('tidak cocok') || lower.contains('does not match')) {
+              confirmPasswordError = translated;
+            }
+          }
+        }
+      }
+      errorCode = result['rc'] ?? 0;
+      errorCodeEmail = result['rc'] ?? 0;
+      errorMessage = data;
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: bahasa!['maaf'],
+        desc: desc,
+        btnOkOnPress: () {
+          setState(() {});
+        },
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show();
+    } else if (result['rc'] == 401 && !isValidEmail(_emailController.text.trim())) {
+      errorCode = result['rc'] ?? 0;
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: bahasa!['maaf'],
+        desc: bahasa!['error_email_1'],
+        btnOkOnPress: () {
+          setState(() {});
+        },
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show();
+    } else if (result['rc'] == 401) {
+      errorCode = result['rc'] ?? 0;
+
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.topSlide,
+        title: bahasa!['maaf'],
+        desc: bahasa!['password_invalid'],
+        btnOkOnPress: () {
+          setState(() {});
+        },
+        btnOkColor: Colors.red,
+        buttonsTextStyle: TextStyle(color: Colors.white),
+        headerAnimationLoop: false,
+        dismissOnTouchOutside: true,
+        showCloseIcon: true,
+      ).show();
     } else {
       // gagal login
       AwesomeDialog(
@@ -159,6 +254,7 @@ class _LoginPageState extends State<LoginPage> {
           final token = result['data']['token'];
 
           // simpan ke secure storage
+          await StorageService.setLoginMethod('google');
           await StorageService.setToken(token);
           await StorageService.setUser(
             id: user['id'], 
@@ -177,11 +273,16 @@ class _LoginPageState extends State<LoginPage> {
             link_twitter: user['link_twitter'],
           );
 
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const HomePage()),
-            (route) => false,
-          );
+          if (widget.notLog) {
+            // jika login dari halaman lain
+            Navigator.pop(context, true);
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HomePage()),
+              (route) => false,
+            );
+          }
         } else {
           Fluttertoast.showToast(msg: cancelLogin!);
         }
@@ -396,7 +497,12 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 35),
                 TextField(
                   controller: _emailController,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() {
+                    errorCodeEmail = 0;
+                  }),
+                  inputFormatters: [
+                    EmailInputFormatter(),
+                  ],
                   decoration: InputDecoration(
                     hintText: input_email,
                     hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -409,6 +515,30 @@ class _LoginPageState extends State<LoginPage> {
                     focusedBorder: _border(true),
                   ),
                 ),
+
+                if (errorCodeEmail == 422 && errorMessage['email'] != null)
+                  ...((errorMessage['email'] as List).map((e) => Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                      child: Text(
+                        translateError(e.toString(), langCode),
+                        style: TextStyle(color: Colors.red[900], fontSize: 12),
+                      ),
+                    ),
+                  ))),
+
+                if (errorCodeEmail == 500 && !isValidEmail(_emailController.text.trim()))
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          bahasa!['error_email_1'],
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
 
                 //password
                 const SizedBox(height: 16),
@@ -452,6 +582,65 @@ class _LoginPageState extends State<LoginPage> {
                     )
                   ),
                 ),
+
+                if (errorMessage['password'] != null 
+                    && (errorMessage['password'] as List).any((e) => e.toString().contains('Password diperlukan')))
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(PasswordError!, langCode)
+                            : PasswordError ?? '',
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
+
+                if (errorMessage['password'] != null 
+                    && (errorMessage['password'] as List).any((e) => e.toString().contains('Password minimal 8 karakter')) 
+                    && _passwordController.text.length < 8)
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(PasswordError2!, langCode)
+                            : PasswordError2 ?? '',
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
+                  
+                if (errorMessage['password'] != null 
+                    && (errorMessage['password'] as List).any((e) => e.toString().contains('Password harus mengandung setidaknya satu huruf dan satu angka'))
+                    && !RegExp(r'^(?=.*[a-zA-Z])(?=.*[0-9])').hasMatch(_passwordController.text))
+                   Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          langCode == "en"
+                            ? translateError(PasswordError3!, langCode)
+                            : PasswordError3 ?? '',
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
+
+                if (errorCode == 401) 
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        child: Text(
+                          bahasa!['password_invalid'],
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                    ),
+                  ),
 
                 // lupa Password
                 const SizedBox(height: 16),
@@ -602,5 +791,23 @@ class _LoginPageState extends State<LoginPage> {
 
   void _unfocusAll(BuildContext context) {
     FocusScope.of(context).unfocus();
+  }
+
+  String translateError(String message, String? langCode) {
+    if (langCode == 'id') {
+      return message;
+    }
+
+    final normalized = message.toLowerCase().trim();
+
+    for (final entry in errorTranslationMap.entries) {
+      final key = entry.key.toLowerCase().trim();
+
+      if (normalized.contains(key)) {
+        return entry.value;
+      }
+    }
+
+    return message;
   }
 }

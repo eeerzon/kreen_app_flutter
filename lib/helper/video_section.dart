@@ -18,43 +18,33 @@ class _VideoSectionState extends State<VideoSection> {
   @override
   void initState() {
     super.initState();
+  }
 
-    widget.controller.addListener(() {
-      if (widget.controller.value.isFullScreen) {
-        widget.controller.toggleFullScreenMode();
-      }
-    });
+  @override
+  void didUpdateWidget(covariant VideoSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.pause();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return YoutubePlayerBuilder(
-      // cegah fullscreen default
-      // onEnterFullScreen: () async {
-      //   if (_isOpeningFullscreen) return; // 🔒 GUARD
-      //     _isOpeningFullscreen = true;
-
-      //   await Navigator.of(context).push(
-      //     MaterialPageRoute(
-      //       builder: (_) => FullscreenYoutubePage(
-      //         controller: widget.controller,
-      //       ),
-      //     ),
-      //   );
-
-      //   _isOpeningFullscreen = false; // 🔓 RELEASE
-      // },
-      onEnterFullScreen: null, // cegah fullscreen default
-
-      // kosongkan exit default
-      // onExitFullScreen: () {},
+      
+      onEnterFullScreen: null,
 
       player: YoutubePlayer(
         controller: widget.controller,
         showVideoProgressIndicator: true,
+        bottomActions: [
+          CurrentPosition(),
+          ProgressBar(isExpanded: true),
+          RemainingDuration(),
+        ],
       ),
-
-      // JANGAN bungkus Column / Container
+      
       builder: (context, player) => player,
     );
   }

@@ -8,6 +8,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'pages/splash_logo_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return MaterialApp(
       theme: ThemeData(
         textSelectionTheme: const TextSelectionThemeData(
@@ -39,6 +41,16 @@ class MyApp extends StatelessWidget {
           selectionHandleColor: Colors.orange,
         ),
       ),
+      locale: const Locale('id'),
+      supportedLocales: const [
+        Locale('en'),
+        Locale('id'),
+      ],
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       home: SplashLogoPage(), // langsung splash logo
     );

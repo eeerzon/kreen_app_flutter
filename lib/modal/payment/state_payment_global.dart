@@ -11,7 +11,6 @@ import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
-import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
 import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
 import 'package:kreen_app_flutter/pages/order/waiting_order_event.dart';
@@ -477,7 +476,6 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       };
 
       var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode, token: token);
-
       if (resultEventOrder != null) {
         if (resultEventOrder['rc'] == 200) {
           final tempOrder = resultEventOrder['data'];
@@ -515,6 +513,8 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         //       showCloseIcon: true,
         //     ).show();
         //   }
+        } else if (resultEventOrder['rc'] == 422) {
+          
         } else {
           AwesomeDialog(
             context: context,

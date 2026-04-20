@@ -105,8 +105,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
   YoutubePlayerController? _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
-  bool _videoReady = false;
-  final bool _isTopVideo = true;
 
   void onFullscreenChanged(bool value) {
     setState(() {
@@ -120,6 +118,18 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     _initData();
   }
 
+  // ignore: unused_field
+  String _storedToken = '';
+  Future<void> _loadToken() async {
+    final token = await StorageService.getToken() ?? '';
+    if (mounted) setState(() => _storedToken = token);
+  }
+
+  // Dipanggil setelah login sukses dari modal
+  Future<void> _onAfterLogin() async {
+    await _loadToken();
+  }
+
   Future<void> _initData() async {
     await _getBahasa();
     await _getCurrency();
@@ -131,8 +141,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       (_) => checkPaymentStatus(),
     );
 
-    final videoId =
-      YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
+    final rawUrl = detailFinalis['video_profile'] ?? "";
+    final cleanedUrl = cleanYoutubeUrl(rawUrl);
+
+    final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+
+    // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
     if (videoId != null && mounted) {
       setState(() {
@@ -145,15 +159,13 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
             ),
           );
 
-            _ytBottomController = YoutubePlayerController(
+          _ytBottomController = YoutubePlayerController(
             initialVideoId: videoId,
             flags: const YoutubePlayerFlags(
               autoPlay: false,
               forceHD: false,
             ),
           );
-
-          _videoReady = true;
         }
       });
     }
@@ -621,7 +633,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                           alignment: Alignment.center,
                                           child: Container(
                                             color: Colors.white,
-                                            child: buildVideo()
+                                            child: buildTopVideo()
                                           ),
                                         ),
                                       ),
@@ -1194,40 +1206,44 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 ),
                               )
                             ),
-                      
-                            if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Container(
-                                color: Colors.white,
-                                width: double.infinity,
-                                padding: kGlobalPadding,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      videoProfilText!,
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    ),
-
-                                    const SizedBox(height: 12),
-                                    Align(
-                                      alignment: Alignment.center,
-                                      child: SizedBox(
-                                        child: 
-                                        // VideoSection(
-                                        //   // link: detailFinalis['video_profile'],
-                                        //   // headerText: videoProfilText!, 
-                                        //   // noValidText: noValidText!,
-                                        //   // onFullscreenChanged: onFullscreenChanged,
-                                        //   controller: _ytController,
-                                        // ),
-                                        buildVideo()
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
                           ],
+                        ],
+
+                        if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            color: Colors.white,
+                            width: double.infinity,
+                            padding: kGlobalPadding,
+                            child: Column(
+                              children: [
+                                Text(
+                                  videoProfilText!,
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.center,
+                                  // child: SizedBox(
+                                  //   child: 
+                                    // VideoSection(
+                                    //   // link: detailFinalis['video_profile'],
+                                    //   // headerText: videoProfilText!, 
+                                    //   // noValidText: noValidText!,
+                                    //   // onFullscreenChanged: onFullscreenChanged,
+                                    //   controller: _ytController,
+                                    // ),
+                                  //   buildVideo()
+                                  // ),
+                                  child: AspectRatio(
+                                    aspectRatio: 16 / 9,
+                                    child: buildBottomVideo(),
+                                  )
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                     
                         if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty
@@ -1385,14 +1401,29 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                       : () async {
                           final storedToken = await StorageService.getToken() ?? '';
                           var getUser = await StorageService.getUser();
+
                           String? idUser = getUser['id'];
 
                           await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
                           getUser = await StorageService.getUser();
-                          
-                          if (detailvote['flag_verify_email'] == '0') {
 
+                          if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
+                            await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                            return;
+                          }
+
+                          if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                            await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                            return;
+                          }
+
+                          if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                            await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                            return;
+                          }
+
+                          if (mounted) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -1407,37 +1438,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   fromDetail: false,
                                   idUser: idUser,
                                   flag_login: detailvote['flag_login'],
+                                  flag_verify_email: detailvote['flag_verify_email'],
                                   rateCurrency: detailvote['rate_currency_vote'],
                                   rateCurrencyUser: detailvote['rate_currency_user'],
                                 ),
                               ),
                             );
-                          } else {
-                            final storedToken = await StorageService.getToken() ?? '';
-
-                            if (getUser['verifEmail'] == '0') {
-                              EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => StatePaymentManual(
-                                    id_vote: idVote!,
-                                    ids_finalis: ids_finalis,
-                                    names_finalis: names_finalis,
-                                    counts_finalis: counts_finalis,
-                                    totalHarga: totalHarga,
-                                    totalHargaAsli: totalHargaAsli,
-                                    price: detailvote['harga_asli'],
-                                    fromDetail: false,
-                                    idUser: idUser,
-                                    flag_login: detailvote['flag_login'],
-                                    rateCurrency: detailvote['rate_currency_vote'],
-                                    rateCurrencyUser: detailvote['rate_currency_user'],
-                                  ),
-                                ),
-                              );
-                            }
                           }
                         },
                   child: Text(
@@ -1519,18 +1525,17 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     }
   }
 
-  Widget buildVideo() {
-    if (!_videoReady) {
-      return const AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Center(child: CircularProgressIndicator(color: Colors.red)),
-      );
-    }
+  Widget buildTopVideo() {
+    return VideoSection(
+      key: const ValueKey("top_video"),
+      controller: _ytTopController!,
+    );
+  }
 
-    if (_isTopVideo) {
-      return VideoSection(controller: _ytTopController!);
-    } else {
-      return VideoSection(controller: _ytBottomController!);
-    }
+  Widget buildBottomVideo() {
+    return VideoSection(
+      key: const ValueKey("bottom_video"),
+      controller: _ytBottomController!,
+    );
   }
 }

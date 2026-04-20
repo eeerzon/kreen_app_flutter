@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use, dead_code
 
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
@@ -69,6 +69,7 @@ class ModalFilter {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            bool isSubmitting = false;
             return SafeArea(
               child: Padding(
                 padding: kGlobalPadding,
@@ -157,34 +158,46 @@ class ModalFilter {
                     SizedBox(height: 20),
 
                     // tombol apply
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(context, {
-                          'time': paramTime,
-                          'price': paramPrice,
-                        });
-                      },
-                      child: SizedBox(
-                        child: Container(
-                          width: double.infinity,
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: !isSubmitting
+                          ? () async {
+                              setState(() => isSubmitting = true);
+
+                              Navigator.pop(context, {
+                                'time': paramTime,
+                                'price': paramPrice,
+                              });
+                            }
+                          : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            "Apply",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                         ),
+                        child: isSubmitting
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              "Apply",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                       ),
                     ),
 
-                    SizedBox(height: 12),
+                    SizedBox(height: 20),
                   ],
                 ),
               ),

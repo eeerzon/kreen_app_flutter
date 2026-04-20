@@ -104,6 +104,19 @@ class _FinalisPageState extends State<FinalisPage> {
       });
     });
   }
+
+  // ignore: unused_field
+  String _storedToken = '';
+  Future<void> _loadToken() async {
+    final token = await StorageService.getToken() ?? '';
+    if (mounted) setState(() => _storedToken = token);
+  }
+
+  // Dipanggil setelah login sukses dari modal
+  Future<void> _onAfterLogin() async {
+    await _loadToken();
+  }
+
   Future<void> _loadVotes() async {
 
     final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
@@ -636,9 +649,23 @@ class _FinalisPageState extends State<FinalisPage> {
                       await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
                       getUser = await StorageService.getUser();
-                      
-                      if (vote['flag_verify_email'] == '0') {
 
+                      if (vote['flag_login'] == '1' && storedToken.isEmpty) {
+                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                        return;
+                      }
+
+                      if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                        return;
+                      }
+
+                      if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                        await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                        return;
+                      }
+
+                      if (mounted) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -653,37 +680,12 @@ class _FinalisPageState extends State<FinalisPage> {
                               fromDetail: false,
                               idUser: idUser,
                               flag_login: vote['flag_login'],
+                              flag_verify_email: vote['flag_verify_email'],
                               rateCurrency: vote['rate_currency_vote'],
                               rateCurrencyUser: vote['rate_currency_user'],
                             ),
                           ),
                         );
-                      } else {
-                        final storedToken = await StorageService.getToken() ?? '';
-
-                        if (getUser['verifEmail'] == '0') {
-                          EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StatePaymentManual(
-                                id_vote: slctedIdVote!,
-                                ids_finalis: ids_finalis,
-                                names_finalis: names_finalis,
-                                counts_finalis: counts_finalis,
-                                totalHarga: totalHarga,
-                                totalHargaAsli: totalHargaAsli,
-                                price: vote['harga_asli'],
-                                fromDetail: false,
-                                idUser: idUser,
-                                flag_login: vote['flag_login'],
-                                rateCurrency: vote['rate_currency_vote'],
-                                rateCurrencyUser: vote['rate_currency_user'],
-                              ),
-                            ),
-                          );
-                        }
                       }
                     },
                   child: Text(

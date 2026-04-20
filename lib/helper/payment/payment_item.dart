@@ -196,7 +196,7 @@ class _PaymentItemState extends State<PaymentItem> {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // Teks akan menyesuaikan ruang sisa
+                                  
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.only(top: 8.0),
@@ -211,7 +211,6 @@ class _PaymentItemState extends State<PaymentItem> {
                                   ),
 
                                   const SizedBox(width: 6),
-                                  // Badge region
                                   Container(
                                     padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                                     decoration: BoxDecoration(
@@ -389,20 +388,6 @@ class _PaymentItemState extends State<PaymentItem> {
                                 style: TextStyle(color: Colors.red[900], fontSize: 12),
                               ),
                             ),
-
-                          // if (widget.showError && cardTouched) ... [
-                          //   const SizedBox(height: 6),
-                          //   Padding(
-                          //     padding: EdgeInsets.fromLTRB(0, 4, 0, 0), //left, top, right, bottom
-                          //     child: Text(
-                          //       widget.bahasa['required'],
-                          //       style: TextStyle(
-                          //         color: Colors.red[900],
-                          //         fontSize: 12
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ]
                         ],
                       ]
                     ],
@@ -534,62 +519,6 @@ class _PaymentItemState extends State<PaymentItem> {
                     
                     if (widget.paymentTipe == "e_wallet") ...[
                       if (widget.isSelected) ... [
-                        // if (widget.item['id'] == "6387457643547345") ...[
-                        //   // const SizedBox(height: 10,),
-                        //   Column(
-                        //     crossAxisAlignment: CrossAxisAlignment.start,
-                        //     children: [
-                        //       Container(
-                        //         color: Colors.white,
-                        //         width: double.infinity,
-                        //         child: TextField(
-                        //           focusNode: widget.phoneEWalletFocus,
-                        //           controller: widget.phoneEwalletController,
-                        //           autofocus: false,
-                        //           onChanged: widget.onPhoneChanged,
-                        //           keyboardType: TextInputType.number,
-                        //           decoration: InputDecoration(
-                        //             hintText: widget.bahasa['nomor_hp'],
-                        //             filled: true,
-                        //             fillColor: Colors.white,
-                        //             hintStyle: TextStyle(color: Colors.grey.shade400),
-                        //             enabledBorder: OutlineInputBorder(
-                        //               borderRadius: const BorderRadius.only(
-                        //                 topLeft: Radius.circular(8),
-                        //                 topRight: Radius.circular(8),
-                        //               ),
-                        //               borderSide: BorderSide(color: Colors.grey.shade300,),
-                        //             ),
-                        //             focusedBorder: OutlineInputBorder(
-                        //               borderSide: BorderSide(color: Colors.grey.shade300,),
-                        //             ),
-                        //           ),
-                        //           inputFormatters: [
-                        //             LengthLimitingTextInputFormatter(12),
-                        //           ],
-                        //         ),
-                        //       ),
-                        //       // error text
-                        //       if (widget.showError && (widget.phoneEwalletController?.text.trim().isEmpty ?? true))
-                        //         Padding(
-                        //           padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
-                        //           child: Text(
-                        //             widget.bahasa['nomor_hp'],
-                        //             style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        //           ),
-                        //         )
-                        //       else if (widget.phoneEwalletController?.text.trim().isNotEmpty == true &&
-                        //           !isValidPhone(widget.phoneEwalletController!.text.trim()))
-                        //         Padding(
-                        //           padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
-                        //           child: Text(
-                        //             widget.bahasa['nomor_hp_error'],
-                        //             style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        //           ),
-                        //         ),
-                        //     ],
-                        //   ),
-                        // ]
 
                         if (attributes.isNotEmpty) ...[
                           const SizedBox(height: 10),

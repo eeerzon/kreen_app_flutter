@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
-import 'package:kreen_app_flutter/pages/event/detail_event.dart';
+import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -61,7 +61,9 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
     final temp_event_order = tempOrder['event_order'] ?? {};
     final temp_event_order_detail = tempOrder['event_order_detail'] ?? [];
 
-    final temp_payment_detail = tempOrder['payment_detail'] ?? {};
+    final temp_payment_detail = tempOrder['payment_detail'] is Map 
+      ? tempOrder['payment_detail'] as Map<String, dynamic>
+      : <String, dynamic>{};
     final temp_instruction = temp_payment_detail['instruction'] ?? [];
 
     final temp_event = tempOrder['event'] ?? {};
@@ -818,23 +820,23 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                             ),
                           ),
                           onPressed: () {
-                            // Navigator.pushAndRemoveUntil(
-                            //   context, 
-                            //   MaterialPageRoute(builder: (context) => HomePage()), 
-                            //   (route) => false
-                            // );
-
                             Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DetailEventPage(
-                                  id_event: event['id_event'],
-                                  currencyCode: currencyCode, 
-                                  price: dataEvents['event_ticket'][0]['price'],
-                                ),
-                              ),
-                              (route) => route.isFirst, // sisakan Home
+                              context, 
+                              MaterialPageRoute(builder: (context) => HomePage()), 
+                              (route) => false
                             );
+
+                            // Navigator.pushAndRemoveUntil(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (_) => DetailEventPage(
+                            //       id_event: event['id_event'],
+                            //       currencyCode: currencyCode, 
+                            //       price: dataEvents['event_ticket'][0]['price'],
+                            //     ),
+                            //   ),
+                            //   (route) => route.isFirst, // sisakan Home
+                            // );
                           },
                           child: Text(
                           bahasa['selesai'], //"Selesai",

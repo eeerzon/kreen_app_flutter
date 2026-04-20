@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
@@ -35,6 +36,7 @@ class StatePaymentManual extends StatefulWidget {
   final bool fromDetail;
   final String? idUser;
   final String flag_login;
+  final String flag_verify_email;
   final num rateCurrency;
   final num rateCurrencyUser;
 
@@ -50,6 +52,7 @@ class StatePaymentManual extends StatefulWidget {
     required this.fromDetail,
     this.idUser,
     required this.flag_login,
+    required this.flag_verify_email,
     required this.rateCurrency,
     required this.rateCurrencyUser
   });
@@ -334,7 +337,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                   key: ValueKey('loading'),
                   child: CircularProgressIndicator(color: Colors.red),
                 )
-              : widget.flag_login == '1' 
+              : widget.flag_login == '1'  || widget.flag_verify_email == '1'
                 ? token == null 
                   ? KeyedSubtree(
                       key: const ValueKey('not-login'),
@@ -1179,8 +1182,17 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         setState(() {});
                                       },
                                       keyboardType: typeInput == 'number'
-                                          ? TextInputType.number
-                                          : TextInputType.text,
+                                        ? TextInputType.number
+                                        : TextInputType.text,
+                                      inputFormatters: [
+                                        isPhoneField
+                                          ? FilteringTextInputFormatter.digitsOnly
+                                          : FilteringTextInputFormatter.singleLineFormatter,
+
+                                        isPhoneField
+                                          ? LengthLimitingTextInputFormatter(16)
+                                          : FilteringTextInputFormatter.singleLineFormatter,
+                                      ],
                                       decoration: InputDecoration(
                                         hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
                                         hintStyle: TextStyle(color: Colors.grey.shade400),

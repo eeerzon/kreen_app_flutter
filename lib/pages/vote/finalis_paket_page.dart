@@ -104,6 +104,18 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     });
   }
 
+  // ignore: unused_field
+  String _storedToken = '';
+  Future<void> _loadToken() async {
+    final token = await StorageService.getToken() ?? '';
+    if (mounted) setState(() => _storedToken = token);
+  }
+
+  // Dipanggil setelah login sukses dari modal
+  Future<void> _onAfterLogin() async {
+    await _loadToken();
+  }
+
   Future<void> _loadVotes() async {
 
     final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
@@ -560,14 +572,29 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                     : () async {
                       final storedToken = await StorageService.getToken() ?? '';
                       var getUser = await StorageService.getUser();
+
                       String? idUser = getUser['id'];
 
                       await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
                       getUser = await StorageService.getUser();
 
-                      if (vote['flag_verify_email'] == '0') {
+                      if (vote['flag_login'] == '1' && storedToken.isEmpty) {
+                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                        return;
+                      }
 
+                      if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                        return;
+                      }
+
+                      if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                        await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                        return;
+                      }
+
+                      if (mounted) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -587,32 +614,6 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                               ),
                           ),
                         );
-                      } else {
-                        final storedToken = await StorageService.getToken() ?? '';
-
-                        if (getUser['verifEmail'] == '0') {
-                          EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StatePaymentPaket(
-                                id_vote: slctedIdVote!,
-                                id_finalis: slctedIdFinalis!,
-                                nama_finalis: slctedNamaFinalis!,
-                                counts: counts,
-                                totalHarga: totalHarga,
-                                totalHargaAsli: harga_akhir_asli,
-                                id_paket: id_paket,
-                                fromDetail: false,
-                                idUser: idUser,
-                                flag_login: vote['flag_login'],
-                                rateCurrency: vote['rate_currency_vote'],
-                                rateCurrencyUser: vote['rate_currency_user'],
-                              ),
-                            ),
-                          );
-                        }
                       }
                     },
                 child: Text(
