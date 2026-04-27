@@ -49,21 +49,24 @@ class _ExploreEventState extends State<ExploreEvent> {
 
   bool showErrorBar = false;
   String errorMessage = "";
+  String? currencyCode;
 
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";
     if (widget.timeFilter.isNotEmpty) {
-      // filterTime = widget.timeFilter.join(",");
-      if (widget.timeFilter.length == 1) {
-        filterTime = widget.timeFilter.first;
+      if (widget.timeFilter.length == 3) {
+        filterTime = '';
+      } else {
+        filterTime = widget.timeFilter.join(",");
       }
     }
 
     String filterPrice = "";
     if (widget.priceFilter.isNotEmpty) {
-      // filterPrice = widget.priceFilter.join(",");
-      if (widget.priceFilter.length == 1) {
-        filterPrice = widget.priceFilter.first;
+      if (widget.priceFilter.length == 2) {
+        filterPrice = '';
+      } else {
+        filterPrice = widget.priceFilter.join(",");
       }
     }
 
@@ -87,6 +90,7 @@ class _ExploreEventState extends State<ExploreEvent> {
       setState(() {
         showErrorBar = true;
         errorMessage = responses?['message'];
+        isFirstLoad = false;
       });
       return;
     }
@@ -204,7 +208,11 @@ class _ExploreEventState extends State<ExploreEvent> {
         currentPage = 1;
         hasMore = true;
         isLoadingMore = false;
+        pageEvents = [];
 
+        // _loadContent(false, widget.keyword);
+
+        setState(() => isFirstLoad = true);
         _loadContent(false, widget.keyword);
     }
   }
@@ -299,37 +307,40 @@ class _ExploreEventState extends State<ExploreEvent> {
 
 
   Widget buildKonten() {
-    if (events.isEmpty) {
-      return Column(
-        children: [
-          ColorFiltered(
-            colorFilter: const ColorFilter.matrix([
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0,      0,      0,      1, 0,
-            ]),
-            child: Image.asset(
-              'assets/images/placeholder.png',
-              width: 200,
-              height: 200,
+    if (pageEvents.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ColorFiltered(
+              colorFilter: const ColorFilter.matrix([
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0,      0,      0,      1, 0,
+              ]),
+              child: Image.asset(
+                'assets/images/placeholder.png',
+                width: 200,
+                height: 200,
+              ),
             ),
-          ),
 
-          SizedBox(height: 12,),
+            SizedBox(height: 12,),
 
-          Text(
-            bahasa['no_data'] ?? 'Tidak ada data',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
+            Text(
+              bahasa['no_data'] ?? 'Tidak ada data',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: () => _refresh(false, widget.keyword),
+      onRefresh: () => _refresh(false, widget.keyword ?? ''),
       child: NotificationListener<ScrollNotification>(
         onNotification: (scrollInfo) {
           if (!isLoadingMore &&

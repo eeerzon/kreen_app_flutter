@@ -59,6 +59,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
   String errorMessage = '';
 
   Timer? _timer;
+  final GlobalKey _shareKey = GlobalKey();
+  String? currencyCode;
 
   String getTicketStatus(Map<String, dynamic> ticket) {
     try {
@@ -393,6 +395,68 @@ class _DetailEventPageState extends State<DetailEventPage> {
       .where((e) => e['flag_aktif'] == 1)
       .toList();
 
+    String category_name = '';
+
+    if (detailEvent['category_name'].toLowerCase().contains('anniversary')
+      || detailEvent['category_name'].toLowerCase().contains('perayaan ulang tahun')) {
+        category_name = bahasa['anniversary'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('birthday')
+      || detailEvent['category_name'].toLowerCase().contains('ulang tahun')) {
+        category_name = bahasa['birthday'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('concert')
+      || detailEvent['category_name'].toLowerCase().contains('konser')) {
+        category_name = bahasa['concert'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('conference')
+      || detailEvent['category_name'].toLowerCase().contains('konferensi')) {
+        category_name = bahasa['conference'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('exibition')
+      || detailEvent['category_name'].toLowerCase().contains('pameran')) {
+        category_name = bahasa['exibition'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('meeting')
+      || detailEvent['category_name'].toLowerCase().contains('pertemuan')) {
+        category_name = bahasa['meeting'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('show')
+      || detailEvent['category_name'].toLowerCase().contains('pertunjukan')) {
+        category_name = bahasa['show'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('opening ceremony')
+      || detailEvent['category_name'].toLowerCase().contains('upacara pembukaan')) {
+        category_name = bahasa['opening_ceremony'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('party')
+      || detailEvent['category_name'].toLowerCase().contains('pesta')) {
+        category_name = bahasa['party'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('Product Launch')
+      || detailEvent['category_name'].toLowerCase().contains('peluncuran produk')) {
+        category_name = bahasa['product_launch'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('teater')
+      || detailEvent['category_name'].toLowerCase().contains('teater')) {
+        category_name = bahasa['teater'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('trade show')
+      || detailEvent['category_name'].toLowerCase().contains('pameran dagang')) {
+        category_name = bahasa['trade_show'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('other')
+      || detailEvent['category_name'].toLowerCase().contains('lainnya')) {
+        category_name = bahasa['other'];
+
+    } else if (detailEvent['category_name'].toLowerCase().contains('job fair')
+      || detailEvent['category_name'].toLowerCase().contains('pameran karir')) {
+        category_name = bahasa['job_fair'];
+
+    } else {
+        category_name = detailEvent['category_name'];
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -687,7 +751,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  detailEvent['category_name'],
+                                  category_name,
                                   style: const TextStyle(
                                     color: Colors.amber,
                                     fontWeight: FontWeight.bold,
@@ -705,10 +769,17 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                           const SizedBox(width: 8),
                           InkWell(
+                            key: _shareKey,
                             onTap: () {
+                              final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+                              final rect = box != null
+                                  ? box.localToGlobal(Offset.zero) & box.size
+                                  : Rect.fromLTWH(0, 0, 100, 100);
+
                               Share.share(
                                 "$baseUrl/ticket-event/${detailEvent['slug']}",
                                 subject: detailEvent['title'],
+                                sharePositionOrigin: rect,
                               );
                             },
                             child: SvgPicture.network(
@@ -736,7 +807,13 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                event['status'],
+                                event['status'] == "Aktif"
+                                  ? langCode == 'id'
+                                    ? "Aktif"
+                                    : "Active"
+                                  : langCode == 'id'
+                                    ? "Tidak Aktif"
+                                    : "Inactive",
                                 style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -749,8 +826,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               ),
                               child: Text(
                                 detailEvent['flag_private'] == 1
-                                ? "Private Event"
-                                : 'Public Event',
+                                  ? langCode == 'id' 
+                                    ? "Event Privat"
+                                    : "Private Event"
+                                  : langCode == 'id' 
+                                    ? "Event Publik" 
+                                    : 'Public Event',
                                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               ),
                             ),

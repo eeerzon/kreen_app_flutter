@@ -35,6 +35,7 @@ class DeskripsiSection_6 extends StatefulWidget {
 
   final ScrollController sponsorController = ScrollController();
   Timer? _timer;
+  final GlobalKey _shareKey = GlobalKey();
   
   @override
   void initState() {
@@ -225,10 +226,17 @@ class DeskripsiSection_6 extends StatefulWidget {
                   ),
 
                   InkWell(
+                    key: _shareKey,
                     onTap: () {
+                      final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+                      final rect = box != null
+                          ? box.localToGlobal(Offset.zero) & box.size
+                          : Rect.fromLTWH(0, 0, 100, 100);
+
                       Share.share(
                         "$baseUrl/voting/${widget.data['vote_slug']}",
                         subject: widget.data['judul_vote'],
+                        sharePositionOrigin: rect, // ← fix iOS
                       );
                     },
                     child: SvgPicture.network(
@@ -976,7 +984,7 @@ class DukunganSection_6 extends StatelessWidget {
   
             if (dateStr.isNotEmpty) {
               try {
-                final date = DateTime.parse(dateStr);
+                final date = DateTime.parse(dateStr).toLocal();
 
                 if (langCode == 'id') {
                   // Bahasa Indonesia
@@ -1119,6 +1127,7 @@ Widget buildTopCard({
                   langCode: langCode,
                   tema: tema,
                   onAfterLogin: onAfterLogin,
+                  persen: false
                 );
               },
               style: ElevatedButton.styleFrom(

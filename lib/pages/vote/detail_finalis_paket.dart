@@ -35,7 +35,8 @@ class DetailFinalisPaketPage extends StatefulWidget {
   final String? close_payment;
   final String? tanggal_buka_payment;
   final String flag_hide_no_urut;
-  const DetailFinalisPaketPage({super.key, required this.id_finalis, required this.vote, required this.index, required this.total_detail, required this.id_paket_bw, this.remaining, this.close_payment, this.tanggal_buka_payment, required this.flag_hide_no_urut});
+  final bool persen;
+  const DetailFinalisPaketPage({super.key, required this.id_finalis, required this.vote, required this.index, required this.total_detail, required this.id_paket_bw, this.remaining, this.close_payment, this.tanggal_buka_payment, required this.flag_hide_no_urut, required this.persen});
 
   @override
   State<DetailFinalisPaketPage> createState() => _DetailFinalisPaketPageState();
@@ -80,6 +81,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  final GlobalKey _shareKey = GlobalKey();
+  String? currencyCode;
 
   Future<void> checkPaymentStatus() async {
     if (widget.close_payment != '1') {
@@ -531,10 +534,17 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         ),
         actions: [
           InkWell(
+            key: _shareKey,
             onTap: () {
+              final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+              final rect = box != null
+                ? box.localToGlobal(Offset.zero) & box.size
+                : Rect.fromLTWH(0, 0, 100, 100);
+              
               Share.share(
                 "$baseUrl/voting/${detailvote['vote_slug']}/${detailFinalis['id_finalis']}",
                 subject: detailvote['judul_vote'],
+                sharePositionOrigin: rect,
               );
             },
             child: SvgPicture.network(
@@ -750,7 +760,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   
                                     const SizedBox(height: 10,),
                                     Text(
-                                      formatter.format(detailFinalis['total_voters'] ?? 0),
+                                      widget.persen 
+                                        ? "${detailFinalis['percent']}%"
+                                        : formatter.format(detailFinalis['total_voters'] ?? 0),
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
                                   ],
@@ -773,7 +785,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                         color,
                                         bgColor,
                                         id_paket,
-                                        currencyCode ?? detailvote['currency']
+                                        currencyCode!
                                       );
                       
                                       if (selectedQty != null) {

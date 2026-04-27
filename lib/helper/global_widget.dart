@@ -1,6 +1,6 @@
 
 
-// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
+// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names, unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
@@ -27,10 +27,12 @@ Future<void> handleVoteAction({
   required String langCode,
   required Color tema,
   required VoidCallback onAfterLogin,
+  required bool persen
 }) async {
 
   final storedToken = await StorageService.getToken() ?? '';
   var storeUser = await StorageService.getUser();
+  String? currencyCode = await StorageService.getCurrency();
 
   await refreshAfterVerification(storedToken, storeUser['email'] ?? '', langCode);
 
@@ -57,7 +59,7 @@ Future<void> handleVoteAction({
 
   // Semua lolos -> navigate
   if (context.mounted) {
-    _navigateToFinalis(context, flagPaket, idFinalis, flagHideNoUrut);
+    _navigateToFinalis(context, flagPaket, idFinalis, flagHideNoUrut, persen);
   }
 }
 
@@ -66,6 +68,7 @@ void _navigateToFinalis(
   String flagPaket,
   String idFinalis,
   String flagHideNoUrut,
+  bool persen
 ) {
   Navigator.push(
     context,
@@ -76,6 +79,7 @@ void _navigateToFinalis(
             count: 0,
             indexWrap: null,
             flag_hide_no_urut: flagHideNoUrut,
+            persen: persen,
           )
         : DetailFinalisPaketPage(
             id_finalis: idFinalis,
@@ -84,6 +88,7 @@ void _navigateToFinalis(
             total_detail: 0,
             id_paket_bw: null,
             flag_hide_no_urut: flagHideNoUrut,
+            persen: persen,
           ),
     ),
   );
@@ -188,6 +193,7 @@ class VoteLimit extends StatefulWidget {
 
 class _VoteLimitState extends State<VoteLimit> {
   Map<String, dynamic> bahasa = {};
+  String? currencyCode;
 
   @override
   void initState() {
@@ -203,6 +209,8 @@ class _VoteLimitState extends State<VoteLimit> {
     setState(() {
       bahasa = tempBahasa;
     });
+
+    currencyCode = await StorageService.getCurrency();
   }
 
   @override
@@ -266,7 +274,7 @@ class _VoteLimitState extends State<VoteLimit> {
                         MaterialPageRoute(
                           builder: (context) => DetailVotePage(
                             id_event: widget.id_event,
-                            currencyCode: currencyCode,
+                            currencyCode: currencyCode!,
                           ),
                         ),
                       );

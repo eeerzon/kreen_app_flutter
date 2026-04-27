@@ -69,6 +69,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     symbol: "",
     decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
   );
+  String? currencyCode;
 
   @override
   void initState() {

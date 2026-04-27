@@ -34,6 +34,7 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
 
   final ScrollController sponsorController = ScrollController();
   Timer? _timer;
+  final GlobalKey _shareKey = GlobalKey();
   
   @override
   void initState() {
@@ -183,10 +184,17 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
                   ),
 
                   InkWell(
+                    key: _shareKey,
                     onTap: () {
+                      final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+                      final rect = box != null
+                          ? box.localToGlobal(Offset.zero) & box.size
+                          : Rect.fromLTWH(0, 0, 100, 100);
+
                       Share.share(
                         "$baseUrl/voting/${widget.data['vote_slug']}",
                         subject: widget.data['judul_vote'],
+                        sharePositionOrigin: rect, // ← fix iOS
                       );
                     },
                     child: SvgPicture.network(
@@ -536,7 +544,7 @@ class _LeaderboardSectionState extends State<LeaderboardSection> {
                   flag_login: widget.data['flag_login'],
                   flag_verify_email: widget.data['flag_verify_email'],
                   langCode: widget.langCode,
-                  onAfterLogin: _onAfterLogin,
+                  onAfterLogin: _onAfterLogin
                 );
               } else {
                 return SizedBox.shrink();
@@ -948,7 +956,7 @@ class DukunganSection extends StatelessWidget {
     
               if (dateStr.isNotEmpty) {
                 try {
-                  final date = DateTime.parse(dateStr);
+                  final date = DateTime.parse(dateStr).toLocal();
 
                   if (langCode == 'id') {
                     // Bahasa Indonesia
@@ -1017,7 +1025,7 @@ Widget buildTopCard({
   required String flag_login,
   required String flag_verify_email,
   required String langCode,
-  required VoidCallback onAfterLogin,
+  required VoidCallback onAfterLogin
 }) {
   String crownImage = '';
   switch (rank) {
@@ -1091,6 +1099,7 @@ Widget buildTopCard({
                   langCode: langCode,
                   tema: tema,
                   onAfterLogin: onAfterLogin,
+                  persen: false,
                  );
               },
               style: ElevatedButton.styleFrom(
@@ -1136,7 +1145,7 @@ Widget buildListCard({
   required int rank,
   required String name,
   required num votes,
-  required double progress,
+  required num progress,
   required String image,
   required Color tema,
   required Map<String, dynamic> lang,

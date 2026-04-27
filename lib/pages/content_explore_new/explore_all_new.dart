@@ -55,6 +55,7 @@ class _ExploreAllState extends State<ExploreAllNew> {
   bool showErrorBar = false;
   String errorMessage = "";
   bool _isSearching = false;
+  String? currencyCode;
 
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();

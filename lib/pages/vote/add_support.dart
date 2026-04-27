@@ -41,6 +41,9 @@ class _AddSupportPageState extends State<AddSupportPage> {
   String? langCode;
   Map<String, dynamic> bahasa = {};
 
+  bool isSubmitting = false;
+  String? currencyCode;
+
   @override
   void initState() {
     super.initState();
@@ -539,7 +542,9 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: isSubmitting ? null : () async {
+                        setState(() => isSubmitting = true);
+
                         final dukungan = _supportController.text;
               
                         //kirim ke API
@@ -569,6 +574,9 @@ class _AddSupportPageState extends State<AddSupportPage> {
                         if (result != null) {
                           final temprc = result['rc'];
                           if (temprc == 200) {
+
+                            await Future.delayed(const Duration(milliseconds: 400));
+
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
@@ -579,7 +587,11 @@ class _AddSupportPageState extends State<AddSupportPage> {
                               ),
                               (route) => route.isFirst, // sisakan Home
                             );
+                          } else {
+                            setState(() => isSubmitting = false);
                           }
+                        } else {
+                          setState(() => isSubmitting = false);
                         }
               
                       },
@@ -590,10 +602,16 @@ class _AddSupportPageState extends State<AddSupportPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: Text(
-                        bahasa['send_support'],
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white),
+                            )
+                          : Text(
+                              bahasa['send_support'],
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                 ],

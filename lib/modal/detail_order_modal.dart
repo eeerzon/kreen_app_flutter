@@ -5,6 +5,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
+import 'package:kreen_app_flutter/pages/event/detail_event.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
+import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote.dart';
+import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote_paket.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -13,13 +17,14 @@ import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DetailOrderModal {
-  static Future<void> show(BuildContext context, String idOrder) async {
+  static Future<void> show(BuildContext context, String idOrder, String detailOrder) async {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> voteOder = {};
     List<dynamic> voteOrderDetail = [];
     List<dynamic> finalis = [];
     Map<String, dynamic> vote = {};
+    Map<String, dynamic> detailVote = {};
     String? statusOrder, currencyRegion;
     bool isLoading = true;
 
@@ -28,11 +33,15 @@ class DetailOrderModal {
     Map<String, dynamic> bahasa = {};
 
     num totalPriceRegion = 0;
+    num displayTotalAmount = 0;
+    String? currencyCode;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
+
+      currencyCode = await StorageService.getCurrency();
     }
 
     Future<void> loadOrder() async {
@@ -87,7 +96,20 @@ class DetailOrderModal {
 
       totalPriceRegion = voteOder['total_amount'] * voteOder['currency_value_region'];
       totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-      totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+      if (currencyRegion == "IDR") {
+        totalPriceRegion = totalPriceRegion.ceil();
+        displayTotalAmount = num.parse(totalPriceRegion.toString());
+      } else {
+        totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+        displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+      }
+
+      final resultVote = await ApiService.get("/vote/${vote['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
+      if (resultVote == null || resultVote['rc'] != 200) {
+        return;
+      } else {
+        detailVote = resultVote['data'] ?? {};
+      }
 
       isLoading = false;
     }
@@ -103,8 +125,8 @@ class DetailOrderModal {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Detail Order",
+                    Text(
+                      detailOrder,
                       style: TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold),
                     ),
@@ -339,8 +361,8 @@ class DetailOrderModal {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Detail Order",
+                        Text(
+                          bahasa['detail_pesanan'] ?? 'Detail Pesanan',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -414,79 +436,95 @@ class DetailOrderModal {
                     const Divider(),
 
                     const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 70,
-                                  height: 70,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: hasValidUrl
-                                      ? Image.network(
-                                          url,
-                                          height: 70,
-                                          width: 70,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Image.asset(
-                                              'assets/images/img_broken.jpg',
-                                              height: 70,
-                                              width: 70,
-                                              fit: BoxFit.cover,
-                                            );
-                                          },
-                                        )
-                                      : Image.asset(
-                                          'assets/images/img_broken.jpg',
-                                          height: 70,
-                                          width: 70,
-                                          fit: BoxFit.cover,
-                                        )
-                                  ),
-                                ),
-
-                                const SizedBox(width: 8,),
-
-                                Expanded( // penting agar tdk overflow
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        vote['judul_vote'] ?? '-',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "${vote['nama_penyelenggara'] ?? '-'}",
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        voteOder['total_amount'] == 0
-                                        ? bahasa['harga_detail'] ?? "" //'Gratis'
-                                        : "$currencyRegion ${formatter.format(totalPriceRegion)}",
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                    InkWell(
+                      onTap: () {
+                        if (vote['id_vote'] != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DetailVotePage(id_event: vote['id_vote'].toString()),
                             ),
-                          ),
-                        ],
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context)
+                            .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 70,
+                                    height: 70,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: hasValidUrl
+                                        ? Image.network(
+                                            url,
+                                            height: 70,
+                                            width: 70,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                'assets/images/img_broken.jpg',
+                                                height: 70,
+                                                width: 70,
+                                                fit: BoxFit.cover,
+                                              );
+                                            },
+                                          )
+                                        : Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            height: 70,
+                                            width: 70,
+                                            fit: BoxFit.cover,
+                                          )
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 8,),
+
+                                  Expanded( // penting agar tdk overflow
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          vote['judul_vote'] ?? '-',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${vote['nama_penyelenggara'] ?? '-'}",
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          voteOder['total_amount'] == 0
+                                          ? bahasa['harga_detail'] ?? "" //'Gratis'
+                                          : "$currencyRegion ${formatter.format(displayTotalAmount)}",
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -500,63 +538,146 @@ class DetailOrderModal {
                       children: List.generate(finalis.length, (index) {
                         final item = finalis[index];
 
+                        final dateStr = detailVote['tanggal_buka_payment']?.toString() ?? '-';
+                        String formattedDate = '-';
+
+                        if (dateStr.isNotEmpty) {
+                          try {
+                            final wibDate = parseWib(dateStr);
+                            // parsing string ke DateTime
+                            var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+                            date = wibDate.toLocal();
+                            if (langCode == 'id') {
+                              // Bahasa Indonesia
+                              final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+                              formattedDate = formatter.format(date);
+                            } else {
+                              // Bahasa Inggris
+                              final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+                              formattedDate = formatter.format(date);
+
+                              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                              final day = date.day;
+                              String suffix = 'th';
+                              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+                              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+                              formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+                            }
+                          } catch (e) {
+                            formattedDate = '-';
+                          }
+                        }
+                        
+                        int viewApi = 0;
+                        if (detailVote['leaderboard_tipe'] == 'number') {
+                          viewApi = 2;
+                        } else if (detailVote['leaderboard_tipe'] == 'percent') {
+                          viewApi = 3;
+                        } else if (detailVote['leaderboard_tipe'] == 'hidden') {
+                          viewApi = 4;
+                        } else if (detailVote['leaderboard_tipe'] == 'bar-percent') {
+                          viewApi = 5;
+                        } else if (detailVote['leaderboard_tipe'] == 'bar-number') {
+                          viewApi = 6;
+                        }
+
                         return Padding(
                           padding: EdgeInsets.only(bottom: index == finalis.length - 1 ? 0 : 16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 70,
-                                  height: 70,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: item['poster_finalis'] != null
-                                    ? Image.network(
-                                        item['poster_finalis'],
-                                        height: 70,
-                                        width: 70,
-                                      )
-                                    : Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        height: 70,
-                                        width: 70,
-                                        fit: BoxFit.cover,
-                                      ),
+                          child: InkWell(
+                            onTap: () {
+                              if (detailVote['flag_paket'] == '0') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LeaderboardSingleVote(
+                                      id_finalis: item['id_finalis'],
+                                      count: 0,
+                                      indexWrap: null,
+                                      close_payment: detailVote['close_payment'],
+                                      tanggal_buka_vote: formattedDate,
+                                      flag_hide_nomor_urut: detailVote['flag_hide_nomor_urut'],
+                                      currencyCode: currencyCode,
+                                      view_api: viewApi,
+                                    ),
                                   ),
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['nama_finalis'] ?? '-',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_vote']}",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.red,
+                                );
+                              } else if (detailVote['flag_paket'] == '1') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => LeaderboardSingleVotePaket(
+                                      id_finalis: item['id_finalis'],
+                                      vote: 0,
+                                      index: 0,
+                                      total_detail: 0,
+                                      id_paket_bw: null,
+                                      close_payment: detailVote['close_payment'],
+                                      tanggal_buka_vote: formattedDate,
+                                      flag_hide_nomor_urut: detailVote['flag_hide_nomor_urut'],
+                                      currencyCode: currencyCode,
+                                      view_api: viewApi,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 70,
+                                    height: 70,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: item['poster_finalis'] != null
+                                      ? Image.network(
+                                          item['poster_finalis'],
+                                          height: 70,
+                                          width: 70,
+                                        )
+                                      : Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          height: 70,
+                                          width: 70,
+                                          fit: BoxFit.cover,
                                         ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ],
+
+                                  const SizedBox(width: 8),
+
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item['nama_finalis'] ?? '-',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_vote']}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -586,7 +707,12 @@ class DetailOrderModal {
                           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                           children: [
                             TableRow(children: [
-                              const Text('ID Order', style: TextStyle(color: Colors.grey),),
+                              Text(
+                                langCode == 'id'
+                                  ? 'ID Pesanan'
+                                  : 'Order ID',
+                                style: TextStyle(color: Colors.grey),
+                              ),
                               const Text(' :  '),
                               Text(
                                 voteOder['id_order'],
@@ -602,7 +728,7 @@ class DetailOrderModal {
                               Text(bahasa['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
-                                "$currencyRegion ${formatter.format(totalPriceRegion)}",
+                                "$currencyRegion ${formatter.format(displayTotalAmount)}",
                                 style: TextStyle(fontWeight: FontWeight.bold),),
                             ]),
                             const TableRow(children: [
@@ -633,7 +759,7 @@ class DetailOrderModal {
   }
 
 
-  static Future<void> showEvent(BuildContext context, String idOrder, bool isSukses) async {
+  static Future<void> showEvent(BuildContext context, String idOrder, bool isSukses, String detailOrder) async {
     final formatter = NumberFormat.decimalPattern("en_US");
     
     Map<String, dynamic> eventOder = {};
@@ -650,13 +776,17 @@ class DetailOrderModal {
     Map<String, dynamic> bahasa = {};
 
     num totalPriceRegion = 0;
+    num displayTotalAmount = 0;
 
     bool isGeneratingPdf = false;
+    String? currencyCode;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
 
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
+
+      currencyCode = await StorageService.getCurrency();
 
       isLoading = false;
     }
@@ -724,7 +854,13 @@ class DetailOrderModal {
 
       totalPriceRegion = eventOder['user_currency_total_payment'] * eventOder['currency_value_region'];
       totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-      totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+      if (currencyRegion == "IDR") {
+        totalPriceRegion = totalPriceRegion.ceil();
+        displayTotalAmount = num.parse(totalPriceRegion.toString());
+      } else {
+        totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+        displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+      }
     }
 
     Widget buildSkeleton() {
@@ -738,8 +874,8 @@ class DetailOrderModal {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Detail Order",
+                    Text(
+                      detailOrder,
                       style: TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold),
                     ),
@@ -983,8 +1119,8 @@ class DetailOrderModal {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Detail Order",
+                        Text(
+                          bahasa['detail_pesanan'] ?? "Detail Pesanan",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
@@ -1058,70 +1194,85 @@ class DetailOrderModal {
                     const Divider(),
 
                     const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300,),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 70,
-                                  height: 70,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      event['event_banner'],
-                                      height: 70,
-                                      width: 70,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/images/img_broken.jpg',
-                                          height: 70,
-                                          width: 70,
-                                        );
-                                      },
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                              DetailEventPage(
+                                id_event: detailEvent['id'].toString(), 
+                                price: dataEvents['event_ticket'][0]['price'] ?? 0,
+                                currencyCode: currencyCode
+                              ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300,),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 70,
+                                    height: 70,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        event['event_banner'],
+                                        height: 70,
+                                        width: 70,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            height: 70,
+                                            width: 70,
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
 
-                                const SizedBox(width: 8,),
+                                  const SizedBox(width: 8,),
 
-                                Expanded( // penting agar tdk overflow
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        event['event_title'] ?? '-',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      // const SizedBox(height: 4),
-                                      // Text(
-                                      //   "${vote['nama_penyelenggara']}",
-                                      //   style: TextStyle(color: Colors.grey),
-                                      // ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        eventOder['amount'] == 0
-                                        ? bahasa['harga_detail'] ?? "" //'Gratis'
-                                        : "$currencyRegion ${formatter.format(totalPriceRegion)}",
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
+                                  Expanded( // penting agar tdk overflow
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          event['event_title'] ?? '-',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        // const SizedBox(height: 4),
+                                        // Text(
+                                        //   "${vote['nama_penyelenggara']}",
+                                        //   style: TextStyle(color: Colors.grey),
+                                        // ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          eventOder['amount'] == 0
+                                          ? bahasa['harga_detail'] ?? "" //'Gratis'
+                                          : "$currencyRegion ${formatter.format(totalPriceRegion)}",
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
@@ -1427,7 +1578,12 @@ class DetailOrderModal {
                           },
                           children: [
                             TableRow(children: [
-                              const Text('ID Order', style: TextStyle(color: Colors.grey),),
+                              Text(
+                                langCode == 'id'
+                                  ? 'ID Pesanan'
+                                  : 'Order ID',
+                                style: TextStyle(color: Colors.grey),
+                              ),
                               const Text(' :  '),
                               Text(
                                 eventOder['id_order'],
@@ -1443,7 +1599,7 @@ class DetailOrderModal {
                               Text(bahasa['harga'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
-                                "$currencyRegion ${formatter.format(totalPriceRegion)}",
+                                "$currencyRegion ${formatter.format(displayTotalAmount)}",
                                 style: TextStyle(fontWeight: FontWeight.bold),),
                             ]),
                             const TableRow(children: [

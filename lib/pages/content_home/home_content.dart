@@ -56,6 +56,7 @@ class _HomeContentState extends State<HomeContent> {
   
   bool showErrorBar = false;
   String errorMessage = ''; 
+  String? currencyCode;
 
   @override
   void initState() {
@@ -1096,6 +1097,13 @@ class _HomeContentState extends State<HomeContent> {
                                       await StorageService.setCurrency(currencyCode!);
                                     }
 
+                                    int view_api = 0;
+                                    if (item['leaderboard_tipe'] == "percent") {
+                                      view_api = 3;
+                                    } else if (item['leaderboard_tipe'] == "bar-percent") {
+                                      view_api = 5;
+                                    }
+
                                     if (item['flag_paket'] == '0') { //0
                                       Navigator.push(
                                         context,
@@ -1108,6 +1116,7 @@ class _HomeContentState extends State<HomeContent> {
                                             tanggal_buka_vote: formattedDate,
                                             flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
                                             currencyCode: currencyCode,
+                                            view_api: view_api
                                           ),
                                         ),
                                       ).then((_) {
@@ -1127,6 +1136,7 @@ class _HomeContentState extends State<HomeContent> {
                                             tanggal_buka_vote: formattedDate,
                                             flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
                                             currencyCode: currencyCode,
+                                            view_api: view_api
                                           ),
                                         ),
                                       ).then((_) {

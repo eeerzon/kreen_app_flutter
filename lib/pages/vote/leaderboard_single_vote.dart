@@ -41,6 +41,7 @@ class LeaderboardSingleVote extends StatefulWidget {
   final String? tanggal_buka_vote;
   final String? flag_hide_nomor_urut;
   final String? currencyCode;
+  final int view_api;
 
   const LeaderboardSingleVote({
     super.key, 
@@ -50,7 +51,8 @@ class LeaderboardSingleVote extends StatefulWidget {
     this.close_payment, 
     this.tanggal_buka_vote, 
     this.flag_hide_nomor_urut, 
-    this.currencyCode
+    this.currencyCode,
+    required this.view_api
   });
 
   @override
@@ -105,6 +107,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  final GlobalKey _shareKey = GlobalKey();
+  bool persen = false;
+  String? currencyCode;
 
   Future<void> checkPaymentStatus(String tanggal_buka_payment) async {
     if (widget.close_payment != '1') {
@@ -166,32 +171,41 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
     });
 
-    final rawUrl = detailFinalis['video_profile'] ?? "";
-    final cleanedUrl = cleanYoutubeUrl(rawUrl);
+    String? videoId;
+    if (detailFinalis['video_profile'] == null || detailFinalis['video_profile'] == '') {
+      videoId = null;
+    } else {
+      final rawUrl = detailFinalis['video_profile'] ?? "";
+      final cleanedUrl = cleanYoutubeUrl(rawUrl);
 
-    final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+      videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+    }
 
     // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
     if (videoId != null && mounted) {
       setState(() {
-        if (videoId != "" && videoId.isNotEmpty) {
-          _ytTopController = YoutubePlayerController(
-            initialVideoId: videoId,
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              forceHD: false,
-            ),
-          );
+        _ytTopController = YoutubePlayerController(
+          initialVideoId: videoId!,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            forceHD: false,
+          ),
+        );
 
-            _ytBottomController = YoutubePlayerController(
-            initialVideoId: videoId,
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              forceHD: false,
-            ),
-          );
-        }
+        _ytBottomController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            forceHD: false,
+          ),
+        );
+      });
+    }
+
+    if (widget.view_api == 3 || widget.view_api == 5) {
+      setState(() {
+        persen = true;
       });
     }
   }
@@ -617,6 +631,10 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       themeName = detailvote['theme_name'].toString();
     }
 
+    if (themeName == "Default Kreen") {
+      themeName = "default";
+    }
+
     Color color = colorMap[themeName] ?? Colors.red;
 
     final dateStr = detailvote['tanggal_grandfinal_mulai']?.toString() ?? '-';
@@ -685,10 +703,17 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         ),
         actions: [
           InkWell(
+            key: _shareKey,
             onTap: () {
+              final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+              final rect = box != null
+                ? box.localToGlobal(Offset.zero) & box.size
+                : Rect.fromLTWH(0, 0, 100, 100);
+              
               Share.share(
                 "$baseUrl/voting/${detailvote['vote_slug']}/${detailFinalis['id_finalis']}",
                 subject: detailvote['judul_vote'],
+                sharePositionOrigin: rect,
               );
             },
             child: SvgPicture.network(
@@ -917,7 +942,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                     
                                       const SizedBox(height: 10,),
                                       Text(
-                                        formatter.format(detailFinalis['total_voters'] ?? 0),
+                                        persen
+                                          ? "${detailFinalis['percent']}%"
+                                          : formatter.format(detailFinalis['total_voters'] ?? 0),
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       )
                                     ],

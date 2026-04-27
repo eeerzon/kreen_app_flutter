@@ -19,7 +19,8 @@ import 'package:shimmer/shimmer.dart';
 
 class FinalisPage extends StatefulWidget {
   final String id_vote;
-  const FinalisPage({super.key, required this.id_vote});
+  final int view_api;
+  const FinalisPage({super.key, required this.id_vote, required this.view_api});
 
   @override
   State<FinalisPage> createState() => _FinalisPageState();
@@ -66,6 +67,8 @@ class _FinalisPageState extends State<FinalisPage> {
   bool isPaymentClosed = false;
   bool isBeforeOpen = false;
   bool _isSearching = false;
+  bool persen = false;
+  String? currencyCode;
 
   Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
     if (close_payment != '1') {
@@ -118,6 +121,10 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   Future<void> _loadVotes() async {
+
+    if (widget.view_api == 3 || widget.view_api == 5) {
+      persen = true;
+    }
 
     final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
     if (resultVote == null || resultVote['rc'] != 200) {
@@ -1113,7 +1120,9 @@ class _FinalisPageState extends State<FinalisPage> {
         
                           const SizedBox(height: 10,),
                           Text(
-                            formatter.format(item['total_voters'] ?? 0),
+                            persen 
+                              ? "${item['percent']}%"
+                              : formatter.format(item['total_voters'] ?? 0),
                             style: TextStyle(fontWeight: FontWeight.bold),
                           )
                         ],
@@ -1136,6 +1145,7 @@ class _FinalisPageState extends State<FinalisPage> {
                               close_payment: vote['close_payment'],
                               tanggal_buka_payment: formattedDate,
                               flag_hide_no_urut: vote['flag_hide_nomor_urut'],
+                              persen: persen,
                             ),
                           ),
                         );

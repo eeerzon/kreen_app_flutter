@@ -1,3 +1,7 @@
+// ignore_for_file: deprecated_member_use
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_all.dart';
@@ -32,6 +36,8 @@ class _ExplorePageState extends State<ExplorePage> {
 
   String? langCode;
   Map<String, dynamic>? bahasa;
+  bool _isSearching = false;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -50,18 +56,31 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 
   void onSearch(String value) {
-    setState(() {
-      _keyword = (value.isEmpty ? "" : value);
+    _debounce?.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 1000), () async {
+      setState(() => _isSearching = true);
+
+      setState(() {
+        _keyword = value.isEmpty ? "" : value;
+        _isSearching = false;
+      });
     });
   }
 
   void _resetSearch() {
-    _searchController.clear();
+    _debounce?.cancel();
 
-    setState(() {
-      _keyword = "";
-      timeFilter = [];
-      priceFilter = [];
+    _debounce = Timer(const Duration(milliseconds: 1000), () async {
+      setState(() => _isSearching = true);
+      _searchController.clear();
+
+      setState(() {
+        _keyword = "";
+        timeFilter = [];
+        priceFilter = [];
+         _isSearching = false;
+      });
     });
   }
 
@@ -73,6 +92,7 @@ class _ExplorePageState extends State<ExplorePage> {
       _searchController.clear();
       timeFilter = [];
       priceFilter = [];
+        _isSearching = false;
     });
   }
 
@@ -145,10 +165,17 @@ class _ExplorePageState extends State<ExplorePage> {
               onChanged: onSearch,
               initialTime: timeFilter,
               initialPrice: priceFilter,
-              onFilterApply: (time, price) {
+              onFilterApply: (time, price) async {
+                setState(() {
+                  _isSearching = true;
+                });
+                
+                await Future.delayed(const Duration(milliseconds: 1000));
+
                 setState(() {
                   timeFilter = time;
                   priceFilter = price;
+                  _isSearching = false;
                 });
               },
               selectedIndex: _selectedIndex,
@@ -191,7 +218,21 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
 
             const SizedBox(height: 16),
-            Expanded(child: buildPage()),
+            Expanded(
+              child: Stack(
+                children: [
+                  buildPage(),
+
+                  if (_isSearching)
+                    Container(
+                      color: Colors.white.withOpacity(0.6),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.red),
+                      ),
+                    ),
+                ],
+              ),
+            )
           ],
         ),
       ),

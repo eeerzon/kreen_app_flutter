@@ -55,6 +55,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
   List<dynamic> support = [];
   bool showErrorBar = false;
   String errorMessage = ''; 
+  String? currencyCode;
 
   @override
   void initState() {
@@ -502,14 +503,14 @@ class _DetailVotePageState extends State<DetailVotePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => FinalisPage(id_vote: vote['id_vote']),
+                    builder: (_) => FinalisPage(id_vote: vote['id_vote'], view_api: view_api,),
                   ),
                 );
               } else {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => FinalisPaketPage(id_vote: vote['id_vote']),
+                    builder: (_) => FinalisPaketPage(id_vote: vote['id_vote'], view_api: view_api,),
                   ),
                 );
               }

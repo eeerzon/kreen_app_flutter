@@ -30,6 +30,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     "id": "Indonesia",
     "en": "English"
   };
+  String? currencyCode;
 
   @override
   void initState() {

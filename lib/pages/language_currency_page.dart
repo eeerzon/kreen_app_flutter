@@ -20,6 +20,7 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
 
   String? langCode;
   bool? changed;
+  String? currencyCode;
 
   @override
   void initState() {

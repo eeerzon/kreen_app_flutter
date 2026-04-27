@@ -35,6 +35,7 @@ class DeskripsiSection_3 extends StatefulWidget {
 
   final ScrollController sponsorController = ScrollController();
   Timer? _timer;
+  final GlobalKey _shareKey = GlobalKey();
   
   @override
   void initState() {
@@ -222,10 +223,17 @@ class DeskripsiSection_3 extends StatefulWidget {
                   ),
 
                   InkWell(
+                    key: _shareKey,
                     onTap: () {
+                      final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+                      final rect = box != null
+                          ? box.localToGlobal(Offset.zero) & box.size
+                          : Rect.fromLTWH(0, 0, 100, 100);
+
                       Share.share(
                         "$baseUrl/voting/${widget.data['vote_slug']}",
                         subject: widget.data['judul_vote'],
+                        sharePositionOrigin: rect, // ← fix iOS
                       );
                     },
                     child: SvgPicture.network(
@@ -824,7 +832,7 @@ class _LeaderboardSection_3State extends State<LeaderboardSection_3> {
                   context: context, 
                   rank: item['rank'], 
                   name: item['nama_finalis'], 
-                  votes: item['total_voters'] ?? 0, 
+                  votes: item['percent'] ?? 0, 
                   color: colors, 
                   isBig: big, 
                   image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
@@ -967,7 +975,7 @@ class DukunganSection_3 extends StatelessWidget {
   
             if (dateStr.isNotEmpty) {
               try {
-                final date = DateTime.parse(dateStr);
+                final date = DateTime.parse(dateStr).toLocal();
 
                 if (langCode == 'id') {
                   // Bahasa Indonesia
@@ -1104,6 +1112,7 @@ Widget buildTopCard({
                   langCode: langCode, 
                   tema: tema,
                   onAfterLogin: onAfterLogin,
+                  persen: true
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -1149,7 +1158,7 @@ Widget buildListCard({
   required String name,
   required num votes,
   required String image,
-  required double totalVotes,
+  required num totalVotes,
   required Color tema,
 }) {
 

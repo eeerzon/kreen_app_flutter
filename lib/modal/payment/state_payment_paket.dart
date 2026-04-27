@@ -183,6 +183,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
   String? bankCodeDebit;
   bool hasAttribute = false;
+  String? currencyCode;
   
   @override
   void initState() {
@@ -711,6 +712,20 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                   id_event: widget.id_vote,
                 )),
               );
+            } else if (errorMessage.toLowerCase().contains("melewati batas voting")) {
+              AwesomeDialog(
+                context: context,
+                dialogType: DialogType.noHeader,
+                animType: AnimType.topSlide,
+                title: bahasa['maaf'],
+                desc: bahasa['lewat_batas_voting'],
+                btnOkOnPress: () {},
+                btnOkColor: Colors.red,
+                buttonsTextStyle: TextStyle(color: Colors.white),
+                headerAnimationLoop: false,
+                dismissOnTouchOutside: true,
+                showCloseIcon: true,
+              ).show();
             } else {
               AwesomeDialog(
                 context: context,
@@ -766,7 +781,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
         _showError = true;
       });
 
-      final isValid = _validateAllForm();
+      final isValid = _validateAllForm(detailVote['currency']);
 
       for (var i = 0; i < indikator.length; i++) {
         if (indikator[i]['type_form'] != 'file') {
@@ -1211,17 +1226,35 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                   ),
 
                                   if (isPhoneField) ... [
-                                    if (!isValidPhone(_phoneController.text) && _phoneTouched)
-                                      Padding(
-                                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
-                                        child: Text(
-                                          bahasa['nomor_hp_error'],
-                                          style: TextStyle(
-                                            color: Colors.red[900],
-                                            fontSize: 12
+                                    if (detailVote['currency'] == 'IDR') ... [
+                                      if (!isValidPhoneIDR(_phoneController.text)
+                                          && _phoneController.text.trim().isNotEmpty 
+                                          && (_phoneTouched || _showError))
+                                        Padding(
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                          child: Text(
+                                            bahasa['nomor_hp_error_idr'],
+                                            style: TextStyle(
+                                              color: Colors.red[900],
+                                              fontSize: 12
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                    ] else ... [
+                                      if (!isValidPhone(_phoneController.text) 
+                                          && _phoneController.text.trim().isNotEmpty 
+                                          && (_phoneTouched || _showError))
+                                        Padding(
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                          child: Text(
+                                            bahasa['nomor_hp_error'],
+                                            style: TextStyle(
+                                              color: Colors.red[900],
+                                              fontSize: 12
+                                            ),
+                                          ),
+                                        ),
+                                    ],
 
                                     const SizedBox(height: 4),
                                     if (_showError && _phoneController.text.trim().isEmpty)
@@ -1247,6 +1280,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                         )
                                       ],
                                     ),
+                                    
                                   ] else if (isEmailField) ... [
                                     if (!isValidEmail(_emailController.text) && _emailTouched)
                                       Padding(
@@ -2778,7 +2812,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     super.dispose();
   }
 
-  bool _validateAllForm() {
+  bool _validateAllForm(String currencyVote) {
     bool isValid = true;
     FocusNode? firstErrorFocus;
     bool genderError = false;
@@ -2798,7 +2832,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     }
     
 
-    // if (indikator.isNotEmpty) {
+    if (indikator.isNotEmpty) {
 
     //   // email
     //   if (_emailController.text.trim().isEmpty ||
@@ -2815,58 +2849,67 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     //   }
     // }
 
-    //email
-    final bool isEmailRequired =
-      indikator.any((e) => e['id_indikator_vote'] == 12);
+      //email
+      final bool isEmailRequired =
+        indikator.any((e) => e['id_indikator_vote'] == 12);
 
-    final email = _emailController.text.trim();
+      final email = _emailController.text.trim();
 
-    if (email.isNotEmpty && !isValidEmail(email)) {
-      // format salah
-      isValid = false;
-      firstErrorFocus ??= _emailFocus;
-    }
-
-    if (isEmailRequired && email.isEmpty) {
-      // wajib tapi kosong
-      isValid = false;
-      firstErrorFocus ??= _emailFocus;
-    }
-
-    //phone
-    final bool isPhoneRequired =
-      indikator.any((e) => e['id_indikator_vote'] == 1);
-
-    final phone = _phoneController.text.trim();
-
-    if (phone.isNotEmpty && !isValidPhone(phone)) {
-      // format salah
-      isValid = false;
-      firstErrorFocus ??= _phoneFocus;
-    }
-
-    if (isPhoneRequired && phone.isEmpty) {
-      // wajib tapi kosong
-      isValid = false;
-      firstErrorFocus ??= _phoneFocus;
-    }
-
-    // form indikator
-    for (int j = 0; j < indikator.length; j++) {
-      final item = indikator[j];
-      final label = (item['indikator_vote'] ?? '').toString().toLowerCase();
-      final isPhoneField = label.contains('hp');
-      final isEmailField = label.contains('email');
-
-      // skip phone & email — sudah divalidasi di atas
-      if (isPhoneField || isEmailField) continue;
-
-      if (answers[j].toString().trim().isEmpty) {
+      if (email.isNotEmpty && !isValidEmail(email)) {
+        // format salah
         isValid = false;
-        // tandai field ini sudah "disentuh" supaya error muncul di UI
-        setState(() => _answerTouched[j] = true);
-        firstErrorFocus ??= indikatorFocus[j];
-        break;
+        firstErrorFocus ??= _emailFocus;
+      }
+
+      if (isEmailRequired && email.isEmpty) {
+        // wajib tapi kosong
+        isValid = false;
+        firstErrorFocus ??= _emailFocus;
+      }
+
+      //phone
+      final bool isPhoneRequired =
+        indikator.any((e) => e['id_indikator_vote'] == 1);
+
+      final phone = _phoneController.text.trim();
+
+      if (currencyVote == 'IDR') {
+        if (phone.isNotEmpty && !isValidPhoneIDR(phone)) {
+          // format salah
+          isValid = false;
+          firstErrorFocus ??= _phoneFocus;
+        }
+      } else {
+        if (phone.isNotEmpty && !isValidPhone(phone)) {
+          // format salah
+          isValid = false;
+          firstErrorFocus ??= _phoneFocus;
+        }
+      }
+
+      if (isPhoneRequired && phone.isEmpty) {
+        // wajib tapi kosong
+        isValid = false;
+        firstErrorFocus ??= _phoneFocus;
+      }
+
+      // form indikator
+      for (int j = 0; j < indikator.length; j++) {
+        final item = indikator[j];
+        final label = (item['indikator_vote'] ?? '').toString().toLowerCase();
+        final isPhoneField = label.contains('hp');
+        final isEmailField = label.contains('email');
+
+        // skip phone & email — sudah divalidasi di atas
+        if (isPhoneField || isEmailField) continue;
+
+        if (answers[j].toString().trim().isEmpty) {
+          isValid = false;
+          // tandai field ini sudah "disentuh" supaya error muncul di UI
+          setState(() => _answerTouched[j] = true);
+          firstErrorFocus ??= indikatorFocus[j];
+          break;
+        }
       }
     }
 

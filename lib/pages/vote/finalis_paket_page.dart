@@ -18,7 +18,8 @@ import 'package:shimmer/shimmer.dart';
 
 class FinalisPaketPage extends StatefulWidget {
   final String id_vote;
-  const FinalisPaketPage({super.key, required this.id_vote});
+  final int view_api;
+  const FinalisPaketPage({super.key, required this.id_vote, required this.view_api});
 
   @override
   State<FinalisPaketPage> createState() => _FinalisPaketPageState();
@@ -65,6 +66,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   bool isPaymentClosed = false;
   bool isBeforeOpen = false;
   bool _isSearching = false;
+  bool persen = false;
+  String? currencyCode;
 
   Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
     if (close_payment != '1') {
@@ -117,6 +120,10 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   }
 
   Future<void> _loadVotes() async {
+
+    if (widget.view_api == 3 || widget.view_api == 5) {
+      persen = true;
+    }
 
     final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
     if (resultVote == null || resultVote['rc'] != 200) {
@@ -997,7 +1004,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       
                         const SizedBox(height: 10,),
                         Text(
-                          formatter.format(item['total_voters'] ?? 0),
+                          persen
+                            ? "${item['percent']}%"
+                            : formatter.format(item['total_voters'] ?? 0),
                           style: TextStyle(fontWeight: FontWeight.bold),
                         )
                       ],
@@ -1022,6 +1031,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                             close_payment: vote['close_payment'],
                             tanggal_buka_payment: formattedDate,
                             flag_hide_no_urut: vote['flag_hide_nomor_urut'],
+                            persen: persen,
                             ),
                         ),
                       );
@@ -1059,7 +1069,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                             color,
                             bgColor,
                             id_paket,
-                            currencyCode ?? vote['currency']
+                            currencyCode!
                           );
 
                           if (selectedQty != null) {

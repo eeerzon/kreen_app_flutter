@@ -44,6 +44,7 @@ class LeaderboardSingleVotePaket extends StatefulWidget {
   final String? tanggal_buka_vote;
   final String? flag_hide_nomor_urut;
   final String? currencyCode;
+  final int view_api;
 
   const LeaderboardSingleVotePaket({
     super.key, 
@@ -56,7 +57,8 @@ class LeaderboardSingleVotePaket extends StatefulWidget {
     this.close_payment, 
     this.tanggal_buka_vote, 
     this.flag_hide_nomor_urut, 
-    this.currencyCode
+    this.currencyCode,
+    required this.view_api
   });
 
   @override
@@ -107,6 +109,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  final GlobalKey _shareKey = GlobalKey();
+  bool persen = false;
+  String? currencyCode;
 
   Future<void> checkPaymentStatus(String tanggal_buka_payment) async {
     if (widget.close_payment != '1') {
@@ -168,17 +173,22 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
     });
 
-    final rawUrl = detailFinalis['video_profile'] ?? "";
-    final cleanedUrl = cleanYoutubeUrl(rawUrl);
+    String? videoId;
+    if (detailFinalis['video_profile'] == null || detailFinalis['video_profile'] == '') {
+      videoId = null;
+    } else {
+      final rawUrl = detailFinalis['video_profile'] ?? "";
+      final cleanedUrl = cleanYoutubeUrl(rawUrl);
 
-    final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+      videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+    }
 
     // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
     if (videoId != null && mounted) {
       setState(() {
         _ytTopController = YoutubePlayerController(
-          initialVideoId: videoId,
+          initialVideoId: videoId!,
           flags: const YoutubePlayerFlags(
             autoPlay: false,
             forceHD: false,
@@ -192,6 +202,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
             forceHD: false,
           ),
         );
+      });
+    }
+
+    if (widget.view_api == 3 || widget.view_api == 5) {
+      setState(() {
+        persen = true;
       });
     }
   }
@@ -578,6 +594,10 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       themeName = detailvote['theme_name'];
     }
 
+    if (themeName == "Default Kreen") {
+      themeName = "default";
+    }
+
     Color color = colorMap[themeName] ?? Colors.red;
     Color bgColor;
     if (color is MaterialColor) {
@@ -645,10 +665,17 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         ),
         actions: [
           InkWell(
+            key: _shareKey,
             onTap: () {
+              final box = _shareKey.currentContext?.findRenderObject() as RenderBox?;
+              final rect = box != null
+                ? box.localToGlobal(Offset.zero) & box.size
+                : Rect.fromLTWH(0, 0, 100, 100);
+              
               Share.share(
                 "$baseUrl/voting/${detailvote['vote_slug']}/${detailFinalis['id_finalis']}",
                 subject: detailvote['judul_vote'],
+                sharePositionOrigin: rect,
               );
             },
             child: SvgPicture.network(
@@ -869,7 +896,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                   
                                     const SizedBox(height: 10,),
                                     Text(
-                                      formatter.format(detailFinalis['total_voters'] ?? 0),
+                                      persen
+                                        ? "${detailFinalis['percent']}%"
+                                        : formatter.format(detailFinalis['total_voters'] ?? 0),
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )
                                   ],
@@ -893,7 +922,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                       color,
                                       bgColor,
                                       id_paket!,
-                                      currencyCode ?? detailvote['currency']
+                                      currencyCode!
                                     );
                     
                                     if (selectedQty != null) {

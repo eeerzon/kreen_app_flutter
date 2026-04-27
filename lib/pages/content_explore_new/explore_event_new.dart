@@ -49,6 +49,7 @@ class _ExploreEventState extends State<ExploreEventNew> {
 
   bool showErrorBar = false;
   String errorMessage = "";
+  String? currencyCode;
 
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";

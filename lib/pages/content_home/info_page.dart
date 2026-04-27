@@ -32,6 +32,7 @@ class _InfoPageState extends State<InfoPage> {
 
   bool isEdit = false;
   bool? changed;
+  String? currencyCode;
 
   @override
   void initState() {

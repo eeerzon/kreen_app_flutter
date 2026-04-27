@@ -51,6 +51,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   String errorMessage = '';
 
   late List<bool> openStates;
+  String? currencyCode;
 
   @override
   void initState() {

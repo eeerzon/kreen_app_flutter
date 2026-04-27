@@ -24,13 +24,20 @@ class OrderEvent extends StatefulWidget {
 class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateMixin{
   String? langCode;
   late TabController _tabController;
-  bool isLoading = true;
+  bool isLoadingSukses = true;
+  bool isLoadingPending = true;
+  bool isLoadingFail = true;
 
   Map<String, dynamic> bahasa = {};
   String? orderMenunggu, orderGagal;
 
   bool showErrorBar = false;
   String errorMessage = "";
+
+  bool _successLoaded = false;
+  bool _pendingLoaded = false;
+  bool _failLoaded = false;
+  String? currencyCode;
 
   @override
   void initState() {
@@ -40,7 +47,21 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
-      await _loadContent();
+      await _loadSuccess();
+    });
+
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        final index = _tabController.index;
+        
+        if (index == 0 && !_successLoaded) {
+          _loadSuccess();
+        } else if (index == 1 && !_pendingLoaded) {
+          _loadPending();
+        } else if (index == 2 && !_failLoaded) {
+          _loadFail();
+        }
+      }
     });
   }
 
@@ -81,18 +102,18 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
   List<Map<String, dynamic>> eventPending = [];
   List<Map<String, dynamic>> eventGagal = [];
 
-  Future<void> _loadContent() async {
+  Future<void> _loadSuccess() async {
+    setState(() {
+      isLoadingSukses = true;
+    });
+
     orderSuccess = [];
-    orderPending = [];
-    orderFail = [];
 
     eventSukses = [];
-    eventPending = [];
-    eventGagal = [];
 
     if (paymentExpired) {
       setState(() {
-        isLoading = true;
+        isLoadingSukses = true;
       });
     }
 
@@ -108,31 +129,9 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       return;
     }
 
-    var resultPending = await ApiService.get('/order/event?id_user=$idUser&status=pending&sort_by=terbaru', xLanguage: langCode);
-    if (resultPending == null || resultPending['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultPending?['message'];
-      });
-      return;
-    }
-
-    var resultFail = await ApiService.get('/order/event?id_user=$idUser&status=fail&sort_by=terbaru', xLanguage: langCode);
-    if (resultFail == null || resultFail['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultFail?['message'];
-      });
-      return;
-    }
-
     var tempSuccess = resultSuccess['data'];
-    var tempPending = resultPending['data'];
-    var tempFail = resultFail['data'];
 
     List<Map<String, dynamic>> tempEventSukses = [];
-    List<Map<String, dynamic>> tempEventPending = [];
-    List<Map<String, dynamic>> tempEventGagal = [];
 
     for (var ordersukses in tempSuccess) {
       final idOrder = ordersukses['id_order'];
@@ -154,6 +153,47 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
       });
     }
 
+    if (!mounted) return;
+    setState(() {
+      orderSuccess = tempSuccess;
+      eventSukses = tempEventSukses;
+
+      isLoadingSukses = false;
+      showErrorBar = false;
+    });
+  }
+
+  Future<void> _loadPending() async {
+    setState(() {
+      isLoadingPending = true;
+    });
+
+    orderPending = [];
+    
+    eventPending = [];
+
+    if (paymentExpired) {
+      setState(() {
+        isLoadingPending = true;
+      });
+    }
+
+    var getUser = await StorageService.getUser();
+    var idUser = getUser['id'];
+
+    var resultPending = await ApiService.get('/order/event?id_user=$idUser&status=pending&sort_by=terbaru', xLanguage: langCode);
+    if (resultPending == null || resultPending['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultPending?['message'];
+      });
+      return;
+    }
+    
+    var tempPending = resultPending['data'];
+    
+    List<Map<String, dynamic>> tempEventPending = [];
+
     for (var orderpending in tempPending) {
       final idOrder = orderpending['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
@@ -173,6 +213,48 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
         'id_event': tempVotePending['id_event'],
       });
     }
+
+    if (!mounted) return;
+    setState(() {
+
+      orderPending = tempPending;
+      eventPending = tempEventPending;
+
+      isLoadingPending = false;
+      showErrorBar = false;
+    });
+  }
+
+  Future<void> _loadFail() async {
+    setState(() {
+      isLoadingFail = true;
+    });
+    
+    orderFail = [];
+    
+    eventGagal = [];
+
+    if (paymentExpired) {
+      setState(() {
+        isLoadingFail = true;
+      });
+    }
+
+    var getUser = await StorageService.getUser();
+    var idUser = getUser['id'];
+
+    var resultFail = await ApiService.get('/order/event?id_user=$idUser&status=fail&sort_by=terbaru', xLanguage: langCode);
+    if (resultFail == null || resultFail['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFail?['message'];
+      });
+      return;
+    }
+    
+    var tempFail = resultFail['data'];
+    
+    List<Map<String, dynamic>> tempEventGagal = [];
 
     for (var ordergagal in tempFail) {
       final idOrder = ordergagal['id_order'];
@@ -196,16 +278,11 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
 
     if (!mounted) return;
     setState(() {
-      orderSuccess = tempSuccess;
-      eventSukses = tempEventSukses;
-
-      orderPending = tempPending;
-      eventPending = tempEventPending;
 
       orderFail = tempFail;
       eventGagal = tempEventGagal;
 
-      isLoading = false;
+      isLoadingFail = false;
       showErrorBar = false;
     });
   }
@@ -218,8 +295,18 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
           visible: showErrorBar, 
           message: errorMessage, 
           onRetry: () {
-            _loadContent();
-          }
+            final index = _tabController.index;
+            if (index == 0) {
+              _successLoaded = false;
+              _loadSuccess();
+            } else if (index == 1) {
+              _pendingLoaded = false;
+              _loadPending();
+            } else if (index == 2) {
+              _failLoaded = false;
+              _loadFail();
+            }
+          },
         ),
 
         Column(
@@ -232,6 +319,19 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
                 indicatorColor: Colors.red,
                 labelColor: Colors.red,
                 unselectedLabelColor: Colors.grey,
+                onTap: (index) {
+                  setState(() {
+                    _tabController.animateTo(index);
+                  });
+
+                  if (index == 0 && !_successLoaded) {
+                    _loadSuccess();
+                  } else if (index == 1 && !_pendingLoaded) {
+                    _loadPending();
+                  } else if (index == 2 && !_failLoaded) {
+                    _loadFail();
+                  }
+                },
                 tabs: [
                   Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
                   Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
@@ -241,30 +341,30 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
             ),
             
             Expanded(
-              child: Container(
-                color: Colors.white,
-                child: isLoading
-                    ? _buildSkeletonLoader()
-                    : TabBarView(
-                  controller: _tabController,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: [
-
-                    orderSuccess.isNotEmpty
+              child: TabBarView(
+                controller: _tabController,
+                // physics: NeverScrollableScrollPhysics(),
+                children: [
+                  isLoadingSukses
+                    ? _buildSkeletonLoader() 
+                    : orderSuccess.isNotEmpty
                       ? EventSuccess(orderSuccess: orderSuccess, events: eventSukses,)
                       : NoOrder(),
 
-                    orderPending.isNotEmpty
-                      ? EventPending(orderPending: orderPending, events: eventPending, reloadParent: _loadContent)
+                  isLoadingPending
+                    ? _buildSkeletonLoader()
+                    : orderPending.isNotEmpty
+                      ? EventPending(orderPending: orderPending, events: eventPending, reloadParent: _loadPending)
                       : NoOrder(),
 
-                    orderFail.isNotEmpty
+                  isLoadingFail
+                    ? _buildSkeletonLoader()
+                    : orderFail.isNotEmpty
                       ? EventFail(orderFail: orderFail, events: eventGagal)
                       : NoOrder(),
 
-                  ],
-                ),
-              ) 
+                ],
+              ),
             ),
           ],
         )
@@ -548,211 +648,241 @@ class _EventSuccessState extends State<EventSuccess> {
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
               totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+              num displayTotalAmount;
+              if (currencyRegion == "IDR") {
+                totalPriceRegion = totalPriceRegion.ceil();
+                displayTotalAmount = num.parse(totalPriceRegion.toString());
+              } else {
+                totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+                displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+              }
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
-                  child: Column(
-                    children: [
-                      //tgl
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formattedDate
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: (itemEvents['order_status'] == '0')
-                                          ? Colors.red.shade50
-                                          : (itemEvents['order_status'] == '1')
-                                                ? Colors.green.shade50
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red.shade50
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange.shade50
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red.shade50
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red.shade50
-                                                        : Colors.black,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (itemEvents['order_status'] == '0')
-                                          ? Colors.red
-                                          : (itemEvents['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    statusOrder,
-                                    style: TextStyle(
-                                      color: (itemEvents['order_status'] == '0')
-                                              ? Colors.red
-                                              : (itemEvents['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // image
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 70,
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    itemEvents['banner'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8,),
-
-                            Expanded( // penting agar tdk overflow
-                              child: Column(
+                child: InkWell(
+                  onTap: () async {
+                    if (itemEvents['id_order'] != null) {
+                      await DetailOrderModal.showEvent(context, itemEvents['id_order'], true, bahasa['detail_pesanan']);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      children: [
+                        //tgl
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    itemEvents['event_title'] ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    langCode == 'id' 
+                                      ? 'Tanggal Pesanan' 
+                                      : 'Order Date',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['tiket']}"
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['price'] == 0
-                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
-                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                    formattedDate,
+                                  )
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // button
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  if (itemEvents['id_event'] != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    // "Beli Lagi",
-                                      bahasa['beli_lagi'] ?? "",
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemEvents['id_order'] != null) {
-                                    await DetailOrderModal.showEvent(context, itemEvents['id_order'], true);
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    "Detail Order",
-                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (itemEvents['order_status'] == '0')
+                                            ? Colors.red.shade50
+                                            : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green.shade50
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red.shade50
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange.shade50
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red.shade50
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red.shade50
+                                                          : Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (itemEvents['order_status'] == '0')
+                                            ? Colors.red
+                                            : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                    width: 1,
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      statusOrder,
+                                      style: TextStyle(
+                                        color: (itemEvents['order_status'] == '0')
+                                                ? Colors.red
+                                                : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // image
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      itemEvents['banner'],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8,),
+
+                              Expanded( // penting agar tdk overflow
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      itemEvents['event_title'] ?? '-',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$qty ${bahasa['tiket']}"
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail'] ?? "" //'Gratis'
+                                      : "$currencyRegion ${formatterNUmber.format(displayTotalAmount)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // button
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    if (itemEvents['id_event'] != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      // "Beli Lagi",
+                                        bahasa['beli_lagi'] ?? "",
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemEvents['id_order'] != null) {
+                                      await DetailOrderModal.showEvent(context, itemEvents['id_order'], true, bahasa['detail_pesanan']);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'] ?? '',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                )
+                ),
               );
 
             } else {
@@ -1015,216 +1145,246 @@ class _EventPendingState extends State<EventPending> {
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
               totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+              num displayTotalAmount;
+              if (currencyRegion == "IDR") {
+                totalPriceRegion = totalPriceRegion.ceil();
+                displayTotalAmount = num.parse(totalPriceRegion.toString());
+              } else {
+                totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+                displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+              }
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
-                  child: Column(
-                    children: [
-                      //tgl
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formattedDate
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: (itemEvents['order_status'] == '0')
-                                          ? Colors.red.shade50
-                                          : (itemEvents['order_status'] == '1')
-                                                ? Colors.green.shade50
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red.shade50
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange.shade50
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red.shade50
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red.shade50
-                                                        : Colors.black,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (itemEvents['order_status'] == '0')
-                                          ? Colors.red
-                                          : (itemEvents['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    statusOrder,
-                                    style: TextStyle(
-                                      color: (itemEvents['order_status'] == '0')
-                                              ? Colors.red
-                                              : (itemEvents['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // image
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 70,
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    itemEvents['banner'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8,),
-
-                            Expanded( // penting agar tdk overflow
-                              child: Column(
+                child: InkWell(
+                  onTap: () async {
+                    if (itemEvents['id_order'] != null) {
+                      await DetailOrderModal.showEvent(context, itemEvents['id_order'], false, bahasa['detail_pesanan']);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      children: [
+                        //tgl
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    itemEvents['event_title'] ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    langCode == 'id' 
+                                      ? 'Tanggal Pesanan' 
+                                      : 'Order Date',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['tiket']}"
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['price'] == 0
-                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
-                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                    formattedDate,
+                                  )
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // button
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemEvents['id_order'] != null) {
-                                    final changed = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency'],)),
-                                    );
-
-                                    if (changed == true) {
-                                      widget.reloadParent?.call();
-                                    }
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (itemEvents['order_status'] == '0')
+                                            ? Colors.red.shade50
+                                            : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green.shade50
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red.shade50
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange.shade50
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red.shade50
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red.shade50
+                                                          : Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (itemEvents['order_status'] == '0')
+                                            ? Colors.red
+                                            : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                    width: 1,
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                      //"Kembali ke Pembayaran",
-                                      bahasa['back_payment'] ?? "",
-                                      textAlign: TextAlign.center,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      statusOrder,
                                       style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                        color: (itemEvents['order_status'] == '0')
+                                                ? Colors.red
+                                                : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,),
                                     ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemEvents['id_order'] != null) {
-                                    await DetailOrderModal.showEvent(context, itemEvents['id_order'], false);
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    "Detail Order",
-                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // image
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      itemEvents['banner'],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8,),
+
+                              Expanded( // penting agar tdk overflow
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      itemEvents['event_title'] ?? '-',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$qty ${bahasa['tiket']}"
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail'] ?? "" //'Gratis'
+                                      : "$currencyRegion ${formatterNUmber.format(displayTotalAmount)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // button
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemEvents['id_order'] != null) {
+                                      final changed = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency'],)),
+                                      );
+
+                                      if (changed == true) {
+                                        widget.reloadParent?.call();
+                                      }
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                        //"Kembali ke Pembayaran",
+                                        bahasa['back_payment'] ?? "",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemEvents['id_order'] != null) {
+                                      await DetailOrderModal.showEvent(context, itemEvents['id_order'], false, bahasa['detail_pesanan']);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'] ?? '',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                )
+                ),
               );
 
             } else {
@@ -1488,211 +1648,241 @@ class _EventFailState extends State<EventFail> {
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
               totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+              num displayTotalAmount;
+              if (currencyRegion == "IDR") {
+                totalPriceRegion = totalPriceRegion.ceil();
+                displayTotalAmount = num.parse(totalPriceRegion.toString());
+              } else {
+                totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+                displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+              }
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
-                  child: Column(
-                    children: [
-                      //tgl
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formattedDate
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: (itemEvents['order_status'] == '0')
-                                          ? Colors.red.shade50
-                                          : (itemEvents['order_status'] == '1')
-                                                ? Colors.green.shade50
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red.shade50
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange.shade50
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red.shade50
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red.shade50
-                                                        : Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (itemEvents['order_status'] == '0')
-                                          ? Colors.red
-                                          : (itemEvents['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.white,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    statusOrder,
-                                    style: TextStyle(
-                                      color: (itemEvents['order_status'] == '0')
-                                              ? Colors.red
-                                              : (itemEvents['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemEvents['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemEvents['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemEvents['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemEvents['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.white,),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // image
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 70,
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    itemEvents['banner'] ?? '',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8,),
-
-                            Expanded( // penting agar tdk overflow
-                              child: Column(
+                child: InkWell(
+                  onTap: () async {
+                    if (itemEvents['id_order'] != null) {
+                      await DetailOrderModal.showEvent(context, itemEvents['id_order'], false, bahasa['detail_pesanan']);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      children: [
+                        //tgl
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    itemEvents['event_title'] ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    langCode == 'id' 
+                                      ? 'Tanggal Pesanan' 
+                                      : 'Order Date',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['tiket']}"
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['price'] == 0
-                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
-                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                    formattedDate,
+                                  )
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // button
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  if (itemEvents['id_event'] != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
-                                      ),
-                                    );
-                                  }  else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    // "Ulangi Pembelian",
-                                    bahasa['retry_payment'] ?? "",
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemEvents['id_order'] != null) {
-                                    await DetailOrderModal.showEvent(context, itemEvents['id_order'], false);
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    "Detail Order",
-                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (itemEvents['order_status'] == '0')
+                                            ? Colors.red.shade50
+                                            : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green.shade50
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red.shade50
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange.shade50
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red.shade50
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red.shade50
+                                                          : Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (itemEvents['order_status'] == '0')
+                                            ? Colors.red
+                                            : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.white,
+                                    width: 1,
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      statusOrder,
+                                      style: TextStyle(
+                                        color: (itemEvents['order_status'] == '0')
+                                                ? Colors.red
+                                                : (itemEvents['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemEvents['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemEvents['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemEvents['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemEvents['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.white,),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // image
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      itemEvents['banner'] ?? '',
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8,),
+
+                              Expanded( // penting agar tdk overflow
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      itemEvents['event_title'] ?? '-',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$qty ${bahasa['tiket']}"
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail'] ?? "" //'Gratis'
+                                      : "$currencyRegion ${formatterNUmber.format(displayTotalAmount)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // button
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    if (itemEvents['id_event'] != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              DetailEventPage(id_event: itemEvents['id_event'].toString(), price: eventPrice,),
+                                        ),
+                                      );
+                                    }  else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      // "Ulangi Pembelian",
+                                      bahasa['retry_payment'] ?? "",
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemEvents['id_order'] != null) {
+                                      await DetailOrderModal.showEvent(context, itemEvents['id_order'], false, bahasa['detail_pesanan']);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'])));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'] ?? '',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                )
+                ),
               );
 
             } else {

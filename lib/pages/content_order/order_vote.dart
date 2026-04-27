@@ -24,13 +24,20 @@ class OrderVote extends StatefulWidget {
 class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMixin{
   String? langCode;
   late TabController _tabController;
-  bool isLoading = true;
+  bool isLoadingSukses = true;
+  bool isLoadingPending = true;
+  bool isLoadingFail = true;
 
   Map<String, dynamic> bahasa = {};
   String? orderMenunggu, orderGagal;
 
   bool showErrorBar = false;
   String errorMessage = "";
+
+  bool _successLoaded = false;
+  bool _pendingLoaded = false;
+  bool _failLoaded = false;
+  String? currencyCode;
 
   @override
   void initState() {
@@ -40,7 +47,21 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
-      await _loadContent();
+      await _loadSuccess();
+    });
+
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        final index = _tabController.index;
+        
+        if (index == 0 && !_successLoaded) {
+          _loadSuccess();
+        } else if (index == 1 && !_pendingLoaded) {
+          _loadPending();
+        } else if (index == 2 && !_failLoaded) {
+          _loadFail();
+        }
+      }
     });
   }
 
@@ -81,18 +102,18 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
   List<Map<String, dynamic>> votesPending = [];
   List<Map<String, dynamic>> votesGagal = [];
   
-  Future<void> _loadContent() async {
+  Future<void> _loadSuccess() async {
+    setState(() {
+      isLoadingSukses = true;
+    });
+
     orderSuccess = [];
-    orderPending = [];
-    orderFail = [];
 
     votesSukses = [];
-    votesPending = [];
-    votesGagal = [];
 
     if (paymentExpired) {
       setState(() {
-        isLoading = true;
+        isLoadingSukses = true;
       });
     }
 
@@ -108,31 +129,9 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       return;
     }
 
-    var resultPending = await ApiService.get('/order/vote?email_voter=$email&status=pending&sort_by=terbaru&type_data=new', xLanguage: langCode);
-    if (resultPending == null || resultPending['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultPending?['message'];
-      });
-      return;
-    }
-
-    var resultFail = await ApiService.get('/order/vote?email_voter=$email&status=fail&sort_by=terbaru&type_data=new', xLanguage: langCode);
-    if (resultFail == null || resultFail['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultFail?['message'];
-      });
-      return;
-    }
-
     var tempSuccess = resultSuccess['data'];
-    var tempPending = resultPending['data'];
-    var tempFail = resultFail['data'];
 
     List<Map<String, dynamic>> tempVotesSukses = [];
-    List<Map<String, dynamic>> tempVotesPending = [];
-    List<Map<String, dynamic>> tempVotesGagal = [];
 
     for (var ordersukses in tempSuccess) {
       final idOrder = ordersukses['id_order'];
@@ -154,6 +153,48 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       });
     }
 
+    if (!mounted) return;
+    setState(() {
+      orderSuccess = tempSuccess;
+      votesSukses = tempVotesSukses;
+
+      isLoadingSukses = false;
+      showErrorBar = false;
+      _successLoaded = true;
+    });
+  }
+
+  Future<void> _loadPending() async {
+    setState(() {
+      isLoadingPending = true;
+    });
+
+    orderPending = [];
+    
+    votesPending = [];
+
+    if (paymentExpired) {
+      setState(() {
+        isLoadingPending = true;
+      });
+    }
+
+    var getUser = await StorageService.getUser();
+    var email = getUser['email'];
+
+    var resultPending = await ApiService.get('/order/vote?email_voter=$email&status=pending&sort_by=terbaru&type_data=new', xLanguage: langCode);
+    if (resultPending == null || resultPending['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultPending?['message'];
+      });
+      return;
+    }
+    
+    var tempPending = resultPending['data'];
+    
+    List<Map<String, dynamic>> tempVotesPending = [];
+
     for (var orderpending in tempPending) {
       final idOrder = orderpending['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
@@ -173,6 +214,49 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
         'id_vote': tempVotePending['id_vote'],
       });
     }
+
+    if (!mounted) return;
+    setState(() {
+
+      orderPending = tempPending;
+      votesPending = tempVotesPending;
+
+      isLoadingPending = false;
+      showErrorBar = false;
+      _pendingLoaded = true;
+    });
+  }
+
+  Future<void> _loadFail() async {
+    setState(() {
+      isLoadingFail = true;
+    });
+
+    orderFail = [];
+    
+    votesGagal = [];
+
+    if (paymentExpired) {
+      setState(() {
+        isLoadingFail = true;
+      });
+    }
+
+    var getUser = await StorageService.getUser();
+    var email = getUser['email'];
+
+    var resultFail = await ApiService.get('/order/vote?email_voter=$email&status=fail&sort_by=terbaru&type_data=new', xLanguage: langCode);
+    if (resultFail == null || resultFail['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultFail?['message'];
+      });
+      return;
+    }
+    
+    var tempFail = resultFail['data'];
+    
+    List<Map<String, dynamic>> tempVotesGagal = [];
 
     for (var ordergagal in tempFail) {
       final idOrder = ordergagal['id_order'];
@@ -196,17 +280,13 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
 
     if (!mounted) return;
     setState(() {
-      orderSuccess = tempSuccess;
-      votesSukses = tempVotesSukses;
-
-      orderPending = tempPending;
-      votesPending = tempVotesPending;
 
       orderFail = tempFail;
       votesGagal = tempVotesGagal;
 
-      isLoading = false;
+      isLoadingFail = false;
       showErrorBar = false;
+      _failLoaded = true;
     });
   }
 
@@ -218,8 +298,18 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
           visible: showErrorBar, 
           message: errorMessage, 
           onRetry: () {
-            _loadContent();
-          }
+            final index = _tabController.index;
+            if (index == 0) {
+              _successLoaded = false;
+              _loadSuccess();
+            } else if (index == 1) {
+              _pendingLoaded = false;
+              _loadPending();
+            } else if (index == 2) {
+              _failLoaded = false;
+              _loadFail();
+            }
+          },
         ),
 
         Column(
@@ -232,6 +322,19 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
                 indicatorColor: Colors.red,
                 labelColor: Colors.red,
                 unselectedLabelColor: Colors.grey,
+                onTap: (index) {
+                  setState(() {
+                    _tabController.animateTo(index);
+                  });
+
+                  if (index == 0 && !_successLoaded) {
+                    _loadSuccess();
+                  } else if (index == 1 && !_pendingLoaded) {
+                    _loadPending();
+                  } else if (index == 2 && !_failLoaded) {
+                    _loadFail();
+                  }
+                },
                 tabs: [
                   Tab(icon: Icon(Icons.check_circle_outline), text: bahasa['selesai']), //selesai
                   Tab(icon: Icon(Icons.access_time), text: orderMenunggu), //menunggu
@@ -241,27 +344,28 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
             ),
             
             Expanded(
-              child: isLoading
-                    ? _buildSkeletonLoader()
-                    : TabBarView(
-                  controller: _tabController,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: [
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  isLoadingSukses
+                      ? _buildSkeletonLoader()
+                      : orderSuccess.isNotEmpty
+                          ? VoteSuccess(orderSuccess: orderSuccess, votes: votesSukses)
+                          : NoOrder(),
 
-                    orderSuccess.isNotEmpty
-                      ? VoteSuccess(orderSuccess: orderSuccess, votes: votesSukses,)
-                      : NoOrder(),
+                  isLoadingPending
+                      ? _buildSkeletonLoader()
+                      : orderPending.isNotEmpty
+                          ? VotePending(orderPending: orderPending, votes: votesPending, reloadParent: _loadPending)
+                          : NoOrder(),
 
-                    orderPending.isNotEmpty
-                      ? VotePending(orderPending: orderPending, votes: votesPending, reloadParent: _loadContent)
-                      : NoOrder(),
-
-                    orderFail.isNotEmpty
-                      ? VoteFail(orderFail: orderFail, votes: votesGagal)
-                      : NoOrder(),
-
-                  ],
-                ),
+                  isLoadingFail
+                      ? _buildSkeletonLoader()
+                      : orderFail.isNotEmpty
+                          ? VoteFail(orderFail: orderFail, votes: votesGagal)
+                          : NoOrder(),
+                ],
+              ),
             ),
           ],
         )
@@ -543,213 +647,243 @@ class _VoteSuccessState extends State<VoteSuccess> {
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
               totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+              num displayTotalAmount;
+              if (currencyRegion == "IDR") {
+                totalPriceRegion = totalPriceRegion.ceil();
+                displayTotalAmount = num.parse(totalPriceRegion.toString());
+              } else {
+                totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+                displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+              }
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
-                  child: Column(
-                    children: [
-                      //tgl
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formattedDate
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: (itemVotes['order_status'] == '0')
-                                          ? Colors.red.shade50
-                                          : (itemVotes['order_status'] == '1')
-                                                ? Colors.green.shade50
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red.shade50
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange.shade50
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red.shade50
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red.shade50
-                                                        : Colors.black,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (itemVotes['order_status'] == '0')
-                                          ? Colors.red
-                                          : (itemVotes['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    statusOrder,
-                                    style: TextStyle(
-                                      color: (itemVotes['order_status'] == '0')
-                                              ? Colors.red
-                                              : (itemVotes['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // image
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 70,
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    itemVotes['banner'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8,),
-
-                            Expanded( // penting agar tdk overflow
-                              child: Column(
+                child: InkWell(
+                  onTap: () async {
+                    if (itemVotes['id_order'] != null) {
+                      await DetailOrderModal.show(context, itemVotes['id_order'], bahasa['detail_pesanan']);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      children: [
+                        //tgl
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    itemVotes['judul_vote'] ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    langCode == 'id' 
+                                      ? 'Tanggal Pesanan' 
+                                      : 'Order Date',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['text_vote']}"
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['price'] == 0
-                                    ? bahasa['harga_detail'] ?? "" //'Gratis'
-                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                    formattedDate,
+                                  )
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // button
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  if (itemVotes['id_vote'] != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            DetailVotePage(id_event: itemVotes['id_vote'].toString()),
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (itemVotes['order_status'] == '0')
+                                            ? Colors.red.shade50
+                                            : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green.shade50
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red.shade50
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange.shade50
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red.shade50
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red.shade50
+                                                          : Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (itemVotes['order_status'] == '0')
+                                            ? Colors.red
+                                            : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                    width: 1,
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                      //"Vote Lagi",
-                                      bahasa['vote_lagi'] ?? "",
-                                      textAlign: TextAlign.center,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      statusOrder,
                                       style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                        color: (itemVotes['order_status'] == '0')
+                                                ? Colors.red
+                                                : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,),
                                     ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemVotes['id_order'] != null) {
-                                    await DetailOrderModal.show(context, itemVotes['id_order']);
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    "Detail Order",
-                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // image
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      itemVotes['banner'],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8,),
+
+                              Expanded( // penting agar tdk overflow
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      itemVotes['judul_vote'] ?? '-',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$qty ${bahasa['text_vote']}"
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail'] ?? "" //'Gratis'
+                                      : "$currencyRegion ${formatterNUmber.format(displayTotalAmount)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // button
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    if (itemVotes['id_vote'] != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              DetailVotePage(id_event: itemVotes['id_vote'].toString()),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                        //"Vote Lagi",
+                                        bahasa['vote_lagi'] ?? "",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemVotes['id_order'] != null) {
+                                      await DetailOrderModal.show(context, itemVotes['id_order'], bahasa['detail_pesanan']);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'] ?? '',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -1013,214 +1147,244 @@ class _VotePendingState extends State<VotePending> {
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
               totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+              num displayTotalAmount;
+              if (currencyRegion == "IDR") {
+                totalPriceRegion = totalPriceRegion.ceil();
+                displayTotalAmount = num.parse(totalPriceRegion.toString());
+              } else {
+                totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+                displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+              }
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
-                  child: Column(
-                    children: [
-                      //tgl
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formattedDate
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: (itemVotes['order_status'] == '0')
-                                          ? Colors.red.shade50
-                                          : (itemVotes['order_status'] == '1')
-                                                ? Colors.green.shade50
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red.shade50
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange.shade50
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red.shade50
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red.shade50
-                                                        : Colors.black,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (itemVotes['order_status'] == '0')
-                                          ? Colors.red
-                                          : (itemVotes['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    statusOrder,
-                                    style: TextStyle(
-                                      color: (itemVotes['order_status'] == '0')
-                                              ? Colors.red
-                                              : (itemVotes['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // image
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 70,
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    itemVotes['banner'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8,),
-
-                            Expanded( // penting agar tdk overflow
-                              child: Column(
+                child: InkWell(
+                  onTap: () async {
+                    if (itemVotes['id_order'] != null) {
+                      await DetailOrderModal.show(context, itemVotes['id_order'], bahasa['detail_pesanan']);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      children: [
+                        //tgl
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    itemVotes['judul_vote'] ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    langCode == 'id' 
+                                      ? 'Tanggal Pesanan' 
+                                      : 'Order Date',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['text_vote']}"
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['price'] == 0
-                                    ? bahasa['harga_detail'] //'Gratis'
-                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                    formattedDate,
+                                  )
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // button
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemVotes['id_order'] != null) {
-                                    final changed = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: item['currency'],)),
-                                    );
-
-                                    if (changed == true) {
-                                      widget.reloadParent?.call();
-                                    }
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (itemVotes['order_status'] == '0')
+                                            ? Colors.red.shade50
+                                            : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green.shade50
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red.shade50
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange.shade50
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red.shade50
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red.shade50
+                                                          : Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (itemVotes['order_status'] == '0')
+                                            ? Colors.red
+                                            : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                    width: 1,
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                      //"Kembali ke Pembayaran",
-                                      bahasa['back_payment'] ?? "",
-                                      textAlign: TextAlign.center,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      statusOrder,
                                       style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                        color: (itemVotes['order_status'] == '0')
+                                                ? Colors.red
+                                                : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,),
                                     ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemVotes['id_order'] != null) {
-                                    await DetailOrderModal.show(context, itemVotes['id_order']);
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    "Detail Order",
-                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // image
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      itemVotes['banner'],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8,),
+
+                              Expanded( // penting agar tdk overflow
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      itemVotes['judul_vote'] ?? '-',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$qty ${bahasa['text_vote']}"
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail'] //'Gratis'
+                                      : "$currencyRegion ${formatterNUmber.format(displayTotalAmount)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // button
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemVotes['id_order'] != null) {
+                                      final changed = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: item['currency'],)),
+                                      );
+
+                                      if (changed == true) {
+                                        widget.reloadParent?.call();
+                                      }
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                        //"Kembali ke Pembayaran",
+                                        bahasa['back_payment'] ?? "",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemVotes['id_order'] != null) {
+                                      await DetailOrderModal.show(context, itemVotes['id_order'], bahasa['detail_pesanan']);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'] ?? "",
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -1485,209 +1649,239 @@ class _VoteFailState extends State<VoteFail> {
               num totalPrice = item['price'] + item['fees'];
               num totalPriceRegion = totalPrice * item['currency_value_region'];
               totalPriceRegion = num.parse(totalPriceRegion.toStringAsFixed(5));
-              totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+              num displayTotalAmount;
+              if (currencyRegion == "IDR") {
+                totalPriceRegion = totalPriceRegion.ceil();
+                displayTotalAmount = num.parse(totalPriceRegion.toString());
+              } else {
+                totalPriceRegion = (totalPriceRegion * 100).ceil() / 100;
+                displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
+              }
 
               return Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300,),
-                  ),
-                  child: Column(
-                    children: [
-                      //tgl
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              formattedDate
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: (itemVotes['order_status'] == '0')
-                                          ? Colors.red.shade50
-                                          : (itemVotes['order_status'] == '1')
-                                                ? Colors.green.shade50
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red.shade50
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange.shade50
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red.shade50
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red.shade50
-                                                        : Colors.black,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (itemVotes['order_status'] == '0')
-                                          ? Colors.red
-                                          : (itemVotes['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    statusOrder,
-                                    style: TextStyle(
-                                      color: (itemVotes['order_status'] == '0')
-                                              ? Colors.red
-                                              : (itemVotes['order_status'] == '1')
-                                                ? Colors.green
-                                                : (itemVotes['order_status'] == '2') 
-                                                  ? Colors.red
-                                                  : (itemVotes['order_status'] == '3') 
-                                                    ? Colors.orange
-                                                    : (itemVotes['order_status'] == '4')
-                                                      ? Colors.red
-                                                      : (itemVotes['order_status'] == '20')
-                                                        ? Colors.red
-                                                        : Colors.black,),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // image
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 70,
-                              child: AspectRatio(
-                                aspectRatio: 4 / 5,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    itemVotes['banner'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/images/img_broken.jpg',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 8,),
-
-                            Expanded( // penting agar tdk overflow
-                              child: Column(
+                child: InkWell(
+                  onTap: () async {
+                    if (itemVotes['id_order'] != null) {
+                      await DetailOrderModal.show(context, itemVotes['id_order'], bahasa['detail_pesanan']);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    child: Column(
+                      children: [
+                        //tgl
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    itemVotes['judul_vote'] ?? '-',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    langCode == 'id' 
+                                      ? 'Tanggal Pesanan' 
+                                      : 'Order Date',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
                                   Text(
-                                    "$qty ${bahasa['text_vote']}"
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item['price'] == 0
-                                    ? bahasa['harga_detail'] //'Gratis'
-                                    : "$currencyRegion ${formatterNUmber.format(totalPriceRegion)}",
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                    formattedDate,
+                                  )
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      // button
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  if (itemVotes['id_order'] != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            DetailVotePage(id_event: itemVotes['id_vote'].toString()),
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    //"Ulangi Pembelian",
-                                    bahasa['retry_payment'] ?? "",
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: InkWell(
-                                onTap: () async {
-                                  if (itemVotes['id_order'] != null) {
-                                    await DetailOrderModal.show(context, itemVotes['id_order']);
-                                  } else {
-                                    ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: const Text(
-                                    "Detail Order",
-                                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: (itemVotes['order_status'] == '0')
+                                            ? Colors.red.shade50
+                                            : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green.shade50
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red.shade50
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange.shade50
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red.shade50
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red.shade50
+                                                          : Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: (itemVotes['order_status'] == '0')
+                                            ? Colors.red
+                                            : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                    width: 1,
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      statusOrder,
+                                      style: TextStyle(
+                                        color: (itemVotes['order_status'] == '0')
+                                                ? Colors.red
+                                                : (itemVotes['order_status'] == '1')
+                                                  ? Colors.green
+                                                  : (itemVotes['order_status'] == '2') 
+                                                    ? Colors.red
+                                                    : (itemVotes['order_status'] == '3') 
+                                                      ? Colors.orange
+                                                      : (itemVotes['order_status'] == '4')
+                                                        ? Colors.red
+                                                        : (itemVotes['order_status'] == '20')
+                                                          ? Colors.red
+                                                          : Colors.black,),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // image
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 70,
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      itemVotes['banner'],
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/images/img_broken.jpg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8,),
+
+                              Expanded( // penting agar tdk overflow
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      itemVotes['judul_vote'] ?? '-',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "$qty ${bahasa['text_vote']}"
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail'] //'Gratis'
+                                      : "$currencyRegion ${formatterNUmber.format(displayTotalAmount)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // button
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    if (itemVotes['id_order'] != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              DetailVotePage(id_event: itemVotes['id_vote'].toString()),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      //"Ulangi Pembelian",
+                                      bahasa['retry_payment'] ?? "",
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    if (itemVotes['id_order'] != null) {
+                                      await DetailOrderModal.show(context, itemVotes['id_order'], bahasa['detail_pesanan']);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'] ?? '',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 
-class ModalFilter {
+class ModalFilterVote {
   static Future<Map<String, List<String>>?> show(
     BuildContext context,
     String langCode,
@@ -16,9 +16,13 @@ class ModalFilter {
     }
   ) async {
 
-    // copy agar tidak langsung mutate parent sebelum OK
     List<String> paramTime = List.from(initialTime);
     List<String> paramPrice = List.from(initialPrice);
+    
+    final List<String> originalTime = List.from(initialTime);
+    final List<String> originalPrice = List.from(initialPrice);
+
+    int paramCount = paramTime.length + paramPrice.length;
 
     final bahasa = await LangService.getJsonData(langCode, "bahasa");
 
@@ -33,33 +37,39 @@ class ModalFilter {
       'paid': bahasa['berbayar'],
     };
 
+    bool hasChangedFuction(List<String> time, List<String> price) {
+      if (time.length != originalTime.length || price.length != originalPrice.length) return true;
+      if (!time.every((e) => originalTime.contains(e))) return true;
+      if (!price.every((e) => originalPrice.contains(e))) return true;
+      return false;
+    }
+
     void toggleTime(String key, void Function(void Function()) setState) {
       setState(() {
-        paramTime.contains(key)
-            ? paramTime.remove(key)
-            : paramTime.add(key);
+        paramTime.contains(key) ? paramTime.remove(key) : paramTime.add(key);
+        paramCount = paramTime.length + paramPrice.length;
       });
     }
 
     void togglePrice(String key, void Function(void Function()) setState) {
       setState(() {
-        paramPrice.contains(key)
-            ? paramPrice.remove(key)
-            : paramPrice.add(key);
+        paramPrice.contains(key) ? paramPrice.remove(key) : paramPrice.add(key);
+        paramCount = paramTime.length + paramPrice.length;
       });
     }
 
     final String timeTitle =
-      selectedIndex == 0 // 0 = All
+      selectedIndex == 0
         ? "${bahasa['time_event']}/Grand Final"
-        : selectedIndex == 1 // 1 = Vote
+        : selectedIndex == 1
           ? "Grand Final"
           : bahasa['time_event'];
 
+    bool isSubmitting = false;
 
     return await showModalBottomSheet<Map<String, List<String>>>(
       context: context,
-      isDismissible: true,
+      isDismissible: false,
       enableDrag: true,
       backgroundColor: Colors.white,
       isScrollControlled: true,
@@ -69,7 +79,16 @@ class ModalFilter {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            bool isSubmitting = false;
+
+            final bool hasChanged = hasChangedFuction(paramTime, paramPrice);
+
+            // Reset visible jika: ada filter aktif awal ATAU ada filter dipilih sekarang
+            final bool showReset = paramCount > 0;
+
+            // Apply bisa diklik jika ada perubahan
+            // Kasus khusus: jika semua di-reset (paramCount==0) dari kondisi ada filter → tetap bisa apply
+            bool canApply = hasChanged && !isSubmitting;
+
             return SafeArea(
               child: Padding(
                 padding: kGlobalPadding,
@@ -81,36 +100,53 @@ class ModalFilter {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Filter', style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold)),
-                        // IconButton(
-                        //   icon: Icon(Icons.close),
-                        //   onPressed: () => Navigator.pop(context),
-                        // ),
-
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              paramTime.clear();
-                              paramPrice.clear();
-                            });
-                          },
-                          child: Text(
-                            'Reset',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: const Icon(Icons.close, size: 30),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            const Text('Filter', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          ],
                         ),
+
+                        // Reset hanya tampil jika ada filter terpilih
+                        if (showReset)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                paramTime.clear();
+                                paramPrice.clear();
+                                paramCount = 0;
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Reset',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox.shrink(),
                       ],
                     ),
 
-                    Divider(),
+                    const Divider(),
 
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(timeTitle, style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(timeTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
+
+                    const SizedBox(height: 8),
                     Column(
                       children: timeLabels.keys.map((key) {
                         return InkWell(
@@ -130,12 +166,14 @@ class ModalFilter {
                       }).toList(),
                     ),
 
-                    Divider(),
+                    const Divider(),
 
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(bahasa['harga'], style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(bahasa['harga'], style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
+
+                    const SizedBox(height: 8),
                     Column(
                       children: priceLabels.keys.map((key) {
                         return InkWell(
@@ -155,16 +193,21 @@ class ModalFilter {
                       }).toList(),
                     ),
 
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     // tombol apply
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: !isSubmitting
+                        onPressed: canApply
                           ? () async {
-                              setState(() => isSubmitting = true);
+                              setState(() {
+                                canApply = true;
+                                isSubmitting = true;
+                              });
+
+                              await Future.delayed(const Duration(milliseconds: 400));
 
                               Navigator.pop(context, {
                                 'time': paramTime,
@@ -174,30 +217,24 @@ class ModalFilter {
                           : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
+                          disabledBackgroundColor: Colors.grey.shade400,
+                          disabledForegroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: isSubmitting
-                          ? SizedBox(
+                          ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                              child: CircularProgressIndicator(color: Colors.white),
                             )
                           : const Text(
                               "Apply",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             ),
                       ),
                     ),
-
-                    SizedBox(height: 20),
                   ],
                 ),
               ),

@@ -111,6 +111,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  String? currencyCode;
 
   Future<void> checkPaymentStatus(String tanggal_buka_payment) async {
     if (widget.close_payment != '1') {
@@ -1935,6 +1936,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  String? currencyCode;
 
   Future<void> checkPaymentStatus(String tanggal_buka_payment) async {
     if (widget.close_payment != '1') {

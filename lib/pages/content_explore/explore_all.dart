@@ -55,6 +55,7 @@ class _ExploreAllState extends State<ExploreAll> {
   bool showErrorBar = false;
   String errorMessage = "";
   bool _isSearching = false;
+  String? currencyCode;
 
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
@@ -79,40 +80,45 @@ class _ExploreAllState extends State<ExploreAll> {
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";
     if (widget.timeFilter.isNotEmpty) {
-      // filterTime = widget.timeFilter.join(",");
-      if (widget.timeFilter.length == 1) {
-        filterTime = widget.timeFilter.first;
+      if (widget.timeFilter.length == 3) {
+        filterTime = '';
+      } else {
+        filterTime = widget.timeFilter.join(",");
       }
     }
 
     String filterPrice = "";
     if (widget.priceFilter.isNotEmpty) {
-      // filterPrice = widget.priceFilter.join(",");
-      if (widget.priceFilter.length == 1) {
-        filterPrice = widget.priceFilter.first;
+      if (widget.priceFilter.length == 2) {
+        filterPrice = '';
+      } else {
+        filterPrice = widget.priceFilter.join(",");
       }
     }
 
-    // final endpointAll = isFirst 
-    //   ? "/v2/global-search?time=$filterTime&price=$filterPrice&limit=$limit&page=1&order=asc&order_by=start_date" 
-    //   : filterTime == ""
-    //     ? "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=$limit&page=1&order=asc&order_by=start_date"
-    //     : "/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=9999&page=1&order=asc&order_by=start_date";
-
-    String endpointAll = "/v2/global-search?"
-      "term=${term ?? ''}"
-      "&time=$filterTime"
-      "&price=$filterPrice"
-      "&limit=$limit"
-      "&page=1"
-      "&order=asc"
-      "&order_by=start_date";
+    final endpointAll = isFirst 
+      ? "/v2/global-search?"
+          "time=$filterTime"
+          "&price=$filterPrice"
+          "&limit=$limit"
+          "&page=1"
+          "&order=asc"
+          "&order_by=start_date" 
+      : "/v2/global-search?"
+          "term=$term"
+          "&time=$filterTime"
+          "&price=$filterPrice"
+          "&limit=$limit"
+          "&page=1"
+          "&order=asc"
+          "&order_by=start_date";
 
     final responses = await ApiService.get(endpointAll, xLanguage: langCode, xCurrency: currencyCode);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
         showErrorBar = true;
         errorMessage = responses?['message'];
+        isFirstLoad = false;
       });
       return;
     }
@@ -162,7 +168,25 @@ class _ExploreAllState extends State<ExploreAll> {
       hasMore = true;
     }
 
-    final url = "$baseapiUrl/v2/global-search?time=${widget.timeFilter.join(",")}&price=${widget.priceFilter.join(",")}&limit=6&page=$currentPage&order=asc&order_by=start_date";
+    String filterTime = "";
+    if (widget.timeFilter.isNotEmpty) {
+      if (widget.timeFilter.length == 3) {
+        filterTime = '';
+      } else {
+        filterTime = widget.timeFilter.join(",");
+      }
+    }
+
+    String filterPrice = "";
+    if (widget.priceFilter.isNotEmpty) {
+      if (widget.priceFilter.length == 2) {
+        filterPrice = '';
+      } else {
+        filterPrice = widget.priceFilter.join(",");
+      }
+    }
+
+    final url = "$baseapiUrl/v2/global-search?time=$filterTime&price=$filterPrice&limit=6&page=$currentPage&order=asc&order_by=start_date";
     
     final response = await http.get(
       Uri.parse(url),
@@ -230,11 +254,23 @@ class _ExploreAllState extends State<ExploreAll> {
         currentPage = 1;
         hasMore = true;
         isLoadingMore = false;
+        allDataCombained = [];
 
-        setState(() => _isSearching = true);
+        // setState(() => _isSearching = true);
+        // _loadContent(false, widget.keyword);
+        // if (!mounted) return;
+        // setState(() => _isSearching = false);
+        setState(() {
+          _isSearching = true;
+          isFirstLoad = true;
+        });
+
         _loadContent(false, widget.keyword);
         if (!mounted) return;
-        setState(() => _isSearching = false);
+        setState(() {
+          _isSearching = false;
+        });
+
     }
   }
 
@@ -328,36 +364,39 @@ class _ExploreAllState extends State<ExploreAll> {
 
   Widget buildKonten() {
     if (allDataCombained.isEmpty) {
-      return Column(
-        children: [
-          ColorFiltered(
-            colorFilter: const ColorFilter.matrix([
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0.2126, 0.7152, 0.0722, 0, 0,
-              0,      0,      0,      1, 0,
-            ]),
-            child: Image.asset(
-              'assets/images/placeholder.png',
-              width: 200,
-              height: 200,
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ColorFiltered(
+              colorFilter: const ColorFilter.matrix([
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0,      0,      0,      1, 0,
+              ]),
+              child: Image.asset(
+                'assets/images/placeholder.png',
+                width: 200,
+                height: 200,
+              ),
             ),
-          ),
 
-          SizedBox(height: 12,),
+            SizedBox(height: 12,),
 
-          Text(
-            bahasa['no_data'] ?? 'No Data',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
+            Text(
+              bahasa['no_data'] ?? 'No Data',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: () => _refresh(false, widget.keyword),
+      onRefresh: () => _refresh(false, widget.keyword ?? ''),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {

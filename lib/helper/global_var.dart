@@ -31,7 +31,12 @@ bool isValidPhone(String phone) {
   return regex.hasMatch(phone);
 }
 
-String? currencyCode = 'IDR'; // currency aktif UI
+bool isValidPhoneIDR(String phone) {
+  final regex = RegExp(r'^08[0-9]{7,15}$');
+  return regex.hasMatch(phone);
+}
+
+// String? currencyCode = 'IDR';
 String? userCurrency = 'IDR'; // preference user
 String? lastCurrency;
 
@@ -82,6 +87,8 @@ bool hasFile(String answer) {
 }
 
 String cleanYoutubeUrl(String url) {
+  if (url.isEmpty) return '';
+
   try {
     final uri = Uri.parse(url);
 

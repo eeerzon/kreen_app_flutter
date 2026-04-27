@@ -1,7 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/modal/modal_filter.dart';
+import 'package:kreen_app_flutter/modal/modal_filter_vote.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
@@ -107,7 +107,16 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
             SizedBox(width: 4,),
             IconButton(
               onPressed: () async {
-                final result = await ModalFilter.show(
+                // final result = await ModalFilter.show(
+                //   context,
+                //   langCode!,
+                //   paramTime,
+                //   paramPrice,
+                //   paramPage,
+                //   selectedIndex: widget.selectedIndex,
+                // );
+
+                final result = await ModalFilterVote.show(
                   context,
                   langCode!,
                   paramTime,
@@ -121,6 +130,7 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
                     paramTime = result['time']!;
                     paramPrice = result['price']!;
                     paramPage = 1;
+                    
                   });
                   widget.onFilterApply(paramTime, paramPrice);
                 }
