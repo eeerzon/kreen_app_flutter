@@ -78,6 +78,30 @@ class _InfiniteSponsorMarqueeState extends State<InfiniteSponsorMarquee>
         onTapUp: (_) => _resumeWithDelay(),
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final screenWidth = constraints.maxWidth;
+            final shouldScroll = _singleSetWidth > screenWidth;
+
+            if (!shouldScroll && _singleSetWidth > 0) {
+              return Row(
+                children: widget.sponsors.map<Widget>((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 24),
+                    child: SizedBox(
+                      height: widget.height,
+                      child: Image.network(
+                        item['src'],
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          'assets/images/img_broken.jpg',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            }
+
             return OverflowBox(
               minWidth: 0,
               maxWidth: double.infinity, // IZINKAN OVERFLOW
@@ -91,10 +115,12 @@ class _InfiniteSponsorMarqueeState extends State<InfiniteSponsorMarquee>
                       height: widget.height,
                       onMeasured: (w) => _singleSetWidth = w,
                     ),
-                    _SponsorRow(
-                      sponsors: widget.sponsors,
-                      height: widget.height,
-                    ),
+                    
+                    if (shouldScroll)
+                      _SponsorRow(
+                        sponsors: widget.sponsors,
+                        height: widget.height,
+                      ),
                   ],
                 ),
               ),

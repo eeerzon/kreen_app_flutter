@@ -173,6 +173,45 @@ final Map<String, String> idNormalizationMap = {
 };
 
 
+String translateError(String message, String? langCode) {
+  final normalized = message.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+
+  if (langCode == 'id') {
+    
+    for (final entry in idNormalizationMap.entries) {
+      final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+      if (normalized == key) {
+        return entry.value;
+      }
+    }
+    
+    for (final entry in idNormalizationMap.entries) {
+      final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+      if (normalized.contains(key)) {
+        return entry.value;
+      }
+    }
+    return message;
+  }
+
+
+  for (final entry in errorTranslationMap.entries) {
+    final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+    if (normalized == key) {
+      return entry.value;
+    }
+  }
+  
+  for (final entry in errorTranslationMap.entries) {
+    final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
+    if (normalized.contains(key)) {
+      return entry.value;
+    }
+  }
+
+  return message;
+}
+
 class EmailInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

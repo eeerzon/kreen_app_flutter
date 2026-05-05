@@ -15,6 +15,7 @@ import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
 import 'package:kreen_app_flutter/modal/tutor_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/infinite_sponsor.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote/running_text.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -92,6 +93,9 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
     if (widget.data['theme_name'] != null) {
       themeName = widget.data['theme_name'];
     }
+    if (themeName == "Default Kreen") {
+      themeName = "default";
+    }
 
     Color color = colorMap[themeName] ?? Colors.red;
 
@@ -108,9 +112,60 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
       sponsors = json.decode(strSponsor);
     }
 
+    Color textColor = color; // fallback ke theme color
+    final rawColor = (widget.data['running_text_color'] ?? '').toString().trim();
+    if (rawColor.isNotEmpty) {
+      try {
+        final hex = rawColor.replaceAll('#', '');
+        textColor = Color(int.parse('FF$hex', radix: 16));
+        
+        // textColor = Color(int.parse('FF2ea8ab', radix: 16));
+      } catch (_) {}
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        
+        if (widget.data['flag_live'] == '1') ... [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: color,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.network(
+                    "$baseUrl/image/signal.svg",
+                    width: 16,
+                    height: 16,
+                    fit: BoxFit.contain,
+                  ),
+
+                  SizedBox(width: 6,),
+                  Text(
+                    lang['voting_ongoing'],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+        ],
+
         Stack(
           children: [
             AspectRatio(
@@ -146,10 +201,9 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
           ]
         ),
 
-        const SizedBox(height: 8),
-
+        const SizedBox(height: 12),
         Padding(
-          padding: kGlobalPadding,
+          padding: EdgeInsetsGeometry.fromLTRB(20, 0, 20, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -299,8 +353,36 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+        
+        SizedBox(height: 12),
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: textColor,
+          ),
+          child: Builder(
+            builder: (context) {
+              final rawText = (widget.data['running_text'] ?? '').toString().trim();
+              final displayText = rawText.isNotEmpty
+                  ? rawText
+                  : widget.langCode == 'id'
+                    ? 'Kreen Vote - Your Trusted Voting Partner - Dukung finalis pilihan kamu pada ${widget.data['judul_vote'] ?? ''}' 
+                    : 'Kreen Vote - Your Trusted Voting Partner - Support your favorite finalist on ${widget.data['judul_vote'] ?? ''}';
 
+              return RunningText(text: displayText, textColor: Colors.white);
+            },
+          ),
+        ),
+
+        // const SizedBox(height: 12),
+        Padding(
+          padding: EdgeInsetsGeometry.fromLTRB(20, 0, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Container(
                 color: Colors.white,
                 child: Padding(
@@ -561,13 +643,22 @@ class _LeaderboardSectionState extends State<LeaderboardSection> {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 20), // jarak antar item
                     child: buildListCard(
+                      context: context,
                       rank: item['rank'],
                       name: item['nama_finalis'],
                       votes: item['total_voters'] ?? 0,
                       progress: 0,
                       image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                       tema: color,
+                      idFinalis: item['id_finalis'].toString(),
+                      remaining: remaining,
                       lang: lang,
+                      flag_hide_no_urut: widget.data['flag_hide_nomor_urut'],
+                      flag_paket : widget.data['flag_paket'],
+                      flag_login: widget.data['flag_login'],
+                      flag_verify_email: widget.data['flag_verify_email'],
+                      langCode: widget.langCode,
+                      onAfterLogin: _onAfterLogin
                     ),
                   );
                 } else {
@@ -1046,75 +1137,91 @@ Widget buildTopCard({
     clipBehavior: Clip.none,
     alignment: Alignment.topCenter,
     children: [
-      Container(
-        width: isBig ? 120 : 100,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade300,),
-        ),
-        child: Column(
-          children: [
-            AspectRatio(
-              aspectRatio: 4 / 5,
-              child: Image.network(
-                image, 
-                height: isBig ? 120 : 90, 
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.network(
-                    '$baseUrl/noimage_finalis.png',
-                    height: isBig ? 120 : 90,
-                    fit: BoxFit.cover,
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              "$votes",
-              style: TextStyle(color: tema, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              lang['text_vote'],
-              style: TextStyle(color: Colors.grey, fontSize: 11),
-            ),
-            const SizedBox(height: 6),
-            ElevatedButton(
-              onPressed: () async {
-                await handleVoteAction(
-                  context: context,
-                  flagLogin: flag_login,
-                  flagVerifyEmail: flag_verify_email,
-                  idFinalis: idFinalis,
-                  flagHideNoUrut: flag_hide_no_urut,
-                  flagPaket: flag_paket,
-                  langCode: langCode,
-                  tema: tema,
-                  onAfterLogin: onAfterLogin,
-                  persen: false,
-                 );
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 13),
-                backgroundColor: tema,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+      InkWell(
+        onTap: () async {
+          await handleVoteAction(
+            context: context,
+            flagLogin: flag_login,
+            flagVerifyEmail: flag_verify_email,
+            idFinalis: idFinalis,
+            flagHideNoUrut: flag_hide_no_urut,
+            flagPaket: flag_paket,
+            langCode: langCode,
+            tema: tema,
+            onAfterLogin: onAfterLogin,
+            persen: false,
+          );
+        },
+        child: Container(
+          width: isBig ? 120 : 100,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300,),
+          ),
+          child: Column(
+            children: [
+              AspectRatio(
+                aspectRatio: 4 / 5,
+                child: Image.network(
+                  image, 
+                  height: isBig ? 120 : 90, 
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      '$baseUrl/noimage_finalis.png',
+                      height: isBig ? 120 : 90,
+                      fit: BoxFit.cover,
+                    );
+                  },
                 ),
               ),
-              child: const Text(
-                "Vote",
-                style: TextStyle(color: Colors.white),
+              const SizedBox(height: 6),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              Text(
+                "$votes",
+                style: TextStyle(color: tema, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                lang['text_vote'],
+                style: TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+              const SizedBox(height: 6),
+              ElevatedButton(
+                onPressed: () async {
+                  await handleVoteAction(
+                    context: context,
+                    flagLogin: flag_login,
+                    flagVerifyEmail: flag_verify_email,
+                    idFinalis: idFinalis,
+                    flagHideNoUrut: flag_hide_no_urut,
+                    flagPaket: flag_paket,
+                    langCode: langCode,
+                    tema: tema,
+                    onAfterLogin: onAfterLogin,
+                    persen: false,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 13),
+                  backgroundColor: tema,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "Vote",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
 
@@ -1142,82 +1249,107 @@ Widget buildTopCard({
 
 
 Widget buildListCard({
+  required BuildContext context,
   required int rank,
   required String name,
   required num votes,
   required num progress,
   required String image,
   required Color tema,
+  required String idFinalis,
+  required Duration remaining,
   required Map<String, dynamic> lang,
+  required String flag_hide_no_urut,
+  required String flag_paket,
+  required String flag_login,
+  required String flag_verify_email,
+  required String langCode,
+  required VoidCallback onAfterLogin
 }) {
-  return Container(
-    padding: kGlobalPadding,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.grey.shade300,),
-    ),
-    child: Row(
-      children: [
-        Text("$rank",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(width: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            width: 50,
-            child: AspectRatio(
-              aspectRatio: 4 / 5,
-              child: Image.network(
-                image,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.network(
-                    '$baseUrl/noimage_finalis.png',
-                    fit: BoxFit.cover,
-                  );
-                },
+  return InkWell(
+    onTap: () async {
+      await handleVoteAction(
+        context: context,
+        flagLogin: flag_login,
+        flagVerifyEmail: flag_verify_email,
+        idFinalis: idFinalis,
+        flagHideNoUrut: flag_hide_no_urut,
+        flagPaket: flag_paket,
+        langCode: langCode,
+        tema: tema,
+        onAfterLogin: onAfterLogin,
+        persen: false,
+      );
+    },
+    child: Container(
+      padding: kGlobalPadding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300,),
+      ),
+      child: Row(
+        children: [
+          Text("$rank",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(width: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 50,
+              child: AspectRatio(
+                aspectRatio: 4 / 5,
+                child: Image.network(
+                  image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      '$baseUrl/noimage_finalis.png',
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 4),
+                // LinearProgressIndicator(
+                //   value: progress,
+                //   minHeight: 6,
+                //   borderRadius: BorderRadius.circular(10),
+                //   color: Colors.orange,
+                //   backgroundColor: Colors.grey.shade200,
+                // ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
             children: [
-              Text(name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 4),
-              // LinearProgressIndicator(
-              //   value: progress,
-              //   minHeight: 6,
-              //   borderRadius: BorderRadius.circular(10),
-              //   color: Colors.orange,
-              //   backgroundColor: Colors.grey.shade200,
-              // ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          children: [
-            Text(
-              votes.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => "${m[1]}."),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: tema,
+              Text(
+                votes.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => "${m[1]}."),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: tema,
+                ),
               ),
-            ),
-            Text(
-              lang['text_vote'],
-              style: TextStyle(color: Colors.grey, fontSize: 11),
-            ),
-          ],
-        )
-        
-      ],
+              Text(
+                lang['text_vote'],
+                style: TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+            ],
+          )
+          
+        ],
+      ),
     ),
   );
 }

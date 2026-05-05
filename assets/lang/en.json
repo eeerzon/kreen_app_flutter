@@ -408,6 +408,10 @@
     "trade_show" : "Trade Show",
     "workshop" : "Workshop",
     "Other" : "Other",
-    "job_fair" : "Job Fair"
+    "job_fair" : "Job Fair",
+    "voting_ongoing" : "Voting In Ongoing",
+    "artikel_seputar_voting" : "Articles About Voting",
+    "baca_sekarang" : "Read Now",
+    "tutup" : "Close"
   }
 }

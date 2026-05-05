@@ -171,6 +171,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
 
   String? bankCodeDebit;
   bool hasAttribute = false;
+  String? currencyCode;
 
   @override
   void initState() {
@@ -441,6 +442,14 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
             genderValue = ''; // handle error
           }
 
+          final formMasterIds = (widget.ids_order_form_master.length > globalIndex)
+              ? widget.ids_order_form_master[globalIndex]
+              : <dynamic>[];
+
+          final formDetailIds = (widget.ids_order_form_details.length > globalIndex)
+              ? widget.ids_order_form_details[globalIndex]
+              : <dynamic>[];
+
           tickets.add({
             "id_ticket": idTicket,
             "first_name": widget.first_names[globalIndex].text,
@@ -448,14 +457,30 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
             "phone": widget.phones[globalIndex].text,
             "gender": genderValue,
             "order_form_answers": List.generate(
-              widget.ids_order_form_master[j].length,
+              formMasterIds.length,
               (index) => {
-                "id_order_form_master": widget.ids_order_form_master[j][index],
-                "id_order_form_detail": widget.ids_order_form_details[j][index],
+                "id_order_form_master": formMasterIds[index],
+                "id_order_form_detail": formDetailIds[index],
                 "answer": widget.answers[globalIndex][index],
               },
             ),
           });
+
+          // tickets.add({
+          //   "id_ticket": idTicket,
+          //   "first_name": widget.first_names[globalIndex].text,
+          //   "email": widget.emails[globalIndex].text,
+          //   "phone": widget.phones[globalIndex].text,
+          //   "gender": genderValue,
+          //   "order_form_answers": List.generate(
+          //     widget.ids_order_form_master[j].length,
+          //     (index) => {
+          //       "id_order_form_master": widget.ids_order_form_master[j][index],
+          //       "id_order_form_detail": widget.ids_order_form_details[j][index],
+          //       "answer": widget.answers[globalIndex][index],
+          //     },
+          //   ),
+          // });
           globalIndex++;
         }
       }
@@ -479,7 +504,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       };
 
       var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode, token: token);
-
       if (resultEventOrder != null) {
         if (resultEventOrder['rc'] == 200) {
           final tempOrder = resultEventOrder['data'];
@@ -523,7 +547,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
             dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
-            desc: bahasa['error'], //error message dari api
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}", //error message dari api
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),

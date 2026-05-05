@@ -761,7 +761,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                     const SizedBox(height: 10,),
                                     Text(
                                       widget.persen 
-                                        ? "${detailFinalis['percent']}%"
+                                        ? "${detailFinalis['percent'] ?? 0}%"
                                         : formatter.format(detailFinalis['total_voters'] ?? 0),
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     )

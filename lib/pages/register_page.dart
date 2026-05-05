@@ -122,7 +122,7 @@ class _RegisPageState extends State<RegisPage> {
             final lower = translated.toLowerCase();
             if (lower.contains('diperlukan') || lower.contains('required')) {
               PasswordError = translated;
-            } else if (lower.contains('minimal 8 karakter') || lower.contains('must be at least 8 characters')) {
+            } else if (lower.contains('password minimal 8 karakter') || lower.contains('password must be at least 8 characters')) {
               PasswordError2 = translated;
             } else if (lower.contains('mengandung setidaknya satu huruf dan satu angka') || lower.contains('must contain at least one letter and one number')) {
               PasswordError3 = translated;
@@ -469,6 +469,9 @@ class _RegisPageState extends State<RegisPage> {
                   }),
                   inputFormatters: [
                     EmailInputFormatter(),
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r"[a-zA-Z0-9@._+\-]"),
+                    ),
                   ],
                   decoration: InputDecoration(
                     hintText: email!,
@@ -894,31 +897,6 @@ class _RegisPageState extends State<RegisPage> {
 
   void _unfocusAll(BuildContext context) {
     FocusScope.of(context).unfocus();
-  }
-
-  String translateError(String message, String? langCode) {
-
-    final normalized = message.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
-
-    if (langCode == 'id') {
-      for (final entry in idNormalizationMap.entries) {
-        final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
-        if (normalized.contains(key) || key.contains(normalized)) {
-          return entry.value;
-        }
-      }
-      return message;
-    }
-
-    for (final entry in errorTranslationMap.entries) {
-      final key = entry.key.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
-
-      if (normalized.contains(key)) {
-        return entry.value;
-      }
-    }
-
-    return message;
   }
 }
 

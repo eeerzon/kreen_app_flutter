@@ -408,6 +408,10 @@
     "trade_show" : "Pameran Dagang",
     "workshop" : "Workshop",
     "Other" : "Lainnya",
-    "job_fair" : "Pameran Karir"
+    "job_fair" : "Pameran Karir",
+    "voting_ongoing" : "Voting Sedang Berlangsung",
+    "artikel_seputar_voting" : "Artikel Seputar Voting",
+    "baca_sekarang" : "Baca Sekarang",
+    "tutup" : "Tutup"
   }
 }

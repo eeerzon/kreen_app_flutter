@@ -172,6 +172,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
   String? bankCodeDebit;
   bool hasAttribute = false;
+  String? currencyCode;
 
   @override
   void initState() {
@@ -466,12 +467,14 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             "expiry_year": expiry_year,
             "cvv": cvv
         },
-        "order_form_answers_global": List.generate(
-          widget.ids_order_form_master.length, (index) => {
-            "id_order_form_master": widget.ids_order_form_master[index],
-            "id_order_form_detail": widget.ids_order_form_details[index],
-            "answer": widget.answers[index]
-          },
+        "order_form_answers_global": widget.ids_order_form_master.isEmpty
+          ? []
+          :  List.generate(
+            widget.ids_order_form_master.length, (index) => {
+              "id_order_form_master": widget.ids_order_form_master[index],
+              "id_order_form_detail": widget.ids_order_form_details[index],
+              "answer": widget.answers[index]
+            },
         ),
       };
 
@@ -513,7 +516,6 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
         //       showCloseIcon: true,
         //     ).show();
         //   }
-        } else if (resultEventOrder['rc'] == 422) {
           
         } else {
           AwesomeDialog(
@@ -521,7 +523,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
-            desc: bahasa['error'], //error message dari api
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}", //error message dari api
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),

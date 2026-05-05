@@ -160,6 +160,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
 
       isLoadingSukses = false;
       showErrorBar = false;
+      _successLoaded = true;
     });
   }
 
@@ -222,6 +223,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
 
       isLoadingPending = false;
       showErrorBar = false;
+      _pendingLoaded = true;
     });
   }
 
@@ -284,6 +286,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
 
       isLoadingFail = false;
       showErrorBar = false;
+      _failLoaded = true;
     });
   }
 
@@ -435,7 +438,7 @@ class _EventSuccessState extends State<EventSuccess> {
   List<dynamic> orderSuccess = [];
   List<dynamic> events = [];
 
-  bool isLoading = false;
+  bool isLoading = true;
   bool hasMore = true;
   int currentPage = 1;
 
@@ -935,7 +938,7 @@ class _EventPendingState extends State<EventPending> {
   List<dynamic> orderPending = [];
   List<dynamic> events = [];
 
-  bool isLoading = false;
+  bool isLoading = true;
   bool hasMore = true;
   int currentPage = 1;
 
@@ -1436,7 +1439,7 @@ class _EventFailState extends State<EventFail> {
   List<dynamic> orderFail = [];
   List<dynamic> events = [];
 
-  bool isLoading = false;
+  bool isLoading = true;
   bool hasMore = true;
   int currentPage = 1;
 

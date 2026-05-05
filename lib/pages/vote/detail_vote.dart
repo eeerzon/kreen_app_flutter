@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/widget_webview.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_2_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.dart';
@@ -57,6 +58,9 @@ class _DetailVotePageState extends State<DetailVotePage> {
   String errorMessage = ''; 
   String? currencyCode;
 
+  Map<String, dynamic> articleData = {};
+  bool _articlePopupShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +87,10 @@ class _DetailVotePageState extends State<DetailVotePage> {
       });
       return;
     }
+
+    articleData = resultVote['data']['article_data'] ?? {};
+
+    _articlePopupShown = await StorageService.getArticlePopupShown(widget.id_event);
 
     final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode);
     if (resultLeaderboard == null || resultLeaderboard['rc'] != 200) {
@@ -471,8 +479,21 @@ class _DetailVotePageState extends State<DetailVotePage> {
     if (vote['theme_name'] != null) {
       themeName = vote['theme_name'];
     }
+    if (themeName == "Default Kreen") {
+      themeName = "Red";
+    }
     
     Color color = colorMap[themeName] ?? Colors.red;
+  
+    if (articleData.isNotEmpty && !_articlePopupShown) {
+      _articlePopupShown = true;
+
+      StorageService.setArticlePopupShown(widget.id_event, true);
+      
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showArticlePopup(articleData, color);
+      });
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -607,6 +628,142 @@ class _DetailVotePageState extends State<DetailVotePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showArticlePopup(Map<String, dynamic> article, Color color) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // header bar
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: color,
+              child: Row(
+                children: [
+                  Icon(Icons.circle, color: Colors.white, size: 10),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      bahasa!['artikel_seputar_voting'] ?? 'Artikel Seputar Voting',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+
+            // thumbnail
+            if (article['img'] != null)
+              Image.network(
+                article['img'],
+                width: double.infinity,
+                height: 220,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => SizedBox.shrink(),
+              ),
+
+            // konten
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    article['article_title'] ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    article['description'] ?? '',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 13,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Colors.grey.shade400),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            bahasa!['tutup'] ?? 'Tutup',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color,
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    WidgetWebView(header: bahasa!['artikel'], url: articleData['link']),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            bahasa!['baca_sekarang'] ?? 'Baca Sekarang',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

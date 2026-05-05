@@ -80,7 +80,7 @@ class _ExploreAllState extends State<ExploreAll> {
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";
     if (widget.timeFilter.isNotEmpty) {
-      if (widget.timeFilter.length == 3) {
+      if (widget.timeFilter.length > 3) {
         filterTime = '';
       } else {
         filterTime = widget.timeFilter.join(",");
@@ -89,7 +89,7 @@ class _ExploreAllState extends State<ExploreAll> {
 
     String filterPrice = "";
     if (widget.priceFilter.isNotEmpty) {
-      if (widget.priceFilter.length == 2) {
+      if (widget.priceFilter.length > 2) {
         filterPrice = '';
       } else {
         filterPrice = widget.priceFilter.join(",");
@@ -116,7 +116,7 @@ class _ExploreAllState extends State<ExploreAll> {
     final responses = await ApiService.get(endpointAll, xLanguage: langCode, xCurrency: currencyCode);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
-        showErrorBar = true;
+        showErrorBar = false;
         errorMessage = responses?['message'];
         isFirstLoad = false;
       });
@@ -145,7 +145,7 @@ class _ExploreAllState extends State<ExploreAll> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
-      await _loadContent(isFirstLoad, null);
+      await _loadContent(isFirstLoad, '');
     });
     
     _scrollController.addListener(() {
@@ -170,7 +170,7 @@ class _ExploreAllState extends State<ExploreAll> {
 
     String filterTime = "";
     if (widget.timeFilter.isNotEmpty) {
-      if (widget.timeFilter.length == 3) {
+      if (widget.timeFilter.length > 3) {
         filterTime = '';
       } else {
         filterTime = widget.timeFilter.join(",");
@@ -179,7 +179,7 @@ class _ExploreAllState extends State<ExploreAll> {
 
     String filterPrice = "";
     if (widget.priceFilter.isNotEmpty) {
-      if (widget.priceFilter.length == 2) {
+      if (widget.priceFilter.length > 2) {
         filterPrice = '';
       } else {
         filterPrice = widget.priceFilter.join(",");
@@ -203,15 +203,15 @@ class _ExploreAllState extends State<ExploreAll> {
       final data = json.decode(response.body);
       newData = List.from(data['data'] ?? []);
     } else if (response.statusCode == 408) {
-      showErrorBar = true;
+      showErrorBar = false;
       errorMessage = bahasa['timeout'];
       return;
     } else if (response.statusCode == 503) {
-      showErrorBar = true;
+      showErrorBar = false;
       errorMessage = bahasa['no_internet'];
       return;
     } else if (response.statusCode == 500) {
-      showErrorBar = true;
+      showErrorBar = false;
       errorMessage = bahasa['error'];
       return;
     }
@@ -265,7 +265,7 @@ class _ExploreAllState extends State<ExploreAll> {
           isFirstLoad = true;
         });
 
-        _loadContent(false, widget.keyword);
+        _loadContent(false, widget.keyword ?? '');
         if (!mounted) return;
         setState(() {
           _isSearching = false;
@@ -289,7 +289,7 @@ class _ExploreAllState extends State<ExploreAll> {
                 visible: showErrorBar, 
                 message: errorMessage, 
                 onRetry: () {
-                  _loadContent(false, widget.keyword);
+                  _loadContent(false, widget.keyword ?? '');
                 }
               )
             ],
@@ -716,7 +716,7 @@ class _ExploreAllState extends State<ExploreAll> {
   Future<void> _handleBackFromDetail() async {
     if (isChoosed == 0) {
       currencyCode = lastCurrency;
-      await _loadContent(false, widget.keyword);
+      await _loadContent(false, widget.keyword ?? '');
       setState(() {});
     }
   }

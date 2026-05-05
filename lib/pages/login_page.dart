@@ -2,6 +2,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -502,6 +503,9 @@ class _LoginPageState extends State<LoginPage> {
                   }),
                   inputFormatters: [
                     EmailInputFormatter(),
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r"[a-zA-Z0-9@._+\-]"),
+                    ),
                   ],
                   decoration: InputDecoration(
                     hintText: input_email,
@@ -791,23 +795,5 @@ class _LoginPageState extends State<LoginPage> {
 
   void _unfocusAll(BuildContext context) {
     FocusScope.of(context).unfocus();
-  }
-
-  String translateError(String message, String? langCode) {
-    if (langCode == 'id') {
-      return message;
-    }
-
-    final normalized = message.toLowerCase().trim();
-
-    for (final entry in errorTranslationMap.entries) {
-      final key = entry.key.toLowerCase().trim();
-
-      if (normalized.contains(key)) {
-        return entry.value;
-      }
-    }
-
-    return message;
   }
 }

@@ -54,7 +54,7 @@ class _ExploreVoteState extends State<ExploreVote> {
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";
     if (widget.timeFilter.isNotEmpty) {
-      if (widget.timeFilter.length == 3) {
+      if (widget.timeFilter.length > 3) {
         filterTime = '';
       } else {
         filterTime = widget.timeFilter.join(",");
@@ -63,7 +63,7 @@ class _ExploreVoteState extends State<ExploreVote> {
 
     String filterPrice = "";
     if (widget.priceFilter.isNotEmpty) {
-      if (widget.priceFilter.length == 2) {
+      if (widget.priceFilter.length > 2) {
         filterPrice = '';
       } else {
         filterPrice = widget.priceFilter.join(",");
@@ -88,7 +88,7 @@ class _ExploreVoteState extends State<ExploreVote> {
     final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
-        showErrorBar = true;
+        showErrorBar = false;
         errorMessage = responses?['message'];
         isFirstLoad = false;
       });
@@ -213,7 +213,7 @@ class _ExploreVoteState extends State<ExploreVote> {
       // _loadContent(false, widget.keyword);
 
         setState(() => isFirstLoad = true);
-        _loadContent(false, widget.keyword);
+        _loadContent(false, widget.keyword ?? '');
     }
   }
 
@@ -232,7 +232,7 @@ class _ExploreVoteState extends State<ExploreVote> {
               visible: showErrorBar, 
               message: errorMessage, 
               onRetry: () {
-                _loadContent(false, widget.keyword);
+                _loadContent(false, widget.keyword ?? '');
               }
             )
           ],
@@ -567,7 +567,7 @@ class _ExploreVoteState extends State<ExploreVote> {
   Future<void> _handleBackFromDetail() async {
     if (isChoosed == 0) {
       currencyCode = lastCurrency;
-      await _loadContent(false, widget.keyword);
+      await _loadContent(false, widget.keyword ?? '');
       setState(() {});
     }
   }

@@ -1126,6 +1126,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 _emailChanged = value.trim() != _originalEmail.trim();
                               });
                             }),
+                            inputFormatters: [
+                              EmailInputFormatter(),
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r"[a-zA-Z0-9@._+\-]"),
+                              ),
+                            ],
                             decoration: InputDecoration(
                               hintText: emailHint,
                               hintStyle: TextStyle(color: Colors.grey.shade400),

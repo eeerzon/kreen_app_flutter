@@ -160,4 +160,13 @@ class StorageService {
     final value = await _storage.read(key: 'isChoosed');
     return value != null ? int.tryParse(value) : null;
   }
+
+  static Future<bool> getArticlePopupShown(String idEvent) async {
+    final value = await _storage.read(key: 'article_popup_$idEvent');
+    return value == 'true';
+  }
+
+  static Future<void> setArticlePopupShown(String idEvent, bool value) async {
+    await _storage.write(key: 'article_popup_$idEvent', value: value.toString());
+  }
 }

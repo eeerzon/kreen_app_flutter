@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use, unused_field
 
 import 'dart:convert';
 import 'dart:io';
@@ -89,14 +89,16 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   Set<int> _duplicateEmailIndexes = {};
   Set<int> _duplicatePhoneIndexes = {};
   Set<int> _duplicateNameIndexes = {};
+  Set<int> _duplicateGenderIndexes = {};
 
   void checkDuplicateInputs() {
-    // JIKA MODE SAMAKAN AKTIF -> DUPLIKASI BOLEH
+    // JIKA MODE SAMAKAN AKTIF, DUPLIKASI BOLEH
     if (widget.flag_samakan_input_tiket_pertama == '1') {
       setState(() {
         _duplicateEmailIndexes = {};
         _duplicatePhoneIndexes = {};
         _duplicateNameIndexes = {};
+        _duplicateGenderIndexes = {};
       });
       return;
     }
@@ -104,20 +106,24 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     Map<String, List<int>> emailMap = {};
     Map<String, List<int>> phoneMap = {};
     Map<String, List<int>> nameMap = {};
+    Map<String, List<int>> genderMap = {};
 
     for (int i = 0; i < totalQty; i++) {
       final e = emailControllers[i].text.trim();
       final p = phoneControllers[i].text.trim();
       final n = nameControllers[i].text.trim();
+      final g = selectedGenders[i];
 
       if (e.isNotEmpty) emailMap.putIfAbsent(e, () => []).add(i);
       if (p.isNotEmpty) phoneMap.putIfAbsent(p, () => []).add(i);
       if (n.isNotEmpty) nameMap.putIfAbsent(n, () => []).add(i);
+      if (g != null) genderMap.putIfAbsent(g, () => []).add(i);
     }
 
     Set<int> dupEmail = {};
     Set<int> dupPhone = {};
     Set<int> dupName = {};
+    Set<int> dupGender = {};
 
     emailMap.forEach((_, indexes) {
       if (indexes.length > 1) dupEmail.addAll(indexes);
@@ -128,12 +134,31 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     nameMap.forEach((_, indexes) {
       if (indexes.length > 1) dupName.addAll(indexes);
     });
+    genderMap.forEach((_, indexes) {
+      if (indexes.length > 1) dupGender.addAll(indexes);
+    });
 
     setState(() {
       _duplicateEmailIndexes = dupEmail;
       _duplicatePhoneIndexes = dupPhone;
       _duplicateNameIndexes = dupName;
+      _duplicateGenderIndexes = dupGender;
     });
+  }
+
+  void _autoCheckIfMatchFirst(int index) {
+    if (index == 0) return;
+
+    final nameMatch = nameControllers[index].text == nameControllers[0].text;
+    final emailMatch = emailControllers[index].text == emailControllers[0].text;
+    final phoneMatch = phoneControllers[index].text == phoneControllers[0].text;
+    final genderMatch = selectedGenders[index] == selectedGenders[0];
+
+    final allMatch = nameMatch && emailMatch && phoneMatch && genderMatch;
+
+    if (_isCheckedList[index] != allMatch) {
+      setState(() => _isCheckedList[index] = allMatch); // auto check & uncheck
+    }
   }
 
 
@@ -156,6 +181,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   List<FocusNode> phoneFocusNodes = [];
   List<FocusNode> genderFocusNodes = [];
   List<FocusNode> indikatorFocus = [];
+  String? currencyCode;
 
   @override
   void initState() {
@@ -627,35 +653,58 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         ),
 
                         if (index != 0 && widget.flag_samakan_input_tiket_pertama == '1') ...[
-                          const SizedBox(height: 2),
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: Colors.red,
-                            controlAffinity: ListTileControlAffinity.leading,
-                            value: _isCheckedList[index],
-                            // visualDensity: VisualDensity(horizontal: -4),
-                            title: Text(
-                              "${bahasa['samakan_input']} ${bahasa['tiket']} 1",
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _isCheckedList[index] = value ?? false;
+                          SizedBox(height: 2),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Checkbox(
+                                activeColor: Colors.red,
+                                value: _isCheckedList[index],
+                                visualDensity: VisualDensity(horizontal: -4, vertical: -4),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isCheckedList[index] = value ?? false;
 
-                                if (_isCheckedList[index]) {
-                                  // copy dari tiket pertama
-                                  emailControllers[index].text = emailControllers[0].text;
-                                  nameControllers[index].text = nameControllers[0].text;
-                                  phoneControllers[index].text = phoneControllers[0].text;
-                                  selectedGenders[index] = selectedGenders[0];
-                                } else {
-                                  // reset
-                                  emailControllers[index].clear();
-                                  nameControllers[index].clear();
-                                  phoneControllers[index].clear();
-                                  selectedGenders[index] = null;
-                                }
-                              });
-                            },
+                                    if (_isCheckedList[index]) {
+                                      // copy dari tiket pertama
+                                      emailControllers[index].text = emailControllers[0].text;
+                                      nameControllers[index].text = nameControllers[0].text;
+                                      phoneControllers[index].text = phoneControllers[0].text;
+                                      selectedGenders[index] = selectedGenders[0];
+                                    } else {
+                                      // reset
+                                      emailControllers[index].clear();
+                                      nameControllers[index].clear();
+                                      phoneControllers[index].clear();
+                                      selectedGenders[index] = null;
+                                    }
+                                  });
+                                },
+                              ),
+                              // SizedBox(width: 8),
+                              Expanded(
+                                child: InkWell(
+                                  child: Text("${bahasa['samakan_input']} ${bahasa['tiket']} 1"),
+                                  onTap: () {
+                                    setState(() {
+                                      _isCheckedList[index] = !_isCheckedList[index];
+
+                                      if (_isCheckedList[index]) {
+                                        emailControllers[index].text = emailControllers[0].text;
+                                        nameControllers[index].text = nameControllers[0].text;
+                                        phoneControllers[index].text = phoneControllers[0].text;
+                                        selectedGenders[index] = selectedGenders[0];
+                                      } else {
+                                        emailControllers[index].clear();
+                                        nameControllers[index].clear();
+                                        phoneControllers[index].clear();
+                                        selectedGenders[index] = null;
+                                      }
+                                    });
+                                  },
+                                ), 
+                              ),
+                            ],
                           ),
                         ],
 
@@ -697,19 +746,26 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               );
                               checkDuplicateInputs();
                             } else {
-                              emailControllers[0].text = value;
-                              emailControllers[0].selection = TextSelection.fromPosition(TextPosition(offset: value.length));
-                              
-                              for (int i = 1; i < totalQty; i++) {
-                                if (_isCheckedList[i]) {
-                                  emailControllers[i].text = value;
+                              if (index == 0) {
+                                emailControllers[0].text = value;
+                                emailControllers[0].selection = TextSelection.fromPosition(TextPosition(offset: value.length));
+                                
+                                for (int i = 1; i < totalQty; i++) {
+                                  if (_isCheckedList[i]) {
+                                    emailControllers[i].text = value;
+                                  }
                                 }
                               }
                             }
+
+                            _autoCheckIfMatchFirst(index);
                           },
                           autofocus: false,
                           inputFormatters: [
                             EmailInputFormatter(),
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r"[a-zA-Z0-9@._+\-]"),
+                            ),
                           ],
                           decoration: InputDecoration(
                             hintText: bahasa['email_hint'],
@@ -782,15 +838,20 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                               );
                               checkDuplicateInputs();
                             } else {
-                              nameControllers[0].text = value;
-                              nameControllers[0].selection = TextSelection.fromPosition(TextPosition(offset: value.length));
-                              
-                              for (int i = 1; i < totalQty; i++) {
-                                if (_isCheckedList[i]) {
-                                  nameControllers[i].text = value;
+                              if (index == 0) {
+                                nameControllers[0].text = value;
+                                nameControllers[0].selection = TextSelection.fromPosition(
+                                  TextPosition(offset: value.length),
+                                );
+                                for (int i = 1; i < totalQty; i++) {
+                                  if (_isCheckedList[i]) {
+                                    nameControllers[i].text = value;
+                                  }
                                 }
                               }
                             }
+
+                            _autoCheckIfMatchFirst(index);
                           },
                           autofocus: false,
                           decoration: InputDecoration(
@@ -864,6 +925,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                             }
                                           }
                                         });
+
+                                        _autoCheckIfMatchFirst(index);
                                       },
                                       child: Container(
                                         height: 120,
@@ -945,18 +1008,19 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 );
                                 checkDuplicateInputs();
                               } else {
-                                phoneControllers[0].text = value;
-                                phoneControllers[0].selection = TextSelection.fromPosition(
-                                  TextPosition(offset: value.length),
-                                );
-
-                                for (int i = 1; i < totalQty; i++) {
-                                  if (_isCheckedList[i]) {
-                                    phoneControllers[i].text = value;
+                                if (index == 0) {
+                                  phoneControllers[0].text = value;
+                                  phoneControllers[0].selection = TextSelection.fromPosition(
+                                    TextPosition(offset: value.length),
+                                  );
+                                  for (int i = 1; i < totalQty; i++) {
+                                    if (_isCheckedList[i]) phoneControllers[i].text = value;
                                   }
                                 }
                               }
                             });
+
+                            _autoCheckIfMatchFirst(index);
                           },
                           keyboardType: TextInputType.number,
                           inputFormatters: [
@@ -979,24 +1043,49 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ),
                         ),
 
-                        if (phoneControllers[index].text.isNotEmpty &&
+                        if (detailEvent['currency'] == 'IDR') ... [
+                          if (phoneControllers[index].text.isNotEmpty &&
+                            !isValidPhoneIDR(phoneControllers[index].text) && _phoneTouched) ...[
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                child: Text(
+                                  bahasa['nomor_hp_error_idr'],
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ),
+                          ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                    _duplicatePhoneIndexes.contains(index)) ...[
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                              child: Text(
+                                bahasa['error_nohp_1'],
+                                style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ] else ...[
+                          if (phoneControllers[index].text.isNotEmpty &&
                             !isValidPhone(phoneControllers[index].text) && _phoneTouched) ...[
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                            child: Text(
-                              nohpError!,
-                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  nohpError!,
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              ),
+                          ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
+                                    _duplicatePhoneIndexes.contains(index)) ...[
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                              child: Text(
+                                bahasa['error_nohp_1'],
+                                style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              ),
                             ),
-                          ),
-                        ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
-                                   _duplicatePhoneIndexes.contains(index)) ...[
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                            child: Text(
-                              bahasa['error_nohp_1'],
-                              style: TextStyle(color: Colors.red[900], fontSize: 12),
-                            ),
-                          ),
+                          ],
                         ],
 
                         if (_showError && phoneControllers[index].text.trim().isEmpty)
@@ -1064,10 +1153,33 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                   controller: answerControllers[idx],
                                   onChanged: (value) {
                                     setState(() {
-                                      answerControllers[idx].text = value;
+                                      if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                        answerControllers[idx].text = value;
+                                        answers[idx] = value;
 
-                                      answers[idx] = value;
+                                        answerControllers[idx].selection = TextSelection.fromPosition(
+                                          TextPosition(offset: value.length)
+                                        );
+                                      } else {
+                                        if (idx == 0) {
+                                          answerControllers[0].text = value;
+                                          answers[0] = value;
+
+                                          answerControllers[0].selection = TextSelection.fromPosition(
+                                            TextPosition(offset: value.length)
+                                          );
+
+                                          for (int i = 1; i < formTiket.length; i++) {
+                                            if (_isCheckedList[i]) {
+                                              answerControllers[i].text = value;
+                                              answers[i] = value;
+                                            }
+                                          }
+                                        }
+                                      }
                                     });
+                                        
+                                    _autoCheckIfMatchFirst(idx);
                                   },
                                   autofocus: false,
                                   decoration: InputDecoration(
@@ -1202,9 +1314,29 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           child: GestureDetector(
                                             onTap: () {
                                               setState(() {
-                                                selected = item['label'];
-                                                answerControllers[idx].text = item['label'];
+                                                if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                                    selected = item['label'];
+                                                    answerControllers[idx].text = item['label'];
+
+                                                    answers[idx] = item['label'];
+                                                  } else {
+                                                    if (idx == 0) {
+                                                      selected = item['label'];
+                                                      answerControllers[0].text = item['label'];
+
+                                                      answers[0] = item['label'];
+
+                                                      for (int i = 1; i < answers.length; i++) {
+                                                        if (_isCheckedList[i]) {
+                                                          answers[i] = item['label'];
+                                                          answerControllers[i].text = item['label'];
+                                                        }
+                                                      }
+                                                    }
+                                                  }
                                               });
+
+                                              _autoCheckIfMatchFirst(idx);
                                             },
                                             child: Container(
                                               height: 120,
@@ -1274,8 +1406,25 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                             groupValue: answerControllers[idx].text,
                                             onChanged: (val) {
                                               setState(() {
-                                                answerControllers[idx].text = val ?? '';
+                                                if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                                  answerControllers[idx].text = value;
+                                                  answers[idx] = value;
+                                                } else {
+                                                  if (idx == 0) {
+                                                    answerControllers[0].text = value;
+                                                    answers[0]= value;
+
+                                                    for (int i = 1; i < answers.length; i++) {
+                                                      if (_isCheckedList[i]) {
+                                                        answers[i] = value;
+                                                        answerControllers[i].text = value;
+                                                      }
+                                                    }
+                                                  }
+                                                }
                                               });
+
+                                              _autoCheckIfMatchFirst(idx);
                                             },
                                             contentPadding: EdgeInsets.zero,
                                             dense: true,
@@ -1321,8 +1470,25 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         .toList(),
                                         onChanged: (value) {
                                           setState(() {
-                                            answerControllers[idx].text = value ?? '';
+                                            if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                              answerControllers[idx].text = value ?? '';
+                                              answers[idx] = value ?? '';
+                                            } else {
+                                              if (idx == 0) {
+                                                answerControllers[0].text = value ?? '';
+                                                answers[0] = value ?? '';
+
+                                                for (int i = 1; i < answers.length; i++) {
+                                                  if (_isCheckedList[i]) {
+                                                    answers[i] = value ?? '';
+                                                    answerControllers[i].text = value ?? '';
+                                                  }
+                                                }
+                                              }
+                                            }
                                           });
+                                          
+                                          _autoCheckIfMatchFirst(idx);
                                         },
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(
@@ -1394,9 +1560,28 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                   selectedValues.remove(value);
                                                 }
 
-                                                answerControllers[idx].text =
-                                                    selectedValues.join(',');
+                                                if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                                  answerControllers[idx].text =
+                                                      selectedValues.join(',');
+
+                                                  answers[idx] = answerControllers[idx].text;
+                                                } else {
+                                                  if (idx == 0) {
+                                                    answerControllers[0].text =
+                                                        selectedValues.join(',');
+
+                                                    answers[0] = answerControllers[0].text;
+
+                                                    for (int i = 1; i < answers.length; i++) {
+                                                      if (_isCheckedList[i]) {
+                                                        answers[i] = answerControllers[0].text;
+                                                        answerControllers[i].text = answerControllers[0].text;
+                                                      }
+                                                    }
+                                                  }
+                                                }
                                               });
+                                              _autoCheckIfMatchFirst(idx);
                                             },
                                           );
                                         }).toList();
@@ -1496,7 +1681,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           _showError = true;
                         });
 
-                        final isValid = _validateAllForm();
+                        final isValid = _validateAllForm(detailEvent['currency']);
                         
                         for (var i = 0; i < formTiket.length; i++) {
                           if (formTiket[i]['type_form'] != 'file') {
@@ -1560,12 +1745,14 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             "longitude": longitude,
                             "tickets": tickets,
                             "payment_method": null,
-                            "order_form_answers_global": List.generate(
-                              ids_order_form_master.length, (index) => {
-                                "id_order_form_master": ids_order_form_master[index],
-                                "id_order_form_detail": ids_order_form_detail[index],
-                                "answer": answers[index]
-                              },
+                            "order_form_answers_global": ids_order_form_master.isEmpty
+                              ? []
+                              :  List.generate(
+                                ids_order_form_master.length, (index) => {
+                                  "id_order_form_master": ids_order_form_master[index],
+                                  "id_order_form_detail": ids_order_form_detail[index],
+                                  "answer": answers[index]
+                                },
                             ),
                           };
                           
@@ -1695,7 +1882,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     super.dispose();
   }
 
-  bool _validateAllForm() {
+  bool _validateAllForm(String currencyEvent){
     bool isValid = true;
     FocusNode? firstErrorFocus;
 
@@ -1726,12 +1913,22 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
       }
 
       // phone
-      if (phoneControllers[i].text.trim().isEmpty ||
-          !isValidPhone(phoneControllers[i].text) ||
-          (widget.flag_samakan_input_tiket_pertama == '0' &&
-          _duplicatePhoneIndexes.contains(i))) {
-        isValid = false;
-        firstErrorFocus ??= phoneFocusNodes[i];
+      if (currencyEvent == 'IDR') {
+        if (phoneControllers[i].text.trim().isEmpty ||
+            !isValidPhoneIDR(phoneControllers[i].text) ||
+            (widget.flag_samakan_input_tiket_pertama == '0' &&
+            _duplicatePhoneIndexes.contains(i))) {
+          isValid = false;
+          firstErrorFocus ??= phoneFocusNodes[i];
+        }
+      } else {
+        if (phoneControllers[i].text.trim().isEmpty ||
+            !isValidPhone(phoneControllers[i].text) ||
+            (widget.flag_samakan_input_tiket_pertama == '0' &&
+            _duplicatePhoneIndexes.contains(i))) {
+          isValid = false;
+          firstErrorFocus ??= phoneFocusNodes[i];
+        }
       }
 
       // form tiket

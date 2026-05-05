@@ -600,7 +600,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: bahasa['error'],
+                desc: bahasa['lewat_batas_voting'],
                 btnOkOnPress: () {},
                 btnOkColor: Colors.red,
                 buttonsTextStyle: TextStyle(color: Colors.white),
@@ -677,12 +677,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         };
 
         var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
-        if (resultVoteOrder == null || resultVoteOrder['rc'] != 200) {
-          setState(() {
-            showErrorBar = true;
-            errorMessage = resultVoteOrder?['message'];
-          });
-        }
 
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
@@ -711,6 +705,20 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                   id_event: detailVote['id_vote'].toString(),
                 )),
               );
+            } else if (errorMessage.toLowerCase().contains("melewati batas voting")) {
+              AwesomeDialog(
+                context: context,
+                dialogType: DialogType.noHeader,
+                animType: AnimType.topSlide,
+                title: bahasa['maaf'],
+                desc: bahasa['lewat_batas_voting'],
+                btnOkOnPress: () {},
+                btnOkColor: Colors.red,
+                buttonsTextStyle: TextStyle(color: Colors.white),
+                headerAnimationLoop: false,
+                dismissOnTouchOutside: true,
+                showCloseIcon: true,
+              ).show();
             } else {
               AwesomeDialog(
                 context: context,
@@ -1089,6 +1097,12 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               }
                               _emailController.text = value;
                             },
+                            inputFormatters: [
+                              EmailInputFormatter(),
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r"[a-zA-Z0-9@._+\-]"),
+                              ),
+                            ],
                             decoration: InputDecoration(
                               hintText: emailHint!,
                               hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -1206,7 +1220,17 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         isPhoneField
                                           ? LengthLimitingTextInputFormatter(16)
                                           : FilteringTextInputFormatter.singleLineFormatter,
+
+                                        isEmailField
+                                          ? EmailInputFormatter()
+                                          : FilteringTextInputFormatter.singleLineFormatter,
+                                        
+
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r"[a-zA-Z0-9@._+\-]"),
+                                        ),
                                       ],
+                                      
                                       decoration: InputDecoration(
                                         hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
                                         hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -2865,6 +2889,14 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       genderError = true;
     }
     
+
+    final email = _emailController.text.trim();
+
+    if (email.isNotEmpty && !isValidEmail(email)) {
+      // format salah
+      isValid = false;
+      firstErrorFocus ??= _emailFocus;
+    }
 
     if (indikator.isNotEmpty) {
 

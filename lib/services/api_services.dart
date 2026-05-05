@@ -159,7 +159,7 @@ class ApiService {
     try {
       final response = await http
         .post(url, headers: headers, body: json.encode(body))
-        .timeout(Duration(seconds: 15));
+        .timeout(Duration(seconds: 22));
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;

@@ -718,45 +718,50 @@ class _FinalisPageState extends State<FinalisPage> {
         },
         child: CustomScrollView(
           slivers: [
-            // konten atas (countdown)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: color, width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      children: [
-                        Text(countDownText!),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _timeBox("$days", daysText!, timerColor),
-                            const SizedBox(width: 20),
-                            _timeBox("$hours".padLeft(2, "0"), hoursText!, timerColor),
-                            const SizedBox(width: 10),
-                            _separator(timerColor),
-                            const SizedBox(width: 10),
-                            _timeBox("$minutes".padLeft(2, "0"), minutesText!, timerColor),
-                            const SizedBox(width: 10),
-                            _separator(timerColor),
-                            const SizedBox(width: 10),
-                            _timeBox("$seconds".padLeft(2, "0"), secondsText!, timerColor),
-                          ],
-                        ),
-                      ],
+
+            if (vote['flag_cd'] == '1' &&
+                vote['real_tanggal_tutup_vote'] != null &&
+                DateTime.tryParse(vote['real_tanggal_tutup_vote'].toString())?.isAfter(DateTime.now()) == true) ... [
+              // konten atas (countdown)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: color, width: 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: kGlobalPadding,
+                      child: Column(
+                        children: [
+                          Text(countDownText!),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _timeBox("$days", daysText!, timerColor),
+                              const SizedBox(width: 20),
+                              _timeBox("$hours".padLeft(2, "0"), hoursText!, timerColor),
+                              const SizedBox(width: 10),
+                              _separator(timerColor),
+                              const SizedBox(width: 10),
+                              _timeBox("$minutes".padLeft(2, "0"), minutesText!, timerColor),
+                              const SizedBox(width: 10),
+                              _separator(timerColor),
+                              const SizedBox(width: 10),
+                              _timeBox("$seconds".padLeft(2, "0"), secondsText!, timerColor),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
 
             //sticky search bar
             SliverPersistentHeader(
@@ -1121,7 +1126,7 @@ class _FinalisPageState extends State<FinalisPage> {
                           const SizedBox(height: 10,),
                           Text(
                             persen 
-                              ? "${item['percent']}%"
+                              ? "${item['percent'] ?? 0}%"
                               : formatter.format(item['total_voters'] ?? 0),
                             style: TextStyle(fontWeight: FontWeight.bold),
                           )
