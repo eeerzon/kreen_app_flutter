@@ -754,7 +754,13 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   
                                         SizedBox(width: 4),
                                         //text
-                                        Text("Vote"),
+                                        Text(
+                                          (widget.persen
+                                            ? (detailFinalis['percent'] ?? 0) > 1
+                                            : (detailFinalis['total_voters'] ?? 0) > 1)
+                                              ? bahasa['text_votes']
+                                              : bahasa['text_vote'],
+                                        ),
                                       ],
                                     ),
                   
@@ -1156,7 +1162,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                       ),
                     ),
                     Text(
-                      "${bahasa['paket']} $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
+                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']}\n$countData ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
                       style: TextStyle(fontSize: 12),
                     ),
                   ],

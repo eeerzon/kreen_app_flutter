@@ -721,37 +721,39 @@ class _ProfileState extends State<Profile> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            
-                            if (loginMethod != null && loginMethod == 'email') ... [
-                              //password
-                              SizedBox(height: 10,),
-                              SizedBox(
-                                width: double.infinity,
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const ChangePassword(),
-                                      ),
-                                    );
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.lock, color: Colors.red,),
 
-                                      SizedBox(width: 12,),
-                                      Text(
-                                        bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
-                                      )
-                                    ],
-                                  ),
+                            //password
+                            SizedBox(height: 10,),
+                            SizedBox(
+                              width: double.infinity,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChangePassword(loginMethod: loginMethod,),
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.lock, color: Colors.red,),
+
+                                    SizedBox(width: 12,),
+                                    Text(
+                                      bahasa['pengaturan_password'] ?? "", //'Pengaturan Sandi',
+                                    )
+                                  ],
                                 ),
                               ),
+                            ),
+
+                            SizedBox(height: 10,),
+                            Divider(),
+                            
+                            if (loginMethod != null && loginMethod == 'email') ... [
 
                               if (verifEmail == '0') ... [
-                                SizedBox(height: 10,),
-                                Divider(),
 
                                 SizedBox(height: 10,),
                                 SizedBox(
@@ -837,10 +839,10 @@ class _ProfileState extends State<Profile> {
                                     ),
                                   ),
                                 ),
-                              ],
 
-                              SizedBox(height: 10,),
-                              Divider(),
+                                SizedBox(height: 10,),
+                                Divider(),
+                              ],
                             ],
 
                             //pusat bantuan

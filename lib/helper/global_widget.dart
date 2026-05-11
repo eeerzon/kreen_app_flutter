@@ -3,6 +3,7 @@
 // ignore_for_file: use_build_context_synchronously, non_constant_identifier_names, unused_local_variable
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/ticket_pdf_generator.dart';
 import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
@@ -336,3 +337,13 @@ class _VoteLimitState extends State<VoteLimit> {
       );
     }
   }
+
+Future<bool> isImageAccessible(String? url) async {
+  if (url == null || url.isEmpty) return false;
+  try {
+    final response = await http.head(Uri.parse(url));
+    return response.statusCode == 200;
+  } catch (_) {
+    return false;
+  }
+}

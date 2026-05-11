@@ -667,7 +667,9 @@ class DetailOrderModal {
                                         
                                         const SizedBox(height: 4),
                                         Text(
-                                          "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_vote']}",
+                                          voteOrderDetail[index]['qty'] > 1
+                                            ? "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_votes']}"
+                                            : "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_vote']}",
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: Colors.red,

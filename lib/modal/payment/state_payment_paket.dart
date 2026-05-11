@@ -584,18 +584,19 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: id_order, formHistory: false, currency_session: currencyCode,)),
             );
           } else if (resultVoteOrder['rc'] == 400) {
-            if (errorMessage.toLowerCase().contains("limit")) {
+            if (resultVoteOrder['message'].toLowerCase().contains("limit")) {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => VoteLimit(
                   errorMessage: 
                     langCode == 'id' 
-                      ? errorMessage
+                      ? resultVoteOrder['message']
                       : "The transaction limit for this vote has been reached.",
                   id_event: widget.id_vote,
                 )),
               );
-            } else if (errorMessage.toLowerCase().contains("melewati batas voting")) {
+            } else if (resultVoteOrder['message'].toLowerCase().contains("sudah melewati batas voting")
+                && resultVoteOrder['error_code'] == 'VOTE_CLOSED') {
               AwesomeDialog(
                 context: context,
                 dialogType: DialogType.noHeader,
@@ -615,7 +616,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: bahasa['error'],
+                // desc: bahasa['error'],
+                desc: "${bahasa['error']}\n${bahasa['error_payment']}",
                 btnOkOnPress: () {},
                 btnOkColor: Colors.red,
                 buttonsTextStyle: TextStyle(color: Colors.white),
@@ -630,7 +632,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               dialogType: DialogType.noHeader,
               animType: AnimType.topSlide,
               title: bahasa['maaf'],
-              desc: bahasa['error'], //error message dari api
+              // desc: bahasa['error'], //error message dari api
+              desc: "${bahasa['error']}\n${bahasa['error_payment']}",
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -645,7 +648,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
             dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
-            desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+            // desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}",
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -654,6 +658,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
             showCloseIcon: true,
           ).show();
         }
+
+      //gratis
       } else {
 
         String genderValue;
@@ -709,18 +715,19 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               MaterialPageRoute(builder: (_) => AddSupportPage(id_order: id_order, id_vote: widget.id_vote, nama: _nameController.text,)),
             );
           } else if (resultVoteOrder['rc'] == 400) {
-            if (errorMessage.toLowerCase().contains("limit")) {
+            if (resultVoteOrder['message'].toLowerCase().contains("limit")) {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => VoteLimit(
                   errorMessage: 
                     langCode == 'id' 
-                      ? errorMessage
+                      ? resultVoteOrder['message']
                       : "The transaction limit for this vote has been reached.",
                   id_event: widget.id_vote,
                 )),
               );
-            } else if (errorMessage.toLowerCase().contains("melewati batas voting")) {
+            } else if (resultVoteOrder['message'].toLowerCase().contains("sudah melewati batas voting")
+                && resultVoteOrder['error_code'] == 'VOTE_CLOSED') {
               AwesomeDialog(
                 context: context,
                 dialogType: DialogType.noHeader,
@@ -740,7 +747,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: bahasa['error'],
+                // desc: bahasa['error'],
+                desc: "${bahasa['error']}\n${bahasa['error_payment']}",
                 btnOkOnPress: () {},
                 btnOkColor: Colors.red,
                 buttonsTextStyle: TextStyle(color: Colors.white),
@@ -755,7 +763,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
               dialogType: DialogType.noHeader,
               animType: AnimType.topSlide,
               title: bahasa['maaf'],
-              desc: bahasa['error'], //error message dari api
+              // desc: bahasa['error'], //error message dari api
+              desc: "${bahasa['error']}\n${bahasa['error_payment']}",
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
               buttonsTextStyle: TextStyle(color: Colors.white),
@@ -770,7 +779,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
             dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
-            desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+            // desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}",
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -923,7 +933,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        bahasa['header'],
+                        // bahasa['header'],
+                        bahasa['selesaikan_vote_kamu'],
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
@@ -1158,9 +1169,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                             const SizedBox(height: 12),
                             ...List.generate(indikator.length, (idx) {
                               final item = indikator[idx];
-                              final label = item['indikator_vote'] ?? '';
+                              final label = langCode == 'en'
+                                ? item['en_indikator_vote'] ?? ''
+                                : item['indikator_vote'] ?? '';
                               final typeInput = item['type_input'] ?? 'text';
-                              final isPhoneField = label.toLowerCase().contains('hp');
+                              final isPhoneField = label.toLowerCase().contains('hp') || label.toLowerCase().contains('phone');
                               final isEmailField = label.toLowerCase().contains('email');
                               final id_indikator_vote = item['id_indikator_vote'];
                               ids_indikator[idx] = id_indikator_vote.toString();
@@ -1179,7 +1192,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                 children: [
                                   Row(
                                     children: [
-                                      Text(label),
+                                      Text(
+                                        isPhoneField 
+                                          ? bahasa['nomor_hp_label']
+                                          : label
+                                      ),
                                       const Text(
                                         "*",
                                         style: TextStyle(color: Colors.red),
@@ -1233,7 +1250,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                         ),
                                       ],
                                     decoration: InputDecoration(
-                                      hintText: "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}",
+                                      hintText: isPhoneField
+                                        ? bahasa['nomor_hp']
+                                        : langCode == 'id' 
+                                          ? "${bahasa['hint_label_indikator_1']} $label ${bahasa['hint_label_indikator_2']}"
+                                          : "${bahasa['hint_label_indikator_1']} ${bahasa['hint_label_indikator_2']} $label",
                                       hintStyle: TextStyle(color: Colors.grey.shade400),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
@@ -2426,7 +2447,9 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    "${widget.nama_finalis} (${widget.counts} ${bahasa['text_vote']})",
+                                    widget.counts > 1 
+                                      ? "${widget.nama_finalis} (${widget.counts} ${bahasa['text_votes']})" 
+                                      : "${widget.nama_finalis} (${widget.counts} ${bahasa['text_vote']})",
                                   ),
                                   Text(
                                     currencyCode == null
@@ -2662,7 +2685,12 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                           style: TextStyle(color: Colors.black),
                                           children: [
                                             TextSpan(text: bahasa['kebijakan_privasi_7']),
-                                          TextSpan(text: "${widget.counts} ${bahasa['text_vote']}", style: TextStyle(fontWeight: FontWeight.bold)),
+                                            TextSpan(
+                                              text: widget.counts == 1 
+                                                ? "${widget.counts} ${bahasa['text_votes']}" 
+                                                : "${widget.counts} ${bahasa['text_vote']}", 
+                                              style: TextStyle(fontWeight: FontWeight.bold)
+                                            ),
                                             TextSpan(text: bahasa['kebijakan_privasi_8']),
                                             TextSpan(
                                                 text: currencyCode == null

@@ -16,8 +16,9 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class ChangePassword extends StatefulWidget {
+  final String? loginMethod;
 
-  const ChangePassword({super.key});
+  const ChangePassword({super.key, this.loginMethod});
 
   @override
   State<ChangePassword> createState() => _ChangePasswordState();
@@ -35,10 +36,14 @@ class _ChangePasswordState extends State<ChangePassword> {
   final FocusNode _newPasswordFocus = FocusNode();
   final FocusNode _confirmPasswordFocus = FocusNode();
 
-  bool get _isFormFilled =>
-      _currentPasswordController.text.isNotEmpty &&
-      _newPasswordController.text.isNotEmpty &&
-      _confirmPasswordController.text.isNotEmpty;
+  bool get _isFormFilled {
+    final isEmail = widget.loginMethod == 'email';
+    
+    if (isEmail && _currentPasswordController.text.isEmpty) return false;
+    
+    return _newPasswordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty;
+  }
 
   Map<String, dynamic> errorMessage = {};
   String errorMessage500 = '';
@@ -127,74 +132,77 @@ class _ChangePasswordState extends State<ChangePassword> {
                           bahasa['pengaturan_password_desc'], //'Kata sandi baru tidak boleh sama dengan kata sandi sebelumnya.'
                         ),
 
-                        SizedBox(height: 20),
-                        Text(
-                          bahasa['old_password_label'], //'Password Lama',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        if (widget.loginMethod == 'email') ... [
 
-                        SizedBox(height: 8),
-                        TextField(
-                          controller: _currentPasswordController,
-                          focusNode: _currentPasswordFocus,
-                          readOnly: _lockCurrentPasswordField,
-                          keyboardType: TextInputType.visiblePassword,
-                          onChanged: (val) {
-                            setState(() {
-                              if (val.length >= 8) {
-                                currentPasswordError = null;
-                              } else {
-                                currentPasswordError = currentPasswordErrorTemp;
-                              }
-                            });
-                          },
-                          inputFormatters: [
-                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                          ],
-                          obscureText: _obscurePasswordCurrent,
-                          decoration: InputDecoration(
-                            hintText: bahasa['old_password_hint'], //'Masukkan kata sandi lama',
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey, width: 2),
-                            ),
-                            suffixIcon: InkWell(
-                              onTap: () async {
-                                _unfocusAll(context);
-                                setState(() {
-                                  _lockCurrentPasswordField = true;
-                                  _obscurePasswordCurrent = !_obscurePasswordCurrent;
-                                });
-
-                                await Future.delayed(const Duration(milliseconds: 30));
-
-                                setState(() {
-                                  _lockCurrentPasswordField = false;
-                                });
-                              },
-                              child: Icon(
-                                _obscurePasswordCurrent
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                          SizedBox(height: 20),
+                          Text(
+                            bahasa['old_password_label'], //'Password Lama',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          
+                          SizedBox(height: 8),
+                          TextField(
+                            controller: _currentPasswordController,
+                            focusNode: _currentPasswordFocus,
+                            readOnly: _lockCurrentPasswordField,
+                            keyboardType: TextInputType.visiblePassword,
+                            onChanged: (val) {
+                              setState(() {
+                                if (val.length >= 8) {
+                                  currentPasswordError = null;
+                                } else {
+                                  currentPasswordError = currentPasswordErrorTemp;
+                                }
+                              });
+                            },
+                            inputFormatters: [
+                              FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                            ],
+                            obscureText: _obscurePasswordCurrent,
+                            decoration: InputDecoration(
+                              hintText: bahasa['old_password_hint'], //'Masukkan kata sandi lama',
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            )
-                          ),
-                        ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey, width: 2),
+                              ),
+                              suffixIcon: InkWell(
+                                onTap: () async {
+                                  _unfocusAll(context);
+                                  setState(() {
+                                    _lockCurrentPasswordField = true;
+                                    _obscurePasswordCurrent = !_obscurePasswordCurrent;
+                                  });
 
-                        if (currentPasswordError != null ) ... [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
-                            child: Text(
-                              currentPasswordError!,
-                              style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                  await Future.delayed(const Duration(milliseconds: 30));
+
+                                  setState(() {
+                                    _lockCurrentPasswordField = false;
+                                  });
+                                },
+                                child: Icon(
+                                  _obscurePasswordCurrent
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                ),
+                              )
                             ),
                           ),
+
+                          if (currentPasswordError != null ) ... [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                              child: Text(
+                                currentPasswordError!,
+                                style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              ),
+                            ),
+                          ],
                         ],
 
                         SizedBox(height: 20),
@@ -456,7 +464,7 @@ class _ChangePasswordState extends State<ChangePassword> {
     };
     
     final response = await ApiService.postSetProfil('$baseapiUrl/setting/update-password',token: token, body: body, xLanguage: langCode);
-
+    
     if (!mounted) return;
 
     if (response!['rc'] == 200) {
@@ -611,7 +619,11 @@ class _ChangePasswordState extends State<ChangePassword> {
             if (lower.contains('current password') || lower.contains('kata sandi lama')) {
               currentPasswordError = translated;
               currentPasswordErrorTemp = translated;
+            } else if (lower.contains('password saat ini tidak sesuai') || lower.contains('saat ini tidak sesuai')) {
+              currentPasswordError = translated;
+              currentPasswordErrorTemp = translated;
             }
+            
           }
         }
 
@@ -666,6 +678,11 @@ class _ChangePasswordState extends State<ChangePassword> {
     } else {
       errorCode = response['rc'] ?? 0;
       if (response['rc'] == 500 && response['message'].toString().toLowerCase().contains('saat ini salah')) {
+        setState(() {
+          currentPasswordError = translateError(response['message'].toString(), langCode);
+          // errorMessage500 = translated;
+        });
+      } else if (response['rc'] == 500 && response['message'].toString().toLowerCase().contains('saat ini tidak sesuai')) {
         setState(() {
           currentPasswordError = translateError(response['message'].toString(), langCode);
           // errorMessage500 = translated;

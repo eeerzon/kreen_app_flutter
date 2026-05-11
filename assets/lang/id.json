@@ -81,6 +81,7 @@
     "harga" : "Harga",
     "harga_detail" : "Gratis",
     "text_vote" : "Vote",
+    "text_votes" : "Vote",
     "no_leaderboard" : "Leaderboard belum tersedia",
     "kata_mereka" : "Apa Kata Mereka",
     "no_support" : "Belum ada dukungaan",
@@ -218,6 +219,7 @@
     "status_order_404" : "Hidden",
     "status_pembayaran" : "Status Pembayaran",
     "tiket" : "Tiket",
+    "tikets" : "Tiket",
     "pembayaran" : "Pembayaran",
     "metode_pembayaran" : "Metode\nPembayaran",
     "informasi_tiket" : "Informasi Tiket",
@@ -250,6 +252,7 @@
     "pilih_radio" : "Pilih salah satu",
     "pilih_pembayaran" : "Pilih Pembayaran",
     "pilih_tiket" : "Dapatkan Tiket",
+    "pilih_tikets" : "Dapatkan Tiket",
 
     "order_sukses": "Selamat... Pesananmu Berhasil",
     "order_sukses_desc": "Cek email kamu. Jika kamu tidak ketemu, jangan lupa cek SPAM atau PROMOSI.",
@@ -363,7 +366,9 @@
     "maaf" : "Maaf...",
     "redirect" : "Beralih dalam",
     "batas": "Maksimum {qty} vote per transaksi",
+    "batas_s": "Maksimum {qty} vote per transaksi",
     "batas_event" : "Maksimum {qty} tiket per transaksi",
+    "batas_events" : "Maksimum {qty} tiket per transaksi",
     "batas_file" : "Ukuran file maksimal 1 MB",
     "batas_file_2" : "Hanya menerima format pdf.",
     "id_card" : "Masukkan Nomor Identitas",
@@ -393,7 +398,7 @@
     "unduh_tiket" : "Unduh Tiket",
     "password_invalid" : "Kata sandi tidak valid",
     "detail_pesanan" : "Detail Pesanan",
-    "lewat_batas_voting" : "Kamu sudah melewati batas voting",
+    "lewat_batas_voting" : "Kamu sudah melewati batas waktu voting",
     "anniversary" : "Perayaan Ulang Tahun",
     "birthday" : "Ulang Tahun",
     "concert" : "Konser",
@@ -412,6 +417,8 @@
     "voting_ongoing" : "Voting Sedang Berlangsung",
     "artikel_seputar_voting" : "Artikel Seputar Voting",
     "baca_sekarang" : "Baca Sekarang",
-    "tutup" : "Tutup"
+    "tutup" : "Tutup",
+    "selesaikan_vote_kamu" : "Selesaikan Vote Kamu",
+    "support_answer_error": "Dukungan wajib diisi"
   }
 }

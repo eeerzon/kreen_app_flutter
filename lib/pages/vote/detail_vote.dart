@@ -10,6 +10,7 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.da
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_4_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_5_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_6_widget.dart';
+import 'package:kreen_app_flutter/pages/vote/detail_vote/running_text.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
 import 'package:kreen_app_flutter/pages/vote/finalis_page.dart';
 import 'package:kreen_app_flutter/pages/vote/finalis_paket_page.dart';
@@ -61,6 +62,10 @@ class _DetailVotePageState extends State<DetailVotePage> {
   Map<String, dynamic> articleData = {};
   bool _articlePopupShown = false;
 
+  bool _isStickyRunningText = false;
+  double _runningTextThreshold = -1;
+  final GlobalKey _runningTextKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +78,12 @@ class _DetailVotePageState extends State<DetailVotePage> {
         await _getBahasa();
         await _getCurrency();
         await _loadVotes();
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            _captureRunningTextThreshold();
+          });
+        });
       });
     });
   }
@@ -142,7 +153,9 @@ class _DetailVotePageState extends State<DetailVotePage> {
             ? '${rawName.substring(0, 11)}...'
             : rawName;
 
-          return "$name ${bahasa!["has_been"]} ($qty ${bahasa!["text_vote"]})";
+          return item['qty'] > 1
+            ? "$name ${bahasa!["has_been"]} ($qty ${bahasa!["text_votes"]})"
+            : "$name ${bahasa!["has_been"]} ($qty ${bahasa!["text_vote"]})";
         }).toList();
 
         _isLoading = false;
@@ -269,14 +282,45 @@ class _DetailVotePageState extends State<DetailVotePage> {
     } else {
       _setCurrentIndex(0);
     }
-  }
 
+    // Sticky running text
+    if (_runningTextThreshold > 0) {
+      final shouldStick = offset >= _runningTextThreshold;
+      if (shouldStick != _isStickyRunningText) {
+        setState(() => _isStickyRunningText = shouldStick);
+      }
+    } else {
+      // Coba capture posisi jika belum tersimpan
+      _captureRunningTextThreshold();
+    }
+  }
 
   void _setCurrentIndex(int index) {
     if (_currentIndex != index) {
       setState(() {
         _currentIndex = index;
       });
+    }
+  }
+
+  void _captureRunningTextThreshold() {
+    final ctx = _runningTextKey.currentContext;
+    if (ctx == null) return;
+
+    final scrollable = Scrollable.maybeOf(ctx);
+    if (scrollable == null) return;
+
+    final scrollRenderBox = scrollable.context.findRenderObject() as RenderBox?;
+    if (scrollRenderBox == null) return;
+
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null) return;
+
+    final localPos = box.localToGlobal(Offset.zero, ancestor: scrollRenderBox);
+    final threshold = localPos.dy + _scrollController.offset;
+
+    if (threshold > 0 && threshold != _runningTextThreshold) {
+      _runningTextThreshold = threshold;
     }
   }
 
@@ -297,6 +341,35 @@ class _DetailVotePageState extends State<DetailVotePage> {
               _loadVotes();
             },
           ),
+
+          // Sticky running text di level root — hanya muncul saat loaded
+          if (!_isLoading && _isStickyRunningText) ...[
+            Builder(builder: (context) {
+              // hitung color di sini
+              Map<String, Color> colorMap = {
+                'Blue': Colors.blue, 
+                'Red': Colors.red, 
+                'Green': Colors.green,
+                'Yellow': Colors.yellow, 
+                'Purple': Colors.purple, 
+                'Orange': Colors.orange,
+                'Pink': Colors.pink, 
+                'Grey': Colors.grey, 
+                'Turqoise': Colors.teal,
+              };
+
+              String themeName = vote['theme_name'] ?? 'Red';
+              if (themeName == "Default Kreen") themeName = "Red";
+              final color = colorMap[themeName] ?? Colors.red;
+
+              return Positioned(
+                top: kToolbarHeight + MediaQuery.of(context).padding.top,
+                left: 0,
+                right: 0,
+                child: _buildStickyRunningText(color, vote, langCode!),
+              );
+            }),
+          ],
         ],
       ),
     ); 
@@ -595,7 +668,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                   SizedBox(
                     key: descKey,
                     width: double.infinity,
-                    child: _buildDeskripsiSection(view_api, vote, listOrderVote, langCode!, currencyCode)
+                    child: _buildDeskripsiSection(view_api, vote, listOrderVote, langCode!, currencyCode, _runningTextKey),
                   ),
 
 
@@ -770,20 +843,63 @@ class _DetailVotePageState extends State<DetailVotePage> {
 }
 
 /// Helper builder untuk pilih Section berdasarkan view_api
-Widget _buildDeskripsiSection(int api, Map<String, dynamic> vote, List<dynamic> listOrderVote, String langCode, String? currencyCode) {
+Widget _buildDeskripsiSection(
+  int api, 
+  Map<String, dynamic> vote, 
+  List<dynamic> listOrderVote, 
+  String langCode, 
+  String? currencyCode, 
+  GlobalKey? runningTextKey,
+) {
   switch (api) {
     case 2:
-      return DeskripsiSection_2(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_2(
+        data: vote, 
+        dataNotif: listOrderVote, 
+        langCode: langCode, 
+        currencyCode: currencyCode,
+        runningTextKey: runningTextKey,
+      );
     case 3:
-      return DeskripsiSection_3(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_3(
+        data: vote, 
+        dataNotif: listOrderVote, 
+        langCode: langCode, 
+        currencyCode: currencyCode,
+        runningTextKey: runningTextKey,
+      );
     case 4:
-      return DeskripsiSection_4(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_4(
+        data: vote, 
+        dataNotif: listOrderVote, 
+        langCode: langCode, 
+        currencyCode: currencyCode,
+        runningTextKey: runningTextKey,
+      );
     case 5:
-      return DeskripsiSection_5(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_5(
+        data: vote, 
+        dataNotif: listOrderVote, 
+        langCode: langCode, 
+        currencyCode: currencyCode,
+        runningTextKey: runningTextKey,
+      );
     case 6:
-      return DeskripsiSection_6(data: vote, dataNotif: listOrderVote, langCode: langCode, currencyCode: currencyCode,);
+      return DeskripsiSection_6(
+        data: vote, 
+        dataNotif: listOrderVote, 
+        langCode: langCode, 
+        currencyCode: currencyCode,
+        runningTextKey: runningTextKey,
+      );
     default:
-      return DeskripsiSection(data: vote, dataNotif: listOrderVote, langCode: langCode,);
+      return DeskripsiSection(
+        data: vote, 
+        dataNotif: listOrderVote, 
+        langCode: langCode, 
+        currencyCode: currencyCode,
+        runningTextKey: runningTextKey,
+      );
   }
 }
 
@@ -826,4 +942,28 @@ Widget _buildDukunganSection(int api, Map<String, dynamic> vote, List<dynamic> r
     default:
       return DukunganSection(data: vote, support: reviews, langCode: langCode,);
   }
+}
+
+Widget _buildStickyRunningText(Color color, Map<String, dynamic> vote, String langCode) {
+  Color textColor = color;
+  final rawColor = (vote['running_text_color'] ?? '').toString().trim();
+  if (rawColor.isNotEmpty) {
+    try {
+      final hex = rawColor.replaceAll('#', '');
+      textColor = Color(int.parse('FF$hex', radix: 16));
+    } catch (_) {}
+  }
+
+  final rawText = (vote['running_text'] ?? '').toString().trim();
+  final displayText = rawText.isNotEmpty
+      ? rawText
+      : langCode == 'id'
+        ? 'Kreen Vote - Your Trusted Voting Partner - Dukung finalis pilihan kamu pada ${vote['judul_vote'] ?? ''}'
+        : 'Kreen Vote - Your Trusted Voting Partner - Support your favorite finalist on ${vote['judul_vote'] ?? ''}';
+
+  return Container(
+    padding: const EdgeInsets.all(8),
+    color: textColor,
+    child: RunningText(text: displayText, textColor: Colors.white),
+  );
 }

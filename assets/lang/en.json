@@ -28,7 +28,7 @@
     "guest_login": "Continue as Guest",
     "login_as": "or",
 
-    "input_email": "Email",
+    "input_email": "Enter Email",
     "kirim_email": "Send Email",
     "request_kirim" : "Request sent successfully",
     "input_password": "Password",
@@ -80,7 +80,8 @@
     "lokasi" : "Location",
     "harga" : "Price",
     "harga_detail" : "Free",
-    "text_vote" : "Vote(s)",
+    "text_vote" : "Vote",
+    "text_votes" : "Votes",
     "no_leaderboard" : "No Leaderboard Available",
     "kata_mereka" : "What People Say",
     "no_support" : "No support comment available",
@@ -218,6 +219,7 @@
     "status_order_404" : "Hidden",
     "status_pembayaran" : "Payment Status",
     "tiket" : "Ticket",
+    "tikets" : "Tickets",
     "pembayaran" : "Payment",
     "metode_pembayaran" : "Payment\nMethod",
     "informasi_tiket" : "Ticket Information",
@@ -249,7 +251,8 @@
     "lihat_file" : "View File",
     "pilih_radio" : "Choose",
     "pilih_pembayaran" : "Select Payment",
-    "pilih_tiket" : "Get Ticket(s)",
+    "pilih_tiket" : "Get Ticket",
+    "pilih_tikets" : "Get Tickets",
 
     "order_sukses": "Congratulations! Your order has been successful",
     "order_sukses_desc": "Please check your email. If you don't find it, be sure to check your Spam or Promotions folder.",
@@ -363,13 +366,15 @@
     "maaf" : "Sorry...",
     "redirect" : "Redirect in ",
     "batas": "Maximum {qty} vote per transaction",
-    "batas_event" : "Maximum {qty} tickets per transaction",
+    "batas_s": "Maximum {qty} votes per transaction",
+    "batas_event" : "Maximum {qty} ticket per transaction",
+    "batas_events" : "Maximum {qty} tickets per transaction",
     "batas_file" : "Maximum file size is 1 MB",
     "batas_file_2" : "Only accepts pdf format.",
     "id_card" : "ID Card",
 
     "bayar_sekarang" : "Pay Now",
-    "tiket_tidak_tersedia" : "Tickets not available",
+    "tiket_tidak_tersedia" : "Ticket not available",
     "has_been": "has been voted",
     "menunggu_konfirmasi" : "Waiting for confirmation...",
     "redirecting": "Redirecting...",
@@ -412,6 +417,8 @@
     "voting_ongoing" : "Voting In Ongoing",
     "artikel_seputar_voting" : "Articles About Voting",
     "baca_sekarang" : "Read Now",
-    "tutup" : "Close"
+    "tutup" : "Close",
+    "selesaikan_vote_kamu" : "Finish Your Vote",
+    "support_answer_error": "Support required"
   }
 }

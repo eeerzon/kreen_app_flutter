@@ -798,7 +798,9 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      "$qty ${bahasa['text_vote']}"
+                                      item['qty'] > 1
+                                        ? "$qty ${bahasa['text_votes']}"
+                                        : "$qty ${bahasa['text_vote']}"
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -945,6 +947,7 @@ class _VotePendingState extends State<VotePending> {
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
+  String? currencyCode;
 
   @override
   void initState() {
@@ -975,6 +978,9 @@ class _VotePendingState extends State<VotePending> {
       langCode = code;
     });
 
+    final currency = await StorageService.getCurrency();
+    setState(() => currencyCode = currency);
+
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
@@ -982,6 +988,7 @@ class _VotePendingState extends State<VotePending> {
 
       isLoading = false;
     });
+    
   }
 
   Future<void> _fetchOrders({bool loadMore = false}) async {
@@ -1298,7 +1305,9 @@ class _VotePendingState extends State<VotePending> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      "$qty ${bahasa['text_vote']}"
+                                      item['qty'] > 1
+                                        ? "$qty ${bahasa['text_votes']}"
+                                        : "$qty ${bahasa['text_vote']}"
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -1325,7 +1334,7 @@ class _VotePendingState extends State<VotePending> {
                                     if (itemVotes['id_order'] != null) {
                                       final changed = await Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: item['currency'],)),
+                                        MaterialPageRoute(builder: (_) => WaitingOrderPage(id_order: itemVotes['id_order'], formHistory: true, currency_session: currencyCode,)),
                                       );
 
                                       if (changed == true) {
@@ -1800,7 +1809,9 @@ class _VoteFailState extends State<VoteFail> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      "$qty ${bahasa['text_vote']}"
+                                      item['qty'] > 1
+                                        ? "$qty ${bahasa['text_votes']}"
+                                        : "$qty ${bahasa['text_vote']}"
                                     ),
                                     const SizedBox(height: 4),
                                     Text(

@@ -71,6 +71,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   );
   String? currencyCode;
 
+  bool isCheckingPayment = false;
+
   @override
   void initState() {
     super.initState();
@@ -810,12 +812,23 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     ),
                                   ),
                                   onPressed: () async {
-                                    final didRedirect = await CheckPaymentModal.show(
-                                      context,
-                                      widget.id_order
-                                    );
-                                    if (didRedirect == true) {
-                                      _didRedirect = true;
+                                    if (isCheckingPayment) return;
+                                    
+                                    isCheckingPayment = true;
+                                    
+                                    try {
+                                      final didRedirect = await CheckPaymentModal.show(
+                                        context,
+                                        widget.id_order,
+                                      );
+                                      
+                                      if (didRedirect == true) {
+                                        _didRedirect = true;
+                                      } else if (didRedirect == null) {
+                                        await _checkIfExpiredFromModal();
+                                      }
+                                    } finally {
+                                      if (mounted) setState(() => isCheckingPayment = false);
                                     }
                                   },
                                   child: Text(
@@ -973,10 +986,17 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                             ),
                                           ),
 
-                                          Icon(
-                                            isOpen
+                                          InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                openStates[index] = !openStates[index];
+                                              });
+                                            },
+                                            child: Icon(
+                                              isOpen
                                                 ? Icons.keyboard_arrow_up
                                                 : Icons.keyboard_arrow_down,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -1050,7 +1070,9 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: List.generate(finalis.length, (i) {
                                             return Text(
-                                              '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote(s)',
+                                              voteOrderDetail[i]['qty'] > 1
+                                                ? '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} votes'
+                                                : '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote',
                                               style: const TextStyle(color: Colors.grey),
                                             );
                                           }),
@@ -1250,6 +1272,28 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _checkIfExpiredFromModal() async {
+    final result = await ApiService.get(
+      "/order/vote/${widget.id_order}",
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+    );
+
+    if (result == null || result['rc'] != 200) return;
+
+    final order = result['data']['vote_order'] ?? {};
+    final status = order['order_status']?.toString();
+
+    // Status 20 = expired, status 2 = batal
+    if (status == '20' || status == '2') {
+      _timer?.cancel();
+      setState(() {
+        remaining = Duration.zero;
+        isExpired = true;
+      });
+    }
   }
 
   Widget buildLinkKadaluarsa() {

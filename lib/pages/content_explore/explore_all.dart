@@ -153,12 +153,12 @@ class _ExploreAllState extends State<ExploreAll> {
               _scrollController.position.maxScrollExtent - 200 &&
           !isLoadingMore &&
           hasMore) {
-        _loadMoreKonten();
+        _loadMoreKonten(widget.keyword ?? '');
       }
     });
   }
 
-  Future<void> _fetchKonten({bool loadMore = false}) async {
+  Future<void> _fetchKonten({bool loadMore = false, String? term}) async {
     if (loadMore) {
       if (isLoadingMore || !hasMore) return;
       isLoadingMore = true;
@@ -186,7 +186,7 @@ class _ExploreAllState extends State<ExploreAll> {
       }
     }
 
-    final url = "$baseapiUrl/v2/global-search?time=$filterTime&price=$filterPrice&limit=6&page=$currentPage&order=asc&order_by=start_date";
+    final url = "$baseapiUrl/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=6&page=$currentPage&order=asc&order_by=start_date";
     
     final response = await http.get(
       Uri.parse(url),
@@ -232,11 +232,11 @@ class _ExploreAllState extends State<ExploreAll> {
   }
 
 
-  Future<void> _loadMoreKonten() async {
+  Future<void> _loadMoreKonten(String term) async {
     setState(() {
       currentPage++;
     });
-    await _fetchKonten(loadMore: true);
+    await _fetchKonten(loadMore: true, term: term);
   }
 
   Future<void> _refresh(bool isFirst, String? term) async {
@@ -407,7 +407,7 @@ class _ExploreAllState extends State<ExploreAll> {
             if (!isLoadingMore &&
                 hasMore &&
                 scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-              _loadMoreKonten();
+              _loadMoreKonten(widget.keyword ?? '');
             }
             return false;
           },
@@ -688,7 +688,7 @@ class _ExploreAllState extends State<ExploreAll> {
               _scrollController.position.maxScrollExtent - 200 &&
           !isLoadingMore &&
           hasMore) {
-        _loadMoreKonten();
+        _loadMoreKonten(widget.keyword ?? '');
       }
     });
     _scrollController.dispose();

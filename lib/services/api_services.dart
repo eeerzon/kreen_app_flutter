@@ -42,18 +42,18 @@ class ApiService {
         body: body != null ? json.encode(body) : null,
       );
 
-      if (response.statusCode == 200) {
+      // if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        final body = json.decode(response.body);
+      // } else {
+      //   final body = json.decode(response.body);
 
-        return {
-          "rc": response.statusCode,
-          "success": false,
-          "message": body['message'] ?? "Server error (${response.statusCode})",
-          "data": body['data'] ?? []
-        };
-      }
+      //   return {
+      //     "rc": response.statusCode,
+      //     "success": false,
+      //     "message": body['message'] ?? "Server error (${response.statusCode})",
+      //     "data": body['data'] ?? []
+      //   };
+      // }
     } on TimeoutException {
       return {
         "rc": 408,
@@ -104,16 +104,16 @@ class ApiService {
       final streamedResponse = await request.send();
       final respStr = await streamedResponse.stream.bytesToString();
 
-      if (streamedResponse.statusCode == 200) {
+      // if (streamedResponse.statusCode == 200) {
         return json.decode(respStr) as Map<String, dynamic>;
-      } else {
-        return {
-          "rc": streamedResponse.statusCode,
-          "status": false,
-          "message": "Server error (${streamedResponse.statusCode})",
-          "data": []
-        };
-      }
+      // } else {
+      //   return {
+      //     "rc": streamedResponse.statusCode,
+      //     "status": false,
+      //     "message": "Server error (${streamedResponse.statusCode})",
+      //     "data": []
+      //   };
+      // }
     } on TimeoutException {
       return {
         "rc": 408,
@@ -161,18 +161,18 @@ class ApiService {
         .post(url, headers: headers, body: json.encode(body))
         .timeout(Duration(seconds: 22));
 
-      if (response.statusCode == 200) {
+      // if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        final body = json.decode(response.body);
+      // } else {
+      //   final body = json.decode(response.body);
 
-        return {
-          "rc": response.statusCode,
-          "success": false,
-          "message": body['message'] ?? "Server error (${response.statusCode})",
-          "data": body['data'] ?? []
-        };
-      }
+      //   return {
+      //     "rc": response.statusCode,
+      //     "success": false,
+      //     "message": body['message'] ?? "Server error (${response.statusCode})",
+      //     "data": body['data'] ?? []
+      //   };
+      // }
     } on TimeoutException {
       return {
         "rc": 408,
@@ -229,18 +229,18 @@ class ApiService {
         .get(url, headers: headers)
         .timeout(Duration(seconds: 15));
 
-      if (response.statusCode == 200) {
+      // if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        final body = json.decode(response.body);
+      // } else {
+      //   final body = json.decode(response.body);
 
-        return {
-          "rc": response.statusCode,
-          "success": false,
-          "message": body['message'] ?? "Server error (${response.statusCode})",
-          "data": body['data'] ?? []
-        };
-      }
+      //   return {
+      //     "rc": response.statusCode,
+      //     "success": false,
+      //     "message": body['message'] ?? "Server error (${response.statusCode})",
+      //     "data": body['data'] ?? []
+      //   };
+      // }
     } on TimeoutException {
       return {
         "rc": 408,
@@ -287,18 +287,18 @@ class ApiService {
         .get(url, headers: headers)
         .timeout(Duration(seconds: 15));
 
-      if (response.statusCode == 200) {
+      // if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        final body = json.decode(response.body);
+      // } else {
+      //   final body = json.decode(response.body);
 
-        return {
-          "rc": response.statusCode,
-          "success": false,
-          "message": body['message'] ?? "Server error (${response.statusCode})",
-          "data": body['data'] ?? []
-        };
-      }
+      //   return {
+      //     "rc": response.statusCode,
+      //     "success": false,
+      //     "message": body['message'] ?? "Server error (${response.statusCode})",
+      //     "data": body['data'] ?? []
+      //   };
+      // }
     } on TimeoutException {
       return {
         "rc": 408,
@@ -349,18 +349,18 @@ class ApiService {
         .patch(url, headers: headers, body: json.encode(body))
         .timeout(Duration(seconds: 15));
         
-      if (response.statusCode == 200) {
+      // if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        final body = json.decode(response.body);
+      // } else {
+      //   final body = json.decode(response.body);
 
-        return {
-          "rc": response.statusCode,
-          "success": false,
-          "message": body['message'] ?? "Server error (${response.statusCode})",
-          "data": body['data'] ?? []
-        };
-      }
+      //   return {
+      //     "rc": response.statusCode,
+      //     "success": false,
+      //     "message": body['message'] ?? "Server error (${response.statusCode})",
+      //     "data": body['data'] ?? []
+      //   };
+      // }
     } on TimeoutException {
       return {
         "rc": 408,

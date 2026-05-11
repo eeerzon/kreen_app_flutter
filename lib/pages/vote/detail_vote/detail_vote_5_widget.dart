@@ -26,7 +26,16 @@ class DeskripsiSection_5 extends StatefulWidget {
   final List<dynamic> dataNotif;
   final String langCode;
   final String? currencyCode;
-  const DeskripsiSection_5({super.key, required this.data, required this.dataNotif, required this.langCode, this.currencyCode});
+  final GlobalKey? runningTextKey;
+
+  const DeskripsiSection_5({
+    super.key, 
+    required this.data, 
+    required this.dataNotif, 
+    required this.langCode, 
+    this.currencyCode,
+    this.runningTextKey
+  });
 
   @override
     State<DeskripsiSection_5> createState() => _DeskripsiSection_5State();
@@ -166,7 +175,9 @@ class DeskripsiSection_5 extends StatefulWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         
-        if (widget.data['flag_live'] == '1') ... [
+        if (widget.data['flag_live'] == '1'
+            && widget.data['real_tanggal_tutup_vote'] != null &&
+            DateTime.tryParse(widget.data['real_tanggal_tutup_vote'].toString())?.isAfter(DateTime.now()) == true) ... [
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
             child: Container(
@@ -398,6 +409,7 @@ class DeskripsiSection_5 extends StatefulWidget {
 
         const SizedBox(height: 12),
         Container(
+          key: widget.runningTextKey,
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: textColor,
@@ -777,6 +789,9 @@ class _LeaderboardSection_5State extends State<LeaderboardSection_5> {
   // ignore: unused_field
   String _storedToken = '';
 
+  bool isTutup = false;
+  bool isPaymentClosed = false;
+
   @override
   void initState() {
     super.initState();
@@ -833,13 +848,37 @@ class _LeaderboardSection_5State extends State<LeaderboardSection_5> {
         .where((item) => item['rank'] >= 4)
         .toList()
       ..sort((a, b) => (a['rank'] as int).compareTo(b['rank'] as int));
-
-    DateTime deadline = DateTime.parse(widget.data['tanggal_tutup_vote']);
+        
+    DateTime deadlineUtc = DateTime.parse(widget.data['real_tanggal_tutup_vote']);
     Duration remaining = Duration.zero;
-    final now = DateTime.now();
-    final difference = deadline.difference(now);
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
 
     remaining = difference.isNegative ? Duration.zero : difference;
+    
+    final bukaVoteUtc = DateTime.parse(widget.data['real_tanggal_buka_vote']);
+    bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+
+    if (remaining.inSeconds == 0 || isBeforeOpen) {
+      isTutup = true;
+    }
+
+    if (widget.data['close_payment'] != '1') {
+      isPaymentClosed = false;
+    }
+
+    if (widget.data['tanggal_buka_payment'] != null) {
+      final reopenTime = DateTime.parse(widget.data['tanggal_buka_payment']);
+      final now = DateTime.now().toUtc();
+
+      final closed = now.isBefore(reopenTime);
+
+      if (closed != isPaymentClosed) {
+        isPaymentClosed = closed;
+      }
+    } else {
+      isPaymentClosed = false;
+    }
 
     return Column(
       children: [
@@ -924,6 +963,8 @@ class _LeaderboardSection_5State extends State<LeaderboardSection_5> {
                   flag_verify_email: widget.data['flag_verify_email'],
                   langCode: widget.langCode,
                   onAfterLogin: _onAfterLogin,
+                  isTutup: isTutup,
+                  isPaymentClosed: isPaymentClosed
                 );
               } else{
                 return SizedBox.shrink();
@@ -955,7 +996,9 @@ class _LeaderboardSection_5State extends State<LeaderboardSection_5> {
                         flag_login: widget.data['flag_login'],
                         flag_verify_email: widget.data['flag_verify_email'],
                         langCode: widget.langCode,
-                        onAfterLogin: _onAfterLogin
+                        onAfterLogin: _onAfterLogin,
+                        isTutup: isTutup,
+                        isPaymentClosed: isPaymentClosed
                       ),
                   );
                 } else{
@@ -1132,6 +1175,8 @@ Widget buildTopCard({
   required String flag_verify_email,
   required String langCode,
   required VoidCallback onAfterLogin,
+  bool isTutup = false,
+  bool isPaymentClosed = false
 }) {
   String crownImage = '';
   switch (rank) {
@@ -1153,19 +1198,21 @@ Widget buildTopCard({
     alignment: Alignment.topCenter,
     children: [
       InkWell(
-        onTap: () async {
-          await handleVoteAction(
-            context: context,
-            flagLogin: flag_login,
-            flagVerifyEmail: flag_verify_email,
-            idFinalis: idFinalis,
-            flagHideNoUrut: flag_hide_no_urut,
-            flagPaket: flag_paket,
-            langCode: langCode,
-            tema: tema,
-            onAfterLogin: onAfterLogin,
-            persen: true
-          );
+        onTap: (isTutup || isPaymentClosed)
+          ? null
+          : () async {
+            await handleVoteAction(
+              context: context,
+              flagLogin: flag_login,
+              flagVerifyEmail: flag_verify_email,
+              idFinalis: idFinalis,
+              flagHideNoUrut: flag_hide_no_urut,
+              flagPaket: flag_paket,
+              langCode: langCode,
+              tema: tema,
+              onAfterLogin: onAfterLogin,
+              persen: true
+            );
         },
         child: Container(
           width: isBig ? 120 : 100,
@@ -1205,25 +1252,32 @@ Widget buildTopCard({
               ),
               const SizedBox(height: 6),
               ElevatedButton(
-                onPressed: () async {
-                  await handleVoteAction(
-                    context: context,
-                    flagLogin: flag_login,
-                    flagVerifyEmail: flag_verify_email,
-                    idFinalis: idFinalis,
-                    flagHideNoUrut: flag_hide_no_urut,
-                    flagPaket: flag_paket,
-                    langCode: langCode,
-                    tema: tema,
-                    onAfterLogin: onAfterLogin,
-                    persen: true
-                  );
+                onPressed: (isTutup || isPaymentClosed)
+                  ? null
+                  : () async {
+                    await handleVoteAction(
+                      context: context,
+                      flagLogin: flag_login,
+                      flagVerifyEmail: flag_verify_email,
+                      idFinalis: idFinalis,
+                      flagHideNoUrut: flag_hide_no_urut,
+                      flagPaket: flag_paket,
+                      langCode: langCode,
+                      tema: tema,
+                      onAfterLogin: onAfterLogin,
+                      persen: true
+                    );
                 },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 13),
-                  backgroundColor: tema,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                    (states) =>
+                        states.contains(MaterialState.disabled) ? Colors.grey : tema,
+                  ),
+                  padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 13),
+                  ),
+                  shape: MaterialStateProperty.all(
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
                 child: const Text(
@@ -1274,25 +1328,29 @@ Widget buildListCard({
   required String flag_login,
   required String flag_verify_email,
   required String langCode,
-  required VoidCallback onAfterLogin
+  required VoidCallback onAfterLogin,
+  bool isTutup = false,
+  bool isPaymentClosed = false
 }) {
   // hitung persentase
   final double progress = persentase / 100;
 
   return InkWell(
-    onTap: () async {
-      await handleVoteAction(
-        context: context,
-        flagLogin: flag_login,
-        flagVerifyEmail: flag_verify_email,
-        idFinalis: idFinalis,
-        flagHideNoUrut: flag_hide_no_urut,
-        flagPaket: flag_paket,
-        langCode: langCode,
-        tema: tema,
-        onAfterLogin: onAfterLogin,
-        persen: true,
-      );
+    onTap: (isTutup || isPaymentClosed)
+      ? null
+      : () async {
+        await handleVoteAction(
+          context: context,
+          flagLogin: flag_login,
+          flagVerifyEmail: flag_verify_email,
+          idFinalis: idFinalis,
+          flagHideNoUrut: flag_hide_no_urut,
+          flagPaket: flag_paket,
+          langCode: langCode,
+          tema: tema,
+          onAfterLogin: onAfterLogin,
+          persen: true,
+        );
     },
     child: Container(
       padding: kGlobalPadding,

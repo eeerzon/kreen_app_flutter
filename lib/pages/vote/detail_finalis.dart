@@ -796,7 +796,13 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                     
                                           SizedBox(width: 4),
                                           //text
-                                          Text("Vote"),
+                                          Text(
+                                            (widget.persen
+                                              ? (detailFinalis['percent'] ?? 0) > 1
+                                              : (detailFinalis['total_voters'] ?? 0) > 1)
+                                                ? bahasa['text_votes']
+                                                : bahasa['text_vote'],
+                                          ),
                                         ],
                                       ),
                     
@@ -894,7 +900,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         controller: controllers,
                                         textAlign: TextAlign.center,
                                         keyboardType: TextInputType.number,
-                                        enabled: !isTutup || !isPaymentClosed,
+                                        enabled: !isTutup && !isPaymentClosed,
+                                        // readOnly: isTutup || isPaymentClosed,
                                         decoration: const InputDecoration(
                                           border: InputBorder.none,
                                           isCollapsed: true, // hilangkan padding bawaan
@@ -1371,7 +1378,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                         ),
 
                         AutoSizeText(
-                          "Qty $counts ${bahasa['text_vote']}",
+                          counts > 1
+                            ? "Qty $counts ${bahasa['text_votes']}"
+                            : "Qty $counts ${bahasa['text_vote']}",
                           style: TextStyle(
                             fontSize: 12,
                           ),
@@ -1381,7 +1390,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                         ),
 
                         Text(
-                          "$countData ${bahasa['finalis']}(s)",
+                          countData > 1
+                            ? "$countData ${bahasa['finalis']}s"
+                            : "$countData ${bahasa['finalis']}",
                           style: const TextStyle(fontSize: 12),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

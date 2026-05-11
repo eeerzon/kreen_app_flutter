@@ -20,10 +20,27 @@ const String formatDateId = "dd MMM yyyy";
 const String formatDay = "EEEE";
 
 bool isValidEmail(String email) {
+  const validTlds = {
+    'com', 'net', 'org', 'edu', 'gov', 'mil', 'int',
+    'id', 'uk', 'us', 'au', 'de', 'fr', 'jp', 'cn', 'in', 'br',
+    'co', 'io', 'ai', 'app', 'dev', 'web', 'info', 'biz', 'name',
+    'pro', 'tel', 'mobi', 'asia', 'tv', 'cc', 'me', 'my', 'sg',
+    'ph', 'th', 'vn', 'hk', 'tw', 'kr', 'ru', 'nl', 'es', 'it',
+    'se', 'no', 'dk', 'fi', 'pl', 'cz', 'hu', 'ro', 'gr', 'pt',
+    'ch', 'at', 'be', 'nz', 'za', 'ng', 'ke', 'eg', 'mx', 'ar',
+    'cl', 'ca', 'store', 'online', 'site', 'tech', 'media', 'news',
+  };
+
   final regex = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\.)+([a-zA-Z]{3,}|[a-zA-Z]{2}\.[a-zA-Z]{2,})$'
+    // r'^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\.)+([a-zA-Z]{3,}|[a-zA-Z]{2}\.[a-zA-Z]{2,})$'
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$',
   );
-  return regex.hasMatch(email);
+  
+  // return regex.hasMatch(email);
+  if (!regex.hasMatch(email)) return false;
+
+  final tld = email.split('.').last.toLowerCase();
+  return validTlds.contains(tld);
 }
 
 bool isValidPhone(String phone) {
@@ -135,10 +152,13 @@ final Map<String, String> errorTranslationMap = {
 
 
   // current password
+  'Password saat ini minimal 8 karakter':
+      'Current password must be at least 8 characters',
   'Current password minimal 8 karakter':
       'Current password must be at least 8 characters',
   'Current password diperlukan': 'Current password is required',
   'Password saat ini salah': 'Current password is incorrect',
+  'Password saat ini tidak sesuai': 'Current password is incorrect',
 
   // new password
   'new password minimal 8 karakter':
@@ -161,6 +181,8 @@ final Map<String, String> idNormalizationMap = {
   'Current password minimal 8 karakter': 'Kata sandi lama minimal 8 karakter',
   'Current password diperlukan': 'Kata sandi lama diperlukan',
   'Password saat ini salah': 'Kata sandi lama salah',
+  'Password saat ini tidak sesuai': 'Kata sandi lama tidak sesuai',
+  'Password saat ini minimal 8 karakter': 'Kata sandi lama minimal 8 karakter',
   'New password minimal 8 karakter': 'Kata sandi baru minimal 8 karakter',
   'New password diperlukan': 'Kata sandi baru diperlukan',
   'Confirm password diperlukan': 'Konfirmasi kata sandi diperlukan',

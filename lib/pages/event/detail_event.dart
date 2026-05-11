@@ -73,7 +73,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
         return 'not_started';
       } else if (!now.isBefore(end)) {
         return 'ended';
-      } else if (ticket['sisa_stok'] == 0) {
+      } else if (ticket['sisa_stok'] <= 0) {
         return 'sold_out';
       } else {
         return 'open';
