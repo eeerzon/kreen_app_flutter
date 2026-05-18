@@ -261,7 +261,7 @@
     "warning_order_3": " and make sure ",
     "warning_order_4": " you are logged in to your email.",
     "expired_at": "Valid until ",
-    "segera": "SOON",
+    "segera": "Soon",
     "habis": "SOLD OUT",
     "pembicara" : "Speaker",
     "moderator": "Moderator",
@@ -419,6 +419,8 @@
     "baca_sekarang" : "Read Now",
     "tutup" : "Close",
     "selesaikan_vote_kamu" : "Finish Your Vote",
-    "support_answer_error": "Support required"
+    "support_answer_error": "Support required",
+    "anonim" : "Anonymous",
+    "tutup_sementara" : "Close Temporarily"
   }
 }

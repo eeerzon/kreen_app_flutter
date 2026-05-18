@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
@@ -586,7 +587,8 @@ class _EventSuccessState extends State<EventSuccess> {
               if (item['created_at'].isNotEmpty) {
                 try {
                   // parsing string ke DateTime
-                  final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
                     // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
@@ -802,7 +804,9 @@ class _EventSuccessState extends State<EventSuccess> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      "$qty ${bahasa['tiket']}"
+                                      item['qty'] > 1
+                                        ? "$qty ${bahasa['tikets']}"
+                                        : "$qty ${bahasa['tiket']}"
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -946,6 +950,7 @@ class _EventPendingState extends State<EventPending> {
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
+  String? currencyCode;
 
   @override
   void initState() {
@@ -975,6 +980,9 @@ class _EventPendingState extends State<EventPending> {
     setState(() {
       langCode = code;
     });
+
+    final currency = await StorageService.getCurrency();
+    setState(() => currencyCode = currency);
 
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
@@ -1085,7 +1093,8 @@ class _EventPendingState extends State<EventPending> {
               if (item['created_at'].isNotEmpty) {
                 try {
                   // parsing string ke DateTime
-                  final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
                     // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
@@ -1299,7 +1308,9 @@ class _EventPendingState extends State<EventPending> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      "$qty ${bahasa['tiket']}"
+                                      item['qty'] > 1
+                                        ? "$qty ${bahasa['tikets']}"
+                                        : "$qty ${bahasa['tiket']}"
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -1326,7 +1337,7 @@ class _EventPendingState extends State<EventPending> {
                                     if (itemEvents['id_order'] != null) {
                                       final changed = await Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: item['currency'],)),
+                                        MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: itemEvents['id_order'], formHistory: true, currency_session: currencyCode,)),
                                       );
 
                                       if (changed == true) {
@@ -1586,7 +1597,8 @@ class _EventFailState extends State<EventFail> {
               if (item['created_at'].isNotEmpty) {
                 try {
                   // parsing string ke DateTime
-                  final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
                     // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
@@ -1802,7 +1814,9 @@ class _EventFailState extends State<EventFail> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      "$qty ${bahasa['tiket']}"
+                                      item['qty'] > 1
+                                        ? "$qty ${bahasa['tikets']}"
+                                        : "$qty ${bahasa['tiket']}"
                                     ),
                                     const SizedBox(height: 4),
                                     Text(

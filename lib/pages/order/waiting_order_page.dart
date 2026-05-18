@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
@@ -35,7 +36,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   String? langCode;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
-  final DateTime now = DateTime.now();
+  final DateTime now = DateTime.now().toUtc();
   Duration remaining = Duration.zero;
   Timer? _timer;
 
@@ -95,7 +96,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   void _updateRemaining() {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final difference = deadline.difference(now);
 
     setState(() {
@@ -184,6 +185,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
         final rawExpires = voteOder['order_created_at'];
         if (rawExpires != null && rawExpires.toString().isNotEmpty) {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
+          // final date = DateHelper.parseWibToUtc(rawExpires.toString());
 
           // tambahkan 1 jam untuk durasi expired payment
           // var newDate = date.add(const Duration(hours: 1));
@@ -200,7 +202,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
         openStates = List.generate(instruction.length, (_) => false);
 
-        deadline = DateTime.parse(expiresAt).toLocal();
+        // deadline = DateTime.parse(expiresAt).toLocal();
+        deadline = DateHelper.parseWibToUtc(expiresAt);
         _isLoading = false;
         showErrorBar = false;
       });

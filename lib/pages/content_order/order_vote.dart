@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
@@ -584,7 +585,8 @@ class _VoteSuccessState extends State<VoteSuccess> {
               if (item['created_at'].isNotEmpty) {
                 try {
                   // parsing string ke DateTime
-                  final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
                     // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
@@ -1091,7 +1093,8 @@ class _VotePendingState extends State<VotePending> {
               if (item['created_at'].isNotEmpty) {
                 try {
                   // parsing string ke DateTime
-                  final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
                     // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
@@ -1595,7 +1598,8 @@ class _VoteFailState extends State<VoteFail> {
               if (item['created_at'].isNotEmpty) {
                 try {
                   // parsing string ke DateTime
-                  final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
                     // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");

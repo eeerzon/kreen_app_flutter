@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
@@ -52,6 +53,8 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
   late List<bool> openStates;
   String? currencyCode;
+
+  bool isCheckingPayment = false;
 
   @override
   void initState() {
@@ -240,14 +243,15 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
         final rawExpires = eventOder['order_created_at'];
         if (rawExpires != null && rawExpires.toString().isNotEmpty) {
           final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
+          // final date = DateHelper.parseWibToUtc(rawExpires.toString());
 
           // tambahkan 1 jam untuk durasi expired payment
           // var newDate = date.add(const Duration(hours: 1));
-          // if (eventOder['payment_method_id'] == "6387457643547345") {
+          // if (voteOder['payment_method_id'] == "6387457643547345") {
           //   newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
           // }
 
-          final newDate = date.add(Duration(seconds: paymentDetail['expired_duration'] ?? 0));
+          final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive'] ?? 0));
           
           expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
         } else {
@@ -256,7 +260,8 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
         openStates = List.generate(instruction.length, (_) => false);
 
-        deadline = DateTime.parse(expiresAt).toLocal();
+        // deadline = DateTime.parse(expiresAt).toLocal();
+        deadline = DateHelper.parseWibToUtc(expiresAt);
         _isLoading = false;
         showErrorBar = false;
     }
@@ -851,13 +856,24 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     ),
                                   ),
                                   onPressed: () async {
-                                    final didRedirect = await CheckPaymentModal.showEvent(
-                                      context,
-                                      widget.id_order
-                                    );
-                                    if (didRedirect == true) {
-                                      _didRedirect = true;
+                                    if (isCheckingPayment) return;
+                                    
+                                    isCheckingPayment = true;
+
+                                    try {
+                                      final didRedirect = await CheckPaymentModal.showEvent(
+                                        context,
+                                        widget.id_order
+                                      );
+                                      if (didRedirect == true) {
+                                        _didRedirect = true;
+                                      } else if (didRedirect == null) {
+                                        await _checkIfExpiredFromModal();
+                                      } 
+                                    } finally {
+                                      if (mounted) setState(() => isCheckingPayment = false);
                                     }
+                                    
                                   },
                                   child: Text(
                                     bahasa['check_status'],
@@ -1014,10 +1030,17 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                             ),
                                           ),
 
-                                          Icon(
-                                            isOpen
+                                          InkWell(
+                                            onTap: () {
+                                              setState(() {
+                                                openStates[index] = !openStates[index];
+                                              });
+                                            },
+                                            child: Icon(
+                                              isOpen
                                                 ? Icons.keyboard_arrow_up
                                                 : Icons.keyboard_arrow_down,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -1214,6 +1237,28 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
         ),
       )
     );
+  }
+
+  Future<void> _checkIfExpiredFromModal() async {
+    final result = await ApiService.get(
+      "/order/event/${widget.id_order}",
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+    );
+
+    if (result == null || result['rc'] != 200) return;
+
+    final order = result['data']['event_order'] ?? {};
+    final status = order['order_status']?.toString();
+
+    // Status 20 = expired, status 2 = batal
+    if (status == '20' || status == '2') {
+      _timer?.cancel();
+      setState(() {
+        remaining = Duration.zero;
+        isExpired = true;
+      });
+    }
   }
 
   Future<void> setExpired() async {

@@ -2884,10 +2884,18 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
     final email = _emailController.text.trim();
 
-    if (email.isNotEmpty && !isValidEmail(email)) {
-      // format salah
-      isValid = false;
-      firstErrorFocus ??= _emailFocus;
+    final bool hasEmailIndikator = indikator.any((e) {
+      final label =
+          (e['indikator_vote'] ?? '').toString().toLowerCase();
+
+      return label.contains('email');
+    });
+
+    if (!hasEmailIndikator) {
+      if (email.isNotEmpty && !isValidEmail(email)) {
+        isValid = false;
+        firstErrorFocus ??= _emailFocus;
+      }
     }
 
     if (indikator.isNotEmpty) {
@@ -2908,8 +2916,12 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     // }
 
       //email
-      final bool isEmailRequired =
-        indikator.any((e) => e['id_indikator_vote'] == 12);
+      final bool isEmailRequired = indikator.any((e) {
+        final label =
+            (e['indikator_vote'] ?? '').toString().toLowerCase();
+
+        return label.contains('email');
+      });
 
       final email = _emailController.text.trim();
 
@@ -2926,19 +2938,25 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       }
 
       //phone
-      final bool isPhoneRequired =
-        indikator.any((e) => e['id_indikator_vote'] == 1);
+      final bool isPhoneRequired = indikator.any((e) {
+        final label =
+            (e['indikator_vote'] ?? '').toString().toLowerCase();
+
+        return label.contains('hp') ||
+              label.contains('phone') ||
+              label.contains('telp');
+      });
 
       final phone = _phoneController.text.trim();
 
       if (currencyVote == 'IDR') {
-        if (phone.isNotEmpty && !isValidPhoneIDR(phone)) {
+        if (isPhoneRequired && phone.isNotEmpty && !isValidPhoneIDR(phone)) {
           // format salah
           isValid = false;
           firstErrorFocus ??= _phoneFocus;
         }
       } else {
-        if (phone.isNotEmpty && !isValidPhone(phone)) {
+        if (isPhoneRequired && phone.isNotEmpty && !isValidPhone(phone)) {
           // format salah
           isValid = false;
           firstErrorFocus ??= _phoneFocus;
@@ -2953,13 +2971,6 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
       // form indikator
       for (int j = 0; j < indikator.length; j++) {
-        final item = indikator[j];
-        final label = (item['indikator_vote'] ?? '').toString().toLowerCase();
-        final isPhoneField = label.contains('hp');
-        final isEmailField = label.contains('email');
-
-        // skip phone & email — sudah divalidasi di atas
-        if (isPhoneField || isEmailField) continue;
 
         if (answers[j].toString().trim().isEmpty) {
           isValid = false;

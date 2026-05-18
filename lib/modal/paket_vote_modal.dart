@@ -7,7 +7,17 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class PaketVoteModal {
-  static Future<Map<String, dynamic>?> show(BuildContext context, int index, List<Map<String, dynamic>> paketTerbaik, List<Map<String, dynamic>> paketLainnya, Color color, Color bgColor, String? idPaketBw, String currency) async {
+  static Future<Map<String, dynamic>?> show(
+    BuildContext context, 
+    int index, 
+    List<Map<String, dynamic>> paketTerbaik, 
+    List<Map<String, dynamic>> paketLainnya, 
+    Color color, 
+    Color bgColor, 
+    String? idPaketBw, 
+    String currency,
+    {String? selectedIdPaket}
+  ) async {
     int? selectedIndex, selectedVotes, counts;
     num? hargaGet;
     num? hargaGetAsli;
@@ -18,6 +28,7 @@ class PaketVoteModal {
 
     String? langCode;
     Map<String, dynamic> bahasa = {};
+    String? selectedPaketId = selectedIdPaket;
 
     Future <void> getBahasa() async {
       langCode = await StorageService.getLanguage();
@@ -90,6 +101,36 @@ class PaketVoteModal {
                 await getBahasa();
                 setState(() {
                   isLoading = false;
+                  
+                  if (selectedPaketId != null) {
+                    // cari di paketTerbaik
+                    for (int i = 0; i < paketTerbaik.length; i++) {
+                      if (paketTerbaik[i]['id'] == selectedPaketId) {
+                        selectedIndex = i;
+                        selectedVotes = int.tryParse(paketTerbaik[i]['qty'].toString());
+                        counts = selectedVotes;
+                        hargaGet = double.tryParse(paketTerbaik[i]['harga_akhir'].toString());
+                        hargaGetAsli = double.tryParse(paketTerbaik[i]['harga_akhir_asli'].toString());
+                        idPaket = paketTerbaik[i]['id'];
+                        break;
+                      }
+                    }
+
+                    // cari di paketLainnya jika tidak ketemu
+                    if (selectedVotes == null) {
+                      for (int i = 0; i < paketLainnya.length; i++) {
+                        if (paketLainnya[i]['id'] == selectedPaketId) {
+                          selectedIndex = paketTerbaik.length + i;
+                          selectedVotes = int.tryParse(paketLainnya[i]['qty'].toString());
+                          counts = selectedVotes;
+                          hargaGet = double.tryParse(paketLainnya[i]['harga_akhir'].toString());
+                          hargaGetAsli = double.tryParse(paketLainnya[i]['harga_akhir_asli'].toString());
+                          idPaket = paketLainnya[i]['id'];
+                          break;
+                        }
+                      }
+                    }
+                  }
                 });
               }
             });
@@ -146,7 +187,10 @@ class PaketVoteModal {
                                 final hargaAkhirAsli = double.tryParse(item['harga_akhir_asli'].toString());
                                 final diskon = int.tryParse(item['diskon_persen']?.toString() ?? '0') ?? 0;
 
-                                final isSelected = selectedIndex == idx;
+                                // final isSelected = selectedIndex == idx;
+                                final isSelected = selectedPaketId != null
+                                  ? selectedPaketId == item['id']
+                                  : selectedIndex == idx;
 
                                 return GestureDetector(
                                   onTap: () {
@@ -157,6 +201,7 @@ class PaketVoteModal {
                                       hargaGet = hargaAkhir;
                                       hargaGetAsli = hargaAkhirAsli;
                                       idPaket = item['id'];
+                                      selectedPaketId = item['id'];
                                     });
                                   },
                                   child: Card(
@@ -244,7 +289,10 @@ class PaketVoteModal {
                                 final harga = double.tryParse(item['harga_akhir'].toString()) ?? 0;
                                 final hargaAsli = double.tryParse(item['harga_akhir_asli'].toString()) ?? 0;
 
-                                final isSelected = selectedIndex == idx;
+                                // final isSelected = selectedIndex == idx;
+                                final isSelected = selectedPaketId != null
+                                  ? selectedPaketId == item['id']
+                                  : selectedIndex == idx;
 
                                 return GestureDetector(
                                   onTap: () {
@@ -255,6 +303,7 @@ class PaketVoteModal {
                                       hargaGet = harga;
                                       hargaGetAsli = hargaAsli;
                                       idPaket = item['id'];
+                                      selectedPaketId = item['id'];
                                     });
                                   },
                                   child: Card(

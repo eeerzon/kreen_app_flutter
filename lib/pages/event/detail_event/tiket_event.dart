@@ -82,7 +82,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
   bool isConfirmLoading = false;
   
-  bool _emailTouched = false;
+  List<bool> _emailTouched = [];
   bool _phoneTouched = false;
   
   Set<int> _duplicateEmailIndexes = {};
@@ -146,8 +146,20 @@ class _TiketEventPageState extends State<TiketEventPage> {
   }
 
   void _autoCheckIfMatchFirst(int index) {
-    if (index == 0) return;
+    // if (index == 0) return;
+    if (index == 0) {
+      for (int i = 1; i < totalQty; i++) {
+        if (_isCheckedList[i]) {
+          _evaluateCheckState(i);
+        }
+      }
+      return;
+    }
 
+    _evaluateCheckState(index);
+  }
+
+  void _evaluateCheckState(int index) {
     final nameMatch = nameControllers[index].text == nameControllers[0].text;
     final emailMatch = emailControllers[index].text == emailControllers[0].text;
     final phoneMatch = phoneControllers[index].text == phoneControllers[0].text;
@@ -160,7 +172,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
         break;
       }
     }
-    
+
     final allMatch = nameMatch && emailMatch && phoneMatch && genderMatch && formMatch;
 
     if (_isCheckedList[index] != allMatch) {
@@ -222,11 +234,15 @@ class _TiketEventPageState extends State<TiketEventPage> {
       await _getBahasa();
       await _getCurrency();
       await _loadTiket();
+
+      _isFree = !(widget.prices_tiket_asli?.any((e) => e != 0) ?? false);
     });
 
     ids_order_form_detail = [];
     ids_order_form_master = [];
     answers = [];
+
+    _emailTouched = List.generate(totalQty, (_) => false);
   }
 
   Future<void> _getBahasa() async {
@@ -762,8 +778,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           focusNode: emailFocusNodes[index],
                           controller: emailControllers[index],
                           onChanged: (value) {
-                            if (!_emailTouched) {
-                              setState(() => _emailTouched = true);
+                            if (!_emailTouched[index]) {
+                              setState(() => _emailTouched[index] = true);
                             } else {
                               setState(() {});
                             }
@@ -811,7 +827,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           ),
                         ),
 
-                        if (_emailTouched && !isValidEmail(emailControllers[index].text)) ...[
+                        if (_emailTouched[index] && !isValidEmail(emailControllers[index].text)) ...[
                           Padding(
                             padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                             child: Text(
@@ -1184,9 +1200,15 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                   answers[i][idx] = value;
                                                 }
                                               }
+                                            } else {
+                                              answerControllers[index][idx].text = value;
+                                              answers[index][idx] = value;
+
+                                              answerControllers[index][idx].selection = TextSelection.fromPosition(
+                                                TextPosition(offset: value.length),
+                                              );
                                             }
                                           }
-
                                         });
                                         
                                         _autoCheckIfMatchFirst(index);
@@ -1318,7 +1340,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                         child: Row(
                                           children: List.generate(genders.length, (indx) {
                                             final item = genders[indx];
-                                            final bool isSelected = selected == item['label'];
+                                            // final isSelected = selected == item['label'];
+                                            final isSelected = answerControllers[index][idx].text == item['label'];
 
                                             return Expanded(
                                               child: GestureDetector(
@@ -1342,6 +1365,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                             answerControllers[i][idx].text = item['label'];
                                                           }
                                                         }
+                                                      } else {
+                                                        answerControllers[index][idx].text = item['label'];
+                                                        answers[index][idx] = item['label'];
                                                       }
                                                     }
                                                   });
@@ -1430,6 +1456,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                               answerControllers[i][idx].text = value ?? '';
                                                             }
                                                           }
+                                                        } else {
+                                                          answerControllers[index][idx].text = value ?? '';
+                                                          answers[index][idx] = value ?? '';
                                                         }
                                                       }
                                                     });
@@ -1492,6 +1521,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                         answerControllers[i][idx].text = value ?? '';
                                                       }
                                                     }
+                                                  } else {
+                                                    answerControllers[index][idx].text = value ?? '';
+                                                    answers[index][idx] = value ?? '';
                                                   }
                                                 }
                                               });
@@ -1586,6 +1618,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                             answerControllers[i][idx].text = answerControllers[0][idx].text;
                                                           }
                                                         }
+                                                      } else {
+                                                        answerControllers[index][idx].text = value;
+                                                        answers[index][idx] = value;
                                                       }
                                                     }
                                                   });
@@ -1767,8 +1802,6 @@ class _TiketEventPageState extends State<TiketEventPage> {
                             "payment_method": '',
                           };
 
-                          _isFree = !(widget.prices_tiket_asli?.any((e) => e != 0) ?? false);
-
                           if (_isFree) {
 
                             var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
@@ -1882,7 +1915,9 @@ class _TiketEventPageState extends State<TiketEventPage> {
                               SizedBox(width: 8),
                               Text(
                                 _isFree
-                                ? bahasa['pilih_tiket']
+                                ? totalQty > 1 
+                                  ? bahasa['pilih_tikets'] 
+                                  : bahasa['pilih_tiket']
                                 : bahasa['pilih_pembayaran'],
                                 style: TextStyle(
                                   color: Colors.white,

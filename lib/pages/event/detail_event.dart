@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/tiket_event.dart';
@@ -41,7 +42,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
   bool _isLoading = true;
 
-  List<int> counts = [];
+  final Map<String, int> _ticketCounts = {};
+  // List<int> counts = [];
   List<int> counts_tiket = [];
   List<String> ids_tiket = [];
   List<String> names_tiket = [];
@@ -62,16 +64,30 @@ class _DetailEventPageState extends State<DetailEventPage> {
   final GlobalKey _shareKey = GlobalKey();
   String? currencyCode;
 
-  String getTicketStatus(Map<String, dynamic> ticket) {
+  List<Map<String, dynamic>> get activeTickets {
+    return (event['event_ticket'] as List<dynamic>? ?? [])
+      .cast<Map<String, dynamic>>()
+      .where((t) => t['flag_aktif'] == 1)
+      .toList();
+  }
+
+  int _countOf(String ticketId) => _ticketCounts[ticketId] ?? 0;
+
+  String getTicketStatus(
+    Map<String, dynamic> ticket,
+  ) {
+
     try {
-      final now = DateTime.now().toUtc();
+      final nowUtc = DateTime.now().toUtc();
 
-      final start = DateTime.parse(ticket['sale_datetime_start']);
-      final end = DateTime.parse(ticket['sale_datetime_end']);
+      // source API = WIB
+      final startUtc = DateHelper.parseWibToUtc(ticket['sale_datetime_start']);
 
-      if (now.isBefore(start)) {
+      final endUtc = DateHelper.parseWibToUtc(ticket['sale_datetime_end']);
+
+      if (nowUtc.isBefore(startUtc)) {
         return 'not_started';
-      } else if (!now.isBefore(end)) {
+      } else if (!nowUtc.isBefore(endUtc)) {
         return 'ended';
       } else if (ticket['sisa_stok'] <= 0) {
         return 'sold_out';
@@ -83,10 +99,44 @@ class _DetailEventPageState extends State<DetailEventPage> {
     }
   }
 
+  bool get isButtonEnabled {
+    if (_ticketCounts.isEmpty) return false;
+ 
+    bool anySelected = false;
+ 
+    for (final ticket in activeTickets) {
+      final id = ticket['id_event_ticket']?.toString() ?? '';
+      final count = _countOf(id);
+      if (count <= 0) continue;
+ 
+      // Jika ada tiket yang sudah non-open tapi qty masih > 0 → invalid, disable
+      final status = getTicketStatus(ticket);
+      if (status != 'open') return false;
+ 
+      anySelected = true;
+    }
+ 
+    return anySelected;
+  }
+
+  void _resetClosedTicketCounts() {
+    bool changed = false;
+    for (final ticket in activeTickets) {
+      final id = ticket['id_event_ticket']?.toString() ?? '';
+      final count = _countOf(id);
+      if (count > 0 && getTicketStatus(ticket) != 'open') {
+        _ticketCounts[id] = 0;
+        changed = true;
+      }
+    }
+    if (changed) _syncSelectedTickets();
+  }
+
   void startTicketWatcher(List tickets) {
     _timer?.cancel();
-
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      _resetClosedTicketCounts();
       setState(() {});
     });
   }
@@ -134,7 +184,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
       setState(() {
         event = tempEvent;
 
-        counts = List<int>.filled(event['event_ticket'].length, 0);
+        // counts = List<int>.filled(event['event_ticket'].length, 0);
+        _ticketCounts.clear();
+        for (final t in (event['event_ticket'] as List<dynamic>? ?? [])) {
+          final id = t['id_event_ticket']?.toString() ?? '';
+          if (id.isNotEmpty) _ticketCounts[id] = 0;
+        }
         selected_tiket = List.filled(event['event_ticket'].length, null);
 
         _isLoading = false;
@@ -370,13 +425,11 @@ class _DetailEventPageState extends State<DetailEventPage> {
     );
   }
 
-  bool get isButtonEnabled => counts.isNotEmpty && counts.any((c) => c > 0);
-
   Widget buildKontenEvent() {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     var detailEvent = event['event'];
-    List<dynamic> eventTiket = event['event_ticket'] ?? [];
+    // List<dynamic> eventTiket = event['event_ticket'] ?? [];
     // var eventDate = event['eventdate'][0];
     var eventDateTime = event['event_datetime'] ?? [];
 
@@ -391,9 +444,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
       }).toList();
     }
 
-    final activeTickets = eventTiket
-      .where((e) => e['flag_aktif'] == 1)
-      .toList();
+    // final activeTickets = eventTiket
+    //   .where((e) => e['flag_aktif'] == 1)
+    //   .toList();
 
     String category_name = '';
 
@@ -997,55 +1050,109 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: List.generate(eventDateTime.length, (idx) {
+                                  children: List.generate(eventDateTime.length,(idx) {
                                     final item = eventDateTime[idx];
+
                                     String formattedDate = '-';
-                                    String dateStr = item['date_event'];
-    
-                                    if (dateStr.isNotEmpty) {
-                                      try {
-                                        // parsing string ke DateTime
-                                        final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                                        if (langCode == 'id') {
-                                          // Bahasa Indonesia
-                                          final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
-                                          formattedDate = formatter.format(date);
-                                        } else {
-                                          // Bahasa Inggris
-                                          final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
-                                          formattedDate = formatter.format(date);
+                                    String formattedTime = '-';
 
-                                          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                                          final day = date.day;
-                                          String suffix = 'th';
-                                          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-                                          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-                                          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-                                          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+                                    try {
+                                      // timezone admin/event
+                                      final start = DateTime.parse(
+                                        item['datetime_start_plus_diff'],
+                                      );
+
+                                      final end = DateTime.parse(
+                                        item['datetime_end_plus_diff'],
+                                      );
+
+                                      // DATE
+                                      if (langCode == 'id') {
+                                        final formatter = DateFormat(
+                                          "$formatDay, $formatDateId",
+                                          "id_ID",
+                                        );
+
+                                        formattedDate =
+                                            formatter.format(start);
+
+                                      } else {
+                                        final formatter = DateFormat(
+                                          "$formatDay, $formatDateEn",
+                                          "en_US",
+                                        );
+
+                                        formattedDate = formatter.format(start);
+                                        final day = start.day;
+                                        String suffix = 'th';
+
+                                        if (day % 10 == 1 && day != 11) {
+                                          suffix = 'st';
+                                        } else if (day % 10 == 2 && day != 12) {
+                                          suffix = 'nd';
+                                        } else if (day % 10 == 3 && day != 13) {
+                                          suffix = 'rd';
                                         }
-                                      } catch (e) {
-                                        formattedDate = '-';
-                                      }
-                                    }
 
-                                    String formatTime(String time) {
-                                      final t = DateFormat("HH:mm:ss").parse(time);
-                                      return DateFormat("HH:mm").format(t);
+                                        formattedDate =
+                                            formattedDate.replaceFirst(
+                                              '$day',
+                                              '$day$suffix',
+                                            );
+                                      }
+
+                                      // TIME
+                                      formattedTime =
+                                          "${DateFormat("HH:mm").format(start)}"
+                                          " - "
+                                          "${DateFormat("HH:mm").format(end)}";
+
+                                    } catch (e) {
+
+                                      formattedDate = '-';
+                                      formattedTime = '-';
                                     }
 
                                     return Padding(
-                                      padding: EdgeInsets.only(bottom: idx == eventDateTime.length - 1 ? 0 : 8,),
+                                      padding: EdgeInsets.only(
+                                        bottom:
+                                          idx == eventDateTime.length - 1
+                                            ? 0
+                                            : 4,
+                                      ),
+
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             formattedDate,
-                                            style: const TextStyle(color: Colors.black),
+                                            style: const TextStyle(
+                                              color: Colors.black,
+                                            ),
                                           ),
+
                                           const SizedBox(height: 4),
-                                          Text(
-                                            "${formatTime(item['time_start'])} - ${formatTime(item['time_end'])} (${detailEvent['code_timezone']})",
-                                            style: const TextStyle(color: Colors.black),
+
+                                          RichText(
+                                            text: TextSpan(
+                                              children: [
+                                                TextSpan(
+                                                  text: formattedTime,
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                                TextSpan(
+                                                  text: " (${detailEvent['code_timezone']})",
+                                                  style: TextStyle(
+                                                    color: Colors.blueAccent,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontStyle: FontStyle.italic,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -1974,14 +2081,14 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         ...List.generate(activeTickets.length, (index) {
                           final item = activeTickets[index];
 
-                          final dateStr = item['sale_datetime_end_plus_diff']?.toString() ?? '-';
+                          final dateStr = item['sale_datetime_end']?.toString() ?? '-';
       
                           String formattedDate = '-';
                           
                           if (dateStr.isNotEmpty) {
                             try {
                               // parsing string ke DateTime
-                              final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+                              final date = DateHelper.parseWibToLocal(dateStr);
                               if (langCode == 'id') {
                                 // Bahasa Indonesia
                                 final dayName = DateFormat(formatDay, "id_ID").format(date);
@@ -2015,13 +2122,19 @@ class _DetailEventPageState extends State<DetailEventPage> {
                             hargaFormatted = bahasa['harga_detail'];
                           }
 
-                          final dateOutTiket = DateTime.parse("${item['sale_date_end']} ${item['sale_time_end']}");
-                          final bool sudahTutup = DateTime.now().isAfter(dateOutTiket) || item['sisa_stok'] == 0 || item['sisa_stok'] < 0;
+                          final dateOutTiket = DateHelper.parseWibToUtc(item['sale_datetime_end']);
+                          final bool sudahTutup =
+                            DateTime.now().toUtc().isAfter(dateOutTiket) ||
+                            item['sisa_stok'] <= 0;
 
                           final text = bahasa['batas_event']
                             .replaceAll('{qty}', item['max_qty'].toString());
 
                           final status = getTicketStatus(item);
+
+
+                          final id = item['id_event_ticket']?.toString() ?? '';
+                          final count = _countOf(id);
 
                           return item['flag_aktif'] == 1 
                             ? Padding(
@@ -2117,7 +2230,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                     ? Container(
                                                         padding: const EdgeInsets.symmetric(vertical: 8),
                                                         child: Text(
-                                                          bahasa['segera'],
+                                                          bahasa.toString().toUpperCase(),
                                                           style: const TextStyle(
                                                             fontWeight: FontWeight.bold,
                                                             fontSize: 16,
@@ -2158,10 +2271,12 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                                 mainAxisAlignment: MainAxisAlignment.end,
                                                                 children: [
                                                                   InkWell(
-                                                                    onTap: counts[index] > 0
+                                                                    onTap: count > 0
+                                                                    // counts[index] > 0
                                                                         ? () {
                                                                             setState(() {
-                                                                              counts[index]--;
+                                                                              // counts[index]--;
+                                                                              _ticketCounts[id] = count - 1;
                                                                               _syncSelectedTickets();
                                                                             });
                                                                           }
@@ -2181,7 +2296,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                                   ),
                                                                   const SizedBox(width: 8),
                                                                   Text(
-                                                                    counts[index].toString(),
+                                                                    // counts[index].toString(),
+                                                                    count.toString(),
                                                                     style: const TextStyle(
                                                                       fontWeight: FontWeight.bold,
                                                                       fontSize: 16,
@@ -2191,15 +2307,26 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                                   InkWell(
                                                                     onTap: () {
                                                                       setState(() {
+
+                                                                        if (getTicketStatus(item) != 'open') return;
+
                                                                         final maxQty = item['max_qty'];
                                                                         final sisaStok = item['sisa_stok'];
 
                                                                         final limit =
                                                                             sisaStok < maxQty ? sisaStok : maxQty;
 
-                                                                        if (counts[index] < limit) {
-                                                                          counts[index]++;
-                                                                          _syncSelectedTickets();
+                                                                        // if (counts[index] < limit) {
+                                                                        //   counts[index]++;
+                                                                        //   _ticketCounts[id] = count + 1;
+                                                                        //   _syncSelectedTickets();
+                                                                        // }
+
+                                                                        if (count < limit) {
+                                                                          setState(() {
+                                                                            _ticketCounts[id] = count + 1;
+                                                                            _syncSelectedTickets();
+                                                                          });
                                                                         }
                                                                       });
                                                                     },
@@ -2230,7 +2357,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                 ),
                                               ],
 
-                                              if (counts[index] == item['max_qty']) ... [
+                                              if (count > 0 && count == item['max_qty']) ...[
 
                                                 SizedBox(height: 4,),
 
@@ -2270,15 +2397,27 @@ class _DetailEventPageState extends State<DetailEventPage> {
     prices_tiket.clear();
     prices_tiket_asli.clear();
 
-    for (int i = 0; i < event['event_ticket'].length; i++) {
-      final item = event['event_ticket'][i];
-      final count = counts[i];
+    // for (int i = 0; i < event['event_ticket'].length; i++) {
+    //   final item = event['event_ticket'][i];
+    //   final count = counts[i];
+    //   if (count > 0) {
+    //     ids_tiket.add(item['id_event_ticket']);
+    //     names_tiket.add(item['name_ticket']);
+    //     counts_tiket.add(count);
+    //     prices_tiket.add(item['price']);
+    //     prices_tiket_asli.add(item['price_asli'] ?? 0);
+    //   }
+    // }
+
+    for (final ticket in activeTickets) {
+      final id = ticket['id_event_ticket']?.toString() ?? '';
+      final count = _countOf(id);
       if (count > 0) {
-        ids_tiket.add(item['id_event_ticket']);
-        names_tiket.add(item['name_ticket']);
+        ids_tiket.add(id);
+        names_tiket.add(ticket['name_ticket']);
         counts_tiket.add(count);
-        prices_tiket.add(item['price']);
-        prices_tiket_asli.add(item['price_asli'] ?? 0);
+        prices_tiket.add(ticket['price']);
+        prices_tiket_asli.add(ticket['price_asli'] ?? 0);
       }
     }
   }

@@ -314,22 +314,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (isConfirmLoading) return;
 
-      setState(() {
-        _showError = true;
-      });
+    setState(() {
+      isConfirmLoading = true;
+      _showError = true;
+    });
 
     final isValid = _validateAllForm();
 
     if (!isValid) {
+      setState(() {
+        isConfirmLoading = false;
+      });
       return;
     }
 
-    setState(() {
-      isConfirmLoading = true;
-    });
-
     try {
-      await saveProfile(); 
+      await saveProfile();
     } finally {
       if (mounted) {
         setState(() {
@@ -338,7 +338,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     }
   }
-
 
   Future<void> saveProfile() async {
 
@@ -362,7 +361,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         return;
     }
 
-    if (emailController.text.trim().isEmpty && !isValidEmail(emailController.text.trim())) {
+    if (emailController.text.trim().isEmpty || !isValidEmail(emailController.text.trim())) {
       setState(() {
         _showError = true;
       });
@@ -371,7 +370,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return;
     }
 
-    if (phoneController.text.trim().isEmpty && !isValidPhone(phoneController.text.trim())) {
+    if (phoneController.text.trim().isEmpty || !isValidPhone(phoneController.text.trim())) {
       setState(() {
         _showError = true;
       });
@@ -407,7 +406,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     };
 
     final resultSimpan = await ApiService.postSetProfil('$baseapiUrl/setting/update-profile',token: token, body: body, xLanguage: langCode);
-
+    
     if (resultSimpan?['rc'] == 200) {
       await StorageService.setUser(
         id: widget.user['id'],
@@ -1242,9 +1241,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             ),
                           ),
 
-                          if ((_phoneTouched && !isValidPhone(phoneController.text)) 
-                            || !isValidPhone(phoneController.text)
-                            && phoneController.text.length < 7)
+                          if (_phoneTouched && !isValidPhone(phoneController.text))
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
@@ -1292,6 +1289,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
                               ),
+                              LengthLimitingTextInputFormatter(100),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_linkedin_hint'],
@@ -1340,6 +1338,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
                               ),
+                              LengthLimitingTextInputFormatter(100),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_instagram_hint'],
@@ -1356,7 +1355,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     child: Container(
                                       padding: EdgeInsets.all(10),
                                       color: Colors.grey[200],
-                                      width: 130,
+                                      width: 135,
                                       alignment: Alignment.centerLeft,
                                       child: const Text(
                                         "instagram.com/",
@@ -1388,6 +1387,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
                               ),
+                              LengthLimitingTextInputFormatter(100),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_twitter_hint'],

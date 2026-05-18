@@ -38,6 +38,11 @@ Future<Position?> getCurrentLocationWithValidation(BuildContext context) async {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(bahasa['izin_lokasi_ditolak'])), //"Izin lokasi ditolak permanen. Buka setting untuk mengaktifkan."
       );
+      // Fluttertoast.showToast(
+      //   msg: bahasa['izin_lokasi_ditolak'],
+      //   toastLength: Toast.LENGTH_LONG,
+      //   gravity: ToastGravity.BOTTOM,
+      // );
       await Geolocator.openAppSettings();
       return null;
     }

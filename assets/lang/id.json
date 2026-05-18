@@ -261,7 +261,7 @@
     "warning_order_3" : " atau pastikan ",
     "warning_order_4" : " Anda sudah masuk di email.",
     "expired_at" : "Berlaku hingga ",
-    "segera" : "SEGERA",
+    "segera" : "Segera",
     "habis" : "HABIS",
     "pembicara" : "Pembicara",
     "moderator": "Moderator",
@@ -375,7 +375,7 @@
 
     "bayar_sekarang" : "Bayar Sekarang",
     "tiket_tidak_tersedia" : "Tiket tidak tersedia",
-    "has_been": "telah di vote",
+    "has_been": "telah divote",
     "menunggu_konfirmasi" : "Menunggu konfirmasi pembayaran...",
     "redirecting": "Mengalihkan...",
     "required": "Informasi kartu wajib diisi",
@@ -419,6 +419,8 @@
     "baca_sekarang" : "Baca Sekarang",
     "tutup" : "Tutup",
     "selesaikan_vote_kamu" : "Selesaikan Vote Kamu",
-    "support_answer_error": "Dukungan wajib diisi"
+    "support_answer_error": "Dukungan wajib diisi",
+    "anonim" : "Anonim",
+    "tutup_sementara" : "Tutup Sementara"
   }
 }

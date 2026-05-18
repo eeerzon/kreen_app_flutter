@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -63,9 +65,24 @@ android {
           //     getDefaultProguardFile("proguard-android-optimize.txt"),
           //     "proguard-rules.pro"
           // )
-      }
+        }
+    }
+
+    applicationVariants.all {
+
+        outputs.all {
+
+            val output = this
+
+            if (output is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
+
+                output.outputFileName =
+                    "Kreen App v${versionName}.apk"
+            }
+        }
     }
 }
+
 dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.10")

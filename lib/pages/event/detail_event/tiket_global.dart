@@ -83,7 +83,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
   bool isConfirmLoading = false;
   
-  bool _emailTouched = false;
+  List<bool> _emailTouched = [];
   bool _phoneTouched = false;
   
   Set<int> _duplicateEmailIndexes = {};
@@ -147,17 +147,37 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   }
 
   void _autoCheckIfMatchFirst(int index) {
-    if (index == 0) return;
+    // if (index == 0) return;
+    if (index == 0) {
+      for (int i = 1; i < totalQty; i++) {
+        if (_isCheckedList[i]) {
+          _evaluateCheckState(i);
+        }
+      }
+      return;
+    }
 
+    _evaluateCheckState(index);
+  }
+
+  void _evaluateCheckState(int index) {
     final nameMatch = nameControllers[index].text == nameControllers[0].text;
     final emailMatch = emailControllers[index].text == emailControllers[0].text;
     final phoneMatch = phoneControllers[index].text == phoneControllers[0].text;
     final genderMatch = selectedGenders[index] == selectedGenders[0];
 
-    final allMatch = nameMatch && emailMatch && phoneMatch && genderMatch;
+    bool formMatch = true;
+    for (int i = 0; i < formTiket.length; i++) {
+      if (answers[index][i] != answers[0][i]) {
+        formMatch = false;
+        break;
+      }
+    }
+
+    final allMatch = nameMatch && emailMatch && phoneMatch && genderMatch && formMatch;
 
     if (_isCheckedList[index] != allMatch) {
-      setState(() => _isCheckedList[index] = allMatch); // auto check & uncheck
+      setState(() => _isCheckedList[index] = allMatch);
     }
   }
 
@@ -212,6 +232,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
       _isFree = !(widget.prices_tiket_asli?.any((e) => e != 0) ?? false);
     });
+
+    _emailTouched = List.generate(totalQty, (_) => false);
   }
 
   late final genders = [
@@ -734,8 +756,8 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           focusNode: emailFocusNodes[index],
                           controller: emailControllers[index],
                           onChanged: (value) {
-                            if (!_emailTouched) {
-                              setState(() => _emailTouched = true);
+                            if (!_emailTouched[index]) {
+                              setState(() => _emailTouched[index] = true);
                             } else {
                               setState(() {});
                             }
@@ -783,7 +805,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ),
                         ),
 
-                        if (_emailTouched && !isValidEmail(emailControllers[index].text)) ...[
+                        if (_emailTouched[index] && !isValidEmail(emailControllers[index].text)) ...[
                           Padding(
                             padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                             child: Text(
@@ -1175,6 +1197,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                               answers[i] = value;
                                             }
                                           }
+                                        } else {
+                                          answerControllers[idx].text = value;
+                                          answers[idx] = value;
+
+                                          answerControllers[idx].selection = TextSelection.fromPosition(
+                                            TextPosition(offset: value.length),
+                                          );
                                         }
                                       }
                                     });
@@ -1308,8 +1337,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                     child: Row(
                                       children: List.generate(genders.length, (indx) {
                                         final item = genders[indx];
-                                        final bool isSelected = selected == item['label'];
-
+                                        // final isSelected = selected == item['label'];
+                                        final isSelected = answerControllers[idx].text == item['label'];
+                                        
                                         return Expanded(
                                           child: GestureDetector(
                                             onTap: () {
@@ -1319,21 +1349,24 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                     answerControllers[idx].text = item['label'];
 
                                                     answers[idx] = item['label'];
-                                                  } else {
-                                                    if (idx == 0) {
-                                                      selected = item['label'];
-                                                      answerControllers[0].text = item['label'];
+                                                } else {
+                                                  if (idx == 0) {
+                                                    selected = item['label'];
+                                                    answerControllers[0].text = item['label'];
 
-                                                      answers[0] = item['label'];
+                                                    answers[0] = item['label'];
 
-                                                      for (int i = 1; i < answers.length; i++) {
-                                                        if (_isCheckedList[i]) {
-                                                          answers[i] = item['label'];
-                                                          answerControllers[i].text = item['label'];
-                                                        }
+                                                    for (int i = 1; i < answers.length; i++) {
+                                                      if (_isCheckedList[i]) {
+                                                        answers[i] = item['label'];
+                                                        answerControllers[i].text = item['label'];
                                                       }
                                                     }
+                                                  } else {
+                                                    answerControllers[idx].text = item['label'];
+                                                    answers[idx] = item['label'];
                                                   }
+                                                }
                                               });
 
                                               _autoCheckIfMatchFirst(idx);
@@ -1420,6 +1453,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                         answerControllers[i].text = value;
                                                       }
                                                     }
+                                                  } else {
+                                                    answerControllers[idx].text = value;
+                                                    answers[idx] = value;
                                                   }
                                                 }
                                               });
@@ -1484,6 +1520,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                     answerControllers[i].text = value ?? '';
                                                   }
                                                 }
+                                              } else {
+                                                answerControllers[idx].text = value ?? '';
+                                                answers[idx] = value ?? '';
                                               }
                                             }
                                           });
@@ -1578,6 +1617,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                         answerControllers[i].text = answerControllers[0].text;
                                                       }
                                                     }
+                                                  } else {
+                                                    answerControllers[idx].text = value;
+                                                    answers[idx] = value;
                                                   }
                                                 }
                                               });
@@ -1853,7 +1895,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                             SizedBox(width: 8),
                             Text(
                               _isFree
-                              ? bahasa['pilih_tiket']
+                              ? totalQty > 1 
+                                ? bahasa['pilih_tikets'] 
+                                : bahasa['pilih_tiket']
                               : bahasa['pilih_pembayaran'],
                               style: TextStyle(
                                 color: Colors.white,

@@ -11,7 +11,7 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class CheckPaymentModal {
-  static Future<bool> show(BuildContext context, String idOrder) async {
+  static Future<bool?> show(BuildContext context, String idOrder) async {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> voteOrder = {};
@@ -30,6 +30,8 @@ class CheckPaymentModal {
 
     bool isRedirecting = false;
     bool redirected = false;
+
+    bool isExpired = false;
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
@@ -56,6 +58,10 @@ class CheckPaymentModal {
             statusOrder = bahasa['status_order_20']; // expired
           } else if (voteOrder['order_status'] == '404'){
             statusOrder = bahasa['status_order_404']; // hidden
+          }
+
+          if (voteOrder['order_status'] == '20' || voteOrder['order_status'] == '2') {
+            isExpired = true;
           }
         } else {
           AwesomeDialog(
@@ -106,6 +112,7 @@ class CheckPaymentModal {
     }
 
     Future<void> handleRedirectIfNeeded(BuildContext context, StateSetter setState) async {
+      
       if (voteOrder['order_status'] == '1' && !isRedirecting) {
         setState(() {
           isRedirecting = true;
@@ -169,9 +176,63 @@ class CheckPaymentModal {
           ),
         );
       }
+
+      // ← Handle expired redirect
+      if ((voteOrder['order_status'] == '20' || voteOrder['order_status'] == '2') && !isRedirecting) {
+        setState(() => isRedirecting = true);
+
+        int countdown = 2;
+        late AwesomeDialog dialog;
+        late void Function(void Function()) dialogSetState;
+
+        dialog = AwesomeDialog(
+          context: context,
+          dialogType: DialogType.noHeader,
+          animType: AnimType.scale,
+          dismissOnTouchOutside: false,
+          dismissOnBackKeyPress: false,
+          body: StatefulBuilder(
+            builder: (context, setDialogState) {
+              dialogSetState = setDialogState;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  const CircularProgressIndicator(color: Colors.red),
+                  const SizedBox(height: 12),
+                  // Text(
+                  //   bahasa['link_kadaluarsa'] ?? 'Pembayaran Kadaluarsa',
+                  //   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  //   textAlign: TextAlign.center,
+                  // ),
+                  // const SizedBox(height: 8),
+                  // Text(
+                  //   "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                  //   style: const TextStyle(fontWeight: FontWeight.bold),
+                  // ),
+                ],
+              );
+            },
+          ),
+        )..show();
+
+        for (int i = countdown; i > 0; i--) {
+          await Future.delayed(const Duration(seconds: 1));
+          countdown--;
+          if (context.mounted) dialogSetState(() {});
+        }
+
+        if (!context.mounted) return;
+        dialog.dismiss();
+
+        // Pop modal dengan signal null = expired
+        Navigator.of(context).pop(null);
+      }
     }
 
-    await showModalBottomSheet<bool>(
+    bool handlerCalled = false;
+
+    await showModalBottomSheet<bool?>(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
@@ -183,6 +244,8 @@ class CheckPaymentModal {
           builder: (context, setState) {
 
             WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (handlerCalled) return;
+              handlerCalled = true;
               handleRedirectIfNeeded(context, setState);
             });
             
@@ -257,7 +320,9 @@ class CheckPaymentModal {
                               );
 
                               return Text(
-                                "- ${finalis['nama_finalis']} (${detail['qty']} ${bahasa['text_vote']})",
+                                detail['qty'] > 1
+                                  ? "${finalis['nama_finalis']} (${detail['qty']} ${bahasa['text_votes']})"
+                                  : "- ${finalis['nama_finalis']} (${detail['qty']} ${bahasa['text_vote']})",
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               );
                             }).toList(),
@@ -348,11 +413,13 @@ class CheckPaymentModal {
         );
       },
     );
+    
+    if (isExpired) return null;
     return redirected;
   }
 
 
-  static Future<bool> showEvent(BuildContext context, String idOrder) async {
+  static Future<bool?> showEvent(BuildContext context, String idOrder) async {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     Map<String, dynamic> eventOrder = {};
@@ -371,6 +438,8 @@ class CheckPaymentModal {
 
     bool isRedirecting = false;
     bool redirected = false;
+
+    bool isExpired = false;
 
     Future<void> loadOrder() async {
       final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
@@ -395,6 +464,10 @@ class CheckPaymentModal {
         statusOrder = bahasa['status_order_20'];
       } else if (eventOrder['order_status'] == '404'){
         statusOrder = bahasa['status_order_404'];
+      }
+
+      if (eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') {
+        isExpired = true;
       }
     }
 
@@ -429,6 +502,7 @@ class CheckPaymentModal {
     }
 
     Future<void> handleRedirectIfNeeded(BuildContext context, StateSetter setState) async {
+      
       if (eventOrder['order_status'] == '1' && !isRedirecting) {
         setState(() {
           isRedirecting = true;
@@ -486,9 +560,63 @@ class CheckPaymentModal {
           MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOrder['id_order'], isSukses: true,)),
         );
       }
+
+      // ← Handle expired redirect
+      if ((eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') && !isRedirecting) {
+        setState(() => isRedirecting = true);
+
+        int countdown = 2;
+        late AwesomeDialog dialog;
+        late void Function(void Function()) dialogSetState;
+
+        dialog = AwesomeDialog(
+          context: context,
+          dialogType: DialogType.noHeader,
+          animType: AnimType.scale,
+          dismissOnTouchOutside: false,
+          dismissOnBackKeyPress: false,
+          body: StatefulBuilder(
+            builder: (context, setDialogState) {
+              dialogSetState = setDialogState;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  const CircularProgressIndicator(color: Colors.red),
+                  const SizedBox(height: 12),
+                  // Text(
+                  //   bahasa['link_kadaluarsa'] ?? 'Pembayaran Kadaluarsa',
+                  //   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  //   textAlign: TextAlign.center,
+                  // ),
+                  // const SizedBox(height: 8),
+                  // Text(
+                  //   "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                  //   style: const TextStyle(fontWeight: FontWeight.bold),
+                  // ),
+                ],
+              );
+            },
+          ),
+        )..show();
+
+        for (int i = countdown; i > 0; i--) {
+          await Future.delayed(const Duration(seconds: 1));
+          countdown--;
+          if (context.mounted) dialogSetState(() {});
+        }
+
+        if (!context.mounted) return;
+        dialog.dismiss();
+
+        // Pop modal dengan signal null = expired
+        Navigator.of(context).pop(null);
+      }
     }
 
-    await showModalBottomSheet<bool>(
+    bool handlerCalled = false;
+
+    await showModalBottomSheet<bool?>(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
@@ -519,6 +647,8 @@ class CheckPaymentModal {
           builder: (context, setState) {
 
             WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (handlerCalled) return;
+              handlerCalled = true;
               handleRedirectIfNeeded(context, setState);
             });
 
@@ -677,6 +807,8 @@ class CheckPaymentModal {
         );
       },
     );
+    
+    if (isExpired) return null;
     return redirected;
   }
 }

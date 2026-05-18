@@ -44,6 +44,10 @@ class _AddSupportPageState extends State<AddSupportPage> {
   bool isSubmitting = false;
   String? currencyCode;
 
+  bool _showError = false;
+
+  final _supportFocus = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -240,6 +244,82 @@ class _AddSupportPageState extends State<AddSupportPage> {
         formattedDate = '-';
       }
     }
+
+    Future<void> doSubmitProcess() async {
+      final dukungan = _supportController.text;
+
+      bool isdukunganEmpty = dukungan.isEmpty;
+
+      if (isdukunganEmpty) {
+        setState(() {
+          _showError = true;
+        });
+        return;
+      }
+              
+      //kirim ke API
+      // ApiService.post('/support', {'text': dukungan, 'anonymous': isAnonymous});
+      Map<String, dynamic>? result;
+      final body = {
+        "id_vote": widget.id_vote,
+        "id_order": widget.id_order,
+        "name": isAnonymous ? '' : widget.nama,
+        "support_text": dukungan,
+        "anonymous": isAnonymous.toString()
+      };
+      result = await ApiService.post('/vote/send-support', body: body, xLanguage: langCode);
+
+      if (result != null) {
+        final temprc = result['rc'];
+        if (temprc == 200) {
+
+          await Future.delayed(const Duration(milliseconds: 400));
+
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DetailVotePage(
+                id_event: widget.id_vote,
+                currencyCode: currencyCode,
+              ),
+            ),
+            (route) => route.isFirst, // sisakan Home
+          );
+        } else {
+          setState(() => isSubmitting = false);
+        }
+      } else {
+        setState(() => isSubmitting = false);
+      }
+    }
+
+    void handleSubmit() async {
+      
+      if (isSubmitting) return;
+
+      // setState(() {
+      //   _showError = true;
+      // });
+
+      final isValid = _validateAllForm();
+
+      if (!isValid) {
+        return;
+      }
+
+      setState(() => isSubmitting = true);
+
+      try {
+        await doSubmitProcess(); 
+      } finally {
+        if (mounted) {
+          setState(() {
+            isSubmitting = false;
+          });
+        }
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -501,10 +581,18 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Anonymous',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            isAnonymous = !isAnonymous;
+                          });
+                        },
+                        child: Text(
+                          bahasa['anonim'] ?? 'Anonymous',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
+                      
                       Checkbox(
                         value: isAnonymous,
                         activeColor: Colors.red,
@@ -526,6 +614,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: _supportController,
+                    focusNode: _supportFocus,
                     maxLines: 3,
                     decoration: InputDecoration(
                       hintText: bahasa['support_hint'],
@@ -535,66 +624,32 @@ class _AddSupportPageState extends State<AddSupportPage> {
                       ),
                     ),
                     onChanged: (val) {
+                      if (_showError && val.trim().isNotEmpty) {
+                        setState(() => _showError = false);
+                      } else if (!_showError && val.trim().isEmpty) {
+                        setState(() => _showError = true);
+                      }
                     },
                   ),
+                  if (_showError)
+                      Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                        child: Text(
+                          bahasa['support_answer_error'],
+                          style: TextStyle(color: Colors.red[900], fontSize: 12),
+                        ),
+                      ),
+                    ),
               
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: isSubmitting ? null : () async {
-                        setState(() => isSubmitting = true);
-
-                        final dukungan = _supportController.text;
-              
-                        //kirim ke API
-                        // ApiService.post('/support', {'text': dukungan, 'anonymous': isAnonymous});
-                        Map<String, dynamic>? result;
-                        if (isAnonymous) {
-                            final body_anonim = {
-                              "id_vote": widget.id_vote,
-                              "id_order": widget.id_order,
-                              "name": '',
-                              "support_text": dukungan,
-                              "anonymous": isAnonymous.toString()
-                            };
-                          result = await ApiService.post('/vote/send-support', body: body_anonim, xLanguage: langCode);
-                        } else {
-                          final body = {
-                            "id_vote": widget.id_vote,
-                            "id_order": widget.id_order,
-                            "name": widget.nama,
-                            "support_text": dukungan,
-                            "anonymous": isAnonymous.toString()
-                          };
-                          
-                          result = await ApiService.post('/vote/send-support', body: body, xLanguage: langCode);
-                        }
-              
-                        if (result != null) {
-                          final temprc = result['rc'];
-                          if (temprc == 200) {
-
-                            await Future.delayed(const Duration(milliseconds: 400));
-
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DetailVotePage(
-                                  id_event: widget.id_vote,
-                                  currencyCode: currencyCode,
-                                ),
-                              ),
-                              (route) => route.isFirst, // sisakan Home
-                            );
-                          } else {
-                            setState(() => isSubmitting = false);
-                          }
-                        } else {
-                          setState(() => isSubmitting = false);
-                        }
-              
-                      },
+                      onPressed: isSubmitting 
+                        ? null 
+                        : handleSubmit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -623,4 +678,39 @@ class _AddSupportPageState extends State<AddSupportPage> {
     );
   }
 
+
+  bool _validateAllForm() {
+    bool isValid = true;
+    FocusNode? firstErrorFocus;
+
+    if (_supportController.text.trim().isEmpty) {
+      isValid = false;
+      firstErrorFocus ??= _supportFocus;
+      setState(() => _showError = true);
+    }
+
+    if (!isValid) {
+      if (firstErrorFocus != null) {
+        _scrollToFocus(firstErrorFocus);
+      }
+    }
+
+    return isValid;
+  }
+
+  void _scrollToFocus(FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      node.requestFocus();
+
+      final context = node.context;
+      if (context == null) return;
+
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.3,
+      );
+    });
+  }
 }
