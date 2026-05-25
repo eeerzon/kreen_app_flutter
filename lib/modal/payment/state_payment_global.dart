@@ -490,33 +490,6 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             context,
             MaterialPageRoute(builder: (_) => WaitingOrderEvent(id_order: id_order, formHistory: false, currency_session: currencyCode,)),
           );
-        // } else if (resultEventOrder['rc'] == 400) {
-        //   if (errorMessage.toLowerCase().contains("limit")) {
-        //     Navigator.push(
-        //       context,
-        //       MaterialPageRoute(builder: (_) => VoteLimit(
-        //         errorMessage: 
-        //           langCode == 'id' 
-        //             ? errorMessage
-        //             : "The transaction limit for this vote has been reached."
-        //       )),
-        //     );
-        //   } else {
-        //     AwesomeDialog(
-        //       context: context,
-        //       dialogType: DialogType.noHeader,
-        //       animType: AnimType.topSlide,
-        //       title: bahasa['maaf'],
-        //       desc: bahasa['error'],
-        //       btnOkOnPress: () {},
-        //       btnOkColor: Colors.red,
-        //       buttonsTextStyle: TextStyle(color: Colors.white),
-        //       headerAnimationLoop: false,
-        //       dismissOnTouchOutside: true,
-        //       showCloseIcon: true,
-        //     ).show();
-        //   }
-          
         } else {
           AwesomeDialog(
             context: context,

@@ -594,9 +594,9 @@ class _LoginPageState extends State<LoginPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(PasswordError!, langCode)
-                            : PasswordError ?? '',
+                          langCode == "id"
+                            ? PasswordError ?? ''
+                            : translateError(PasswordError!, langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -610,9 +610,9 @@ class _LoginPageState extends State<LoginPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(PasswordError2!, langCode)
-                            : PasswordError2 ?? '',
+                          langCode == "id"
+                            ? PasswordError2 ?? '' 
+                            : translateError(PasswordError2!, langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -626,9 +626,9 @@ class _LoginPageState extends State<LoginPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(PasswordError3!, langCode)
-                            : PasswordError3 ?? '',
+                          langCode == "id"
+                            ? PasswordError3 ?? '' 
+                            : translateError(PasswordError3!, langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),

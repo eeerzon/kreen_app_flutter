@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
@@ -69,6 +70,8 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   num? harga;
   num? hargaAsli;
   bool isTutup = false;
+  Duration remaining = Duration.zero;
+  DateTime deadlineUtc = DateTime.now();
   bool canDownload = true;
 
   String buttonText = '';
@@ -109,9 +112,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  bool isBeforeOpen = false;
   final GlobalKey _shareKey = GlobalKey();
   bool persen = false;
   String? currencyCode;
+
+  bool isButtonClicked = false;
 
   Future<void> checkPaymentStatus(String tanggal_buka_payment) async {
     if (widget.close_payment != '1') {
@@ -120,7 +126,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     }
 
     try {
-      final reopenTime = DateTime.parse(tanggal_buka_payment);
+      final reopenTime = DateHelper.parseWibToUtc(tanggal_buka_payment);
       final now = DateTime.now().toUtc();
 
       final closed = now.isBefore(reopenTime);
@@ -147,7 +153,55 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   @override
   void initState() {
     super.initState();
-    _initData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _getCurrency();
+      await _loadFinalis();
+      _startCountdown();
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
+      });
+
+      String? videoId;
+      if (detailFinalis['video_profile'] == null || detailFinalis['video_profile'] == '') {
+        videoId = null;
+      } else {
+        final rawUrl = detailFinalis['video_profile'] ?? "";
+        final cleanedUrl = cleanYoutubeUrl(rawUrl);
+
+        videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+      }
+
+      // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
+
+      if (videoId != null && mounted) {
+        setState(() {
+          _ytTopController = YoutubePlayerController(
+            initialVideoId: videoId!,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              forceHD: false,
+            ),
+          );
+
+          _ytBottomController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              forceHD: false,
+            ),
+          );
+        });
+      }
+
+      if (widget.view_api == 3 || widget.view_api == 5) {
+        setState(() {
+          persen = true;
+        });
+      }
+    });
   }
 
   // ignore: unused_field
@@ -160,56 +214,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   // Dipanggil setelah login sukses dari modal
   Future<void> _onAfterLogin() async {
     await _loadToken();
-  }
-
-  Future<void> _initData() async {
-    await _getBahasa();
-    await _getCurrency();
-    await _loadFinalis();
-
-    await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-      await checkPaymentStatus(detailvote['tanggal_buka_payment'] ?? '');
-    });
-
-    String? videoId;
-    if (detailFinalis['video_profile'] == null || detailFinalis['video_profile'] == '') {
-      videoId = null;
-    } else {
-      final rawUrl = detailFinalis['video_profile'] ?? "";
-      final cleanedUrl = cleanYoutubeUrl(rawUrl);
-
-      videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
-    }
-
-    // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
-
-    if (videoId != null && mounted) {
-      setState(() {
-        _ytTopController = YoutubePlayerController(
-          initialVideoId: videoId!,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            forceHD: false,
-          ),
-        );
-
-        _ytBottomController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            forceHD: false,
-          ),
-        );
-      });
-    }
-
-    if (widget.view_api == 3 || widget.view_api == 5) {
-      setState(() {
-        persen = true;
-      });
-    }
   }
 
   Future<void> _getBahasa() async {
@@ -339,49 +343,46 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
               .toList();
         }
 
-        final dateStr = detailvote['tanggal_buka_payment']?.toString() ?? '-';
+        final dateStr = detailvote['real_tanggal_buka_payment']?.toString() ?? '-';
+        
         String formattedDate = '-';
 
         if (dateStr.isNotEmpty) {
           try {
-            final wibDate = parseWib(dateStr);
-            // parsing string ke DateTime
-            var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-            date = wibDate.toLocal();
+            final localDate = DateHelper.parseWibToLocal(dateStr);
             if (langCode == 'id') {
               // Bahasa Indonesia
               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
-              formattedDate = formatter.format(date);
+              formattedDate = formatter.format(localDate);
             } else {
               // Bahasa Inggris
               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
-              formattedDate = formatter.format(date);
+              formattedDate = formatter.format(localDate);
 
               // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-              final day = date.day;
+              final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
               else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
               else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-              formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+              formattedDate = formatter.format(localDate).replaceFirst('$day', '$day$suffix');
             }
           } catch (e) {
             formattedDate = '-';
           }
         }
         
-        DateTime deadlineUtc = parseWib(detailvote['real_tanggal_tutup_vote']);
-        deadlineUtc = deadlineUtc.toLocal();
-        Duration remaining = Duration.zero;
+        deadlineUtc = DateHelper.parseWibToUtc(detailvote['real_tanggal_tutup_vote']);
         final nowUtc = DateTime.now().toUtc();
         final difference = deadlineUtc.difference(nowUtc);
 
         remaining = difference.isNegative ? Duration.zero : difference;
         
-        final bukaVoteUtc = DateTime.parse(detailvote['real_tanggal_buka_vote']);
+        final bukaVoteUtc = DateHelper.parseWibToUtc(detailvote['real_tanggal_buka_vote']);
+        final bukaVote = DateHelper.parseWibToLocal(detailvote['real_tanggal_buka_vote']);
         bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
-        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
 
         if (isBeforeOpen) {
           buttonText = '$voteOpen $formattedBukaVote';
@@ -440,6 +441,64 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     final hargaItem = harga_akhir;
     if (hargaItem == null) return 0;
     return hargaItem;
+  }
+
+  void _startCountdown() {
+    _updateRemaining();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateRemaining();
+    });
+  }
+
+  void _updateRemaining() {
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
+
+    final bukaVoteUtc = DateHelper.parseWibToUtc(detailvote['real_tanggal_buka_vote']);
+    final newIsBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+
+    String newButtonText = buttonText;
+    if (difference.isNegative || difference.inSeconds == 0) {
+      newButtonText = endVote ?? '';
+    } else if (newIsBeforeOpen) {
+      final bukaVote = DateHelper.parseWibToLocal(detailvote['real_tanggal_buka_vote']);
+      final formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
+      newButtonText = '$voteOpen $formattedBukaVote';
+    } else if (detailvote['close_payment'] == '1') {
+      newButtonText = '$voteOpenAgain ${_getFormattedPaymentDate()}';
+    } else {
+      newButtonText = buttonPilihPaketText ?? '';
+    }
+
+    setState(() {
+      remaining = difference.isNegative ? Duration.zero : difference;
+      isBeforeOpen = newIsBeforeOpen;
+
+      isTutup = remaining.inSeconds == 0 || isBeforeOpen;
+
+      buttonText = newButtonText;
+    });
+  }
+
+  String _getFormattedPaymentDate() {
+    final dateStr = detailvote['real_tanggal_buka_payment']?.toString() ?? '-';
+    if (dateStr.isEmpty) return '-';
+    try {
+      final localDate = DateHelper.parseWibToLocal(dateStr);
+      if (langCode == 'id') {
+        return DateFormat("$formatDateId HH:mm", "id_ID").format(localDate);
+      } else {
+        final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+        final day = localDate.day;
+        String suffix = 'th';
+        if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+        else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+        else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+        return formatter.format(localDate).replaceFirst('$day', '$day$suffix');
+      }
+    } catch (e) {
+      return '-';
+    }
   }
 
   @override
@@ -576,18 +635,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     } else if (detailvote['leaderboard_tipe'] == 'bar-number') {
       view_api = 6;
     }
-
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
 
     String themeName = 'default';
     if (detailvote['theme_name'] != null) {
@@ -890,7 +937,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                   
                                         SizedBox(width: 4),
                                         //text
-                                        Text("Vote"),
+                                        Text(
+                                          (persen
+                                            ? detailFinalis['percent'] > 1
+                                            : detailFinalis['total_voters'] > 1)
+                                              ? bahasa!['text_votes']
+                                              : bahasa!['text_vote'],
+                                        ),
                                       ],
                                     ),
                   
@@ -910,9 +963,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: isTutup || isPaymentClosed
+                                onTap: (isPaymentClosed || isBeforeOpen)
                                   ? null
                                   : () async {
+                                    if (remaining.inSeconds == 0) {
+                                        return;
+                                      }
                     
                                     final selectedQty = await PaketVoteModal.show(
                                       context,
@@ -941,7 +997,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                 child: Container(
                                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
                                   decoration: BoxDecoration(
-                                    color: (isTutup || isPaymentClosed)
+                                    color: (remaining.inSeconds == 0 || isPaymentClosed || isBeforeOpen) 
                                       ? Colors.grey
                                       : color,
                                     borderRadius: BorderRadius.circular(8),
@@ -956,7 +1012,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                           style: const TextStyle(color: Colors.white),
                                         ),
                                       ),
-                                      if (!isPaymentClosed) ...[
+                                      if (!isPaymentClosed && !isBeforeOpen && remaining.inSeconds != 0) ...[
                                         // SizedBox(width: 10),
                                         Icon(
                                           Icons.keyboard_arrow_down_rounded,
@@ -1616,7 +1672,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // kiri
-              isTutup || widget.close_payment == '1'
+              isTutup || isBeforeOpen || widget.close_payment == '1' || remaining.inSeconds == 0
               ? SizedBox.shrink()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1635,7 +1691,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                       ),
                     ),
                     Text(
-                      "${bahasa!['paket']} $counts ${bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}(s)",
+                      "${bahasa!['paket']} $counts ${counts > 1 ? bahasa!['text_votes'] : bahasa!['text_vote']}\n$countData ${bahasa!['finalis']}${countData > 1 ? 's' : ''}",
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -1658,61 +1714,73 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                     RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-                onPressed: (harga != 0 && totalHarga == 0) || counts == 0 
+                onPressed: (harga != 0 && totalHarga == 0) || counts == 0 || widget.close_payment == '1' || remaining.inSeconds == 0
                 ? null 
                 : () async {
-                  final storedToken = await StorageService.getToken() ?? '';
-                  var getUser = await StorageService.getUser();
+                  if (isButtonClicked) return;
 
-                  String? idUser = getUser['id'];
+                  isButtonClicked = true;
 
-                  await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+                  try {
+                    final storedToken = await StorageService.getToken() ?? '';
+                    var getUser = await StorageService.getUser();
 
-                  getUser = await StorageService.getUser();
+                    String? idUser = getUser['id'];
 
-                  if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
-                    await EmailVerifModal.showLogin(context, bahasa!, color, onLoginSuccess: _onAfterLogin);
-                    return;
-                  }
+                    await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
-                  if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
-                    await EmailVerifModal.showLogin(context, bahasa!, color, onLoginSuccess: _onAfterLogin);
-                    return;
-                  }
+                    getUser = await StorageService.getUser();
 
-                  if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
-                    await EmailVerifModal.show(context, storedToken, langCode!, bahasa!, getUser['email'] ?? '', color);
-                    return;
-                  }
+                    if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
+                      await EmailVerifModal.showLogin(context, bahasa!, color, onLoginSuccess: _onAfterLogin);
+                      return;
+                    }
 
-                  if (mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StatePaymentPaket(
-                          id_vote: detailFinalis['id_vote'],
-                          id_finalis: detailFinalis['id_finalis'],
-                          nama_finalis: detailFinalis['nama_finalis'],
-                          counts: counts,
-                          totalHarga: totalHarga,
-                          totalHargaAsli: harga_akhir_asli,
-                          id_paket: id_paket!,
-                          fromDetail: true,
-                          idUser: idUser,
-                          flag_login: detailvote['flag_login'],
-                          rateCurrency: detailvote['rate_currency_vote'],
-                          rateCurrencyUser: detailvote['rate_currency_user'],
+                    if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                      await EmailVerifModal.showLogin(context, bahasa!, color, onLoginSuccess: _onAfterLogin);
+                      return;
+                    }
+
+                    if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                      await EmailVerifModal.show(context, storedToken, langCode!, bahasa!, getUser['email'] ?? '', color);
+                      return;
+                    }
+
+                    if (mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatePaymentPaket(
+                            id_vote: detailFinalis['id_vote'],
+                            id_finalis: detailFinalis['id_finalis'],
+                            nama_finalis: detailFinalis['nama_finalis'],
+                            counts: counts,
+                            totalHarga: totalHarga,
+                            totalHargaAsli: harga_akhir_asli,
+                            id_paket: id_paket!,
+                            fromDetail: true,
+                            idUser: idUser,
+                            flag_login: detailvote['flag_login'],
+                            rateCurrency: detailvote['rate_currency_vote'],
+                            rateCurrencyUser: detailvote['rate_currency_user'],
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => isButtonClicked = false);
                   }
                 },
                 child: Text(
-                  isTutup
-                  ? endVote!
-                  : harga != 0 
-                    ? bayarText!
-                    : bahasa!['lanjutkan'],
+                  remaining.inSeconds == 0
+                    ? endVote!
+                    : isBeforeOpen
+                        ? bahasa!['segera']
+                        : detailvote['close_payment'] == '1'
+                            ? bahasa!['tutup_sementara']
+                            : detailvote['harga'] != 0
+                                ? bayarText!
+                                : bahasa!['lanjutkan'],
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),

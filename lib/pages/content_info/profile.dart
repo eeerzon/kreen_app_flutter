@@ -446,6 +446,7 @@ class _ProfileState extends State<Profile> {
                     // "$first_name $last_name",
                     fullName ?? '-',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      textAlign: TextAlign.justify,
                   ),
 
                   SizedBox(height: 20,),
@@ -514,9 +515,13 @@ class _ProfileState extends State<Profile> {
                                   Icon(FontAwesomeIcons.building, color: Colors.red,),
 
                                   SizedBox(width: 12,),
-                                  Text(
-                                    company ?? '-'
-                                  )
+                                  Expanded(
+                                    child: Text(
+                                      company ?? '-',
+                                      softWrap: true,
+                                      textAlign: TextAlign.justify,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -533,9 +538,13 @@ class _ProfileState extends State<Profile> {
                                   Icon(FontAwesomeIcons.briefcase, color: Colors.red,),
 
                                   SizedBox(width: 12,),
-                                  Text(
-                                    jobTitle ?? '-'
-                                  )
+                                  Expanded(
+                                    child: Text(
+                                      jobTitle ?? '-',
+                                      softWrap: true,
+                                      textAlign: TextAlign.justify,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -651,10 +660,13 @@ class _ProfileState extends State<Profile> {
                                 Icon(FontAwesomeIcons.linkedinIn, color: Colors.red,),
 
                                 SizedBox(width: 12,),
-                                Text(
-                                  link_linkedin != null && link_linkedin!.isNotEmpty
+                                Expanded(
+                                  child: Text(
+                                    link_linkedin != null && link_linkedin!.isNotEmpty
                                       ? extractUsername(link_linkedin)
                                       : '-',
+                                    textAlign: TextAlign.justify,
+                                  )
                                 )
                               ],
                             ),
@@ -669,10 +681,13 @@ class _ProfileState extends State<Profile> {
                                 Icon(FontAwesomeIcons.instagram, color: Colors.red,),
 
                                 SizedBox(width: 12,),  
-                                Text(
-                                  link_ig != null && link_ig!.isNotEmpty
+                                Expanded(
+                                  child: Text(
+                                    link_ig != null && link_ig!.isNotEmpty
                                       ? extractUsername(link_ig)
                                       : '-',
+                                    textAlign: TextAlign.justify,
+                                  )
                                 )
                               ],
                             ),
@@ -687,10 +702,13 @@ class _ProfileState extends State<Profile> {
                                 Icon(FontAwesomeIcons.xTwitter, color: Colors.red,),
 
                                 SizedBox(width: 12,),
-                                Text(
-                                  link_twitter != null && link_twitter!.isNotEmpty
+                                Expanded(
+                                  child: Text(
+                                    link_twitter != null && link_twitter!.isNotEmpty
                                       ? extractUsername(link_twitter)
                                       : '-',
+                                    textAlign: TextAlign.justify,
+                                  )
                                 )
                               ],
                             ),
@@ -765,16 +783,14 @@ class _ProfileState extends State<Profile> {
                                         barrierDismissible: false,
                                         builder: (context) {
                                           return AlertDialog(
-                                            title: Text(langCode == 'id' ? "Konfirmasi" : "Confirmation"),
+                                            title: Text(bahasa['konfirmasi'] ?? ""), //'Konfirmasi',
                                             content: Text(
-                                              langCode == 'id'
-                                                ? "Kirim email verifikasi ke $email ?"
-                                                : "Send verification email to $email ?"
+                                              "${bahasa['kirim_email_verif']} $email ?",
                                             ),
                                             actions: [
                                               TextButton(
                                                 onPressed: () => Navigator.pop(context, false),
-                                                child: Text(langCode == 'id' ? "Batal" : "Cancel"),
+                                                child: Text(bahasa['batal'] ?? ""), //'Batal',
                                               ),
                                               ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
@@ -785,7 +801,7 @@ class _ProfileState extends State<Profile> {
                                                 ),
                                                 onPressed: () => Navigator.pop(context, true),
                                                 child: Text(
-                                                  langCode == 'id' ? "Kirim" : "Send",
+                                                  bahasa['kirim'] ?? "", //'Kirim',
                                                   style: const TextStyle(color: Colors.white),
                                                 ),
                                               ),
@@ -802,7 +818,7 @@ class _ProfileState extends State<Profile> {
                                         AwesomeDialog(
                                           context: context,
                                           dialogType: DialogType.noHeader,
-                                          title: langCode == 'id' ? 'Berhasil' : 'Success',
+                                          title: bahasa['sukses'] ?? "", //'Sukses',
                                           desc:
                                             "${bahasa['desc_email_1']}\n"
                                             "${bahasa['desc_email_2']} $email\n"

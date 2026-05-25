@@ -30,6 +30,7 @@
 
     "input_email": "Masukkan email",
     "kirim_email": "Kirim email",
+    "kirim_email_verif": "Kirim email verifikasi ke",
     "request_kirim" : "Permintaan terkirim",
     "input_password": "Masukkan kata sandi",
     "password_min": "Gunakan setidaknya 8 karakter dengan campuran huruf & angka",
@@ -421,6 +422,15 @@
     "selesaikan_vote_kamu" : "Selesaikan Vote Kamu",
     "support_answer_error": "Dukungan wajib diisi",
     "anonim" : "Anonim",
-    "tutup_sementara" : "Tutup Sementara"
+    "tutup_sementara" : "Tutup Sementara",
+    "id_order" : "ID Pesanan",
+    "tgl_order" : "Tanggal Pesanan",
+    "sukses" : "Berhasil",
+    "sukses_regis" : "Pendaftaran Berhasil",
+    "vote_order_limit" : "Vote kamu telah mencapai batas maksimum",
+    "aktif" : "Actif",
+    "non_aktif" : "Tidak Aktif",
+    "running_text_def" : "Dukung finalis pilihan kamu pada",
+    "kirim" : "Kirim"
   }
 }

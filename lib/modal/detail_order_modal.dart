@@ -710,9 +710,7 @@ class DetailOrderModal {
                           children: [
                             TableRow(children: [
                               Text(
-                                langCode == 'id'
-                                  ? 'ID Pesanan'
-                                  : 'Order ID',
+                                bahasa['id_order'] ?? "Order ID",
                                 style: TextStyle(color: Colors.grey),
                               ),
                               const Text(' :  '),
@@ -1581,9 +1579,7 @@ class DetailOrderModal {
                           children: [
                             TableRow(children: [
                               Text(
-                                langCode == 'id'
-                                  ? 'ID Pesanan'
-                                  : 'Order ID',
+                                bahasa['id_order'] ?? "Order ID",
                                 style: TextStyle(color: Colors.grey),
                               ),
                               const Text(' :  '),

@@ -345,18 +345,6 @@ class _DetailVotePageState extends State<DetailVotePage> {
           // Sticky running text di level root — hanya muncul saat loaded
           if (!_isLoading && _isStickyRunningText) ...[
             Builder(builder: (context) {
-              // hitung color di sini
-              Map<String, Color> colorMap = {
-                'Blue': Colors.blue, 
-                'Red': Colors.red, 
-                'Green': Colors.green,
-                'Yellow': Colors.yellow, 
-                'Purple': Colors.purple, 
-                'Orange': Colors.orange,
-                'Pink': Colors.pink, 
-                'Grey': Colors.grey, 
-                'Turqoise': Colors.teal,
-              };
 
               String themeName = vote['theme_name'] ?? 'Red';
               if (themeName == "Default Kreen") themeName = "Red";
@@ -366,7 +354,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                 top: kToolbarHeight + MediaQuery.of(context).padding.top,
                 left: 0,
                 right: 0,
-                child: _buildStickyRunningText(color, vote, langCode!),
+                child: _buildStickyRunningText(color, vote, langCode!, bahasa!),
               );
             }),
           ],
@@ -535,18 +523,6 @@ class _DetailVotePageState extends State<DetailVotePage> {
     } else if (vote['leaderboard_tipe'] == 'bar-number') {
       view_api = 6;
     }
-
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
 
     String themeName = 'Red';
     if (vote['theme_name'] != null) {
@@ -944,7 +920,7 @@ Widget _buildDukunganSection(int api, Map<String, dynamic> vote, List<dynamic> r
   }
 }
 
-Widget _buildStickyRunningText(Color color, Map<String, dynamic> vote, String langCode) {
+Widget _buildStickyRunningText(Color color, Map<String, dynamic> vote, String langCode, Map<String, dynamic> bahasa) {
   Color textColor = color;
   final rawColor = (vote['running_text_color'] ?? '').toString().trim();
   if (rawColor.isNotEmpty) {
@@ -957,9 +933,7 @@ Widget _buildStickyRunningText(Color color, Map<String, dynamic> vote, String la
   final rawText = (vote['running_text'] ?? '').toString().trim();
   final displayText = rawText.isNotEmpty
       ? rawText
-      : langCode == 'id'
-        ? 'Kreen Vote - Your Trusted Voting Partner - Dukung finalis pilihan kamu pada ${vote['judul_vote'] ?? ''}'
-        : 'Kreen Vote - Your Trusted Voting Partner - Support your favorite finalist on ${vote['judul_vote'] ?? ''}';
+      : 'Kreen Vote - Your Trusted Voting Partner - ${bahasa['running_text_def']} ${vote['judul_vote'] ?? ''}';
 
   return Container(
     padding: const EdgeInsets.all(8),

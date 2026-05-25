@@ -12,8 +12,8 @@ const String baseUrl = "https://dev.kreenconnect.com"; //dev
 
 const String baseapiUrl = "$baseUrl/kreenapi";
 
-const String STRIPE_PUBLIC_KEY_PRODUCTION = "pk_live_51PqeNlL6LohooVUu0QrXYjrfhmEDj7WZuzm4EF6FeTGUmErLKRXoGU2UUr0GvrYUFONNGm6jtRr0e0adYXL4guXX00A4ft7WN1";
-const String STRIPE_PUBLIC_KEY_SANDBOX = "pk_test_51PqeNlL6LohooVUuQ3XETGCDPNsYsMG7CEt1wBLeUSslqxjKyTcTFxQ3Ue5ysqCfZLsiGnP2e6Q9Y8hsydwAoixS00m5Q7OvmP";
+const String STRIPE_PUBLIC_KEY = "pk_test_51PqeNlL6LohooVUuQ3XETGCDPNsYsMG7CEt1wBLeUSslqxjKyTcTFxQ3Ue5ysqCfZLsiGnP2e6Q9Y8hsydwAoixS00m5Q7OvmP"; //dev
+// const String STRIPE_PUBLIC_KEY = "pk_live_51PqeNlL6LohooVUu0QrXYjrfhmEDj7WZuzm4EF6FeTGUmErLKRXoGU2UUr0GvrYUFONNGm6jtRr0e0adYXL4guXX00A4ft7WN1"; //prod
 
 const String formatDateEn = "MMM d, yyyy";
 const String formatDateId = "dd MMM yyyy";
@@ -249,3 +249,17 @@ class EmailInputFormatter extends TextInputFormatter {
     );
   }
 }
+
+
+Map<String, Color> colorMap = {
+  'Blue': Colors.blue,
+  'Red': Colors.red,
+  'Green': Colors.green,
+  'Yellow': Colors.yellow,
+  'Purple': Colors.purple,
+  'Orange': Colors.orange,
+  'Pink': Colors.pink,
+  'Grey': Colors.grey,
+  'Turqoise': Colors.teal,
+  'Gold': Color.fromRGBO(206, 138, 11, 1),
+};

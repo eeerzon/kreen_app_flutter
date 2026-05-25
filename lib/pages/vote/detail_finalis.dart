@@ -8,6 +8,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
@@ -43,6 +44,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   num harga = 0;
   num hargaAsli = 0;
   bool isTutup = false;
+  Duration remaining = Duration.zero;
+  DateTime deadlineUtc = DateTime.now();
   bool canDownload = true;
 
   String buttonText = '';
@@ -81,8 +84,11 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
   Timer? _timer;
   bool isPaymentClosed = false;
+  bool isBeforeOpen = false;
   final GlobalKey _shareKey = GlobalKey();
   String? currencyCode;
+
+  bool isButtonClicked = false;
 
   Future<void> checkPaymentStatus() async {
     if (widget.close_payment != '1') {
@@ -118,7 +124,46 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   @override
   void initState() {
     super.initState();
-    _initData();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+      await _getCurrency();
+      await _loadFinalis();
+      _startCountdown();
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+        await checkPaymentStatus();
+      });
+
+      final rawUrl = detailFinalis['video_profile'] ?? "";
+      final cleanedUrl = cleanYoutubeUrl(rawUrl);
+
+      final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
+
+      // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
+
+      if (videoId != null && mounted) {
+        setState(() {
+          if (videoId != "" && videoId.isNotEmpty) {
+            _ytTopController = YoutubePlayerController(
+              initialVideoId: videoId,
+              flags: const YoutubePlayerFlags(
+                autoPlay: false,
+                forceHD: false,
+              ),
+            );
+
+            _ytBottomController = YoutubePlayerController(
+              initialVideoId: videoId,
+              flags: const YoutubePlayerFlags(
+                autoPlay: false,
+                forceHD: false,
+              ),
+            );
+          }
+        });
+      }
+    });
   }
 
   // ignore: unused_field
@@ -131,47 +176,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   // Dipanggil setelah login sukses dari modal
   Future<void> _onAfterLogin() async {
     await _loadToken();
-  }
-
-  Future<void> _initData() async {
-    await _getBahasa();
-    await _getCurrency();
-    await _loadFinalis();
-    await checkPaymentStatus();
-
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => checkPaymentStatus(),
-    );
-
-    final rawUrl = detailFinalis['video_profile'] ?? "";
-    final cleanedUrl = cleanYoutubeUrl(rawUrl);
-
-    final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
-
-    // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
-
-    if (videoId != null && mounted) {
-      setState(() {
-        if (videoId != "" && videoId.isNotEmpty) {
-          _ytTopController = YoutubePlayerController(
-            initialVideoId: videoId,
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              forceHD: false,
-            ),
-          );
-
-          _ytBottomController = YoutubePlayerController(
-            initialVideoId: videoId,
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              forceHD: false,
-            ),
-          );
-        }
-      });
-    }
   }
 
   Future<void> _loadFinalis() async {
@@ -229,22 +233,51 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         names_finalis.add(detailFinalis['nama_finalis']);
         counts_finalis.add(counts);
         
-        DateTime deadlineUtc = DateTime.parse(detailvote['real_tanggal_tutup_vote']);
-        Duration remaining = Duration.zero;
+        final dateStr = detailvote['real_tanggal_buka_payment']?.toString() ?? '-';
+        
+        String formattedDate = '-';
+
+        if (dateStr.isNotEmpty) {
+          try {
+            final localDate = DateHelper.parseWibToLocal(dateStr);
+            if (langCode == 'id') {
+              // Bahasa Indonesia
+              final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+              formattedDate = formatter.format(localDate);
+            } else {
+              // Bahasa Inggris
+              final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+              formattedDate = formatter.format(localDate);
+
+              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              final day = localDate.day;
+              String suffix = 'th';
+              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+              formattedDate = formatter.format(localDate).replaceFirst('$day', '$day$suffix');
+            }
+          } catch (e) {
+            formattedDate = '-';
+          }
+        }
+        
+        deadlineUtc = DateHelper.parseWibToUtc(detailvote['real_tanggal_tutup_vote']);
         final nowUtc = DateTime.now().toUtc();
         final difference = deadlineUtc.difference(nowUtc);
 
         remaining = difference.isNegative ? Duration.zero : difference;
         
-        final bukaVoteUtc = DateTime.parse(detailvote['real_tanggal_buka_vote']);
-        bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+        final bukaVoteUtc = DateHelper.parseWibToUtc(detailvote['real_tanggal_buka_vote']);
+        final bukaVote = DateHelper.parseWibToLocal(detailvote['real_tanggal_buka_vote']);
+        isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
-        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
         
         if (isBeforeOpen) {
           buttonText = '$voteOpen $formattedBukaVote';
         } else if (detailvote['close_payment'] == '1') {
-          buttonText = '$voteOpenAgain ${widget.tanggal_buka_payment}';
+          buttonText = '$voteOpenAgain $formattedDate';
         }
 
         if (remaining.inSeconds == 0 || isBeforeOpen) {
@@ -399,6 +432,22 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     });
   }
 
+  void _startCountdown() {
+    _updateRemaining();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateRemaining();
+    });
+  }
+
+  void _updateRemaining() {
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
+
+    setState(() {
+      remaining = difference.isNegative ? Duration.zero : difference;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -521,18 +570,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   }
 
   Widget buildKontenDetail() {
-
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
 
     String themeName = 'default';
     if (detailvote.containsKey('theme_name') && detailvote['theme_name'] != null) {
@@ -818,19 +855,20 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 ],
                               ),
                     
-                              if (isPaymentClosed) ... [
+                              if (isPaymentClosed || isBeforeOpen) ... [
                                 SizedBox(height: 30),
                                 Container(
                                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
                                   decoration: BoxDecoration(
-                                    color: isPaymentClosed ? Colors.grey : color,
+                                    color: isPaymentClosed || isBeforeOpen ? Colors.grey : color,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        '$voteOpenAgain ${widget.tanggal_buka_payment}',
+                                        // '$voteOpenAgain ${widget.tanggal_buka_payment}',
+                                        buttonText,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(color: Colors.white),
                                         softWrap: true,
@@ -847,7 +885,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   children: [
                                     //button minus
                                     InkWell(
-                                      onTap: (isTutup || isPaymentClosed)
+                                      onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                                         ? null
                                         : () {
                                           if (counts > 0) {
@@ -879,7 +917,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isTutup || isPaymentClosed ? Colors.grey : color,
+                                          color: remaining.inSeconds == 0 || isPaymentClosed ? Colors.grey : color,
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
@@ -900,7 +938,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         controller: controllers,
                                         textAlign: TextAlign.center,
                                         keyboardType: TextInputType.number,
-                                        enabled: !isTutup && !isPaymentClosed,
+                                        enabled: !(remaining.inSeconds == 0 || isPaymentClosed),
                                         // readOnly: isTutup || isPaymentClosed,
                                         decoration: const InputDecoration(
                                           border: InputBorder.none,
@@ -921,7 +959,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     //button plus
                                     const SizedBox(width: 15),
                                     InkWell(
-                                      onTap: (isTutup || isPaymentClosed)
+                                      onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                                         ? null
                                         : () {
                                             setState(() {
@@ -959,7 +997,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isTutup || isPaymentClosed ? Colors.grey : color,
+                                          color: remaining.inSeconds == 0 || isPaymentClosed ? Colors.grey : color,
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Icon(FontAwesomeIcons.plus, size: 15, color: Colors.white),
@@ -1049,10 +1087,11 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                           ),
                         ),
 
-                        if (detailFinalis['usia'] != 0 ||
+                        if ((detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ||
                             (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                            (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
-                          const SizedBox(height: 12,),
+                            (!isHtmlEmpty(detailFinalis['deskripsi']))) ...[
+
+                          SizedBox(height: 12),
                           Container(
                             width: double.infinity,
                             color: Colors.white,
@@ -1061,171 +1100,146 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                      
+
                                   if (detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ...[
-                                    SizedBox(height: 12,),
+                                    SizedBox(height: 12),
+                                    Text(ageText!, style: TextStyle(fontWeight: FontWeight.bold)),
                                     Text(
-                                      ageText!,
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                      
-                                    (detailFinalis['usia'] == 0)
-                                      ? Text(
-                                          noDataText!,
-                                          style: TextStyle(
-                                            color: Colors.grey,
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                        )
-                                      : Text(detailFinalis['usia'].toString(),
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                  ],
-                      
-                                  if (detailFinalis['profesi'].toString().isNotEmpty) ... [
-                                    SizedBox(height: 12,),
-                                    Text(
-                                      activityText!,
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    Text(
-                                      detailFinalis['profesi']
+                                      detailFinalis['usia'].toString(),
+                                      style: TextStyle(color: Colors.grey),
                                     ),
                                   ],
-                      
-                                  if (!isHtmlEmpty(detailFinalis['deskripsi'])) ... [
-                                    SizedBox(height: 12,),
-                                    Text(
-                                      biographyText!,
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    ),
+
+                                  if (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ...[
+                                    SizedBox(height: 12),
+                                    Text(activityText!, style: TextStyle(fontWeight: FontWeight.bold)),
+                                    Text(detailFinalis['profesi']),
+                                  ],
+
+                                  if (!isHtmlEmpty(detailFinalis['deskripsi'])) ...[
+                                    SizedBox(height: 12),
+                                    Text(biographyText!, style: TextStyle(fontWeight: FontWeight.bold)),
                                     Html(
                                       data: detailFinalis['deskripsi'],
                                       style: {
-                                        '*': Style(
-                                          margin: Margins.zero,
-                                          padding: HtmlPaddings.zero,
-                                        ),
-                                        'p': Style(
-                                          margin: Margins.zero,
-                                          padding: HtmlPaddings.zero,
-                                        )
+                                        '*': Style(margin: Margins.zero, padding: HtmlPaddings.zero),
+                                        'p': Style(margin: Margins.zero, padding: HtmlPaddings.zero),
                                       },
                                     ),
                                   ],
-                      
-                                  const SizedBox(height: 12,),
+
+                                  SizedBox(height: 12),
                                 ],
                               ),
                             ),
                           ),
-                          
-                          if (detailFinalis['id_qrcode'] != null) ... [
-                            const SizedBox(height: 12,),
-                            Container(
-                              width: double.infinity,
-                              color: Colors.white,
-                              child: Padding(
-                                padding: kGlobalPadding,
-                                child: Column(
-                                  children: [
-                      
-                                    const SizedBox(height: 12,),
-                                    Image.network(
-                                      'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${detailFinalis['id_qrcode']}',
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/images/img_broken.jpg',
-                                          height: 100,
-                                          width: 100,
-                                          fit: BoxFit.contain,
-                                        );
-                                      },
-                                    ),
-                      
-                                    const SizedBox(height: 12,),
-                                    Text(
-                                      scanQrText!,
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                      
-                                    const SizedBox(height: 12,),
-                                    Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        onTap: canDownload 
-                                          ? () async {
-                                              await downloadQrImage(
-                                                context, 
-                                                detailFinalis['id_qrcode'],
-                                                bahasa['download_scan_gagal'],
-                                                bahasa['download_scan_berhasil'],
-                                                bahasa['kesalahan_simpan_scan'],
-                                              );
-                                            }
-                                          : null,
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: canDownload ? color : Colors.grey,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                downloadQrText!,
-                                                style: TextStyle(color: Colors.white),
-                                              ),
-                                              SizedBox(width: 10,),
-                                              Icon(
-                                                Icons.download, color: Colors.white, size: 15,
-                                              )
-                                            ],
-                                          ),
+                        ],
+                    
+                        if (detailFinalis['id_qrcode'] != null) ... [
+                          SizedBox(height: 12,),
+                          Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            child: Padding(
+                              padding: kGlobalPadding,
+                              child: Column(
+                                children: [
+                    
+                                  SizedBox(height: 12,),
+                                  Image.network(
+                                    'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${detailFinalis['id_qrcode']}',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.contain,
+                                      );
+                                    },
+                                  ),
+                    
+                                  SizedBox(height: 12,),
+                                  Text(
+                                    scanQrText!,
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                    
+                                  SizedBox(height: 12,),
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: canDownload 
+                                        ? () async {
+                                            await downloadQrImage(
+                                              context, 
+                                              detailFinalis['id_qrcode'],
+                                              bahasa['download_scan_gagal'],
+                                              bahasa['download_scan_berhasil'],
+                                              bahasa['kesalahan_simpan_scan'],
+                                            );
+                                          }
+                                        : null,
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: canDownload ? color : Colors.grey,
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
-                                      ),
-                                    ),
-                      
-                                    const SizedBox(height: 12,),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[50],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: InkWell(
-                                        onTap: () async {
-                                          await TutorModal.show(context, detailvote['tutorial_vote'], bahasa['tutorial_vote_text']);
-                                        },
                                         child: Row(
                                           crossAxisAlignment: CrossAxisAlignment.center,
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              tataCaraText!,
-                                              style: TextStyle(color: Colors.blue),
+                                              downloadQrText!,
+                                              style: TextStyle(color: Colors.white),
                                             ),
-                                            const SizedBox(width: 10,),
+                                            SizedBox(width: 10,),
                                             Icon(
-                                              Icons.info, color: Colors.blue, size: 15,
+                                              Icons.download, color: Colors.white, size: 15,
                                             )
                                           ],
-                                        )
-                                      )
+                                        ),
+                                      ),
                                     ),
-                                    const SizedBox(height: 12,),
-                                  ],
-                                ),
-                              )
-                            ),
-                          ],
+                                  ),
+                    
+                                  SizedBox(height: 12,),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: InkWell(
+                                      onTap: () async {
+                                        await TutorModal.show(context, detailvote['tutorial_vote'], bahasa['tutorial_vote_text']);
+                                      },
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            tataCaraText!,
+                                            style: TextStyle(color: Colors.blue),
+                                          ),
+                                          SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.info, color: Colors.blue, size: 15,
+                                          )
+                                        ],
+                                      )
+                                    )
+                                  ),
+                                  SizedBox(height: 12,),
+                                ],
+                              ),
+                            )
+                          ),
                         ],
 
                         if (detailFinalis['video_profile'] != null && detailFinalis['video_profile'].toString().isNotEmpty) ...[
@@ -1352,7 +1366,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
             children: [
               // KIRI (fleksibel)
               Expanded(
-                child: isTutup || widget.close_payment == '1'
+                child: isTutup || isBeforeOpen || widget.close_payment == '1' || remaining.inSeconds == 0
                   ? const SizedBox.shrink()
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1419,62 +1433,74 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
-                  onPressed: (harga != 0 && totalHarga == 0) || counts == 0
-                      ? null
-                      : () async {
-                          final storedToken = await StorageService.getToken() ?? '';
-                          var getUser = await StorageService.getUser();
+                  onPressed: (harga != 0 && totalHarga == 0) || counts == 0 || widget.close_payment == '1' || remaining.inSeconds == 0
+                    ? null
+                    : () async {
+                      if (isButtonClicked) return;
 
-                          String? idUser = getUser['id'];
+                      isButtonClicked = true;
 
-                          await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+                      try{
+                        final storedToken = await StorageService.getToken() ?? '';
+                        var getUser = await StorageService.getUser();
 
-                          getUser = await StorageService.getUser();
+                        String? idUser = getUser['id'];
 
-                          if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
-                            await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
-                            return;
-                          }
+                        await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
-                          if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
-                            await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
-                            return;
-                          }
+                        getUser = await StorageService.getUser();
 
-                          if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
-                            await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
-                            return;
-                          }
+                        if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
+                          await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                          return;
+                        }
 
-                          if (mounted) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => StatePaymentManual(
-                                  id_vote: idVote!,
-                                  ids_finalis: ids_finalis,
-                                  names_finalis: names_finalis,
-                                  counts_finalis: counts_finalis,
-                                  totalHarga: totalHarga,
-                                  totalHargaAsli: totalHargaAsli,
-                                  price: detailvote['harga_asli'],
-                                  fromDetail: false,
-                                  idUser: idUser,
-                                  flag_login: detailvote['flag_login'],
-                                  flag_verify_email: detailvote['flag_verify_email'],
-                                  rateCurrency: detailvote['rate_currency_vote'],
-                                  rateCurrencyUser: detailvote['rate_currency_user'],
-                                ),
+                        if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                          await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                          return;
+                        }
+
+                        if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                          await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                          return;
+                        }
+
+                        if (mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StatePaymentManual(
+                                id_vote: idVote!,
+                                ids_finalis: ids_finalis,
+                                names_finalis: names_finalis,
+                                counts_finalis: counts_finalis,
+                                totalHarga: totalHarga,
+                                totalHargaAsli: totalHargaAsli,
+                                price: detailvote['harga_asli'],
+                                fromDetail: false,
+                                idUser: idUser,
+                                flag_login: detailvote['flag_login'],
+                                flag_verify_email: detailvote['flag_verify_email'],
+                                rateCurrency: detailvote['rate_currency_vote'],
+                                rateCurrencyUser: detailvote['rate_currency_user'],
                               ),
-                            );
-                          }
-                        },
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => isButtonClicked = false);
+                      }
+                  },
                   child: Text(
-                    isTutup 
-                      ? endVote! 
-                      : harga != 0 
-                        ? bayarText!
-                        : bahasa['lanjutkan'],
+                    remaining.inSeconds == 0
+                      ? endVote!
+                      : isBeforeOpen
+                          ? bahasa['segera']
+                          : detailvote['close_payment'] == '1'
+                              ? bahasa['tutup_sementara']
+                              : detailvote['harga'] != 0
+                                  ? bayarText!
+                                  : bahasa['lanjutkan'],
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

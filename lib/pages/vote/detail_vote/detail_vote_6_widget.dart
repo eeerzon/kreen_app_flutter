@@ -8,6 +8,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/checking_html.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
@@ -86,18 +87,6 @@ class DeskripsiSection_6 extends StatefulWidget {
   @override
   Widget build(BuildContext context) {
     final lang = DetailVoteLang.of(context).values;
-    
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
 
     String themeName = 'default';
     if (widget.data['theme_name'] != null) {
@@ -106,6 +95,7 @@ class DeskripsiSection_6 extends StatefulWidget {
     if (themeName == "Default Kreen") {
       themeName = "default";
     }
+
     Color color = colorMap[themeName] ?? Colors.red;
 
     Color bgColor;
@@ -148,11 +138,11 @@ class DeskripsiSection_6 extends StatefulWidget {
     final formatter = NumberFormat.decimalPattern("en_US");
     final hargaFormatted = formatter.format(widget.data['harga'] ?? 0);
 
-    DateTime mulai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai']} ${widget.data['waktu_mulai']}");
-    DateTime selesai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai']} ${widget.data['waktu_selesai']}");
+    DateTime mulai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai'] ?? DateTime.now().toIso8601String().substring(0, 10)} ${widget.data['waktu_mulai'] ?? DateTime.now().toIso8601String().substring(11, 19)}");
+    DateTime selesai = DateTime.parse("${widget.data['tanggal_grandfinal_mulai'] ?? DateTime.now().toIso8601String().substring(0, 10)} ${widget.data['waktu_selesai'] ?? DateTime.now().toIso8601String().substring(11, 19)}");
 
-    String jamMulai = "${mulai.hour.toString().padLeft(2, '0')}:${mulai.minute.toString().padLeft(2, '0')}";
-    String jamSelesai = "${selesai.hour.toString().padLeft(2, '0')}:${selesai.minute.toString().padLeft(2, '0')}";
+    String jamMulai = widget.data['waktu_mulai'] != null ? "${mulai.hour.toString().padLeft(2, '0')}:${mulai.minute.toString().padLeft(2, '0')}" : '-';
+    String jamSelesai = widget.data['waktu_selesai'] != null ? "${selesai.hour.toString().padLeft(2, '0')}:${selesai.minute.toString().padLeft(2, '0')}" : '-';
 
     String strSponsor = widget.data['logo'] ?? '';
     List<dynamic> sponsors = [];
@@ -419,9 +409,7 @@ class DeskripsiSection_6 extends StatefulWidget {
               final rawText = (widget.data['running_text'] ?? '').toString().trim();
               final displayText = rawText.isNotEmpty
                   ? rawText
-                  : widget.langCode == 'id'
-                    ? 'Kreen Vote - Your Trusted Voting Partner - Dukung finalis pilihan kamu pada ${widget.data['judul_vote'] ?? ''}' 
-                    : 'Kreen Vote - Your Trusted Voting Partner - Support your favorite finalist on ${widget.data['judul_vote'] ?? ''}';
+                  : 'Kreen Vote - Your Trusted Voting Partner - ${lang['running_text_def']} ${widget.data['judul_vote'] ?? ''}';
 
               return RunningText(text: displayText, textColor: Colors.white);
             },
@@ -572,12 +560,19 @@ class DeskripsiSection_6 extends StatefulWidget {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: <Widget>[
-                                  SvgPicture.network(
-                                    "$baseUrl/image/icon-vote/$themeName/Calendar.svg",
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
+                                  themeName == "Gold"
+                                    ? SvgPicture.asset(
+                                        'assets/images/Calendar.svg',
+                                        width: 30,
+                                        height: 30,
+                                        fit: BoxFit.contain,
+                                      )
+                                    : SvgPicture.network(
+                                        "$baseUrl/image/icon-vote/$themeName/Calendar.svg",
+                                        width: 30,
+                                        height: 30,
+                                        fit: BoxFit.contain,
+                                      ),
 
                                   const SizedBox(width: 12),
                                   //text
@@ -602,12 +597,19 @@ class DeskripsiSection_6 extends StatefulWidget {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: <Widget>[
-                                  SvgPicture.network(
-                                    "$baseUrl/image/icon-vote/$themeName/Time.svg",
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.contain,
-                                  ),
+                                  themeName == "Gold"
+                                    ? SvgPicture.asset(
+                                        'assets/images/Time.svg',
+                                        width: 30,
+                                        height: 30,
+                                        fit: BoxFit.contain,
+                                      )
+                                    : SvgPicture.network(
+                                        "$baseUrl/image/icon-vote/$themeName/Time.svg",
+                                        width: 30,
+                                        height: 30,
+                                        fit: BoxFit.contain,
+                                      ),
 
                                   const SizedBox(width: 12),
                                   //text
@@ -616,20 +618,24 @@ class DeskripsiSection_6 extends StatefulWidget {
                                       text: TextSpan(
                                         children: [
                                           TextSpan(
-                                            text: "$jamMulai - $jamSelesai",
+                                            text: jamMulai != '-' && jamSelesai != '-' ? "$jamMulai - $jamSelesai" : '-',
                                             style: const TextStyle(
                                               color: Colors.black,
                                               fontSize: 14,
                                             ),
                                           ),
                                           TextSpan(
-                                            text: widget.data['code_timezone'] == 'WIB'
-                                              ? " (GMT+7)"
-                                              : widget.data['code_timezone'] == 'WITA'
-                                                ? " (GMT+8)"
-                                                : widget.data['code_timezone'] == 'WIT'
-                                                  ? " (GMT+9)"
-                                                  : "",
+                                            text: jamMulai != '-' && jamSelesai != '-' 
+                                              ? widget.data['code_timezone'] == 'WIB'
+                                                ? " (GMT+7)"
+                                                : widget.data['code_timezone'] == 'WITA'
+                                                  ? " (GMT+8)"
+                                                  : widget.data['code_timezone'] == 'WIT'
+                                                    ? " (GMT+9)"
+                                                    : widget.data['code_timezone'] != null
+                                                      ? " (${widget.data['code_timezone']})"
+                                                      : ''
+                                              : '',
                                             style: TextStyle(
                                               color: color,
                                               fontWeight: FontWeight.bold,
@@ -665,12 +671,19 @@ class DeskripsiSection_6 extends StatefulWidget {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: <Widget>[
-                                    SvgPicture.network(
-                                      "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                      width: 30,
-                                      height: 30,
-                                      fit: BoxFit.contain,
-                                    ),
+                                    themeName == "Gold"
+                                      ? SvgPicture.asset(
+                                          'assets/images/Locations.svg',
+                                          width: 30,
+                                          height: 30,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : SvgPicture.network(
+                                          "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                                          width: 30,
+                                          height: 30,
+                                          fit: BoxFit.contain,
+                                        ),
 
                                     const SizedBox(width: 12),
                                     //text
@@ -714,12 +727,19 @@ class DeskripsiSection_6 extends StatefulWidget {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: <Widget>[
-                                    SvgPicture.network(
-                                      "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                      width: 30,
-                                      height: 30,
-                                      fit: BoxFit.contain,
-                                    ),
+                                    themeName == "Gold"
+                                      ? SvgPicture.asset(
+                                          'assets/images/Locations.svg',
+                                          width: 30,
+                                          height: 30,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : SvgPicture.network(
+                                          "$baseUrl/image/icon-vote/$themeName/Locations.svg",
+                                          width: 30,
+                                          height: 30,
+                                          fit: BoxFit.contain,
+                                        ),
 
                                     const SizedBox(width: 12),
                                     //text
@@ -812,22 +832,14 @@ class _LeaderboardSection_6State extends State<LeaderboardSection_6> {
   Widget build(BuildContext context) {
     final lang = DetailVoteLang.of(context).values;
 
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
-
     String themeName = 'Red';
     if (widget.data['theme_name'] != null) {
       themeName = widget.data['theme_name'];
     }
+    if (themeName == "Default Kreen") {
+      themeName = "Red";
+    }
+
     Color color = colorMap[themeName] ?? Colors.red;
 
     Color bgColor;
@@ -856,14 +868,14 @@ class _LeaderboardSection_6State extends State<LeaderboardSection_6> {
         .toList()
       ..sort((a, b) => (a['rank'] as int).compareTo(b['rank'] as int));
         
-    DateTime deadlineUtc = DateTime.parse(widget.data['real_tanggal_tutup_vote']);
+    DateTime deadlineUtc = DateHelper.parseWibToUtc(widget.data['real_tanggal_tutup_vote']);
     Duration remaining = Duration.zero;
     final nowUtc = DateTime.now().toUtc();
     final difference = deadlineUtc.difference(nowUtc);
 
     remaining = difference.isNegative ? Duration.zero : difference;
     
-    final bukaVoteUtc = DateTime.parse(widget.data['real_tanggal_buka_vote']);
+    final bukaVoteUtc = DateHelper.parseWibToUtc(widget.data['real_tanggal_buka_vote']);
     bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
     if (remaining.inSeconds == 0 || isBeforeOpen) {
@@ -875,11 +887,10 @@ class _LeaderboardSection_6State extends State<LeaderboardSection_6> {
     }
 
     if (widget.data['tanggal_buka_payment'] != null) {
-      final reopenTime = DateTime.parse(widget.data['tanggal_buka_payment']);
-      final now = DateTime.now().toUtc();
+      final reopenUtc = DateHelper.parseWibToUtc(widget.data['tanggal_buka_payment']);
+      final nowUtc = DateTime.now().toUtc();
 
-      final closed = now.isBefore(reopenTime);
-
+      final closed = nowUtc.isBefore(reopenUtc);
       if (closed != isPaymentClosed) {
         isPaymentClosed = closed;
       }
@@ -971,7 +982,7 @@ class _LeaderboardSection_6State extends State<LeaderboardSection_6> {
                   flag_verify_email: widget.data['flag_verify_email'],
                   langCode: widget.langCode,
                   onAfterLogin: _onAfterLogin,
-                  isTutup: isTutup,
+                  isTutup: isBeforeOpen,
                   isPaymentClosed: isPaymentClosed
                 );
               } else{
@@ -1005,7 +1016,7 @@ class _LeaderboardSection_6State extends State<LeaderboardSection_6> {
                       flag_verify_email: widget.data['flag_verify_email'],
                       langCode: widget.langCode,
                       onAfterLogin: _onAfterLogin,
-                      isTutup: isTutup,
+                      isTutup: isBeforeOpen,
                       isPaymentClosed: isPaymentClosed
                     ),
                   );
@@ -1043,22 +1054,14 @@ class DukunganSection_6 extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = DetailVoteLang.of(context).values;
 
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
-
     String themeName = 'default';
     if (data['theme_name'] != null) {
       themeName = data['theme_name'];
     }
+    if (themeName == "Default Kreen") {
+      themeName = "Red";
+    }
+
     Color color = colorMap[themeName] ?? Colors.red;
 
     Color bgColor;
@@ -1202,26 +1205,36 @@ Widget buildTopCard({
       crownImage = '';
   }
 
+  bool isButtonClicked = false;
+
   return Stack(
     clipBehavior: Clip.none,
     alignment: Alignment.topCenter,
     children: [
       InkWell(
-        onTap: (isTutup || isPaymentClosed)
+        onTap: remaining.inSeconds == 0
           ? null
           : () async {
-            await handleVoteAction(
-              context: context,
-              flagLogin: flag_login,
-              flagVerifyEmail: flag_verify_email,
-              idFinalis: idFinalis,
-              flagHideNoUrut: flag_hide_no_urut,
-              flagPaket: flag_paket,
-              langCode: langCode,
-              tema: tema,
-              onAfterLogin: onAfterLogin,
-              persen: false
-            );
+            if (isButtonClicked) return;
+
+            isButtonClicked = true;
+
+            try {
+              await handleVoteAction(
+                context: context,
+                flagLogin: flag_login,
+                flagVerifyEmail: flag_verify_email,
+                idFinalis: idFinalis,
+                flagHideNoUrut: flag_hide_no_urut,
+                flagPaket: flag_paket,
+                langCode: langCode,
+                tema: tema,
+                onAfterLogin: onAfterLogin,
+                persen: false
+              );
+            } finally {
+              isButtonClicked = false;
+            }
         },
         child: Container(
           width: isBig ? 120 : 100,
@@ -1268,21 +1281,29 @@ Widget buildTopCard({
               ),
               const SizedBox(height: 6),
               ElevatedButton(
-                onPressed: (isTutup || isPaymentClosed)
+                onPressed: remaining.inSeconds == 0
                   ? null
                   : () async {
-                    await handleVoteAction(
-                      context: context,
-                      flagLogin: flag_login,
-                      flagVerifyEmail: flag_verify_email,
-                      idFinalis: idFinalis,
-                      flagHideNoUrut: flag_hide_no_urut,
-                      flagPaket: flag_paket,
-                      langCode: langCode,
-                      tema: tema,
-                      onAfterLogin: onAfterLogin,
-                      persen: false
-                    );
+                    if (isButtonClicked) return;
+
+                    isButtonClicked = true;
+
+                    try {
+                      await handleVoteAction(
+                        context: context,
+                        flagLogin: flag_login,
+                        flagVerifyEmail: flag_verify_email,
+                        idFinalis: idFinalis,
+                        flagHideNoUrut: flag_hide_no_urut,
+                        flagPaket: flag_paket,
+                        langCode: langCode,
+                        tema: tema,
+                        onAfterLogin: onAfterLogin,
+                        persen: false
+                      );
+                    } finally {
+                      isButtonClicked = false;
+                    }
                 },
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.resolveWith<Color>(
@@ -1349,22 +1370,32 @@ Widget buildListCard({
   bool isTutup = false,
   bool isPaymentClosed = false
 }) {
+  bool isButtonClicked = false;
+
   return InkWell(
     onTap: (isTutup || isPaymentClosed)
       ? null
       : () async {
-        await handleVoteAction(
-          context: context,
-          flagLogin: flag_login,
-          flagVerifyEmail: flag_verify_email,
-          idFinalis: idFinalis,
-          flagHideNoUrut: flag_hide_no_urut,
-          flagPaket: flag_paket,
-          langCode: langCode,
-          tema: tema,
-          onAfterLogin: onAfterLogin,
-          persen: false,
-        );
+        if (isButtonClicked) return;
+
+        isButtonClicked = true;
+
+        try {
+          await handleVoteAction(
+            context: context,
+            flagLogin: flag_login,
+            flagVerifyEmail: flag_verify_email,
+            idFinalis: idFinalis,
+            flagHideNoUrut: flag_hide_no_urut,
+            flagPaket: flag_paket,
+            langCode: langCode,
+            tema: tema,
+            onAfterLogin: onAfterLogin,
+            persen: false,
+          );
+        } finally {
+          isButtonClicked = false;
+        }
     },
     child: Container(
       padding: kGlobalPadding,

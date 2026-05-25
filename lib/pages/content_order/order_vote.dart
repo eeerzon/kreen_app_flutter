@@ -687,9 +687,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    langCode == 'id' 
-                                      ? 'Tanggal Pesanan' 
-                                      : 'Order Date',
+                                    bahasa['tgl_order'],
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),
@@ -1195,9 +1193,7 @@ class _VotePendingState extends State<VotePending> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    langCode == 'id' 
-                                      ? 'Tanggal Pesanan' 
-                                      : 'Order Date',
+                                    bahasa['tgl_order'],
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),
@@ -1700,9 +1696,7 @@ class _VoteFailState extends State<VoteFail> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    langCode == 'id' 
-                                      ? 'Tanggal Pesanan' 
-                                      : 'Order Date',
+                                    bahasa['tgl_order'],
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),

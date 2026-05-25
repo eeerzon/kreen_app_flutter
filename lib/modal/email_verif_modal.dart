@@ -78,7 +78,7 @@ class EmailVerifModal {
                       AwesomeDialog(
                         context: context,
                         dialogType: DialogType.success,
-                        title: langCode == 'id' ? 'Berhasil' : 'Success',
+                        title: bahasa['sukses'], //"Berhasil",
                         desc:
                           "${bahasa['desc_email_1']}\n"
                           "${bahasa['desc_email_2']} $email\n"

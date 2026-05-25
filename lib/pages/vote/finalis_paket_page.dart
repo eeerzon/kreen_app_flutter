@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
@@ -29,7 +30,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   String? langCode;
   var get_user;
   DateTime deadline = DateTime(2025, 09, 26, 13, 30, 00, 00, 00);
-  late DateTime deadlineUtc;
+  DateTime deadlineUtc = DateTime.now().toUtc();
 
   Duration remaining = Duration.zero;
   Timer? _timer;
@@ -69,6 +70,16 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   bool persen = false;
   String? currencyCode;
 
+  bool isButtonClicked = false;
+        
+  String formattedDate = '-';
+
+  final Map<String, String?> _idPaketPerFinalis = {};
+  final Map<String, int> _countsPerFinalis = {};
+  final Map<String, num> _hargaPerFinalis = {};
+  final Map<String, num> _hargaAsliPerFinalis = {};
+  final Map<String, int> _countDataPerFinalis = {};
+
   Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
     if (close_payment != '1') {
       isPaymentClosed = false;
@@ -76,10 +87,10 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     }
 
     try {
-      final reopenTime = DateTime.parse(tanggal_buka_payment!);
-      final now = DateTime.now().toUtc();
+      final reopenUtc = DateHelper.parseWibToUtc(tanggal_buka_payment!);
+      final nowUtc = DateTime.now().toUtc();
 
-      final closed = now.isBefore(reopenTime);
+      final closed = nowUtc.isBefore(reopenUtc);
 
       if (closed != isPaymentClosed) {
         setState(() {
@@ -157,8 +168,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
         deadline = DateTime.parse(vote['real_tanggal_tutup_vote']);
         // deadlineUtc = DateTime.parse(vote['real_tanggal_tutup_vote']);
-        deadlineUtc = parseWib(vote['real_tanggal_tutup_vote']);
-        deadlineUtc = deadlineUtc.toLocal();
+        // deadlineUtc = deadlineUtc.toLocal();
+
+        deadlineUtc = DateHelper.parseWibToUtc(vote['real_tanggal_tutup_vote'],);
       
         controllers = List.generate(vote.length, (i) {
           return TextEditingController(text: "0");
@@ -187,10 +199,64 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
               .cast<Map<String, dynamic>>()
               .toList();
         }
+        
         _isLoading = false;
         showErrorBar = false;
       });
     }
+  }
+
+  // Tambah getter
+  String get buttonText {
+    if (remaining.inSeconds == 0) return endVote ?? '';
+
+    final dateStr = vote['real_tanggal_buka_payment']?.toString() ?? '-';
+
+    if (dateStr.isNotEmpty) {
+      try {
+        final localDate = DateHelper.parseWibToLocal(dateStr);
+        if (langCode == 'id') {
+          // Bahasa Indonesia
+          final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+          formattedDate = formatter.format(localDate);
+        } else {
+          // Bahasa Inggris
+          final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+          formattedDate = formatter.format(localDate);
+
+          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+          final day = localDate.day;
+          String suffix = 'th';
+          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+          formattedDate = formatter.format(localDate).replaceFirst('$day', '$day$suffix');
+        }
+      } catch (e) {
+        formattedDate = '-';
+      }
+    }
+
+    // final bukaVoteUtc = DateTime.parse(vote['real_tanggal_buka_vote']);
+    final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
+    final bukaVote = DateHelper.parseWibToLocal(vote['real_tanggal_buka_vote']);
+
+    final nowUtc = DateTime.now().toUtc();
+
+    isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+
+    String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
+    
+    if (isBeforeOpen) {
+      return '$voteOpen $formattedBukaVote';
+    }
+    if (vote['close_payment'] == '1') {
+      return '$voteOpenAgain $formattedDate';
+    }
+    if (vote['harga'] != 0) {
+      return buttonPilihPaketText ?? '';
+    }
+    return bahasa['lanjutkan'] ?? '';
   }
 
   Map<String, dynamic> bahasa = {};
@@ -280,11 +346,16 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   }
 
   void _updateRemaining() {
+    if (vote.isEmpty) return;
+
     final nowUtc = DateTime.now().toUtc();
     final difference = deadlineUtc.difference(nowUtc);
 
+    final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
+
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
+      isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
     });
   }
 
@@ -477,18 +548,6 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       );
     }
 
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
-
     String themeName = 'default';
     if (vote['theme_name'] != null) {
       themeName = vote['theme_name'];
@@ -550,7 +609,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                       ),
                     ),
                     Text(
-                      "${bahasa['paket']} $counts ${bahasa['text_vote']}\n$countData ${bahasa['finalis']}(s)",
+                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']}\n$countData ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -574,61 +633,73 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                     RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-                onPressed: (vote['harga'] != 0 && totalHarga == 0) || counts == 0
+                onPressed: (vote['harga'] != 0 && totalHarga == 0) || counts == 0 || vote['close_payment'] == '1' || remaining.inSeconds == 0
                     ? null
                     : () async {
-                      final storedToken = await StorageService.getToken() ?? '';
-                      var getUser = await StorageService.getUser();
+                      if (isButtonClicked) return;
 
-                      String? idUser = getUser['id'];
+                      isButtonClicked = true;
 
-                      await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+                      try {
+                        final storedToken = await StorageService.getToken() ?? '';
+                        var getUser = await StorageService.getUser();
 
-                      getUser = await StorageService.getUser();
+                        String? idUser = getUser['id'];
 
-                      if (vote['flag_login'] == '1' && storedToken.isEmpty) {
-                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
-                        return;
-                      }
+                        await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
-                      if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
-                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
-                        return;
-                      }
+                        getUser = await StorageService.getUser();
 
-                      if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
-                        await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
-                        return;
-                      }
+                        if (vote['flag_login'] == '1' && storedToken.isEmpty) {
+                          await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                          return;
+                        }
 
-                      if (mounted) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StatePaymentPaket(
-                              id_vote: slctedIdVote!,
-                              id_finalis: slctedIdFinalis!,
-                              nama_finalis: slctedNamaFinalis!,
-                              counts: counts,
-                              totalHarga: totalHarga,
-                              totalHargaAsli: harga_akhir_asli,
-                              id_paket: id_paket,
-                              fromDetail: false,
-                              idUser: idUser,
-                              flag_login: vote['flag_login'],
-                              rateCurrency: vote['rate_currency_vote'],
-                              rateCurrencyUser: vote['rate_currency_user'],
-                              ),
-                          ),
-                        );
+                        if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                          await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                          return;
+                        }
+
+                        if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                          await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                          return;
+                        }
+
+                        if (mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StatePaymentPaket(
+                                id_vote: slctedIdVote!,
+                                id_finalis: slctedIdFinalis!,
+                                nama_finalis: slctedNamaFinalis!,
+                                counts: counts,
+                                totalHarga: totalHarga,
+                                totalHargaAsli: harga_akhir_asli,
+                                id_paket: id_paket,
+                                fromDetail: false,
+                                idUser: idUser,
+                                flag_login: vote['flag_login'],
+                                rateCurrency: vote['rate_currency_vote'],
+                                rateCurrencyUser: vote['rate_currency_user'],
+                                ),
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => isButtonClicked = false);
                       }
                     },
                 child: Text(
                   remaining.inSeconds == 0
                     ? endVote!
-                    : vote['harga'] != 0 
-                      ? bayarText!
-                      : bahasa['lanjutkan'],
+                    : isBeforeOpen
+                        ? bahasa['segera']
+                        : vote['close_payment'] == '1'
+                            ? bahasa['tutup_sementara']
+                            : vote['harga'] != 0
+                                ? bayarText!
+                                : bahasa['lanjutkan'],
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -650,9 +721,13 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
         child: CustomScrollView(
           slivers: [
 
-            if (vote['flag_cd'] == '1' &&
-                vote['real_tanggal_tutup_vote'] != null &&
-                DateTime.tryParse(vote['real_tanggal_tutup_vote'].toString())?.isAfter(DateTime.now()) == true) ... [
+            if (
+              vote['flag_cd'] == '1' &&
+              vote['real_tanggal_tutup_vote'] != null &&
+              DateHelper.parseWibToUtc(
+                vote['real_tanggal_tutup_vote'].toString(),
+              ).isAfter(DateTime.now().toUtc())
+            ) ...[
               // konten atas (countdown)
               SliverToBoxAdapter(
                 child: Padding(
@@ -795,57 +870,6 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
     final formatter = NumberFormat.decimalPattern("en_US");
     final hargaFormatted = formatter.format(vote['harga'] ?? 0);
-
-
-    final dateStr = vote['tanggal_buka_payment']?.toString() ?? '-';
-    
-    String formattedDate = '-';
-
-    if (dateStr.isNotEmpty) {
-      try {
-        final wibDate = parseWib(dateStr);
-        // parsing string ke DateTime
-        var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-        date = wibDate.toLocal();
-        if (langCode == 'id') {
-          // Bahasa Indonesia
-          final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
-          formattedDate = formatter.format(date);
-        } else {
-          // Bahasa Inggris
-          final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
-          formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-          final day = date.day;
-          String suffix = 'th';
-          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-        }
-      } catch (e) {
-        formattedDate = '-';
-      }
-    }
-
-    final bukaVoteUtc = DateTime.parse(vote['real_tanggal_buka_vote']);
-
-    final nowUtc = DateTime.now().toUtc();
-
-    isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
-
-    String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
-
-    String buttonText = '';
-    
-    if (isBeforeOpen) {
-      buttonText = '$voteOpen $formattedBukaVote';
-    } else if (vote['close_payment'] == '1') {
-      buttonText = '$voteOpenAgain $formattedDate';
-    } else {
-      buttonText = buttonPilihPaketText!;
-    }
 
     if (listFinalis.isEmpty) {
       return Column(
@@ -1003,7 +1027,13 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       
                             SizedBox(width: 4),
                             //text
-                            Text("Vote"),
+                            Text(
+                              (persen
+                                ? item['percent'] > 1
+                                : item['total_voters'] > 1)
+                                  ? bahasa['text_votes']
+                                  : bahasa['text_vote'],
+                            ),
                           ],
                         ),
       
@@ -1023,21 +1053,44 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
+                      final idFinalis = item['id_finalis'];
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => DetailFinalisPaketPage(
-                            id_finalis: item['id_finalis'],
-                            vote: counts, 
+                            id_finalis: idFinalis,
+                            vote: _countsPerFinalis[idFinalis] ?? 0,
                             index: index, 
-                            total_detail: totalHarga, 
-                            id_paket_bw: id_paket,
+                            total_detail: _hargaPerFinalis[idFinalis] ?? 0,
+                            id_paket_bw: _idPaketPerFinalis[idFinalis],
                             remaining: remaining,
                             close_payment: vote['close_payment'],
                             tanggal_buka_payment: formattedDate,
                             flag_hide_no_urut: vote['flag_hide_nomor_urut'],
                             persen: persen,
-                            ),
+                            onPaketSelected: (newIdPaket, newCounts, newHarga, newHargaAsli, newCountData) {
+                              setState(() {
+                                _idPaketPerFinalis[idFinalis] = newIdPaket;
+                                _countsPerFinalis[idFinalis] = newCounts;
+                                _hargaPerFinalis[idFinalis] = newHarga;
+                                _hargaAsliPerFinalis[idFinalis] = newHargaAsli;
+                                _countDataPerFinalis[idFinalis] = newCountData;
+
+                                // Update bottomnav parent
+                                slctedIdVote = item['id_vote'];
+                                slctedIdFinalis = idFinalis;
+                                slctedNamaFinalis = item['nama_finalis'];
+
+                                id_paket = newIdPaket!;
+                                counts = newCounts;
+                                harga_akhir = newHarga;
+                                harga_akhir_asli = newHargaAsli;
+                                countData = newCountData;
+                              });
+                            },
+                            harga_akhir_asli: _hargaAsliPerFinalis[idFinalis] ?? 0,
+                            harga_akhir: _hargaPerFinalis[idFinalis] ?? 0,
+                          ),
                         ),
                       );
                     },
@@ -1066,6 +1119,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                             return;
                           }
 
+                          final idFinalis = item['id_finalis'];
+
                           final selectedQty = await PaketVoteModal.show(
                             context,
                             index,
@@ -1073,27 +1128,31 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                             paketLainnya,
                             color,
                             bgColor,
-                            id_paket,
-                            currencyCode!
+                            _idPaketPerFinalis[idFinalis],
+                            currencyCode!,
+                            selectedIdPaket: _idPaketPerFinalis[idFinalis],
                           );
 
                           if (selectedQty != null) {
                             setState(() {
-                              counts = selectedQty['counts'];
-                              harga_akhir = selectedQty['harga_akhir'];
-                              if (currencyCode != null) {
-                                harga_akhir_asli = selectedQty['harga_akhir_asli'];
-                              } else {
-                                harga_akhir_asli = selectedQty['harga_akhir'];
-                              }
-                              id_paket = selectedQty['id_paket'];
-                              countData = selectedQty['count_data'];
+                              _idPaketPerFinalis[idFinalis] = selectedQty['id_paket'];
+                              _countsPerFinalis[idFinalis] = selectedQty['counts'];
+                              _hargaPerFinalis[idFinalis] = selectedQty['harga_akhir'];
+                              _hargaAsliPerFinalis[idFinalis] = selectedQty['harga_akhir_asli'];
+                              _countDataPerFinalis[idFinalis] = selectedQty['count_data'];
+
+                              // Update untuk bottomnav
+                              slctedIdVote = item['id_vote'];
+                              slctedIdFinalis = idFinalis;
+                              slctedNamaFinalis = item['nama_finalis'];
+                              
+                              id_paket = _idPaketPerFinalis[idFinalis]!;
+                              counts = _countsPerFinalis[idFinalis] ?? 0;
+                              harga_akhir = _hargaPerFinalis[idFinalis] ?? 0;
+                              harga_akhir_asli = _hargaAsliPerFinalis[idFinalis] ?? 0;
+                              countData = _countDataPerFinalis[idFinalis] ?? 0;
                             });
                           }
-
-                          slctedIdVote = item['id_vote'];
-                          slctedIdFinalis = item['id_finalis'];
-                          slctedNamaFinalis = item['nama_finalis'];
                         },
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 60),
@@ -1113,7 +1172,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
-                          if (!isPaymentClosed) ...[
+                          if (!isPaymentClosed && !isBeforeOpen && remaining.inSeconds != 0) ...[
                             // SizedBox(width: 10),
                             Icon(
                               Icons.keyboard_arrow_down_rounded,

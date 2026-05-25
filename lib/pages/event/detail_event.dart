@@ -861,12 +861,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               ),
                               child: Text(
                                 event['status'] == "Aktif"
-                                  ? langCode == 'id'
-                                    ? "Aktif"
-                                    : "Active"
-                                  : langCode == 'id'
-                                    ? "Tidak Aktif"
-                                    : "Inactive",
+                                  ? bahasa['aktif']
+                                  : bahasa['non_aktif'],
                                 style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -879,12 +875,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               ),
                               child: Text(
                                 detailEvent['flag_private'] == 1
-                                  ? langCode == 'id' 
-                                    ? "Event Privat"
-                                    : "Private Event"
-                                  : langCode == 'id' 
-                                    ? "Event Publik" 
-                                    : 'Public Event',
+                                  ? bahasa['aktif']
+                                  : bahasa['non_aktif'],
                                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -2230,7 +2222,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                     ? Container(
                                                         padding: const EdgeInsets.symmetric(vertical: 8),
                                                         child: Text(
-                                                          bahasa.toString().toUpperCase(),
+                                                          bahasa['segera'].toString().toUpperCase(),
                                                           style: const TextStyle(
                                                             fontWeight: FontWeight.bold,
                                                             fontSize: 16,

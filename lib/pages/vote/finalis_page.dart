@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
@@ -70,6 +71,11 @@ class _FinalisPageState extends State<FinalisPage> {
   bool persen = false;
   String? currencyCode;
 
+  bool isButtonClicked = false;
+        
+  String formattedDate = '-';
+  String buttonText = '';
+
   Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
     if (close_payment != '1') {
       isPaymentClosed = false;
@@ -77,10 +83,10 @@ class _FinalisPageState extends State<FinalisPage> {
     }
 
     try {
-      final reopenTime = DateTime.parse(tanggal_buka_payment!);
-      final now = DateTime.now().toUtc();
+      final reopenUtc = DateHelper.parseWibToUtc(tanggal_buka_payment!);
+      final nowUtc = DateTime.now().toUtc();
 
-      final closed = now.isBefore(reopenTime);
+      final closed = nowUtc.isBefore(reopenUtc);
 
       if (closed != isPaymentClosed) {
         setState(() {
@@ -156,9 +162,9 @@ class _FinalisPageState extends State<FinalisPage> {
         finalis = tempFinalis;
 
         deadline = DateTime.parse(vote['real_tanggal_tutup_vote']);
-        // deadlineUtc = DateTime.parse(vote['real_tanggal_tutup_vote']);
-        deadlineUtc = parseWib(vote['real_tanggal_tutup_vote']);
-        deadlineUtc = deadlineUtc.toLocal();
+
+        deadlineUtc = DateHelper.parseWibToUtc(vote['real_tanggal_tutup_vote'],);
+        
         counts = List<int>.filled(finalis.length, 0);
         selectedVotes = List.filled(finalis.length, null);
         selectedIndexes = List.filled(finalis.length, null);
@@ -166,6 +172,48 @@ class _FinalisPageState extends State<FinalisPage> {
         controllers = List.generate(vote.length, (i) {
           return TextEditingController(text: "0");
         });
+
+        final dateStr = vote['real_tanggal_buka_payment']?.toString() ?? '-';
+
+        if (dateStr.isNotEmpty) {
+          try {
+            final localDate = DateHelper.parseWibToLocal(dateStr);
+            if (langCode == 'id') {
+              // Bahasa Indonesia
+              final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+              formattedDate = formatter.format(localDate);
+            } else {
+              // Bahasa Inggris
+              final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
+              formattedDate = formatter.format(localDate);
+
+              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              final day = localDate.day;
+              String suffix = 'th';
+              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+              formattedDate = formatter.format(localDate).replaceFirst('$day', '$day$suffix');
+            }
+          } catch (e) {
+            formattedDate = '-';
+          }
+        }
+
+        // final bukaVoteUtc = DateTime.parse(vote['real_tanggal_buka_vote']);
+        final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
+        final bukaVote = DateHelper.parseWibToLocal(vote['real_tanggal_buka_vote']);
+        final nowUtc = DateTime.now().toUtc();
+
+        isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+
+        String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
+        
+        if (isBeforeOpen) {
+          buttonText = '$voteOpen $formattedBukaVote';
+        } else if (vote['close_payment'] == '1') {
+          buttonText = '$voteOpenAgain $formattedDate';
+        }
 
         _isLoading = false;
         showErrorBar = false;
@@ -335,8 +383,11 @@ class _FinalisPageState extends State<FinalisPage> {
     final nowUtc = DateTime.now().toUtc();
     final difference = deadlineUtc.difference(nowUtc);
 
+    final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
+
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
+      isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
     });
   }
 
@@ -521,18 +572,6 @@ class _FinalisPageState extends State<FinalisPage> {
     final minutes = remaining.inMinutes % 60;
     final seconds = remaining.inSeconds % 60;
 
-    Map<String, Color> colorMap = {
-      'Blue': Colors.blue,
-      'Red': Colors.red,
-      'Green': Colors.green,
-      'Yellow': Colors.yellow,
-      'Purple': Colors.purple,
-      'Orange': Colors.orange,
-      'Pink': Colors.pink,
-      'Grey': Colors.grey,
-      'Turqoise': Colors.teal,
-    };
-
     String themeName = 'default';
     if (vote['theme_name'] != null) {
       themeName = vote['theme_name'];
@@ -604,7 +643,9 @@ class _FinalisPageState extends State<FinalisPage> {
                         ),
 
                         AutoSizeText(
-                          "Qty $totalQty ${bahasa['text_vote']}",
+                          totalQty > 1
+                            ? "Qty $totalQty ${bahasa['text_votes']}"
+                            : "Qty $totalQty ${bahasa['text_vote']}",
                           style: TextStyle(
                             fontSize: 12,
                           ),
@@ -614,7 +655,9 @@ class _FinalisPageState extends State<FinalisPage> {
                         ),
                         
                         Text(
-                          "$countData ${bahasa['finalis']}(s)",
+                          countData > 1
+                            ? "$countData ${bahasa['finalis']}s"
+                            : "$countData ${bahasa['finalis']}",
                           style: TextStyle(fontSize: 12,),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -645,62 +688,74 @@ class _FinalisPageState extends State<FinalisPage> {
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
-                  onPressed: (vote['harga'] != 0 && totalHarga == 0) || totalCount == 0 
+                  onPressed: (vote['harga'] != 0 && totalHarga == 0) || totalCount == 0 || vote['close_payment'] == '1' || remaining.inSeconds == 0
                     ? null 
                     : () async {
-                      final storedToken = await StorageService.getToken() ?? '';
-                      var getUser = await StorageService.getUser();
+                      if (isButtonClicked) return;
 
-                      String? idUser = getUser['id'];
+                      isButtonClicked = true;
 
-                      await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+                      try{
+                        final storedToken = await StorageService.getToken() ?? '';
+                        var getUser = await StorageService.getUser();
 
-                      getUser = await StorageService.getUser();
+                        String? idUser = getUser['id'];
 
-                      if (vote['flag_login'] == '1' && storedToken.isEmpty) {
-                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
-                        return;
-                      }
+                        await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
 
-                      if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
-                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
-                        return;
-                      }
+                        getUser = await StorageService.getUser();
 
-                      if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
-                        await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
-                        return;
-                      }
+                        if (vote['flag_login'] == '1' && storedToken.isEmpty) {
+                          await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                          return;
+                        }
 
-                      if (mounted) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => StatePaymentManual(
-                              id_vote: slctedIdVote!,
-                              ids_finalis: ids_finalis,
-                              names_finalis: names_finalis,
-                              counts_finalis: counts_finalis,
-                              totalHarga: totalHarga,
-                              totalHargaAsli: totalHargaAsli,
-                              price: vote['harga_asli'],
-                              fromDetail: false,
-                              idUser: idUser,
-                              flag_login: vote['flag_login'],
-                              flag_verify_email: vote['flag_verify_email'],
-                              rateCurrency: vote['rate_currency_vote'],
-                              rateCurrencyUser: vote['rate_currency_user'],
+                        if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                          await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                          return;
+                        }
+
+                        if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                          await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                          return;
+                        }
+
+                        if (mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StatePaymentManual(
+                                id_vote: slctedIdVote!,
+                                ids_finalis: ids_finalis,
+                                names_finalis: names_finalis,
+                                counts_finalis: counts_finalis,
+                                totalHarga: totalHarga,
+                                totalHargaAsli: totalHargaAsli,
+                                price: vote['harga_asli'],
+                                fromDetail: false,
+                                idUser: idUser,
+                                flag_login: vote['flag_login'],
+                                flag_verify_email: vote['flag_verify_email'],
+                                rateCurrency: vote['rate_currency_vote'],
+                                rateCurrencyUser: vote['rate_currency_user'],
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => isButtonClicked = false);
                       }
                     },
                   child: Text(
                     remaining.inSeconds == 0
-                    ? endVote!
-                      : vote['harga'] != 0 
-                        ? bayarText!
-                        : bahasa['lanjutkan'],
+                      ? endVote!
+                      : isBeforeOpen
+                          ? bahasa['segera']
+                          : vote['close_payment'] == '1'
+                              ? bahasa['tutup_sementara']
+                              : vote['harga'] != 0
+                                  ? bayarText!
+                                  : bahasa['lanjutkan'],
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -719,9 +774,13 @@ class _FinalisPageState extends State<FinalisPage> {
         child: CustomScrollView(
           slivers: [
 
-            if (vote['flag_cd'] == '1' &&
-                vote['real_tanggal_tutup_vote'] != null &&
-                DateTime.tryParse(vote['real_tanggal_tutup_vote'].toString())?.isAfter(DateTime.now()) == true) ... [
+            if (
+              vote['flag_cd'] == '1' &&
+              vote['real_tanggal_tutup_vote'] != null &&
+              DateHelper.parseWibToUtc(
+                vote['real_tanggal_tutup_vote'].toString(),
+              ).isAfter(DateTime.now().toUtc())
+            ) ...[
               // konten atas (countdown)
               SliverToBoxAdapter(
                 child: Padding(
@@ -905,53 +964,6 @@ class _FinalisPageState extends State<FinalisPage> {
       ? voteOptions.where((v) => v <= vote['batas_qty']).toList()
       : voteOptions;
 
-    final dateStr = vote['tanggal_buka_payment']?.toString() ?? '-';
-    String formattedDate = '-';
-
-    if (dateStr.isNotEmpty) {
-      try {
-        final wibDate = parseWib(dateStr);
-        // parsing string ke DateTime
-        var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-        date = wibDate.toLocal();
-        if (langCode == 'id') {
-          // Bahasa Indonesia
-          final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
-          formattedDate = formatter.format(date);
-        } else {
-          // Bahasa Inggris
-          final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
-          formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-          final day = date.day;
-          String suffix = 'th';
-          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-        }
-      } catch (e) {
-        formattedDate = '-';
-      }
-    }
-
-    final bukaVoteUtc = DateTime.parse(vote['real_tanggal_buka_vote']);
-
-    final nowUtc = DateTime.now().toUtc();
-
-    isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
-
-    String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVoteUtc);
-
-    String buttonText = '';
-    
-    if (isBeforeOpen) {
-      buttonText = '$voteOpen $formattedBukaVote';
-    } else if (vote['close_payment'] == '1') {
-      buttonText = '$voteOpenAgain $formattedDate';
-    }
-
     final text = bahasa['batas']
       .replaceAll('{qty}', vote['batas_qty'].toString());
 
@@ -1119,7 +1131,13 @@ class _FinalisPageState extends State<FinalisPage> {
         
                               SizedBox(width: 4),
                               //text
-                              Text("Vote"),
+                              Text(
+                                (persen
+                                  ? (item['percent'] ?? 0) > 1
+                                  : (item['total_voters'] ?? 0) > 1)
+                                    ? bahasa['text_votes']
+                                    : bahasa['text_vote'],
+                              ),
                             ],
                           ),
         

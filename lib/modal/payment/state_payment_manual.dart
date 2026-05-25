@@ -576,7 +576,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                   errorMessage: 
                     langCode == 'id' 
                       ? resultVoteOrder['message']
-                      : "The transaction limit for this vote has been reached.",
+                      : bahasa['vote_order_limit'], //"The transaction limit for this vote has been reached.",
                   id_event: widget.id_vote,
                 )),
               );
@@ -706,7 +706,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                   errorMessage: 
                     langCode == 'id' 
                       ? resultVoteOrder['message']
-                      : "The transaction limit for this vote has been reached.",
+                      : bahasa['vote_order_limit'], //"The transaction limit for this vote has been reached.",
                   id_event: widget.id_vote,
                 )),
               );

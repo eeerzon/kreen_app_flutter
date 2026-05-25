@@ -87,8 +87,8 @@ class _RegisPageState extends State<RegisPage> {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.noHeader,
-        title: langCode == 'id' ? 'Berhasil' : 'Success',
-        desc: langCode == 'id' ? 'Pendaftaran Berhasil' : 'Registration Success',
+        title: bahasa['sukses'],
+        desc: bahasa['sukses_regis'],
         transitionAnimationDuration: const Duration(milliseconds: 400),
         autoHide: const Duration(seconds: 1),
       ).show().then((_) {
@@ -509,41 +509,6 @@ class _RegisPageState extends State<RegisPage> {
                         ),
                       ),
                     ))),
-                  
-                // if ((_emailTouched || errorCodeEmail == 422) 
-                //     && !isValidEmail(_emailController.text))
-                //   Align(
-                //     alignment: AlignmentGeometry.centerLeft,
-                //     child: Padding(
-                //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                //       child: Text(
-                //         errorCodeEmail == 422 && errorMessage['email'] != null
-                //           ? (langCode == "en"
-                //               ? translateError(errorMessage['email'][0], langCode)
-                //               : errorMessage['email'][0])
-                //           : bahasa['error_email_1'],
-                //         style: TextStyle(color: Colors.red[900], fontSize: 12),
-                //       ),
-                //     ),
-                //   ),
-
-                // if (errorCodeEmail == 422 && 
-                //     errorMessage['email'] != null &&
-                //     (errorMessage['email'] as List).any((e) => 
-                //       e.toString().toLowerCase().contains('registered') || 
-                //       e.toString().toLowerCase().contains('terdaftar')))
-                //   Align(
-                //     alignment: AlignmentGeometry.centerLeft,
-                //     child: Padding(
-                //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                //         child: Text(
-                //           langCode == "en"
-                //             ? translateError(errorMessage['email'][0], langCode)
-                //             : errorMessage['email'][0],
-                //           style: TextStyle(color: Colors.red[900], fontSize: 12),
-                //         ),
-                //     ),
-                //   ),
 
                 //phone
                 const SizedBox(height: 16),
@@ -662,9 +627,9 @@ class _RegisPageState extends State<RegisPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(PasswordError!, langCode)
-                            : PasswordError ?? '',
+                          langCode == "id"
+                            ? PasswordError ?? '' 
+                            : translateError(PasswordError!, langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -678,9 +643,9 @@ class _RegisPageState extends State<RegisPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(PasswordError2!, langCode)
-                            : PasswordError2 ?? '',
+                          langCode == "id"
+                            ? PasswordError2 ?? '' 
+                            : translateError(PasswordError2!, langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -694,9 +659,9 @@ class _RegisPageState extends State<RegisPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(PasswordError3!, langCode)
-                            : PasswordError3 ?? '',
+                          langCode == "id"
+                            ? PasswordError3 ?? '' 
+                            : translateError(PasswordError3!, langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
@@ -757,9 +722,9 @@ class _RegisPageState extends State<RegisPage> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                         child: Text(
-                          langCode == "en"
-                            ? translateError(confirmPasswordError ?? 'Passwords do not match', langCode)
-                            : confirmPasswordError ?? '',
+                          langCode == "id"
+                            ? confirmPasswordError ?? '' 
+                            : translateError(confirmPasswordError ?? 'Passwords do not match', langCode),
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),

@@ -16,7 +16,7 @@ void main() async {
   await Firebase.initializeApp();
 
   // Stripe.publishableKey = STRIPE_PUBLIC_KEY_PRODUCTION;
-  Stripe.publishableKey = STRIPE_PUBLIC_KEY_SANDBOX; //dev
+  Stripe.publishableKey = STRIPE_PUBLIC_KEY;
   await Stripe.instance.applySettings(); 
 
   await SystemChrome.setPreferredOrientations([

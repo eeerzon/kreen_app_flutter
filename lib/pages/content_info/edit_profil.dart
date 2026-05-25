@@ -75,6 +75,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _emailChanged = false;
   String _originalEmail = '';
 
+  final GlobalKey _genderKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +104,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _getBahasa() async {
@@ -260,40 +269,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return url;
   }
 
-  bool _validateAllForm() {
-    bool isValid = true;
-    FocusNode? firstErrorFocus;
-
-    final email = emailController.text.trim();
-
-    if (email.isEmpty || !isValidEmail(email)) {
-      isValid = false;
-      firstErrorFocus ??= emailFocusNode;
-    }
-
-    final phone = phoneController.text.trim();
-
-    if (phone.isEmpty || !isValidPhone(phone)) {
-      isValid = false;
-      firstErrorFocus ??= phoneFocusNode;
-    }
-
-    if (selectedGender == null) {
-      isValid = false;
-    }
-
-    if (dobController.text.trim().isEmpty) {
-      isValid = false;
-      firstErrorFocus ??= dobFocusNode;
-    }
-
-    if (!isValid && firstErrorFocus != null) {
-      _scrollToFocus(firstErrorFocus);
-    }
-
-    return isValid;
-  }
-
   void _scrollToFocus(FocusNode node) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       node.requestFocus();
@@ -336,6 +311,53 @@ class _EditProfilePageState extends State<EditProfilePage> {
           isConfirmLoading = false;
         });
       }
+    }
+  }
+
+  bool _validateAllForm() {
+    bool isValid = true;
+    FocusNode? firstErrorFocus;
+
+    final email = emailController.text.trim();
+
+    if (email.isEmpty || !isValidEmail(email)) {
+      isValid = false;
+      firstErrorFocus ??= emailFocusNode;
+    }
+
+    final phone = phoneController.text.trim();
+
+    if (phone.isEmpty || !isValidPhone(phone)) {
+      isValid = false;
+      firstErrorFocus ??= phoneFocusNode;
+    }
+
+    if (selectedGender == null) {
+      isValid = false;
+      _scrollToGender();
+    }
+
+    if (dobController.text.trim().isEmpty) {
+      isValid = false;
+      firstErrorFocus ??= dobFocusNode;
+    }
+
+    if (!isValid && firstErrorFocus != null) {
+      _scrollToFocus(firstErrorFocus);
+    }
+
+    return isValid;
+  }
+
+  void _scrollToGender() {
+    final context = _genderKey.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.1, // sedikit padding dari atas
+      );
     }
   }
 
@@ -824,7 +846,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 RegExp(r"[a-zA-Z\u00C0-\u017F\s]"),
                               ),
                               NameInputFormatter(),
-                              LengthLimitingTextInputFormatter(50),
+                              LengthLimitingTextInputFormatter(191),
                             ],
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
@@ -850,6 +872,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               )
                             )
                           ],
+
+                          if (_showError && (fullNameController.text.trim().isEmpty)) 
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  bahasa['nama_lengkap_req'],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              )
+                            ),
 
                           // SizedBox(height: 20,),
                           // Align(
@@ -932,6 +966,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                           SizedBox(height: 20,),
                           Align(
+                            key: _genderKey,
                             alignment: AlignmentGeometry.centerLeft,
                             child: Text(
                               bahasa['gender_label'], //'Jenis Kelamin'
@@ -941,13 +976,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           Row(
                             children: List.generate(genders.length, (index) {
                               final item = genders[index];
-                              final isSelectedGender =
+                              final isSelectedGender = selectedGender != null &&
                                 (selectedGender.toString().toLowerCase() == 'male'
                                         ? bahasa['gender_1']
                                         : bahasa['gender_2'])
                                     .toString()
                                     .toLowerCase() ==
                                 item['label'].toString().toLowerCase();
+
 
                               return Expanded(
                                 child: GestureDetector(
@@ -1001,6 +1037,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               );
                             }),
                           ),
+                          if (_showError && selectedGender == null)
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                child: Text(
+                                  bahasa['gender_error'],
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ),
+                            ),
 
                           SizedBox(height: 10,),
                           Align(
@@ -1034,7 +1084,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
 
-                              LengthLimitingTextInputFormatter(100),
+                              LengthLimitingTextInputFormatter(255),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['company_hint'],
@@ -1078,7 +1128,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
 
-                              LengthLimitingTextInputFormatter(100),
+                              LengthLimitingTextInputFormatter(255),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['job_hint'],
@@ -1130,6 +1180,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r"[a-zA-Z0-9@._+\-]"),
                               ),
+                              LengthLimitingTextInputFormatter(255),
                             ],
                             decoration: InputDecoration(
                               hintText: emailHint,
@@ -1160,14 +1211,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               child: Padding(
                                 padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
                                 child: Text(
-                                  langCode == "en"
-                                    ? translateError(errorMessage['email'][0], langCode)
-                                    : errorMessage['email'][0],
+                                  langCode == "id"
+                                    ? errorMessage['email'][0] 
+                                    : translateError(errorMessage['email'][0], langCode),
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
                                 ),
                               ),
                             )
                           ],
+
+                          if (_showError && emailController.text.trim().isEmpty)
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  bahasa['error_email_3'],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              ),
+                            ),
 
                           if (!isEmailAlreadyRegistered()) ... [
 
@@ -1205,7 +1268,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               )
                             ]
-
                           ],
 
                           SizedBox(height: 20,),
@@ -1222,6 +1284,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(15),
                             ],
                             onChanged: (_) => setState(() {
                               if (!_phoneTouched) {
@@ -1266,6 +1329,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             )
                           ],
 
+                          if (_showError && phoneController.text.trim().isEmpty)
+                            Align(
+                              alignment: AlignmentGeometry.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                child: Text(
+                                  bahasa['error_nohp_2'],
+                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                ),
+                              ),
+                            ),
+
                           SizedBox(height: 20,),
                           Align(
                             alignment: AlignmentGeometry.centerLeft,
@@ -1289,7 +1364,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
                               ),
-                              LengthLimitingTextInputFormatter(100),
+                              LengthLimitingTextInputFormatter(255),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_linkedin_hint'],
@@ -1338,7 +1413,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
                               ),
-                              LengthLimitingTextInputFormatter(100),
+                              LengthLimitingTextInputFormatter(255),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_instagram_hint'],
@@ -1387,7 +1462,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
                               ),
-                              LengthLimitingTextInputFormatter(100),
+                              LengthLimitingTextInputFormatter(255),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['uname_twitter_hint'],

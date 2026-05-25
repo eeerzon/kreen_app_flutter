@@ -30,6 +30,7 @@
 
     "input_email": "Enter Email",
     "kirim_email": "Send Email",
+    "kirim_email_verif": "Send verification email to",
     "request_kirim" : "Request sent successfully",
     "input_password": "Password",
     "password_min": "Use at least 8 characters with a mix of letters & numbers",
@@ -421,6 +422,15 @@
     "selesaikan_vote_kamu" : "Finish Your Vote",
     "support_answer_error": "Support required",
     "anonim" : "Anonymous",
-    "tutup_sementara" : "Close Temporarily"
+    "tutup_sementara" : "Close Temporarily",
+    "id_order" : "Order ID",
+    "tgl_order" : "Order Date",
+    "sukses" : "Success",
+    "sukses_regis" : "Registration Success",
+    "vote_order_limit" : "The transaction limit for this vote has been reached.",
+    "aktif" : "Active",
+    "non_aktif" : "Inactive",
+    "running_text_def" : "Support your favorite finalist on",
+    "kirim" : "Send"
   }
 }
