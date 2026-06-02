@@ -268,13 +268,17 @@ class _HomeContentState extends State<HomeContent> {
     // ambil semua file_upload dari banner
     for (var item in banners) {
       final url = item['file_upload']?.toString();
-      if (url != null && url.isNotEmpty) allImageUrls.add(url);
+      if (url != null && url.isNotEmpty && Uri.tryParse(url)?.hasAbsolutePath == true && url.startsWith('http')) {
+        allImageUrls.add(url);
+      }
     }
 
     // ambil semua img dari vote populer
     for (var item in votes) {
       final url = item['img']?.toString();
-      if (url != null && url.isNotEmpty) allImageUrls.add(url);
+      if (url != null && url.isNotEmpty && Uri.tryParse(url)?.hasAbsolutePath == true && url.startsWith('http')) {
+        allImageUrls.add(url);
+      }
     }
 
     // hilangkan duplikat biar efisien

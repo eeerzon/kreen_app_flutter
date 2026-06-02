@@ -241,11 +241,19 @@ class EmailInputFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     // Hapus SEMUA spasi
-    String text = newValue.text.replaceAll(RegExp(r'\s'), '');
+    final text = newValue.text.replaceAll(RegExp(r'\s'), '');
+
+    // Hitung berapa spasi yang dihapus sebelum posisi cursor
+    final spacesBeforeCursor = newValue.text
+        .substring(0, newValue.selection.baseOffset)
+        .replaceAll(RegExp(r'\s'), '')
+        .length;
 
     return TextEditingValue(
       text: text,
-      selection: TextSelection.collapsed(offset: text.length),
+      selection: TextSelection.collapsed(
+        offset: spacesBeforeCursor.clamp(0, text.length),
+      ),
     );
   }
 }

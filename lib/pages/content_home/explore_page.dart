@@ -9,7 +9,7 @@ import 'package:kreen_app_flutter/pages/content_explore/explore_event.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_filter.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_search_bar.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_vote.dart';
-import 'package:kreen_app_flutter/pages/content_explore_new/explore_filter_new.dart';
+import 'package:kreen_app_flutter/pages/content_explore/explore_filter_new.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
@@ -180,27 +180,6 @@ class _ExplorePageState extends State<ExplorePage> {
               },
               selectedIndex: _selectedIndex,
             ),
-
-            // ExploreSearchBarNew(
-            //   key: ValueKey(_selectedIndex),
-            //   controller: _searchController, 
-            //   onChanged: onSearch,
-            //   initialTime: timeFilter,
-            //   initialPrice: priceFilter,
-            //   onFilterApply: (time, price, type) {
-            //     setState(() {
-            //       timeFilter = time;
-            //       priceFilter = price;
-            //       _selectedIndex = type;
-            //     });
-            //   },
-            //   selectedIndex: _selectedIndex,
-            //   onTypeChange: (type) {
-            //     setState(() {
-            //       _selectedIndex = type;
-            //     });
-            //   },
-            // ),
 
             const SizedBox(height: 16),
             ExploreFilter(

@@ -81,28 +81,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    strAvatar = widget.user['photo'];
-    fullNameController = TextEditingController(text: widget.user['full_name']);
-    firstNameController = TextEditingController(text: widget.user['first_name']);
-    lastNameController = TextEditingController(text: widget.user['last_name']);
-    emailController = TextEditingController(text: widget.user['email']);
-    dobController = TextEditingController(text: widget.user['dob']);
-    phoneController = TextEditingController(text: widget.user['phone']);
-    dob = widget.user['dob'];
-    gender = widget.user['gender'] ?? '';
-    companyController = TextEditingController(text: widget.user['company'] ?? '');
-    jobTitleController = TextEditingController(text: widget.user['jobTitle'] ?? '');
-    linkedinController = TextEditingController(text: widget.user['link_linkedin'] ?? '');
-    igController = TextEditingController(text: widget.user['link_ig'] ?? '');
-    twitterController = TextEditingController(text: widget.user['link_twitter'] ?? '');
-    verifEmail = widget.user['verified_email'];
-
-    selectedGender = widget.user['gender'];
-
-    _originalEmail = widget.user['email'] ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
+
+      strAvatar = widget.user['photo'];
+      fullNameController = TextEditingController(text: widget.user['full_name']);
+      firstNameController = TextEditingController(text: widget.user['first_name']);
+      lastNameController = TextEditingController(text: widget.user['last_name']);
+      emailController = TextEditingController(text: widget.user['email']);
+      dobController = TextEditingController(text: widget.user['dob']);
+      phoneController = TextEditingController(text: widget.user['phone']);
+      dob = widget.user['dob'];
+      gender = widget.user['gender'] ?? '';
+      companyController = TextEditingController(text: widget.user['company'] ?? '');
+      jobTitleController = TextEditingController(text: widget.user['jobTitle'] ?? '');
+      linkedinController = TextEditingController(text: widget.user['link_linkedin'] ?? '');
+      igController = TextEditingController(text: widget.user['link_ig'] ?? '');
+      twitterController = TextEditingController(text: widget.user['link_twitter'] ?? '');
+      verifEmail = widget.user['verified_email'];
+
+      selectedGender = widget.user['gender'];
+
+      _originalEmail = widget.user['email'] ?? '';
     });
   }
 
@@ -841,6 +842,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             focusNode: firstNameFocusNode,
                             controller: fullNameController,
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                 RegExp(r"[a-zA-Z\u00C0-\u017F\s]"),
@@ -1063,6 +1066,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: companyController,
                             onChanged: (_) => setState(() {}),
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
                               //batasi emoji
                               FilteringTextInputFormatter.deny(
@@ -1084,7 +1089,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
 
-                              LengthLimitingTextInputFormatter(255),
+                              LengthLimitingTextInputFormatter(100),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['company_hint'],
@@ -1108,6 +1113,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: jobTitleController,
                             onChanged: (_) => setState(() {}),
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
                               FilteringTextInputFormatter.deny(
                                 RegExp(
@@ -1128,7 +1135,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
 
-                              LengthLimitingTextInputFormatter(255),
+                              LengthLimitingTextInputFormatter(100),
                             ],
                             decoration: InputDecoration(
                               hintText: bahasa['job_hint'],
@@ -1160,6 +1167,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             focusNode: emailFocusNode,
                             controller: emailController,
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             onChanged: (value) => setState(() {
                               if (!_emailTouched) {
                                 setState(() {
@@ -1360,6 +1369,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: linkedinController,
                             onChanged: (_) => setState(() {}),
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
@@ -1409,6 +1420,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: igController,
                             onChanged: (_) => setState(() {}),
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),
@@ -1458,6 +1471,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           TextField(
                             controller: twitterController,
                             onChanged: (_) => setState(() {}),
+                            maxLines: 1,
+                            scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                 RegExp(r'[a-zA-Z0-9:/?&=._\-]'),

@@ -186,8 +186,15 @@ class _ExploreAllState extends State<ExploreAll> {
       }
     }
 
-    final url = "$baseapiUrl/v2/global-search?term=$term&time=$filterTime&price=$filterPrice&limit=6&page=$currentPage&order=asc&order_by=start_date";
-    
+    final url = "$baseapiUrl/v2/global-search?"
+      "term=$term"
+      "&time=$filterTime"
+      "&price=$filterPrice"
+      "&limit=6"
+      "&page=$currentPage"
+      "&order=asc"
+      "&order_by=start_date";
+
     final response = await http.get(
       Uri.parse(url),
       headers: {
