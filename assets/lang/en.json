@@ -430,7 +430,14 @@
     "vote_order_limit" : "The transaction limit for this vote has been reached.",
     "aktif" : "Active",
     "non_aktif" : "Inactive",
+    "public" : "Public Event",
+    "private" : "Private Event",
     "running_text_def" : "Support your favorite finalist on",
-    "kirim" : "Send"
+    "kirim" : "Send",
+
+    "boost_desc_1" : "Every vote purchased during this promo period will be counted",
+    "boost_desc_2" : "Boost Vote ends in",
+    "boost_desc_3" : "Boost vote period is valid until",
+    "vote_sekarang" : "VOTE NOW!"
   }
 }

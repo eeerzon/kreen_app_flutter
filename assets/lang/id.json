@@ -428,9 +428,16 @@
     "sukses" : "Berhasil",
     "sukses_regis" : "Pendaftaran Berhasil",
     "vote_order_limit" : "Vote kamu telah mencapai batas maksimum",
-    "aktif" : "Actif",
+    "aktif" : "Aktif",
     "non_aktif" : "Tidak Aktif",
+    "public" : "Event Publik",
+    "private" : "Event Privat",
     "running_text_def" : "Dukung finalis pilihan kamu pada",
-    "kirim" : "Kirim"
+    "kirim" : "Kirim",
+
+    "boost_desc_1": "Setiap vote yang dibeli selama periode promo ini akan dihitung",
+    "boost_desc_2": "Boost Vote berakhir dalam",
+    "boost_desc_3": "Periode Boost Vote berlaku hingga",
+    "vote_sekarang": "VOTE SEKARANG!"
   }
 }

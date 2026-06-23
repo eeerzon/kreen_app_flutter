@@ -455,6 +455,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       newButtonText = buttonPilihPaketText ?? '';
     }
 
+    if (difference.isNegative) {
+      _timer?.cancel();
+    }
+
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
       isBeforeOpen = newIsBeforeOpen;

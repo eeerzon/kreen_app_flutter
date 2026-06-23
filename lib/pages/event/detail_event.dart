@@ -875,8 +875,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               ),
                               child: Text(
                                 detailEvent['flag_private'] == 1
-                                  ? bahasa['aktif']
-                                  : bahasa['non_aktif'],
+                                  ? bahasa['private'] ?? 'Private Event'
+                                  : bahasa['public'] ?? 'Public Event',
                                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -888,7 +888,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                detailEvent['type_event'],
+                                detailEvent['type_event'].toString().capitalize,
                                 style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -901,8 +901,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                               ),
                               child: Text(
                                 event['harga_max'] == 0
-                                ? bahasa['harga_detail']
-                                : bahasa['berbayar'],
+                                  ? bahasa['harga_detail']
+                                  : bahasa['berbayar'],
                                 style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                               ),
                             ),

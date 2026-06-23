@@ -1,9 +1,13 @@
 
 
-// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names, unused_local_variable
+// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names, unused_local_variable, deprecated_member_use
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/ticket_pdf_generator.dart';
 import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
@@ -12,6 +16,8 @@ import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis_paket.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote_lang.dart';
+import 'package:kreen_app_flutter/pages/vote/finalis_page.dart';
+import 'package:kreen_app_flutter/pages/vote/finalis_paket_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -346,4 +352,270 @@ Future<bool> isImageAccessible(String? url) async {
   } catch (_) {
     return false;
   }
+}
+
+void showBoostPopup(
+  BuildContext context, 
+  String langCode, 
+  Map<String, dynamic> bahasa, 
+  Map<String, dynamic> vote, 
+  String flag_paket, 
+  Color color, 
+  int multiplier, 
+  String multiplier_end_date, 
+  Duration? remainingTime, 
+  int view_api,
+  bool leaderboardClicked
+) {
+  Timer? dialogTimer;
+  Duration currentRemaining = remainingTime ?? Duration.zero;
+  String formattedDate = '-';
+
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) {
+
+        // start timer khusus dialog
+        dialogTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+          if (currentRemaining.inSeconds > 0) {
+            setDialogState(() {
+              currentRemaining = currentRemaining - const Duration(seconds: 1);
+            });
+          }
+        });
+
+        if (multiplier_end_date.isNotEmpty) {
+          try {
+            final localDate = DateHelper.parseWibToLocal(multiplier_end_date);
+            if (langCode == 'id') {
+              // Bahasa Indonesia
+              final formatter = DateFormat(formatDateId, "id_ID");
+              formattedDate = formatter.format(localDate);
+            } else {
+              // Bahasa Inggris
+              final formatter = DateFormat(formatDateEn, "en_US");
+              formattedDate = formatter.format(localDate);
+
+              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              final day = localDate.day;
+              String suffix = 'th';
+              if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+              else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+              else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+              formattedDate = formatter.format(localDate).replaceFirst('$day', '$day$suffix');
+            }
+          } catch (e) {
+            formattedDate = '-';
+          }
+        }
+
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  color.withOpacity(0.1),
+                  color.withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Stack(
+              children: [
+                // overlay image
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.75,
+                    child: Image.asset(
+                      'assets/images/boost_kreen.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+
+                // konten utama
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      Text(
+                        'BOOST',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: color, width: 3),
+                        ),
+                        child: Text(
+                          'VOTE ${multiplier}X 🔥',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+
+                      SizedBox(height: 10),
+                      Text(
+                        '${bahasa['boost_desc_1'] ?? 'Every vote purchased during this promo period will be counted'} ${multiplier}x',
+                        textAlign: TextAlign.center,
+                      ),
+
+                      SizedBox(height: 10),
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white60,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '🚀 ${bahasa['boost_desc_2'] ?? 'Boost Vote ends in'}',
+                            ),
+
+                            SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _timeBox(currentRemaining.inDays.toString().padLeft(2, "0"), bahasa['day'], Colors.black),
+                                const SizedBox(width: 10),
+                                _separator(Colors.white),
+                                const SizedBox(width: 10),
+                                _timeBox(currentRemaining.inHours.remainder(24).toString().padLeft(2, "0"), bahasa['hour'], Colors.black),
+                                const SizedBox(width: 10),
+                                _separator(Colors.white),
+                                const SizedBox(width: 10),
+                                _timeBox(currentRemaining.inMinutes.remainder(60).toString().padLeft(2, "0"), bahasa['minute'], Colors.black),
+                                const SizedBox(width: 10),
+                                _separator(Colors.white),
+                                const SizedBox(width: 10),
+                                _timeBox(currentRemaining.inSeconds.remainder(60).toString().padLeft(2, "0"), bahasa['second'], Colors.black),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 10),
+                      Text(
+                        '*${bahasa['boost_desc_3'] ?? 'Boost vote period is valid until'}\n$formattedDate',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+
+                      SizedBox(height: 10),
+                      SizedBox(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: color,
+                            padding: EdgeInsets.all(12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            if (leaderboardClicked) {
+                              Navigator.pop(context);
+                            } else {
+                              Navigator.pop(context);
+
+                              if (flag_paket == '0') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => FinalisPage(id_vote: vote['id_vote'], view_api: view_api,),
+                                  ),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => FinalisPaketPage(id_vote: vote['id_vote'], view_api: view_api,),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          child: Text(
+                            bahasa['vote_sekarang'] ?? 'VOTE NOW!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    )
+  ).whenComplete(() => dialogTimer?.cancel());
+}
+
+
+
+Widget _timeBox(String value, String label, Color color) {
+  return Column(
+    children: [
+      Text(
+        value,
+        style: TextStyle(
+          color: color,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      Text(
+        label,
+        style: const TextStyle(color: Colors.black),
+      ),
+    ],
+  );
+}
+
+Widget _separator(Color color) {
+  return Column(
+    children: [
+      Text(
+        "|",
+        style: TextStyle(
+          color: color,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      SizedBox(height: 20), // biar sejajar dengan label bawah
+    ],
+  );
 }

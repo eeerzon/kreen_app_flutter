@@ -190,7 +190,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
           // tambahkan 1 jam untuk durasi expired payment
           // var newDate = date.add(const Duration(hours: 1));
           // if (voteOder['payment_method_id'] == "6387457643547345") {
-          //   newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
+            // final newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
           // }
 
           final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive'] ?? 0));
@@ -1068,18 +1068,20 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                           style: TextStyle(fontWeight: FontWeight.bold),
                                         ),
 
-                                        const SizedBox(height: 8,),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: List.generate(finalis.length, (i) {
-                                            return Text(
-                                              voteOrderDetail[i]['qty'] > 1
-                                                ? '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} votes'
-                                                : '- ${finalis[i]['nama_finalis']} ${voteOrderDetail[i]['qty']} vote',
-                                              style: const TextStyle(color: Colors.grey),
-                                            );
-                                          }),
-                                        ),
+                                        if (voteOder['multiplier'] == 1) ... [
+                                          const SizedBox(height: 8,),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: List.generate(finalis.length, (i) {
+                                              return Text(
+                                                voteOrderDetail[i]['qty'] > 1
+                                                  ? '- ${finalis[i]['nama_finalis']} (${voteOrderDetail[i]['qty']} votes)'
+                                                  : '- ${finalis[i]['nama_finalis']} (${voteOrderDetail[i]['qty']} vote)',
+                                                style: const TextStyle(color: Colors.grey),
+                                              );
+                                            }),
+                                          ),
+                                        ]
                                       ],
                                     ),
                                   ),
@@ -1092,7 +1094,86 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
 
-                              const SizedBox(height: 10,),
+                              if (voteOder['multiplier'] > 1) ... [
+                                const SizedBox(height: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: List.generate(finalis.length, (i) {
+                                    final int qty = voteOrderDetail[i]['qty'] ?? 0;
+                                    final int multiplier = voteOder['multiplier'] ?? 1;
+                                    num realQty = qty / multiplier;
+                                    final int bonus = qty;
+                                    final String namaFinalis = finalis[i]['nama_finalis'] ?? '-';
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          // KIRI
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                namaFinalis,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              if (multiplier > 1) ...[
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Boost Vote',
+                                                  style: TextStyle(color: Colors.green.shade700),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Vote Bonus',
+                                                  style: TextStyle(
+                                                    color: Colors.green.shade700,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+
+                                          // KANAN
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              // qty asli dicoret
+                                              Text(
+                                                '${realQty.toInt()} Vote',
+                                                style: const TextStyle(
+                                                  decoration: TextDecoration.lineThrough,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              if (multiplier > 1) ...[
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'x$multiplier votes',
+                                                  style: TextStyle(color: Colors.green.shade700),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '$bonus Vote',
+                                                  style: TextStyle(
+                                                    color: Colors.green.shade700,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ],
+                              
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [

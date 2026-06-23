@@ -1,9 +1,13 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/widget_webview.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_2_widget.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote/detail_vote_3_widget.dart';
@@ -66,6 +70,12 @@ class _DetailVotePageState extends State<DetailVotePage> {
   double _runningTextThreshold = -1;
   final GlobalKey _runningTextKey = GlobalKey();
 
+  Duration remaining = Duration.zero;
+  Timer? _timer;
+  bool _boostPopupShown = false;
+  Color color = Colors.red;
+  int view_api = 0;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +88,31 @@ class _DetailVotePageState extends State<DetailVotePage> {
         await _getBahasa();
         await _getCurrency();
         await _loadVotes();
+
+        // ambil dari respon api
+        if (vote['leaderboard_tipe'] == 'number') {
+          view_api = 2;
+        } else if (vote['leaderboard_tipe'] == 'percent') {
+          view_api = 3;
+        } else if (vote['leaderboard_tipe'] == 'hidden') {
+          view_api = 4;
+        } else if (vote['leaderboard_tipe'] == 'bar-percent') {
+          view_api = 5;
+        } else if (vote['leaderboard_tipe'] == 'bar-number') {
+          view_api = 6;
+        }
+        
+        if (vote['multiplier'] != null && vote['multiplier'] > 1) {
+          _startCountdown(DateHelper.parseWibToUtc(vote['multiplier_end_date']));
+        }
+
+        // Tampilkan popup hanya sekali
+        if (vote['multiplier'] != null && vote['multiplier'] > 1 && !_boostPopupShown) {
+          _boostPopupShown = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showBoostPopup(context, langCode!, bahasa!, vote, flag_paket!, color, vote['multiplier'], vote['multiplier_end_date'], remaining, view_api, false);
+          });
+        }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -230,6 +265,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -510,19 +546,6 @@ class _DetailVotePageState extends State<DetailVotePage> {
   }
 
   Widget buildKontenVote() {
-    // ambil dari respon api
-    int view_api = 0;
-    if (vote['leaderboard_tipe'] == 'number') {
-      view_api = 2;
-    } else if (vote['leaderboard_tipe'] == 'percent') {
-      view_api = 3;
-    } else if (vote['leaderboard_tipe'] == 'hidden') {
-      view_api = 4;
-    } else if (vote['leaderboard_tipe'] == 'bar-percent') {
-      view_api = 5;
-    } else if (vote['leaderboard_tipe'] == 'bar-number') {
-      view_api = 6;
-    }
 
     String themeName = 'Red';
     if (vote['theme_name'] != null) {
@@ -532,7 +555,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
       themeName = "Red";
     }
     
-    Color color = colorMap[themeName] ?? Colors.red;
+    color = colorMap[themeName] ?? Colors.red;
   
     if (articleData.isNotEmpty && !_articlePopupShown) {
       _articlePopupShown = true;
@@ -815,6 +838,26 @@ class _DetailVotePageState extends State<DetailVotePage> {
         ),
       ),
     );
+  }
+
+  void _startCountdown(DateTime deadlineUtc) {
+    _updateRemaining(deadlineUtc);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateRemaining(deadlineUtc);
+    });
+  }
+
+  void _updateRemaining(DateTime deadlineUtc) {
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
+
+    if (difference.isNegative) {
+      _timer?.cancel();
+    }
+    
+    setState(() {
+      remaining = difference.isNegative ? Duration.zero : difference;
+    });
   }
 }
 

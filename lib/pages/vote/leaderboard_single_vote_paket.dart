@@ -143,6 +143,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
   late YoutubePlayerController _ytTopController, _ytBottomController;
   bool _isFullscreen = false;
+  bool _boostPopupShown = false;
+  Color color = Colors.red;
+  int view_api = 0;
 
   void onFullscreenChanged(bool value) {
     setState(() {
@@ -199,6 +202,31 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       if (widget.view_api == 3 || widget.view_api == 5) {
         setState(() {
           persen = true;
+        });
+      }
+
+      // ambil dari respon api
+      if (detailvote['leaderboard_tipe'] == 'number') {
+        view_api = 2;
+      } else if (detailvote['leaderboard_tipe'] == 'percent') {
+        view_api = 3;
+      } else if (detailvote['leaderboard_tipe'] == 'hidden') {
+        view_api = 4;
+      } else if (detailvote['leaderboard_tipe'] == 'bar-percent') {
+        view_api = 5;
+      } else if (detailvote['leaderboard_tipe'] == 'bar-number') {
+        view_api = 6;
+      }
+      
+      if (detailvote['multiplier'] != null && detailvote['multiplier'] > 1) {
+        _startCountdownBoost(DateHelper.parseWibToUtc(detailvote['multiplier_end_date']));
+      }
+
+      // Tampilkan popup hanya sekali
+      if (detailvote['multiplier'] != null && detailvote['multiplier'] > 1 && !_boostPopupShown) {
+        _boostPopupShown = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showBoostPopup(context, langCode!, bahasa!, detailvote, flag_paket!, color, detailvote['multiplier'], detailvote['multiplier_end_date'], remaining, view_api, true);
         });
       }
     });
@@ -287,6 +315,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       return;
     }
     final tempDetailVote = resultDetailVote['data'] ?? {};
+    String themeName = tempDetailVote['theme_name'] ?? 'Red';
+    if (themeName == "Default Kreen") themeName = "Red";
+    color = colorMap[themeName] ?? Colors.red;
 
     final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard", xLanguage: langCode);
     if (resultLeaderboard == null || resultLeaderboard['rc'] != 200) {
@@ -315,6 +346,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         );
 
         detailvote = tempDetailVote;
+        flag_paket = tempDetailVote['flag_paket'] ?? 0;
         ranking = tempRanking;
         harga = tempDetailVote['harga'];
         hargaAsli = tempDetailVote['harga_asli'];
@@ -470,6 +502,11 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       newButtonText = buttonPilihPaketText ?? '';
     }
 
+    if (difference.isNegative) {
+      _timer?.cancel();
+    }
+
+    if (!mounted) return;
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
       isBeforeOpen = newIsBeforeOpen;
@@ -477,6 +514,26 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       isTutup = remaining.inSeconds == 0 || isBeforeOpen;
 
       buttonText = newButtonText;
+    });
+  }
+
+  void _startCountdownBoost(DateTime deadlineUtc) {
+    _updateRemainingBoost(deadlineUtc);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateRemainingBoost(deadlineUtc);
+    });
+  }
+
+  void _updateRemainingBoost(DateTime deadlineUtc) {
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
+
+    if (difference.isNegative) {
+      _timer?.cancel();
+    }
+    
+    setState(() {
+      remaining = difference.isNegative ? Duration.zero : difference;
     });
   }
 

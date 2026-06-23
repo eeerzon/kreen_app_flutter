@@ -25,7 +25,9 @@ class _PickLoginSectionState extends State<PickLoginSection> {
   @override
   void initState() {
     super.initState();
-    _getBahasa();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _getBahasa();
+    });
   }
 
   Future<void> _getBahasa() async {
@@ -80,16 +82,20 @@ class _PickLoginSectionState extends State<PickLoginSection> {
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      pages[0]["title"]!,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                    Text(
-                      pages[0]["desc"]!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+                    if (pages.isEmpty)
+                      const CircularProgressIndicator() // atau SizedBox.shrink()
+                    else ...[
+                      Text(
+                        pages[0]["title"]!,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        pages[0]["desc"]!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
                   ],
                 ),
               ),

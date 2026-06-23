@@ -385,6 +385,10 @@ class _FinalisPageState extends State<FinalisPage> {
 
     final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
 
+    if (difference.isNegative) {
+      _timer?.cancel();
+    }
+    
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
       isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);

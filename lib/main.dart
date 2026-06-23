@@ -6,10 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:kreen_app_flutter/helper/deep_link_handler.dart';
 import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'pages/splash_logo_screen.dart';
+import 'package:kreen_app_flutter/pages/splash_logo_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+
+final deepLinkHandler = DeepLinkHandler();
+
+// ganti value di global var sesuai kebutuhan
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
@@ -22,7 +27,9 @@ void main() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  
+
+  await deepLinkHandler.init();
+
   runApp(const MyApp());
 }
 
@@ -34,6 +41,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     
     return MaterialApp(
+      navigatorKey: deepLinkHandler.navigatorKey,
       theme: ThemeData(
         textSelectionTheme: const TextSelectionThemeData(
           cursorColor: Colors.orange,
@@ -52,7 +60,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       debugShowCheckedModeBanner: false,
-      home: SplashLogoPage(), // langsung splash logo
+      home: const SplashLogoPage(), // langsung splash logo
     );
   }
 }

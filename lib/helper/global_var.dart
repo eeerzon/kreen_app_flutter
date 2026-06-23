@@ -6,14 +6,24 @@ import 'package:flutter/services.dart';
 // padding global
 const EdgeInsets kGlobalPadding = EdgeInsets.all(20);
 
+// ganti value sesuai kebutuhan
+//====================================================================================
+
 const String baseUrl = "https://dev.kreenconnect.com"; //dev
-// const String baseUrl = "https://kreenconnect.com"; //prod
-// const String baseUrl = "https://bc.kreenconnect.com"; //semiprod
+// const String baseUrl = "https://kreenconnect.com"; //live
+// const String baseUrl = "https://bc.kreenconnect.com"; //semi live
+
+const String baseHost = "dev.kreenconnect.com"; //dev
+// const String baseHost = "kreenconnect.com"; //live
+// const String baseHost = "bc.kreenconnect.com"; //semi live
 
 const String baseapiUrl = "$baseUrl/kreenapi";
 
 const String STRIPE_PUBLIC_KEY = "pk_test_51PqeNlL6LohooVUuQ3XETGCDPNsYsMG7CEt1wBLeUSslqxjKyTcTFxQ3Ue5ysqCfZLsiGnP2e6Q9Y8hsydwAoixS00m5Q7OvmP"; //dev
 // const String STRIPE_PUBLIC_KEY = "pk_live_51PqeNlL6LohooVUu0QrXYjrfhmEDj7WZuzm4EF6FeTGUmErLKRXoGU2UUr0GvrYUFONNGm6jtRr0e0adYXL4guXX00A4ft7WN1"; //prod
+
+//====================================================================================
+
 
 const String formatDateEn = "MMM d, yyyy";
 const String formatDateId = "dd MMM yyyy";
@@ -174,7 +184,7 @@ final Map<String, String> errorTranslationMap = {
 };
 
 
-// Map khusus normalisasi bahasa ID (server → tampilan)
+// Map khusus normalisasi bahasa ID (server -> tampilan)
 final Map<String, String> idNormalizationMap = {
   'Nomor telepon minimal 7 karakter': 'Nomor handphone harus minimal 7 karakter',
   'email harus memiliki domain yang valid.': 'Email harus memiliki domain yang valid',
@@ -271,3 +281,14 @@ Map<String, Color> colorMap = {
   'Turqoise': Colors.teal,
   'Gold': Color.fromRGBO(206, 138, 11, 1),
 };
+
+extension StringExtension on String {
+  String get capitalize {
+    if (isEmpty) return this;
+    return split(' ')
+      .map((word) => word.isEmpty 
+        ? word 
+        : word[0].toUpperCase() + word.substring(1))
+      .join(' ');
+  }
+}

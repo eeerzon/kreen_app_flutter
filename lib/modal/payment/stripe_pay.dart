@@ -76,7 +76,8 @@ Future<void> GooglePay(
         merchantDisplayName: 'Kreen App',
         allowsDelayedPaymentMethods: true,
         googlePay: PaymentSheetGooglePay(
-          testEnv: true, // false untuk Production
+          testEnv: false, // false untuk Production
+          // testEnv: true, // false untuk Production
           currencyCode: 'USD', 
           merchantCountryCode: 'US',
         ),

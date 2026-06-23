@@ -251,31 +251,35 @@ class DeskripsiSection_5 extends StatefulWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.data['judul_vote'] ?? '-',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.data['judul_vote'] ?? '-',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                        ),
+                        const SizedBox(height: 8),
 
-                      // title event
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            widget.data['nama_kategori'] ?? '-',
+                            style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                          ),
                         ),
-                        child: Text(
-                          widget.data['nama_kategori'] ?? '-',
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ]
+                      ],
+                    ),
                   ),
+
+                  const SizedBox(width: 12),
 
                   InkWell(
                     key: _shareKey,

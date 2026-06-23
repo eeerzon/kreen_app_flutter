@@ -52,372 +52,1129 @@ class _HomeContentState extends State<HomeContent> {
   String? leaderboard_title;
   String? seeMore;
 
-  bool isLoadingContent = true;
-  
+  // ─── Loading state per section ───────────────────────────────────────────────
+  // Phase 1: above the fold (banner + vote populer)
+  bool isLoadingAboveFold = true;
+
+  // Phase 2: konten bawah (lazy, di-load setelah phase 1 selesai)
+  bool isLoadingBelowFold = true;
+
   bool showErrorBar = false;
-  String errorMessage = ''; 
+  String errorMessage = '';
   String? currencyCode;
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      
       await _getBahasa();
       await _getCurrency();
-      await _loadContent();
+      await _loadAboveFold(); // fase 1: banner + vote populer
     });
   }
-
+  
   Future<void> _checkToken() async {
     final storedToken = await StorageService.getToken();
-
     if (!mounted) return;
-    setState(() {
-      token = storedToken;
-    });
+    setState(() => token = storedToken);
   }
-
+  
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
-
-    setState(() {
-      langCode = code;
-    });
+    setState(() => langCode = code);
 
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
-
     setState(() {
       bahasa = tempbahasa;
-
       selamatDatang = bahasa['top_nav'];
       login = bahasa['login'];
       event_title = bahasa['event_title'];
       event_recomen = bahasa['event_recomen'];
       event_desc = bahasa['event_desc'];
-
       vote_title = bahasa['vote_title'];
       latest_vote = bahasa['latest_vote'];
-
       leaderboard_title = bahasa['leaderboard_title'];
-
       comingsoon_title = bahasa['comingsoon_title'];
       comingsoon_desc = bahasa['comingsoon_desc'];
-
       partner = bahasa['partner'];
       partner_btn = bahasa['partner_btn'];
-
       news_title = bahasa['news_title'];
       news_desc = bahasa['news_desc'];
-
       seeMore = bahasa['more'];
     });
   }
 
   Future<void> _getCurrency() async {
-    var code = await StorageService.getCurrency();
-    setState(() {
-      currencyCode = code;
-    });
+    final code = await StorageService.getCurrency();
+    setState(() => currencyCode = code);
   }
-
+  
   List<dynamic> activeBanners = [];
   List<double?> aspectRatios = [];
+  List<dynamic> votes        = [];
 
-  List<dynamic> votes = [];
-  List<dynamic> juara = [];
-  List<dynamic> hitsevent = [];
+  // below-fold data — state terpisah supaya bisa di-render incremental
+  List<dynamic> juara       = [];
+  List<dynamic> hitsevent   = [];
   List<dynamic> latestvotes = [];
   List<dynamic> recomenevent = [];
-  List<dynamic> listArtikel = [];
+  List<dynamic> listArtikel  = [];
 
-  List<dynamic> closePayment = [];
-  List<dynamic> tglBukaVote = [];
-
-  Future<void> _loadContent() async {
-
+  // PHASE 1: banner + vote populer
+  /// Load dua endpoint paling penting secara parallel
+  Future<void> _loadAboveFold() async {
     await _checkToken();
 
-    var get_user = await StorageService.getUser();
+    final get_user = await StorageService.getUser();
     first_name = get_user['first_name'];
 
-    final resultbanner = await ApiService.get("/setting-banner/active", xLanguage: langCode);
-    if (resultbanner == null || resultbanner['rc'] != 200) {
+    // Dua request jalan parallel pakai Future.wait
+    final results = await Future.wait([
+      ApiService.get("/setting-banner/active", xLanguage: langCode),
+      ApiService.get("/vote/popular", xCurrency: currencyCode, xLanguage: langCode),
+    ]);
+
+    final resultBanner = results[0];
+    final resultVote = results[1];
+
+    if (!mounted) return;
+
+    // Validasi banner
+    if (resultBanner == null || resultBanner['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultbanner?['message'];
+        errorMessage = resultBanner?['message'] ?? 'Error loading banner';
+        isLoadingAboveFold = false;
       });
       return;
     }
 
-    final resultVote = await ApiService.get("/vote/popular", xCurrency: currencyCode, xLanguage: langCode);
+    // Validasi vote populer
     if (resultVote == null || resultVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultVote?['message'];
+        errorMessage = resultVote?['message'] ?? 'Error loading votes';
+        isLoadingAboveFold = false;
       });
       return;
     }
 
-    final resultJuara = await ApiService.get("/vote/juara", xLanguage: langCode);
-    if (resultJuara == null || resultJuara['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultJuara?['message'];
-      });
-      return;
-    }
-
-    final resulthitEvent = await ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode);
-    if (resulthitEvent == null || resulthitEvent['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resulthitEvent?['message'];
-      });
-      return;
-    }
-
-    final resultlatestVote = await ApiService.get("/vote/latest", xCurrency: currencyCode, xLanguage: langCode);
-    if (resultlatestVote == null || resultlatestVote['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultlatestVote?['message'];
-      });
-      return;
-    }
-
-    final resultrecomenEvent = await ApiService.get("/event/recommended", xCurrency: currencyCode, xLanguage: langCode);
-    if (resultrecomenEvent == null || resultrecomenEvent['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultrecomenEvent?['message'];
-      });
-      return;
-    }
-
-    final resultArtikel = await ApiService.get("/articles?limit=8", xLanguage: langCode);
-    if (resultArtikel == null || resultArtikel['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultArtikel?['message'];
-      });
-      return;
-    }
-
+    // Filter banner expired
     final now = DateTime.now();
-    final allBanners = resultbanner['data'] as List<dynamic>? ?? [];
-
+    final allBanners = resultBanner['data'] as List<dynamic>? ?? [];
     final filtered = allBanners.where((banner) {
       final takedownDateStr = banner['takedown_date']?.toString();
       if (takedownDateStr == null || takedownDateStr.isEmpty) return true;
-
       final takedownDate = DateTime.tryParse(takedownDateStr);
       if (takedownDate == null) return true;
-
       return now.isBefore(takedownDate);
     }).toList();
 
-    final tempActiveBanners = filtered;
     final tempVotes = resultVote['data'] ?? [];
-    
-    final rawData = resultJuara['data'];
+    final tempBanners = filtered;
 
-    List<dynamic> tempJuara = [];
+    // Precache gambar banner + vote (non-blocking: tidak await, jalan di background)
+    _precacheAllImages(context, tempBanners, tempVotes).ignore();
 
-    if (rawData is Map<String, dynamic>) {
-      tempJuara = rawData.values.toList();
-    } else if (rawData is List) {
-      tempJuara = rawData;
-    }
-
-    final tempHitsevent = resulthitEvent['data'] ?? [];
-    final tempLatestVotes = resultlatestVote['data'] ?? [];
-    final tempRecomenEvent = resultrecomenEvent['data'] ?? [];
-    final tempListArtikel = resultArtikel['data'] ?? [];
-    
-    await _precacheAllImages(context, tempActiveBanners, tempVotes);
-
-    var tempChoosed = await StorageService.getIsChoosed();
+    final tempChoosed = await StorageService.getIsChoosed();
 
     if (!mounted) return;
-    if (mounted) {
-      setState(() {
 
-        photo_user = get_user['photo'];
+    setState(() {
+      photo_user = get_user['photo'];
+      activeBanners = tempBanners;
+      votes = tempVotes;
+      isChoosed = tempChoosed ?? 0;
+      isLoadingAboveFold = false; // ← skeleton hilang di sini
+      showErrorBar = false;
+    });
 
-        activeBanners = tempActiveBanners;
-        votes = tempVotes;
-        juara = tempJuara;
-        hitsevent = tempHitsevent;
-        latestvotes = tempLatestVotes;
-        recomenevent = tempRecomenEvent;
-        listArtikel = tempListArtikel;
+    // Hitung aspect ratio banner secara async (tidak blocking render)
+    preloadImageSizes();
 
-        isChoosed = tempChoosed ?? 0;
-
-        preloadImageSizes();
-        isLoadingContent = false;
-        showErrorBar = false;
-      });
-    }
+    // Langsung kick-off phase 2 di background tanpa await
+    _loadBelowFold();
   }
 
-  Future<void> _precacheAllImages(BuildContext context, List<dynamic> banners, List<dynamic> votes) async {
-    List<String> allImageUrls = [];
+  // PHASE 2: konten di bawah
+  /// Di-load setelah phase 1 selesai. User sudah bisa scroll
+  /// dan melihat banner + vote populer saat ini berjalan.
+  Future<void> _loadBelowFold() async {
+    // Semua 5 endpoint jalan parallel
+    final results = await Future.wait([
+      ApiService.get("/vote/juara", xLanguage: langCode),
+      ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode),
+      ApiService.get("/vote/latest", xCurrency: currencyCode, xLanguage: langCode),
+      ApiService.get("/event/recommended", xCurrency: currencyCode, xLanguage: langCode),
+      ApiService.get("/articles?limit=8", xLanguage: langCode),
+    ]);
 
-    // ambil semua file_upload dari banner
-    for (var item in banners) {
-      final url = item['file_upload']?.toString();
-      if (url != null && url.isNotEmpty && Uri.tryParse(url)?.hasAbsolutePath == true && url.startsWith('http')) {
-        allImageUrls.add(url);
+    if (!mounted) return;
+
+    // Jika salah satu gagal, tampilkan error tapi section lain tetap tampil
+    for (final r in results) {
+      if (r == null || r['rc'] != 200) {
+        setState(() {
+          showErrorBar = true;
+          errorMessage = r?['message'] ?? 'Error loading content';
+        });
       }
     }
 
-    // ambil semua img dari vote populer
-    for (var item in votes) {
-      final url = item['img']?.toString();
-      if (url != null && url.isNotEmpty && Uri.tryParse(url)?.hasAbsolutePath == true && url.startsWith('http')) {
-        allImageUrls.add(url);
+    final resultJuara = results[0];
+    final resultHit = results[1];
+    final resultLatest = results[2];
+    final resultRecom = results[3];
+    final resultArtikel = results[4];
+
+    // Parse juara — bisa Map atau List
+    List<dynamic> tempJuara = [];
+    if (resultJuara != null && resultJuara['rc'] == 200) {
+      final rawData = resultJuara['data'];
+      if (rawData is Map<String, dynamic>) {
+        tempJuara = rawData.values.toList();
+      } else if (rawData is List) {
+        tempJuara = rawData;
       }
     }
 
-    // hilangkan duplikat biar efisien
-    allImageUrls = allImageUrls.toSet().toList();
+    setState(() {
+      juara = tempJuara;
+      hitsevent = (resultHit    != null && resultHit['rc']    == 200) ? resultHit['data']    ?? [] : hitsevent;
+      latestvotes = (resultLatest != null && resultLatest['rc'] == 200) ? resultLatest['data']  ?? [] : latestvotes;
+      recomenevent = (resultRecom  != null && resultRecom['rc']  == 200) ? resultRecom['data']   ?? [] : recomenevent;
+      listArtikel = (resultArtikel != null && resultArtikel['rc'] == 200) ? resultArtikel['data'] ?? [] : listArtikel;
+      isLoadingBelowFold = false;
+    });
+  }
 
-    // pre-cache semua gambar
-    for (String url in allImageUrls) {
+  // Full refresh (pull-to-refresh) 
+  Future<void> _loadContent() async {
+    setState(() {
+      isLoadingAboveFold = true;
+      isLoadingBelowFold = true;
+    });
+    await _loadAboveFold();
+  }
+
+  // Image pre-cache
+  Future<void> _precacheAllImages(
+    BuildContext context,
+    List<dynamic> banners,
+    List<dynamic> votes,
+  ) async {
+    final urls = <String>{};
+    for (final b in banners) {
+      final url = b['file_upload']?.toString();
+      if (url != null && url.isNotEmpty && url.startsWith('http')) urls.add(url);
+    }
+    for (final v in votes) {
+      final url = v['img']?.toString();
+      if (url != null && url.isNotEmpty && url.startsWith('http')) urls.add(url);
+    }
+    for (final url in urls) {
+      if (!mounted) return;
       await precacheImage(NetworkImage(url), context);
     }
   }
 
   void preloadImageSizes() {
     aspectRatios = List<double?>.filled(activeBanners.length, null);
-
     for (int i = 0; i < activeBanners.length; i++) {
-      final url = activeBanners[i]['file_upload'];
+      final url   = activeBanners[i]['file_upload'];
       final image = Image.network(url).image;
-
       image.resolve(const ImageConfiguration()).addListener(
         ImageStreamListener((ImageInfo info, bool _) {
-          final width = info.image.width.toDouble();
-          final height = info.image.height.toDouble();
-          setState(() {
-            aspectRatios[i] = width / height;
-          });
+          final w = info.image.width.toDouble();
+          final h = info.image.height.toDouble();
+          if (mounted) setState(() => aspectRatios[i] = w / h);
         }),
       );
     }
   }
 
+  // Skeleton helper
+  Widget _shimmerBox({double width = double.infinity, double height = 20, double radius = 6}) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
+    );
+  }
+
+  // BUILD 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: Stack(
         children: [
-          isLoadingContent
-            ? buildSkeletonHome()
-            : buildKontenHome(),
-
+          isLoadingAboveFold
+              ? buildSkeletonHome()
+              : buildKontenHome(),
           GlobalErrorBar(
             visible: showErrorBar,
             message: errorMessage,
-            onRetry: () {
-              _loadContent();
-            },
+            onRetry: () => _loadContent(),
           ),
         ],
       ),
-    ); 
+    );
   }
 
+  // SKELETON (hanya above-fold)
   Widget buildSkeletonHome() {
-    return Scaffold(
-      body: SingleChildScrollView(
+    return SingleChildScrollView(
+      child: Container(
+        color: Colors.grey[200],
+        padding: kGlobalPadding,
+        child: Column(
+          children: [
+            // Header
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(height: 40, width: 40, color: Colors.white),
+                  Container(height: 40, width: 100, color: Colors.white),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Carousel
+            _shimmerBox(height: 180, radius: 8),
+            const SizedBox(height: 30),
+
+            // Section title
+            Row(
+              children: [
+                _shimmerBox(width: 30, height: 30),
+                const SizedBox(width: 10),
+                _shimmerBox(width: 180, height: 20),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Horizontal cards (3 cards)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: List.generate(3, (i) => Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  width: 200,
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 180,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(height: 14, width: 160, color: Colors.white),
+                                const SizedBox(height: 6),
+                                Container(height: 12, width: 100, color: Colors.white),
+                                const SizedBox(height: 6),
+                                Container(height: 12, width: 80,  color: Colors.white),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // SKELETON SECTION (below fold, ditampilkan sambil phase 2 load)
+  Widget _buildSkeletonSection() {
+    return Padding(
+      padding: kGlobalPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _shimmerBox(width: 30, height: 30),
+              const SizedBox(width: 10),
+              _shimmerBox(width: 140, height: 18),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(3, (i) => Container(
+                margin: const EdgeInsets.only(right: 12),
+                width: 200,
+                child: _shimmerBox(height: 250, radius: 8),
+              )),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // AVATAR helpers
+  bool get isSvg => photo_user?.toLowerCase().endsWith(".svg") ?? false;
+  bool get isHttp => photo_user?.toLowerCase().contains("http") ?? false;
+
+  // DATE FORMATTER
+  String _formatDate(String? dateStr, {bool includeTime = false}) {
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    try {
+      final date = DateTime.parse(dateStr);
+      if (langCode == 'id') {
+        final pattern = includeTime ? "$formatDateId HH:mm" : "$formatDay, $formatDateId";
+        return DateFormat(pattern, "id_ID").format(date);
+      } else {
+        final pattern = includeTime ? "$formatDateEn HH:mm" : "$formatDay, $formatDateEn";
+        String formatted = DateFormat(pattern, "en_US").format(date);
+        final day = date.day;
+        String suffix = 'th';
+        if (day % 10 == 1 && day != 11) {
+          suffix = 'st';
+        } else if (day % 10 == 2 && day != 12) {
+          suffix = 'nd';
+        } else if (day % 10 == 3 && day != 13) {
+          suffix = 'rd';
+        }
+        return formatted.replaceFirst('$day', '$day$suffix');
+      }
+    } catch (_) {
+      return '-';
+    }
+  }
+
+  String _formatPrice(dynamic price) {
+    return NumberFormat.decimalPattern("en_US").format(price ?? 0);
+  }
+
+  // MAIN CONTENT 
+  Widget buildKontenHome() {
+    return RefreshIndicator(
+      onRefresh: _loadContent,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Container(
           color: Colors.grey[200],
-          padding: kGlobalPadding,
           child: Column(
             children: [
-              // Header shimmer
-              Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(height: 40, width: 40, color: Colors.white),
-                    Container(height: 40, width: 100, color: Colors.white),
-                  ],
+              _buildHeader(),
+
+              // banner carousel 
+              AutoPlayCarousel(
+                images: activeBanners.map((e) => e['file_upload'] as String).toList(),
+                data: activeBanners,
+                aspectRatios: aspectRatios,
+                bahasa: bahasa,
+              ),
+              Container(height: 20, color: Colors.white),
+
+              // vote populer 
+              const SizedBox(height: 20),
+              _buildVoteSection(
+                title: vote_title ?? '',
+                imgUrl: '$baseUrl/image/home/vote-populer.png',
+                items: votes,
+                onSeeMore: widget.onSeeMoreVote,
+                type: _CardType.vote,
+              ),
+
+              // konten bawah
+              const SizedBox(height: 20),
+              isLoadingBelowFold
+                  ? Column(children: [
+                      Container(color: Colors.red, child: _buildSkeletonSection()),
+                      const SizedBox(height: 20),
+                      Container(color: Colors.white, child: _buildSkeletonSection()),
+                      const SizedBox(height: 20),
+                      Container(color: Colors.white, child: _buildSkeletonSection()),
+                      const SizedBox(height: 20),
+                      Container(color: Colors.white, child: _buildSkeletonSection()),
+                      const SizedBox(height: 20),
+                      Container(color: Colors.white, child: _buildSkeletonSection()),
+                    ])
+                  : Column(children: [
+                      // leaderboard
+                      _buildLeaderboardSection(),
+
+                      // event hits
+                      const SizedBox(height: 20),
+                      _buildEventSection(
+                        title: event_title ?? '',
+                        imgUrl: '$baseUrl/image/home/hits-event.png',
+                        items: hitsevent,
+                        onSeeMore: widget.onSeeMoreEvent,
+                      ),
+
+                      // vote terbaru
+                      const SizedBox(height: 20),
+                      _buildVoteSection(
+                        title: latest_vote ?? '',
+                        imgUrl: '$baseUrl/image/home/vote-terbaru.png',
+                        items: latestvotes,
+                        onSeeMore: widget.onSeeMoreVote,
+                        type: _CardType.vote,
+                      ),
+
+                      // event rekomendasi
+                      const SizedBox(height: 20),
+                      _buildEventSection(
+                        title: event_recomen ?? '',
+                        imgUrl: '$baseUrl/image/home/event-rekom.png',
+                        items: recomenevent,
+                        onSeeMore: widget.onSeeMoreEvent,
+                      ),
+
+                      // artikel
+                      const SizedBox(height: 20),
+                      _buildArtikelSection(),
+                    ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+
+  Widget _buildHeader() {
+    return Container(
+      color: Colors.red,
+      child: Padding(
+        padding: kGlobalPadding,
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Image.asset(
+                  "assets/images/avata_logo.png",
+                  width: 40, height: 40, fit: BoxFit.contain,
+                ),
+                token == null
+                    ? Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 180),
+                          child: IntrinsicWidth(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                backgroundColor: const Color(0xFFFFDFE0),
+                              ),
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                                );
+                                if (result == true) {
+                                  await _getBahasa();
+                                  await _loadContent();
+                                }
+                              },
+                              child: Text(
+                                login!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : InkWell(
+                        onTap: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => Profile()),
+                          );
+                          if (result == true) await _loadContent();
+                        },
+                        child: CircleAvatar(
+                          child: ClipOval(
+                            child: photo_user != null
+                                ? isSvg
+                                    ? SvgPicture.network(
+                                        '$baseUrl/user/$photo_user',
+                                        width: 40, height: 40, fit: BoxFit.fill,
+                                      )
+                                    : isHttp
+                                        ? Image.network(photo_user!, width: 40, height: 40, fit: BoxFit.fill)
+                                        : Image.network('$baseUrl/user/$photo_user', width: 40, height: 40, fit: BoxFit.fill)
+                                : Image.network("$baseUrl/noimage_finalis.png", width: 40, height: 40, fit: BoxFit.fill),
+                          ),
+                        ),
+                      ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                first_name != null ? 'Hi, $first_name' : selamatDatang!,
+                style: const TextStyle(
+                  fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              // Carousel shimmer
-              Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Container(
-                  height: 180,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String imgUrl,
+    Color textColor = Colors.black,
+    VoidCallback? onSeeMore,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Image.network(
+          imgUrl, width: 30, height: 30, fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) =>
+              Image.asset('assets/images/img_broken.jpg', width: 30, height: 30, fit: BoxFit.contain),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ),
+        if (onSeeMore != null)
+          InkWell(
+            onTap: onSeeMore,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Text(
+                      seeMore ?? 'More',
+                      softWrap: true, maxLines: 2,
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: textColor == Colors.black ? Colors.red : Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: textColor == Colors.black ? Colors.red : Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // vote section (vote populer & vote terbaru — shared widget)
+  Widget _buildVoteSection({
+    required String title,
+    required String imgUrl,
+    required List<dynamic> items,
+    required VoidCallback onSeeMore,
+    required _CardType type,
+  }) {
+    return Container(
+      color: Colors.white,
+      child: Padding(
+        padding: kGlobalPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(title: title, imgUrl: imgUrl, onSeeMore: onSeeMore),
+            const SizedBox(height: 20),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: items.map((item) {
+                  final title = item['title']?.toString() ?? 'Tanpa Judul';
+                  final dateStr = item['date_event']?.toString();
+                  final img = item['img']?.toString() ?? '';
+                  final hargaFmt = _formatPrice(item['price']);
+                  final formattedDate = _formatDate(dateStr);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: InkWell(
+                      onTap: () async {
+                        if (isChoosed == 0) {
+                          currencyCode = item['currency'];
+                          lastCurrency = item['currency'];
+                          await StorageService.setCurrency(currencyCode!);
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DetailVotePage(
+                              id_event: item['id_event'].toString(),
+                              // id_event: '684f8222cbe92', //pake untuk testing modal boost vote
+                              
+                              currencyCode: currencyCode,
+                            ),
+                          ),
+                        ).then((_) {
+                          if (item['price'] != 0 || isChoosed == 1) _handleBackFromDetail();
+                        });
+                      },
+                      child: _buildVoteCard(
+                        img: img,
+                        title: title,
+                        organizer: item['nama_penyelenggara'] ?? '',
+                        date: formattedDate,
+                        price: item['price'],
+                        hargaFmt: hargaFmt,
+                        currency: item['currency'],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoteCard({
+    required String img,
+    required String title,
+    required String organizer,
+    required String date,
+    required dynamic price,
+    required String hargaFmt,
+    String? currency,
+  }) {
+    return SizedBox(
+      width: 200,
+      child: Card(
+        color: Colors.white, elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCardImage(img),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCardTitle(title),
+                  const SizedBox(height: 4),
+                  Text(organizer, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  Text(
+                    price == 0
+                        ? bahasa['harga_detail'] ?? 'Gratis'
+                        : currencyCode == null ? "$currency $hargaFmt" : "$currencyCode $hargaFmt",
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // event section (hits & rekomendasi — shared widget)
+  Widget _buildEventSection({
+    required String title,
+    required String imgUrl,
+    required List<dynamic> items,
+    required VoidCallback onSeeMore,
+  }) {
+    return Container(
+      color: Colors.white,
+      child: Padding(
+        padding: kGlobalPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(title: title, imgUrl: imgUrl, onSeeMore: onSeeMore),
+            const SizedBox(height: 20),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: items.map((item) {
+                  final title = item['title']?.toString() ?? 'Tanpa Judul';
+                  final dateStr = item['date_event']?.toString();
+                  final img = item['img']?.toString() ?? '';
+                  final price = item['price'] ?? 0;
+                  final hargaFmt = _formatPrice(price);
+                  final formattedDate = _formatDate(dateStr);
+                  final typeEvent = item['type_event'] ?? '-';
+                  final colorType = typeEvent == 'offline' ? Colors.red : Colors.blue;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: InkWell(
+                      onTap: () async {
+                        if (isChoosed == 0) {
+                          currencyCode = item['currency'];
+                          lastCurrency = item['currency'];
+                          await StorageService.setCurrency(currencyCode!);
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DetailEventPage(
+                              id_event: item['id_event'].toString(),
+                              price: price,
+                              currencyCode: currencyCode,
+                            ),
+                          ),
+                        ).then((_) {
+                          if (price != 0 || isChoosed == 1) _handleBackFromDetail();
+                        });
+                      },
+                      child: _buildEventCard(
+                        img: img, title: title,
+                        organizer: item['nama_penyelenggara'] ?? '',
+                        date: formattedDate,
+                        price: price, hargaFmt: hargaFmt,
+                        currency: item['currency'],
+                        typeEvent: typeEvent, colorType: colorType,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventCard({
+    required String img, required String title,
+    required String organizer, required String date,
+    required dynamic price, required String hargaFmt,
+    String? currency, required String typeEvent, required Color colorType,
+  }) {
+    return SizedBox(
+      width: 200,
+      child: Card(
+        color: Colors.white, elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                _buildCardImage(img),
+                Positioned(
+                  top: 8, right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      typeEvent.toString().toUpperCase(),
+                      style: TextStyle(color: colorType, fontSize: 12),
+                    ),
                   ),
                 ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCardTitle(title),
+                  const SizedBox(height: 4),
+                  Text(organizer, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  Text(price == 0 ? '' : bahasa['mulai_dari'] ?? 'Mulai dari'),
+                  const SizedBox(height: 4),
+                  Text(
+                    price == 0
+                        ? bahasa['harga_detail'] ?? 'Gratis'
+                        : currencyCode == null ? "$currency $hargaFmt" : "$currencyCode $hargaFmt",
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                  ),
+                ],
               ),
-              const SizedBox(height: 30),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              // Section title shimmer
-              Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Row(
-                  children: [
-                    Container(height: 30, width: 30, color: Colors.white),
-                    const SizedBox(width: 10),
-                    Container(height: 20, width: 180, color: Colors.white),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+  // leaderboard section
+  Widget _buildLeaderboardSection() {
+    return Container(
+      color: Colors.red,
+      child: Padding(
+        padding: kGlobalPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(
+              title: leaderboard_title ?? '',
+              imgUrl: "$baseUrl/image/home/juara1.png",
+              textColor: Colors.white,
+            ),
+            const SizedBox(height: 20),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: juara.map((item) {
+                  final namaFinalis = item['nama_finalis']?.toString() ?? 'Tanpa Nama';
+                  final judulVote = item['judul_vote']?.toString() ?? '-';
+                  final img = item['img']?.toString() ?? '';
+                  final tanggal = _formatDate(item['tanggal_buka_payment']?.toString(), includeTime: true);
 
-              // Horizontal cards shimmer
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(3, (index) {
-                    return Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      width: 200,
-                      child: Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
+                  int viewApi = 0;
+                  if (item['leaderboard_tipe'] == "percent")     viewApi = 3;
+                  if (item['leaderboard_tipe'] == "bar-percent") viewApi = 5;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: InkWell(
+                      onTap: () async {
+                        if (isChoosed == 0) {
+                          currencyCode = item['currency'];
+                          lastCurrency = item['currency'];
+                          await StorageService.setCurrency(currencyCode!);
+                        }
+
+                        if (item['flag_paket'] == '0') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LeaderboardSingleVote(
+                                id_finalis: item['id_finalis'].toString(),
+                                count: 0, indexWrap: null,
+                                close_payment: item['close_payment'],
+                                tanggal_buka_vote: tanggal,
+                                flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
+                                currencyCode: currencyCode,
+                                view_api: viewApi,
+                              ),
+                            ),
+                          ).then((_) => _handleBackFromDetail());
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LeaderboardSingleVotePaket(
+                                id_finalis: item['id_finalis'].toString(),
+                                vote: 0, index: 0, total_detail: 0, id_paket_bw: null,
+                                close_payment: item['close_payment'],
+                                tanggal_buka_vote: tanggal,
+                                flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
+                                currencyCode: currencyCode,
+                                view_api: viewApi,
+                              ),
+                            ),
+                          ).then((_) => _handleBackFromDetail());
+                        }
+                      },
+                      child: SizedBox(
+                        width: 200,
                         child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          color: Colors.white, elevation: 1,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                height: 180,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                                ),
-                              ),
+                              _buildCardImage(img),
                               Padding(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.all(8),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(height: 14, width: 160, color: Colors.white),
-                                    const SizedBox(height: 6),
-                                    Container(height: 12, width: 100, color: Colors.white),
-                                    const SizedBox(height: 6),
-                                    Container(height: 12, width: 80, color: Colors.white),
+                                    _buildCardTitle(namaFinalis),
+                                    const SizedBox(height: 4),
+                                    SizedBox(
+                                      height: 38,
+                                      child: Text(
+                                        judulVote,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    "VOTE",
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // artikel section 
+  Widget _buildArtikelSection() {
+    return Container(
+      color: Colors.white,
+      child: Padding(
+        padding: kGlobalPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(
+              title: news_title ?? '',
+              imgUrl: '$baseUrl/image/home/update.png',
+            ),
+            const SizedBox(height: 20),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: listArtikel.map((item) {
+                  final articleTitle = item['article_title']?.toString() ?? 'Tanpa Judul';
+                  final img = item['img']?.toString() ?? '';
+                  final dateStr = item['created_at']?.toString() ?? '';
+                  String formattedDate = '-';
+
+                  // Format tanggal artikel (bisa format Indo atau ISO)
+                  if (dateStr.isNotEmpty) {
+                    try {
+                      DateTime? date;
+                      if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(dateStr)) {
+                        const bulanIndo = {
+                          'Januari': 'January', 'Februari': 'February', 'Maret': 'March',
+                          'April': 'April', 'Mei': 'May', 'Juni': 'June', 'Juli': 'July',
+                          'Agustus': 'August', 'September': 'September', 'Oktober': 'October',
+                          'November': 'November', 'Desember': 'December',
+                        };
+                        String en = dateStr;
+                        bulanIndo.forEach((id, eng) => en = en.replaceAll(id, eng));
+                        date = DateFormat(formatDateId, "en_US").parse(en);
+                      } else {
+                        date = DateTime.parse(dateStr);
+                      }
+                      formattedDate = langCode == 'id'
+                          ? DateFormat(formatDateId, "id_ID").format(date)
+                          : _formatDate(date.toIso8601String());
+                    } catch (_) {}
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WidgetWebView(
+                            header: bahasa['artikel'] ?? 'Artikel',
+                            url: item['link'],
+                          ),
+                        ),
+                      ),
+                      child: SizedBox(
+                        width: 200,
+                        child: Card(
+                          color: Colors.white, elevation: 1,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: _buildCardImage(img),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      articleTitle,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(formattedDate, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -425,1991 +1182,57 @@ class _HomeContentState extends State<HomeContent> {
                           ),
                         ),
                       ),
-                    );
-                  }),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 30),
-
-              // Leaderboard shimmer
-              Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Column(
-                  children: [
-                    Container(height: 20, width: 200, color: Colors.white),
-                    const SizedBox(height: 20),
-                    ...List.generate(3, (index) => Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  bool get isSvg {
-    final p = photo_user;
-    if (p == null) return false;
-    return p.toLowerCase().endsWith(".svg");
-  }
 
-  bool get isHttp {
-    final p = photo_user;
-    if (p == null) return false;
-    return p.toLowerCase().contains("http");
-  }
-
-  Widget buildKontenHome() {
-    return Scaffold(
-      // konten page
-      body: RefreshIndicator(
-        onRefresh: _loadContent,
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          child: Container(
-            color: Colors.grey[200],
-            child: Column(
-              children: [
-                //top logo dan button
-                Container(
-                  color: Colors.red,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget> [
-                            //logo
-                            Image.asset(
-                              "assets/images/avata_logo.png",
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.contain,
-                            ),
-                    
-                            //button
-                            token == null
-                              ? Expanded(
-                                  child: Container(
-                                    margin: const EdgeInsets.only(left: 180),
-                                    child: IntrinsicWidth(
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          backgroundColor: const Color(0xFFFFDFE0),
-                                        ),
-                                        onPressed: () async {
-                                          final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => const LoginPage(),
-                                            ),
-                                          );
-
-                                          if (result == true) {
-                                            await _getBahasa();
-                                            await _loadContent();
-                                            setState(() {
-                                              
-                                            });
-                                          }
-                                        },
-                                        child: Text(
-                                          login!,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : 
-                              // Expanded(
-                              //     child: Container(
-                              //       margin: const EdgeInsets.only(left: 180),
-                              //       alignment: Alignment.centerRight,
-                              //       child: InkWell(
-                              //         borderRadius: BorderRadius.circular(30),
-                              //         onTap: () {
-                              //         },
-                              //         child: Container(
-                              //           padding: const EdgeInsets.all(8),
-                              //           decoration: BoxDecoration(
-                              //             color: Colors.white.withOpacity(0.2),
-                              //             shape: BoxShape.circle,
-                              //           ),
-                              //           child: const Icon(
-                              //             Icons.notifications,
-                              //             color: Colors.white,
-                              //             size: 26,
-                              //           ),
-                              //         ),
-                              //       ),
-                              //     ),
-                              //   ),
-
-                              InkWell(
-                                onTap: () async {
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => Profile(),
-                                    ),
-                                  );
-
-                                  if (result == true) {
-                                    await _loadContent();
-                                  }
-                                },
-                                child: CircleAvatar(
-                                  child: ClipOval(
-                                    child: photo_user != null 
-                                      ?
-                                        isSvg
-                                          ? SvgPicture.network(
-                                              '$baseUrl/user/$photo_user',
-                                              width: 40,
-                                              height: 40,
-                                              fit: BoxFit.fill,
-                                            )
-                                          : isHttp
-                                            ? Image.network(
-                                                photo_user!,
-                                                width: 40,
-                                                height: 40,
-                                                fit: BoxFit.fill,
-                                              )
-                                            : Image.network(
-                                                '$baseUrl/user/$photo_user',
-                                                width: 40,
-                                                height: 40,
-                                                fit: BoxFit.fill,
-                                              )
-                                      : Image.network(
-                                          "$baseUrl/noimage_finalis.png",
-                                          width: 40,
-                                          height: 40,
-                                          fit: BoxFit.fill,
-                                        )
-                                  ),
-                                ),
-                              ),
-                            
-                          ],
-                        ),
-                    
-                        //text selamat datang
-                        const SizedBox(height: 16),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text( first_name != null
-                            ? 'Hi, $first_name'
-                            : selamatDatang!,
-                            style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                    
-                        // const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // === Image Slider ===
-                AutoPlayCarousel(
-                  images: activeBanners.map((e) => e['file_upload'] as String).toList(),
-                  data: activeBanners,
-                  aspectRatios: aspectRatios,
-                  bahasa: bahasa,
-                ),
-
-                Container(
-                  height: 20,
-                  color: Colors.white,
-                ),
-                
-
-                //icon
-                // Container(
-                //   color: Colors.white,
-                //   child: Padding(
-                //     padding: const EdgeInsets.all(30),
-                //     child: Container(
-                //       child: Column(
-                //         children: [
-                //           Row(
-                //             mainAxisAlignment: MainAxisAlignment.spaceAround,
-                //             children: <Widget>[
-                //               Column(
-                //                 children: [
-                //                   GestureDetector(
-                //                     onTap: () async {
-                //                       await Navigator.push(
-                //                         context,
-                //                         MaterialPageRoute(builder: (_) => const VotePage()),
-                //                       );
-                //                     },
-                //                     child: Container(
-                //                       child: Image.asset(
-                //                         "assets/images/vote.png",
-                //                         width: 55,
-                //                         height: 55,
-                //                         fit: BoxFit.contain,
-                //                       ),
-                //                     ),
-                //                   ),
-
-                //                   Container(
-                //                     child: Text("Vote",
-                //                       style: TextStyle(color: Colors.black),
-                //                     ),
-                //                   )
-                //                 ],
-                //               ),
-
-                //               Column(
-                //                 children: [
-                //                   GestureDetector(
-                //                     onTap: () async {
-                //                       await Navigator.push(
-                //                         context,
-                //                         MaterialPageRoute(builder: (_) => const EventPage()),
-                //                       );
-                //                     },
-                //                     child: Container(
-                //                       child: Image.asset(
-                //                         "assets/images/event.png",
-                //                         width: 55,
-                //                         height: 55,
-                //                         fit: BoxFit.contain,
-                //                       ),
-                //                     ),
-                //                   ),
-
-                //                   Container(
-                //                     child: Text("Event",
-                //                       style: TextStyle(color: Colors.black),
-                //                     ),
-                //                   )
-                //                 ],
-                //               ),
-
-                //               Column(
-                //                 children: [
-                //                   GestureDetector(
-                //                     onTap: () async {
-                //                       await Navigator.push(
-                //                         context,
-                //                         MaterialPageRoute(builder: (_) => const CharityPage()),
-                //                       );
-                //                     },
-                //                     child: Container(
-                //                       child: Image.asset(
-                //                         "assets/images/charity.png",
-                //                         width: 55,
-                //                         height: 55,
-                //                         fit: BoxFit.contain,
-                //                       ),
-                //                     ),
-                //                   ),
-                                  
-                //                   Container(
-                //                     child: Text("Charity",
-                //                       style: TextStyle(color: Colors.black),
-                //                     ),
-                //                   )
-                //                 ],
-                //               ),
-                //             ],
-                //           )
-                //         ],
-                //       ),
-                //     ),
-                //   ),
-                // ),
-
-                //vote populer
-                const SizedBox(height: 20),
-                //loop data
-                Container(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-
-                            Image.network(
-                              '$baseUrl/image/home/vote-populer.png',
-                              width: 30,
-                              height: 30,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.contain,
-                                  width: 30,
-                                  height: 30,
-                                );
-                              },
-                            ),
-
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    vote_title!,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // tombol MORE di paling kanan
-                            InkWell(
-                              onTap: widget.onSeeMoreVote,
-                              borderRadius: BorderRadius.circular(8),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: 180,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        seeMore!,
-                                        softWrap: true,
-                                        maxLines: 2,
-                                        textAlign: TextAlign.right,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: Colors.red,
-                                    ),
-                                  ],
-                                )
-                              ),
-                            )
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: votes.map((item) {
-                              final title = item['title']?.toString() ?? 'Tanpa Judul';
-                              final dateStr = item['date_event']?.toString() ?? '-';
-                              final img = item['img']?.toString() ?? '';
-                              
-                              String formattedDate = '-';
-
-                              if (dateStr.isNotEmpty) {
-                                try {
-                                  // parsing string ke DateTime
-                                  final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                                  if (langCode == 'id') {
-                                    // Bahasa Indonesia
-                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
-                                    formattedDate = formatter.format(date);
-                                  } else {
-                                    // Bahasa Inggris
-                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
-                                    formattedDate = formatter.format(date);
-
-                                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                                    final day = date.day;
-                                    String suffix = 'th';
-                                    if (day % 10 == 1 && day != 11) {
-                                      suffix = 'st';
-                                    } else if (day % 10 == 2 && day != 12) {
-                                      suffix = 'nd';
-                                    } else if (day % 10 == 3 && day != 13) {
-                                      suffix = 'rd';
-                                    }
-                                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                                  }
-                                } catch (e) {
-                                  formattedDate = '-';
-                                }
-                              }
-
-                              final formatter = NumberFormat.decimalPattern("en_US");
-                              final hargaFormatted = formatter.format(item['price'] ?? 0);
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12), // jarak antar card
-                                child: InkWell(
-                                  onTap: () async {
-                                    if (isChoosed == 0) {
-                                      currencyCode = item['currency'];
-                                      lastCurrency = item['currency'];
-                                      await StorageService.setCurrency(currencyCode!);
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            DetailVotePage(
-                                              id_event: item['id_event'].toString(),
-                                              currencyCode: currencyCode,
-                                            ),
-                                      ),
-                                    ).then((_) {
-                                      if (item['price'] != 0 || isChoosed == 1) {
-                                        _handleBackFromDetail();
-                                      }
-                                    });
-                                  },
-                                  child: SizedBox(
-                                    width: 200,
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // gambar
-                                          ClipRRect(
-                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                            child: AspectRatio(
-                                              aspectRatio: 4 / 5,
-                                              child: img.isNotEmpty
-                                                ? Image.network(
-                                                    img,
-                                                    fit: BoxFit.cover,
-                                                    loadingBuilder: (context, child, loadingProgress) {
-                                                      if (loadingProgress == null) return child;
-                                                      return Image.asset(
-                                                        'assets/images/img_placeholder.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                  )
-                                                : Image.asset(
-                                                    'assets/images/img_broken.jpg',
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                            ),
-                                          ),
-
-                                          // isi teks
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  height: 38,
-                                                  child: Text(
-                                                    title,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                      height: 1.3,
-                                                    ),
-                                                  ),
-                                                ),
-                                                //penyelenggara
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['nama_penyelenggara'],
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //tgl
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  formattedDate,
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //harga
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['price'] == 0
-                                                  ? bahasa['harga_detail'] //'Gratis'
-                                                  : currencyCode == null 
-                                                    ? "${item['currency']} $hargaFormatted"
-                                                    : "$currencyCode $hargaFormatted",
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ) 
-                ),
-
-                //leaderboard
-                const SizedBox(height: 20),
-                Container(
-                  color: Colors.red,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Image.network(
-                              "$baseUrl/image/home/juara1.png",
-                              width: 30,   // atur sesuai kebutuhan
-                              height: 30,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.contain,
-                                  width: 30,
-                                  height: 30,
-                                );
-                              },
-                            ),
-
-                            // SvgPicture.network(
-                            //   '$baseUrl/image/home/vote.svg',
-                            //   width: 30,
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
-
-                            const SizedBox(width: 12),
-                            //text
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    leaderboard_title!,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: juara.map((item) {
-                              final nama_finalis = item['nama_finalis']?.toString() ?? 'Tanpa Nama';
-                              final judul_vote = item['judul_vote']?.toString() ?? '-';
-                              final img = item['img']?.toString() ?? '';
-
-                              final dateStr = item['tanggal_buka_payment'];
-                              String formattedDate = '-';
-
-                              if (dateStr != null) {
-                                try {
-                                  // parsing string ke DateTime
-                                  final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                                  if (langCode == 'id') {
-                                    // Bahasa Indonesia
-                                    final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
-                                    formattedDate = formatter.format(date);
-                                  } else {
-                                    // Bahasa Inggris
-                                    final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
-                                    formattedDate = formatter.format(date);
-
-                                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                                    final day = date.day;
-                                    String suffix = 'th';
-                                    if (day % 10 == 1 && day != 11) {
-                                      suffix = 'st';
-                                    } else if (day % 10 == 2 && day != 12) {
-                                      suffix = 'nd';
-                                    } else if (day % 10 == 3 && day != 13) {
-                                      suffix = 'rd';
-                                    }
-                                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                                  }
-                                } catch (e) {
-                                  formattedDate = '-';
-                                }
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12), // jarak antar card
-                                child: InkWell(
-                                  onTap: () async {
-                                    if (isChoosed == 0) {
-                                      currencyCode = item['currency'];
-                                      lastCurrency = item['currency'];
-                                      await StorageService.setCurrency(currencyCode!);
-                                    }
-
-                                    int view_api = 0;
-                                    if (item['leaderboard_tipe'] == "percent") {
-                                      view_api = 3;
-                                    } else if (item['leaderboard_tipe'] == "bar-percent") {
-                                      view_api = 5;
-                                    }
-
-                                    if (item['flag_paket'] == '0') { //0
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LeaderboardSingleVote(
-                                            id_finalis: item['id_finalis'].toString(), 
-                                            count: 0, 
-                                            indexWrap: null,
-                                            close_payment: item['close_payment'],
-                                            tanggal_buka_vote: formattedDate,
-                                            flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
-                                            currencyCode: currencyCode,
-                                            view_api: view_api
-                                          ),
-                                        ),
-                                      ).then((_) {
-                                        _handleBackFromDetail();
-                                      });
-                                    } else {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LeaderboardSingleVotePaket(
-                                            id_finalis: item['id_finalis'].toString(), 
-                                            vote: 0, 
-                                            index: 0,
-                                            total_detail: 0,
-                                            id_paket_bw: null,
-                                            close_payment: item['close_payment'],
-                                            tanggal_buka_vote: formattedDate,
-                                            flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
-                                            currencyCode: currencyCode,
-                                            view_api: view_api
-                                          ),
-                                        ),
-                                      ).then((_) {
-                                        _handleBackFromDetail();
-                                      });
-                                    }
-                                  },
-                                  child: SizedBox(
-                                    width: 200,
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // gambar
-                                          ClipRRect(
-                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                            child: AspectRatio(
-                                              aspectRatio: 4 / 5,
-                                              child: img.isNotEmpty
-                                                ? Image.network(
-                                                    img,
-                                                    fit: BoxFit.cover,
-                                                    loadingBuilder: (context, child, loadingProgress) {
-                                                      if (loadingProgress == null) return child;
-                                                      return Image.asset(
-                                                        'assets/images/img_placeholder.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                  )
-                                                : Image.asset(
-                                                    'assets/images/img_broken.jpg',
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                            ), 
-                                          ),
-
-                                          // isi teks
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  height: 38,
-                                                  child: Text(
-                                                    nama_finalis,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ),
-                                                
-                                                const SizedBox(height: 4),
-                                                SizedBox(
-                                                  height: 38,
-                                                  child: Text(
-                                                    judul_vote,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-
-                                          // Tombol Vote
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Container(
-                                              width: double.infinity,
-                                              alignment: Alignment.center,
-                                              padding: const EdgeInsets.symmetric(vertical: 8),
-                                              decoration: BoxDecoration(
-                                                color: Colors.red,
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: const Text(
-                                                "VOTE",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                //event hits
-                const SizedBox(height: 20),
-                //loop data
-                Container(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            // SvgPicture.network(
-                            //   '$baseUrl/image/home/star.svg',
-                            //   width: 30,
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
-
-                            Image.network(
-                              '$baseUrl/image/home/hits-event.png',
-                              width: 30,
-                              height: 30,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.contain,
-                                  width: 30,
-                                  height: 30,
-                                );
-                              },
-                            ),
-
-                            const SizedBox(width: 12),
-                            //text
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    event_title!,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // tombol MORE di paling kanan
-                            InkWell(
-                              onTap: widget.onSeeMoreEvent,
-                              borderRadius: BorderRadius.circular(8),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: 180,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        seeMore!,
-                                        softWrap: true,
-                                        maxLines: 2,
-                                        textAlign: TextAlign.right,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: Colors.red,
-                                    ),
-                                  ],
-                                )
-                              ),
-                            )
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: hitsevent.map((item) {
-                              final title = item['title']?.toString() ?? 'Tanpa Judul';
-                              final dateStr = item['date_event']?.toString() ?? '-';
-                              final img = item['img']?.toString() ?? '';
-                              num price = item['price'] ?? 0;
-                              
-                              String formattedDate = '-';
-
-                              if (dateStr.isNotEmpty) {
-                                try {
-                                  // parsing string ke DateTime
-                                  final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                                  if (langCode == 'id') {
-                                    // Bahasa Indonesia
-                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
-                                    formattedDate = formatter.format(date);
-                                  } else {
-                                    // Bahasa Inggris
-                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
-                                    formattedDate = formatter.format(date);
-
-                                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                                    final day = date.day;
-                                    String suffix = 'th';
-                                    if (day % 10 == 1 && day != 11) {
-                                      suffix = 'st';
-                                    } else if (day % 10 == 2 && day != 12) {
-                                      suffix = 'nd';
-                                    } else if (day % 10 == 3 && day != 13) {
-                                      suffix = 'rd';
-                                    }
-                                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                                  }
-                                } catch (e) {
-                                  formattedDate = '-';
-                                }
-                              }
-
-                              String hargaFormatted = '-';
-                              final formatter = NumberFormat.decimalPattern("en_US");
-                              hargaFormatted = formatter.format(item['price'] ?? 0);
-
-                              final type_event = item['type_event'] ?? '-';
-                              Color color_type = Colors.blue;
-                              if (type_event == 'offline') {
-                                color_type = Colors.red;
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12), // jarak antar card
-                                child: InkWell(
-                                  onTap: () async {
-                                    if (isChoosed == 0) {
-                                      currencyCode = item['currency'];
-                                      lastCurrency = item['currency'];
-                                      await StorageService.setCurrency(currencyCode!);
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                          DetailEventPage(
-                                            id_event: item['id_event'].toString(), 
-                                            price: price,
-                                            currencyCode: currencyCode
-                                          ),
-                                      ),
-                                    ).then((_) {
-                                      if (item['price'] != 0 || isChoosed == 1) {
-                                        _handleBackFromDetail();
-                                      }
-                                    });
-                                  },
-                                  child: SizedBox(
-                                    width: 200,
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // gambar
-                                          Stack(
-                                            children: [
-                                              ClipRRect(
-                                                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                                child: AspectRatio(
-                                                  aspectRatio: 4 / 5,
-                                                  child: img.isNotEmpty
-                                                    ? Image.network(
-                                                        img,
-                                                        fit: BoxFit.cover,
-                                                        loadingBuilder: (context, child, loadingProgress) {
-                                                          if (loadingProgress == null) return child;
-                                                          return Image.asset(
-                                                            'assets/images/img_placeholder.jpg',
-                                                            fit: BoxFit.cover,
-                                                          );
-                                                        },
-                                                        errorBuilder: (context, error, stackTrace) {
-                                                          return Image.asset(
-                                                            'assets/images/img_broken.jpg',
-                                                            fit: BoxFit.cover,
-                                                          );
-                                                        },
-                                                      )
-                                                    : Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                ),
-                                              ),
-                                              Positioned(
-                                                top: 8,
-                                                right: 8,
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Text(
-                                                    type_event.toString().toUpperCase(),
-                                                    style: TextStyle(
-                                                      color: color_type,
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          // isi teks
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  height: 38,
-                                                  child: Text(
-                                                    title,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ),
-                                                //penyelenggara
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['nama_penyelenggara'],
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //tgl
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  formattedDate,
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //harga
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['price'] == 0
-                                                  ? '' //"Harga"
-                                                  : bahasa['mulai_dari'] //"Mulai dari",
-                                                ),
-                                                const SizedBox(height: 4,),
-                                                Text(
-                                                  item['price'] == 0
-                                                  ? bahasa['harga_detail'] //'Gratis'
-                                                  : currencyCode == null 
-                                                    ? "${item['currency']} $hargaFormatted"
-                                                    : "$currencyCode $hargaFormatted",
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ) 
-                ),
-
-                //vote terbaru
-                const SizedBox(height: 20),
-                Container(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            // SvgPicture.network(
-                            //   '$baseUrl/image/home/vote.svg',
-                            //   width: 30,
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
-
-                            Image.network(
-                              '$baseUrl/image/home/vote-terbaru.png',
-                              width: 30,
-                              height: 30,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.contain,
-                                  width: 30,
-                                  height: 30,
-                                );
-                              },
-                            ),
-
-                            const SizedBox(width: 12),
-                            //text
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    latest_vote!,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                ],
-                              ),
-                            ),
-
-                            // tombol MORE di paling kanan
-                            InkWell(
-                              onTap: widget.onSeeMoreVote,
-                              borderRadius: BorderRadius.circular(8),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: 180,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        seeMore!,
-                                        softWrap: true,
-                                        maxLines: 2,
-                                        textAlign: TextAlign.right,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: Colors.red,
-                                    ),
-                                  ],
-                                )
-                              ),
-                            )
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: latestvotes.map((item) {
-                              final title = item['title']?.toString() ?? 'Tanpa Judul';
-                              final dateStr = item['date_event']?.toString() ?? '-';
-                              final img = item['img']?.toString() ?? '';
-                              
-                              String formattedDate = '-';
-
-                              if (dateStr.isNotEmpty) {
-                                try {
-                                  // parsing string ke DateTime
-                                  final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                                  if (langCode == 'id') {
-                                    // Bahasa Indonesia
-                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
-                                    formattedDate = formatter.format(date);
-                                  } else {
-                                    // Bahasa Inggris
-                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
-                                    formattedDate = formatter.format(date);
-
-                                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                                    final day = date.day;
-                                    String suffix = 'th';
-                                    if (day % 10 == 1 && day != 11) {
-                                      suffix = 'st';
-                                    } else if (day % 10 == 2 && day != 12) {
-                                      suffix = 'nd';
-                                    } else if (day % 10 == 3 && day != 13) {
-                                      suffix = 'rd';
-                                    }
-                                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                                  }
-                                } catch (e) {
-                                  formattedDate = '-';
-                                }
-                              }
-
-                              final formatter = NumberFormat.decimalPattern("en_US");
-                              final hargaFormatted = formatter.format(item['price'] ?? 0);
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12), // jarak antar card
-                                child: InkWell(
-                                  onTap: () async {
-                                    if (isChoosed == 0) {
-                                      currencyCode = item['currency'];
-                                      lastCurrency = item['currency'];
-                                      await StorageService.setCurrency(currencyCode!);
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            DetailVotePage(
-                                              id_event: item['id_event'].toString(),
-                                              currencyCode: currencyCode,
-                                            ),
-                                      ),
-                                    ).then((_) {
-                                      if (item['price'] != 0 || isChoosed == 1) {
-                                        _handleBackFromDetail();
-                                      }
-                                    });
-                                  },
-                                  child: SizedBox(
-                                    width: 200,
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // gambar
-                                          ClipRRect(
-                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                            child: AspectRatio(
-                                              aspectRatio: 4 / 5,
-                                              child: img.isNotEmpty
-                                                ? Image.network(
-                                                    img,
-                                                    fit: BoxFit.cover,
-                                                    loadingBuilder: (context, child, loadingProgress) {
-                                                      if (loadingProgress == null) return child;
-                                                      return Image.asset(
-                                                        'assets/images/img_placeholder.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                  )
-                                                : Image.asset(
-                                                    'assets/images/img_broken.jpg',
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                            ),
-                                          ),
-
-                                          // isi teks
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  height: 38,
-                                                  child: Text(
-                                                    title,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                      height: 1.3,
-                                                    ),
-                                                  ),
-                                                ),
-                                                //penyelenggara
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['nama_penyelenggara'],
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //tgl
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  formattedDate,
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //harga
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['price'] == 0
-                                                  ? bahasa['harga_detail'] //'Gratis'
-                                                  : currencyCode == null 
-                                                    ? "${item['currency']} $hargaFormatted"
-                                                    : "$currencyCode $hargaFormatted",
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ) 
-                ),
-
-                //event recomended
-                const SizedBox(height: 20),
-                //loop data
-                Container(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            // SvgPicture.network(
-                            //   '$baseUrl/image/home/vote.svg',
-                            //   width: 30,
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
-
-                            Image.network(
-                              '$baseUrl/image/home/event-rekom.png',
-                              width: 30,
-                              height: 30,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.contain,
-                                  width: 30,
-                                  height: 30,
-                                );
-                              },
-                            ),
-
-                            const SizedBox(width: 12),
-                            //text
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    event_recomen!,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // tombol MORE di paling kanan
-                            InkWell(
-                              onTap: widget.onSeeMoreEvent,
-                              borderRadius: BorderRadius.circular(8),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: 180,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        seeMore!,
-                                        softWrap: true,
-                                        maxLines: 2,
-                                        textAlign: TextAlign.right,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_ios,
-                                      color: Colors.red,
-                                    ),
-                                  ],
-                                )
-                              ),
-                            )
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: recomenevent.map((item) {
-                              final title = item['title']?.toString() ?? 'Tanpa Judul';
-                              final dateStr = item['date_event']?.toString() ?? '-';
-                              final img = item['img']?.toString() ?? '';
-                              final price = item['price'] ?? 0;
-                              
-                              String formattedDate = '-';
-
-                              if (dateStr.isNotEmpty) {
-                                try {
-                                  // parsing string ke DateTime
-                                  final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
-                                  if (langCode == 'id') {
-                                    // Bahasa Indonesia
-                                    final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
-                                    formattedDate = formatter.format(date);
-                                  } else {
-                                    // Bahasa Inggris
-                                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
-                                    formattedDate = formatter.format(date);
-
-                                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-                                    final day = date.day;
-                                    String suffix = 'th';
-                                    if (day % 10 == 1 && day != 11) {
-                                      suffix = 'st';
-                                    } else if (day % 10 == 2 && day != 12) {
-                                      suffix = 'nd';
-                                    } else if (day % 10 == 3 && day != 13) {
-                                      suffix = 'rd';
-                                    }
-                                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                                  }
-                                } catch (e) {
-                                  formattedDate = '-';
-                                }
-                              }
-
-                              String hargaFormatted = '-';
-                              final formatter = NumberFormat.decimalPattern("en_US");
-                              hargaFormatted = formatter.format(item['price'] ?? 0);
-
-                              final type_event = item['type_event'] ?? '-';
-                              Color color_type = Colors.blue;
-                              if (type_event == 'offline') {
-                                color_type = Colors.red;
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12), // jarak antar card
-                                child: InkWell(
-                                  onTap: () async {
-                                    if (isChoosed == 0) {
-                                      currencyCode = item['currency'];
-                                      lastCurrency = item['currency'];
-                                      await StorageService.setCurrency(currencyCode!);
-                                    }
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                          DetailEventPage(
-                                            id_event: item['id_event'].toString(), 
-                                            price: price,
-                                            currencyCode: currencyCode
-                                          ),
-                                      ),
-                                    ).then((_) {
-                                      if (item['price'] != 0 || isChoosed == 1) {
-                                        _handleBackFromDetail();
-                                      }
-                                    });
-                                  },
-                                  child: SizedBox(
-                                    width: 200,
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // gambar
-                                          Stack(
-                                            children: [
-                                              ClipRRect(
-                                                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                                child: AspectRatio(
-                                                  aspectRatio: 4 / 5,
-                                                  child: img.isNotEmpty
-                                                    ? Image.network(
-                                                        img,
-                                                        fit: BoxFit.cover,
-                                                        loadingBuilder: (context, child, loadingProgress) {
-                                                          if (loadingProgress == null) return child;
-                                                          return Image.asset(
-                                                            'assets/images/img_placeholder.jpg',
-                                                            fit: BoxFit.cover,
-                                                          );
-                                                        },
-                                                        errorBuilder: (context, error, stackTrace) {
-                                                          return Image.asset(
-                                                            'assets/images/img_broken.jpg',
-                                                            fit: BoxFit.cover,
-                                                          );
-                                                        },
-                                                      )
-                                                    : Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                ),
-                                              ),
-                                              Positioned(
-                                                top: 8,
-                                                right: 8,
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Text(
-                                                    type_event.toString().toUpperCase(),
-                                                    style: TextStyle(
-                                                      color: color_type,
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          // isi teks
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  height: 38,
-                                                  child: Text(
-                                                    title,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ),
-                                                //penyelenggara
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['nama_penyelenggara'],
-                                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //tgl
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  formattedDate,
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                                //harga
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  item['price'] == 0
-                                                  ? '' //"Harga"
-                                                  : bahasa['mulai_dari'] //"Mulai dari",
-                                                ),
-                                                const SizedBox(height: 4,),
-                                                Text(
-                                                  item['price'] == 0
-                                                  ? bahasa['harga_detail'] //'Gratis'
-                                                  : currencyCode == null 
-                                                    ? "${item['currency']} $hargaFormatted"
-                                                    : "$currencyCode $hargaFormatted",
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ) 
-                ),
-
-                //cari informasi
-                const SizedBox(height: 20),
-                Container(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: kGlobalPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            // SvgPicture.network(
-                            //   '$baseUrl/image/home/blog.svg',
-                            //   width: 30,
-                            //   height: 30,
-                            //   fit: BoxFit.contain,
-                            // ),
-
-                            Image.network(
-                              '$baseUrl/image/home/update.png',
-                              width: 30,
-                              height: 30,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.contain,
-                                  width: 30,
-                                  height: 30,
-                                );
-                              },
-                            ),
-
-                            const SizedBox(width: 12),
-                            //text
-                            Expanded( 
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    news_title!,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-                        //news
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: listArtikel.map((item) {
-                              final article_title = item['article_title']?.toString() ?? 'Tanpa Judul';
-                              final img = item['img']?.toString() ?? '';
-                              final dateStr = item['created_at']?.toString() ?? '-';
-                              String formattedDate = '-';
-
-                              if (dateStr.isNotEmpty) {
-                                try {
-                                  DateTime? date;
-                                  
-                                  if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(dateStr)) {
-                                    
-                                    final bulanIndo = {
-                                      'Januari': 'January',
-                                      'Februari': 'February',
-                                      'Maret': 'March',
-                                      'April': 'April',
-                                      'Mei': 'May',
-                                      'Juni': 'June',
-                                      'Juli': 'July',
-                                      'Agustus': 'August',
-                                      'September': 'September',
-                                      'Oktober': 'October',
-                                      'November': 'November',
-                                      'Desember': 'December',
-                                    };
-                                    
-                                    String englishFormat = dateStr;
-                                    bulanIndo.forEach((indo, eng) {
-                                      englishFormat = englishFormat.replaceAll(indo, eng);
-                                    });
-                                    
-                                    date = DateFormat(formatDateId, "en_US").parse(englishFormat);
-                                  } else {
-                                    date = DateTime.parse(dateStr);
-                                  }
-                                  
-                                  if (langCode == 'id') {
-                                    formattedDate = DateFormat(formatDateId, "id_ID").format(date);
-                                  } else {
-                                    final formatter = DateFormat(formatDateEn, "en_US");
-                                    formattedDate = formatter.format(date);
-
-                                    // suffix: st, nd, rd, th
-                                    final day = date.day;
-                                    String suffix = 'th';
-                                    if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-                                    else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-                                    else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-
-                                    formattedDate = formattedDate.replaceFirst('$day', '$day$suffix');
-                                  }
-
-                                } catch (e) {
-                                  formattedDate = '-';
-                                }
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12), // jarak antar card
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            WidgetWebView(header: bahasa['artikel'], url: item['link']),
-                                      ),
-                                    );
-                                  },
-                                  child: SizedBox(
-                                    width: 200,
-                                    child: Card(
-                                      color: Colors.white,
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // gambar
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: AspectRatio(
-                                              aspectRatio: 4 / 5,
-                                              child: img.isNotEmpty
-                                                ? Image.network(
-                                                    img,
-                                                    fit: BoxFit.cover,
-                                                    loadingBuilder: (context, child, loadingProgress) {
-                                                      if (loadingProgress == null) return child;
-                                                      return Image.asset(
-                                                        'assets/images/img_placeholder.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Image.asset(
-                                                        'assets/images/img_broken.jpg',
-                                                        fit: BoxFit.cover,
-                                                      );
-                                                    },
-                                                  )
-                                                : Image.asset(
-                                                    'assets/images/img_broken.jpg',
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                            ),
-                                          ),
-
-                                          // isi teks
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  article_title,
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  formattedDate,
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ) 
-                ),
-
-                //jadi partner
-                // const SizedBox(height: 20),
-                // Container(
-                //   color: Colors.red,
-                //   child: Padding(
-                //     padding: kGlobalPadding,
-                //     child: Column(
-                //       children: [
-                //         Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           crossAxisAlignment: CrossAxisAlignment.center,
-                //           children: <Widget>[
-                //             Image.asset(
-                //               "assets/images/img_onboarding3.png",
-                //               width: 150,   // atur sesuai kebutuhan
-                //               height: 150,
-                //               fit: BoxFit.contain,
-                //             ),
-
-                //             const SizedBox(width: 12),
-                //             //text
-                //             Expanded( // <= ini solusinya
-                //               child: Column(
-                //                 crossAxisAlignment: CrossAxisAlignment.start,
-                //                 children: [
-                //                   Text(
-                //                     partner!,
-                //                     style: TextStyle(
-                //                       fontSize: 16,
-                //                       color: Colors.white,
-                //                       fontWeight: FontWeight.bold,
-                //                     ),
-                //                     softWrap: true,          // biar teks bisa kebungkus
-                //                     overflow: TextOverflow.visible, 
-                //                   ),
-                //                   SizedBox(height: 4),
-                //                   //button
-                //                   // button
-                //                   ElevatedButton(
-                //                     style: ElevatedButton.styleFrom(
-                //                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                //                       backgroundColor: Colors.white,
-                //                       shape: RoundedRectangleBorder(
-                //                         borderRadius: BorderRadius.circular(8),
-                //                       ),
-                //                     ),
-                //                     onPressed: () {
-                //                       // aksi kalau button diklik
-                //                     },
-                //                     child: Text(
-                //                       "Buat Eventmu",
-                //                       style: TextStyle(
-                //                         color: Colors.red,
-                //                         fontWeight: FontWeight.bold,
-                //                       ),
-                //                     ),
-                //                   ),
-
-                //                   ElevatedButton(
-                //                     style: ElevatedButton.styleFrom(
-                //                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                //                       backgroundColor: Colors.white,
-                //                       shape: RoundedRectangleBorder(
-                //                         borderRadius: BorderRadius.circular(8),
-                //                       ),
-                //                     ),
-                //                     onPressed: () {
-                //                       // aksi kalau button diklik
-                //                     },
-                //                     child: Text(
-                //                       "Buat Votemu",
-                //                       style: TextStyle(
-                //                         color: Colors.red,
-                //                         fontWeight: FontWeight.bold,
-                //                       ),
-                //                     ),
-                //                   ),
-                //                 ],
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       ],
-                //     ),
-                //   ) 
-                // ),
-              ],
-            ),
-          ),
-        ),
+  Widget _buildCardImage(String img) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      child: AspectRatio(
+        aspectRatio: 4 / 5,
+        child: img.isNotEmpty
+            ? Image.network(
+                img,
+                fit: BoxFit.cover,
+                loadingBuilder: (_, child, progress) =>
+                    progress == null ? child : Image.asset('assets/images/img_placeholder.jpg', fit: BoxFit.cover),
+                errorBuilder: (_, __, ___) =>
+                    Image.asset('assets/images/img_broken.jpg', fit: BoxFit.cover),
+              )
+            : Image.asset('assets/images/img_broken.jpg', fit: BoxFit.cover),
       ),
-    );   
+    );
   }
 
+  Widget _buildCardTitle(String title) {
+    return SizedBox(
+      height: 38,
+      child: Text(
+        title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, height: 1.3),
+      ),
+    );
+  }
+
+  // back from detail 
   Future<void> _handleBackFromDetail() async {
     if (isChoosed == 0) {
       currencyCode = lastCurrency;
-      isLoadingContent = true;
+      setState(() => isLoadingAboveFold = true);
       await _loadContent();
-      setState(() {});
     }
   }
 }
+
+enum _CardType { vote }

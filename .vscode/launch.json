@@ -3,5 +3,27 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": []
+    "configurations": [
+        {
+        "name": "dev",
+        "request": "launch",
+        "type": "dart",
+        "flutterMode": "debug",
+        "args": ["--flavor", "dev"]
+        },
+        {
+        "name": "live",
+        "request": "launch",
+        "type": "dart",
+        "flutterMode": "debug",
+        "args": ["--flavor", "live"]
+        },
+        {
+        "name": "semilive",
+        "request": "launch",
+        "type": "dart",
+        "flutterMode": "debug",
+        "args": ["--flavor", "semilive"]
+        }
+    ]
 }

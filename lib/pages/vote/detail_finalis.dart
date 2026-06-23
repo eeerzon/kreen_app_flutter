@@ -443,6 +443,10 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     final nowUtc = DateTime.now().toUtc();
     final difference = deadlineUtc.difference(nowUtc);
 
+    if (difference.isNegative) {
+      _timer?.cancel();
+    }
+    
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
     });

@@ -248,9 +248,9 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
           // tambahkan 1 jam untuk durasi expired payment
           // var newDate = date.add(const Duration(hours: 1));
           // if (voteOder['payment_method_id'] == "6387457643547345") {
-          //   newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
+            // final newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
           // }
-
+          
           final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive'] ?? 0));
           
           expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);

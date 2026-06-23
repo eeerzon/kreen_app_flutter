@@ -2682,21 +2682,31 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                       },
                                       child: RichText(
                                         text: TextSpan(
-                                          style: TextStyle(color: Colors.black),
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.normal,
+                                          ),
                                           children: [
                                             TextSpan(text: bahasa['kebijakan_privasi_7']),
                                             TextSpan(
                                               text: widget.counts == 1 
                                                 ? "${widget.counts} ${bahasa['text_votes']}" 
                                                 : "${widget.counts} ${bahasa['text_vote']}", 
-                                              style: TextStyle(fontWeight: FontWeight.bold)
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                             TextSpan(text: bahasa['kebijakan_privasi_8']),
                                             TextSpan(
                                                 text: currencyCode == null
                                                   ? "$voteCurrency ${formatter.format(totalPayment)}"
                                                   : "$currencyCode ${formatter.format(totalPayment)}",
-                                                style: TextStyle(fontWeight: FontWeight.bold)),
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                            ),
                                             TextSpan(
                                                 text:
                                                     bahasa['kebijakan_privasi_9']),

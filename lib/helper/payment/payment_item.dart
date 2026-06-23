@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: non_constant_identifier_names, unused_local_variable
 
 import 'dart:convert';
 
@@ -201,7 +201,8 @@ class _PaymentItemState extends State<PaymentItem> {
                                     child: Padding(
                                       padding: const EdgeInsets.only(top: 8.0),
                                       child: Text(
-                                        "$payment_name $id_pg_type",
+                                        // "$payment_name $id_pg_type",
+                                        "$payment_name",
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         softWrap: true,
@@ -234,9 +235,9 @@ class _PaymentItemState extends State<PaymentItem> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
                                   child: Text(
-                                    widget.currencyCode == null
+                                    widget.currencyCode == "IDR"
                                       ? "${widget.bahasa['limit_min']} ${widget.voteCurrency} ${widget.formatter.format((widget.roundedValueMin + 1000))}"
-                                      : "${widget.bahasa['limit_min']} ${widget.currencyCode} ${widget.formatter.format((widget.roundedValueMin))}",
+                                      : "${widget.bahasa['limit_min']} ${widget.currencyCode} ${widget.formatter.format((widget.roundedValueMin + 0.01))}",
                                     softWrap: true,
                                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                                   ),

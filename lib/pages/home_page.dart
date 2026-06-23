@@ -59,16 +59,23 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _selectedIndex = widget.initialIndex;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    
+      if (!mounted) return;
+      // deepLinkHandler.processPendingLink();
+      
       await _getBahasa();
       await _checkToken();
-      await getCurrentLocationWithValidation(context);();
+      await getCurrentLocationWithValidation(context);
     });
   }
 
   Future<void> _getBahasa() async {
+    if (!mounted) return;
     final templangCode = await StorageService.getLanguage();
 
     // pastikan di-set dulu
+    if (!mounted) return;
     setState(() {
       langCode = templangCode;
     });
@@ -76,6 +83,7 @@ class _HomePageState extends State<HomePage> {
     // baru load content
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
+    if (!mounted) return;
     setState(() {
       bahasa = tempbahasa;
       home = tempbahasa['bot_nav_1'];
@@ -88,8 +96,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _checkToken() async {
+    if (!mounted) return;
     final storedToken = await StorageService.getToken();
 
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         token = storedToken;
@@ -102,6 +112,7 @@ class _HomePageState extends State<HomePage> {
         SessionManager.checkingUserModalShown = true;
 
         Future.microtask(() {
+          if (!mounted) return;
           CheckingUserModal.show(context, langCode!, false);
         });
       }
@@ -168,8 +179,12 @@ class _HomePageState extends State<HomePage> {
           valueListenable: langNotifier,
           builder: (context, value, _) {
 
-            // reload text berdasarkan bahasa terbaru
-            _getBahasa(); 
+            if (mounted) {
+              // Hanya reload kalau bahasa berubah
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _getBahasa();
+              });
+            }
 
             return BottomAppBar(
               color: Colors.white,

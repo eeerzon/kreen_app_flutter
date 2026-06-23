@@ -44,6 +44,25 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        //default set ke dev
+        manifestPlaceholders["appHost"] = "dev.kreenconnect.com"
+        // manifestPlaceholders["appHost"] = "kreenconnect.com"
+        // manifestPlaceholders["appHost"] = "bc.kreenconnect.com"
+    }
+
+    flavorDimensions += "env"
+
+    productFlavors {
+        create("dev") { // Kotlin DSL pakai create()
+            manifestPlaceholders["appHost"] = "dev.kreenconnect.com"
+        }
+        create("live") {
+            manifestPlaceholders["appHost"] = "kreenconnect.com"
+        }
+        create("semilive") {
+            manifestPlaceholders["appHost"] = "bc.kreenconnect.com"
+        }
     }
 
     lint {
@@ -70,6 +89,15 @@ android {
 
     applicationVariants.all {
 
+        val flavorName = this.flavorName // "dev", "live", "semilive"
+    
+        val flavorLabel = when (flavorName) {
+            "dev" -> "dev"
+            "live" -> "live"
+            "semilive" -> "bc"
+            else -> flavorName
+        }
+
         outputs.all {
 
             val output = this
@@ -77,7 +105,7 @@ android {
             if (output is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
 
                 output.outputFileName =
-                    "Kreen App v${versionName}.apk"
+                    "Kreen App v${versionName} (${flavorLabel}).apk"
             }
         }
     }
