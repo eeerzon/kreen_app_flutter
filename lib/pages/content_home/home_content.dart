@@ -5,8 +5,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/pages/content_info/profile.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
@@ -18,7 +19,6 @@ import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:kreen_app_flutter/helper/widget_webview.dart';
-import 'package:kreen_app_flutter/helper/auto_play_carousel.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomeContent extends StatefulWidget {
@@ -51,12 +51,8 @@ class _HomeContentState extends State<HomeContent> {
   String? news_title, news_desc;
   String? leaderboard_title;
   String? seeMore;
-
-  // ─── Loading state per section ───────────────────────────────────────────────
-  // Phase 1: above the fold (banner + vote populer)
+  
   bool isLoadingAboveFold = true;
-
-  // Phase 2: konten bawah (lazy, di-load setelah phase 1 selesai)
   bool isLoadingBelowFold = true;
 
   bool showErrorBar = false;
@@ -70,7 +66,7 @@ class _HomeContentState extends State<HomeContent> {
       
       await _getBahasa();
       await _getCurrency();
-      await _loadAboveFold(); // fase 1: banner + vote populer
+      await _loadAboveFold();
     });
   }
   
@@ -113,23 +109,19 @@ class _HomeContentState extends State<HomeContent> {
   List<dynamic> activeBanners = [];
   List<double?> aspectRatios = [];
   List<dynamic> votes        = [];
-
-  // below-fold data — state terpisah supaya bisa di-render incremental
+  
   List<dynamic> juara       = [];
   List<dynamic> hitsevent   = [];
   List<dynamic> latestvotes = [];
   List<dynamic> recomenevent = [];
   List<dynamic> listArtikel  = [];
-
-  // PHASE 1: banner + vote populer
-  /// Load dua endpoint paling penting secara parallel
+  
   Future<void> _loadAboveFold() async {
     await _checkToken();
 
     final get_user = await StorageService.getUser();
     first_name = get_user['first_name'];
-
-    // Dua request jalan parallel pakai Future.wait
+    
     final results = await Future.wait([
       ApiService.get("/setting-banner/active", xLanguage: langCode),
       ApiService.get("/vote/popular", xCurrency: currencyCode, xLanguage: langCode),
@@ -140,7 +132,6 @@ class _HomeContentState extends State<HomeContent> {
 
     if (!mounted) return;
 
-    // Validasi banner
     if (resultBanner == null || resultBanner['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -149,8 +140,7 @@ class _HomeContentState extends State<HomeContent> {
       });
       return;
     }
-
-    // Validasi vote populer
+    
     if (resultVote == null || resultVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -159,8 +149,7 @@ class _HomeContentState extends State<HomeContent> {
       });
       return;
     }
-
-    // Filter banner expired
+    
     final now = DateTime.now();
     final allBanners = resultBanner['data'] as List<dynamic>? ?? [];
     final filtered = allBanners.where((banner) {
@@ -173,8 +162,7 @@ class _HomeContentState extends State<HomeContent> {
 
     final tempVotes = resultVote['data'] ?? [];
     final tempBanners = filtered;
-
-    // Precache gambar banner + vote (non-blocking: tidak await, jalan di background)
+    
     _precacheAllImages(context, tempBanners, tempVotes).ignore();
 
     final tempChoosed = await StorageService.getIsChoosed();
@@ -186,33 +174,25 @@ class _HomeContentState extends State<HomeContent> {
       activeBanners = tempBanners;
       votes = tempVotes;
       isChoosed = tempChoosed ?? 0;
-      isLoadingAboveFold = false; // ← skeleton hilang di sini
+      isLoadingAboveFold = false;
       showErrorBar = false;
     });
-
-    // Hitung aspect ratio banner secara async (tidak blocking render)
+    
     preloadImageSizes();
-
-    // Langsung kick-off phase 2 di background tanpa await
     _loadBelowFold();
   }
-
-  // PHASE 2: konten di bawah
-  /// Di-load setelah phase 1 selesai. User sudah bisa scroll
-  /// dan melihat banner + vote populer saat ini berjalan.
+  
   Future<void> _loadBelowFold() async {
-    // Semua 5 endpoint jalan parallel
     final results = await Future.wait([
       ApiService.get("/vote/juara", xLanguage: langCode),
       ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode),
       ApiService.get("/vote/latest", xCurrency: currencyCode, xLanguage: langCode),
       ApiService.get("/event/recommended", xCurrency: currencyCode, xLanguage: langCode),
-      ApiService.get("/articles?limit=8", xLanguage: langCode),
+      // ApiService.get("/articles?limit=8", xLanguage: langCode),
     ]);
 
     if (!mounted) return;
-
-    // Jika salah satu gagal, tampilkan error tapi section lain tetap tampil
+    
     for (final r in results) {
       if (r == null || r['rc'] != 200) {
         setState(() {
@@ -226,9 +206,8 @@ class _HomeContentState extends State<HomeContent> {
     final resultHit = results[1];
     final resultLatest = results[2];
     final resultRecom = results[3];
-    final resultArtikel = results[4];
-
-    // Parse juara — bisa Map atau List
+    // final resultArtikel = results[4];
+    
     List<dynamic> tempJuara = [];
     if (resultJuara != null && resultJuara['rc'] == 200) {
       final rawData = resultJuara['data'];
@@ -244,12 +223,11 @@ class _HomeContentState extends State<HomeContent> {
       hitsevent = (resultHit    != null && resultHit['rc']    == 200) ? resultHit['data']    ?? [] : hitsevent;
       latestvotes = (resultLatest != null && resultLatest['rc'] == 200) ? resultLatest['data']  ?? [] : latestvotes;
       recomenevent = (resultRecom  != null && resultRecom['rc']  == 200) ? resultRecom['data']   ?? [] : recomenevent;
-      listArtikel = (resultArtikel != null && resultArtikel['rc'] == 200) ? resultArtikel['data'] ?? [] : listArtikel;
+      // listArtikel = (resultArtikel != null && resultArtikel['rc'] == 200) ? resultArtikel['data'] ?? [] : listArtikel;
       isLoadingBelowFold = false;
     });
   }
-
-  // Full refresh (pull-to-refresh) 
+  
   Future<void> _loadContent() async {
     setState(() {
       isLoadingAboveFold = true;
@@ -257,8 +235,7 @@ class _HomeContentState extends State<HomeContent> {
     });
     await _loadAboveFold();
   }
-
-  // Image pre-cache
+  
   Future<void> _precacheAllImages(
     BuildContext context,
     List<dynamic> banners,
@@ -293,8 +270,7 @@ class _HomeContentState extends State<HomeContent> {
       );
     }
   }
-
-  // Skeleton helper
+  
   Widget _shimmerBox({double width = double.infinity, double height = 20, double radius = 6}) {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
@@ -309,8 +285,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // BUILD 
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -328,8 +303,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // SKELETON (hanya above-fold)
+  
   Widget buildSkeletonHome() {
     return SingleChildScrollView(
       child: Container(
@@ -337,7 +311,7 @@ class _HomeContentState extends State<HomeContent> {
         padding: kGlobalPadding,
         child: Column(
           children: [
-            // Header
+            
             Shimmer.fromColors(
               baseColor: Colors.grey[300]!,
               highlightColor: Colors.grey[100]!,
@@ -350,12 +324,9 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Carousel
             _shimmerBox(height: 180, radius: 8),
             const SizedBox(height: 30),
-
-            // Section title
+            
             Row(
               children: [
                 _shimmerBox(width: 30, height: 30),
@@ -363,9 +334,8 @@ class _HomeContentState extends State<HomeContent> {
                 _shimmerBox(width: 180, height: 20),
               ],
             ),
-            const SizedBox(height: 20),
 
-            // Horizontal cards (3 cards)
+            const SizedBox(height: 20),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -415,8 +385,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // SKELETON SECTION (below fold, ditampilkan sambil phase 2 load)
+  
   Widget _buildSkeletonSection() {
     return Padding(
       padding: kGlobalPadding,
@@ -445,12 +414,10 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // AVATAR helpers
+  
   bool get isSvg => photo_user?.toLowerCase().endsWith(".svg") ?? false;
   bool get isHttp => photo_user?.toLowerCase().contains("http") ?? false;
-
-  // DATE FORMATTER
+  
   String _formatDate(String? dateStr, {bool includeTime = false}) {
     if (dateStr == null || dateStr.isEmpty) return '-';
     try {
@@ -480,8 +447,7 @@ class _HomeContentState extends State<HomeContent> {
   String _formatPrice(dynamic price) {
     return NumberFormat.decimalPattern("en_US").format(price ?? 0);
   }
-
-  // MAIN CONTENT 
+  
   Widget buildKontenHome() {
     return RefreshIndicator(
       onRefresh: _loadContent,
@@ -492,8 +458,7 @@ class _HomeContentState extends State<HomeContent> {
           child: Column(
             children: [
               _buildHeader(),
-
-              // banner carousel 
+              
               AutoPlayCarousel(
                 images: activeBanners.map((e) => e['file_upload'] as String).toList(),
                 data: activeBanners,
@@ -501,8 +466,7 @@ class _HomeContentState extends State<HomeContent> {
                 bahasa: bahasa,
               ),
               Container(height: 20, color: Colors.white),
-
-              // vote populer 
+              
               const SizedBox(height: 20),
               _buildVoteSection(
                 title: vote_title ?? '',
@@ -511,8 +475,7 @@ class _HomeContentState extends State<HomeContent> {
                 onSeeMore: widget.onSeeMoreVote,
                 type: _CardType.vote,
               ),
-
-              // konten bawah
+              
               const SizedBox(height: 20),
               isLoadingBelowFold
                   ? Column(children: [
@@ -527,10 +490,9 @@ class _HomeContentState extends State<HomeContent> {
                       Container(color: Colors.white, child: _buildSkeletonSection()),
                     ])
                   : Column(children: [
-                      // leaderboard
+                    
                       _buildLeaderboardSection(),
-
-                      // event hits
+                      
                       const SizedBox(height: 20),
                       _buildEventSection(
                         title: event_title ?? '',
@@ -538,8 +500,7 @@ class _HomeContentState extends State<HomeContent> {
                         items: hitsevent,
                         onSeeMore: widget.onSeeMoreEvent,
                       ),
-
-                      // vote terbaru
+                      
                       const SizedBox(height: 20),
                       _buildVoteSection(
                         title: latest_vote ?? '',
@@ -548,8 +509,7 @@ class _HomeContentState extends State<HomeContent> {
                         onSeeMore: widget.onSeeMoreVote,
                         type: _CardType.vote,
                       ),
-
-                      // event rekomendasi
+                      
                       const SizedBox(height: 20),
                       _buildEventSection(
                         title: event_recomen ?? '',
@@ -557,10 +517,11 @@ class _HomeContentState extends State<HomeContent> {
                         items: recomenevent,
                         onSeeMore: widget.onSeeMoreEvent,
                       ),
-
-                      // artikel
-                      const SizedBox(height: 20),
-                      _buildArtikelSection(),
+                      
+                      if (listArtikel.isNotEmpty) ... [
+                        const SizedBox(height: 20),
+                        _buildArtikelSection(),
+                      ]
                     ]),
             ],
           ),
@@ -717,8 +678,7 @@ class _HomeContentState extends State<HomeContent> {
       ],
     );
   }
-
-  // vote section (vote populer & vote terbaru — shared widget)
+  
   Widget _buildVoteSection({
     required String title,
     required String imgUrl,
@@ -726,6 +686,8 @@ class _HomeContentState extends State<HomeContent> {
     required VoidCallback onSeeMore,
     required _CardType type,
   }) {
+    bool isOpenedLink = false;
+    
     return Container(
       color: Colors.white,
       child: Padding(
@@ -744,6 +706,7 @@ class _HomeContentState extends State<HomeContent> {
                   final img = item['img']?.toString() ?? '';
                   final hargaFmt = _formatPrice(item['price']);
                   final formattedDate = _formatDate(dateStr);
+                  final url_partner = item['url_partner'];
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -754,19 +717,34 @@ class _HomeContentState extends State<HomeContent> {
                           lastCurrency = item['currency'];
                           await StorageService.setCurrency(currencyCode!);
                         }
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DetailVotePage(
-                              id_event: item['id_event'].toString(),
-                              // id_event: '684f8222cbe92', //pake untuk testing modal boost vote
-                              
-                              currencyCode: currencyCode,
+
+                        if (url_partner != null && url_partner.isNotEmpty) {
+                          if (isOpenedLink) return;
+                                    
+                          isOpenedLink = true;
+                          
+                          try {
+                            await openDeepLink(
+                              url_partner,
+                            );
+                          } finally {
+                            if (mounted) setState(() => isOpenedLink = false);
+                          }
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailVotePage(
+                                id_event: item['id_event'].toString(),
+                                // id_event: '684f8222cbe92', //pake untuk testing modal boost vote
+                                
+                                currencyCode: currencyCode,
+                              ),
                             ),
-                          ),
-                        ).then((_) {
-                          if (item['price'] != 0 || isChoosed == 1) _handleBackFromDetail();
-                        });
+                          ).then((_) {
+                            if (item['price'] != 0 || isChoosed == 1) _handleBackFromDetail();
+                          });
+                        }
                       },
                       child: _buildVoteCard(
                         img: img,
@@ -831,8 +809,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // event section (hits & rekomendasi — shared widget)
+  
   Widget _buildEventSection({
     required String title,
     required String imgUrl,
@@ -962,8 +939,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // leaderboard section
+  
   Widget _buildLeaderboardSection() {
     return Container(
       color: Colors.red,
@@ -991,6 +967,9 @@ class _HomeContentState extends State<HomeContent> {
                   if (item['leaderboard_tipe'] == "percent")     viewApi = 3;
                   if (item['leaderboard_tipe'] == "bar-percent") viewApi = 5;
 
+                  final idVote = item['id_vote']?.toString() ?? '';
+                  final idFinalis = item['id_finalis']?.toString() ?? '';
+
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: InkWell(
@@ -1000,37 +979,47 @@ class _HomeContentState extends State<HomeContent> {
                           lastCurrency = item['currency'];
                           await StorageService.setCurrency(currencyCode!);
                         }
+                        
+                        final storedToken = await StorageService.getToken(); 
+                        final resultVote = await ApiService.get("/vote/$idVote", xCurrency: currencyCode, xLanguage: langCode, token: storedToken);
+                        var detailVote = resultVote?['data'] ?? {};
 
-                        if (item['flag_paket'] == '0') {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LeaderboardSingleVote(
-                                id_finalis: item['id_finalis'].toString(),
-                                count: 0, indexWrap: null,
-                                close_payment: item['close_payment'],
-                                tanggal_buka_vote: tanggal,
-                                flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
-                                currencyCode: currencyCode,
-                                view_api: viewApi,
-                              ),
-                            ),
-                          ).then((_) => _handleBackFromDetail());
+                        if (detailVote['partner_url_web'] != null && detailVote['partner_url_web'].isNotEmpty) {
+                          final partnerUrl = normalizePartnerUrl(detailVote['partner_url_web'].toString());
+                          await openDeepLink('$partnerUrl/$idFinalis');
+                          return;
                         } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LeaderboardSingleVotePaket(
-                                id_finalis: item['id_finalis'].toString(),
-                                vote: 0, index: 0, total_detail: 0, id_paket_bw: null,
-                                close_payment: item['close_payment'],
-                                tanggal_buka_vote: tanggal,
-                                flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
-                                currencyCode: currencyCode,
-                                view_api: viewApi,
+                          if (item['flag_paket'] == '0') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LeaderboardSingleVote(
+                                  id_finalis: item['id_finalis'].toString(),
+                                  count: 0, indexWrap: null,
+                                  close_payment: item['close_payment'],
+                                  tanggal_buka_vote: tanggal,
+                                  flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
+                                  currencyCode: currencyCode,
+                                  view_api: viewApi,
+                                ),
                               ),
-                            ),
-                          ).then((_) => _handleBackFromDetail());
+                            ).then((_) => _handleBackFromDetail());
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => LeaderboardSingleVotePaket(
+                                  id_finalis: item['id_finalis'].toString(),
+                                  vote: 0, index: 0, total_detail: 0, id_paket_bw: null,
+                                  close_payment: item['close_payment'],
+                                  tanggal_buka_vote: tanggal,
+                                  flag_hide_nomor_urut: item['flag_hide_nomor_urut'],
+                                  currencyCode: currencyCode,
+                                  view_api: viewApi,
+                                ),
+                              ),
+                            ).then((_) => _handleBackFromDetail());
+                          }
                         }
                       },
                       child: SizedBox(
@@ -1091,8 +1080,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // artikel section 
+  
   Widget _buildArtikelSection() {
     return Container(
       color: Colors.white,
@@ -1114,11 +1102,10 @@ class _HomeContentState extends State<HomeContent> {
                   final img = item['img']?.toString() ?? '';
                   final dateStr = item['created_at']?.toString() ?? '';
                   String formattedDate = '-';
-
-                  // Format tanggal artikel (bisa format Indo atau ISO)
+                  DateTime? date;
+                  
                   if (dateStr.isNotEmpty) {
                     try {
-                      DateTime? date;
                       if (!RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(dateStr)) {
                         const bulanIndo = {
                           'Januari': 'January', 'Februari': 'February', 'Maret': 'March',
@@ -1128,12 +1115,12 @@ class _HomeContentState extends State<HomeContent> {
                         };
                         String en = dateStr;
                         bulanIndo.forEach((id, eng) => en = en.replaceAll(id, eng));
-                        date = DateFormat(formatDateId, "en_US").parse(en);
+                        date = DateFormat('dd MMMM yyyy', "en_US").parse(en);
                       } else {
                         date = DateTime.parse(dateStr);
                       }
                       formattedDate = langCode == 'id'
-                          ? DateFormat(formatDateId, "id_ID").format(date)
+                          ? DateFormat('dd MMMM yyyy', "id_ID").format(date)
                           : _formatDate(date.toIso8601String());
                     } catch (_) {}
                   }
@@ -1224,8 +1211,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
-  // back from detail 
+  
   Future<void> _handleBackFromDetail() async {
     if (isChoosed == 0) {
       currencyCode = lastCurrency;

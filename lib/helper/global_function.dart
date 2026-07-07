@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// padding global
 const EdgeInsets kGlobalPadding = EdgeInsets.all(20);
 
 // ganti value sesuai kebutuhan
@@ -19,8 +20,8 @@ const String baseHost = "dev.kreenconnect.com"; //dev
 
 const String baseapiUrl = "$baseUrl/kreenapi";
 
-const String STRIPE_PUBLIC_KEY = "pk_test_51PqeNlL6LohooVUuQ3XETGCDPNsYsMG7CEt1wBLeUSslqxjKyTcTFxQ3Ue5ysqCfZLsiGnP2e6Q9Y8hsydwAoixS00m5Q7OvmP"; //dev
-// const String STRIPE_PUBLIC_KEY = "pk_live_51PqeNlL6LohooVUu0QrXYjrfhmEDj7WZuzm4EF6FeTGUmErLKRXoGU2UUr0GvrYUFONNGm6jtRr0e0adYXL4guXX00A4ft7WN1"; //prod
+// const String STRIPE_PUBLIC_KEY = "pk_test_51PqeNlL6LohooVUuQ3XETGCDPNsYsMG7CEt1wBLeUSslqxjKyTcTFxQ3Ue5ysqCfZLsiGnP2e6Q9Y8hsydwAoixS00m5Q7OvmP"; //dev
+const String STRIPE_PUBLIC_KEY = "pk_live_51PqeNlL6LohooVUu0QrXYjrfhmEDj7WZuzm4EF6FeTGUmErLKRXoGU2UUr0GvrYUFONNGm6jtRr0e0adYXL4guXX00A4ft7WN1"; //prod
 
 //====================================================================================
 
@@ -46,7 +47,6 @@ bool isValidEmail(String email) {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$',
   );
   
-  // return regex.hasMatch(email);
   if (!regex.hasMatch(email)) return false;
 
   final tld = email.split('.').last.toLowerCase();
@@ -63,8 +63,7 @@ bool isValidPhoneIDR(String phone) {
   return regex.hasMatch(phone);
 }
 
-// String? currencyCode = 'IDR';
-String? userCurrency = 'IDR'; // preference user
+String? userCurrency = 'IDR';
 String? lastCurrency;
 
 int isChoosed = 1; // 0 = belum pilih, 1 = sudah pilih
@@ -82,6 +81,14 @@ String formatHtmlContent(String? text) {
       .replaceAll('\r\n', '<br>')
       .replaceAll('\n\n', '<br><br>')
       .replaceAll('\n', '<br>');
+}
+
+String parseNewline(String? text) {
+  if (text == null || text.isEmpty) return '';
+  return text
+      .replaceAll('\\n', '\n')
+      .replaceAll('\r\n', '\n')
+      .trim();
 }
 
 bool paymentExpired = false;
@@ -110,7 +117,7 @@ bool hasFile(String answer) {
   final uri = Uri.tryParse(answer);
   if (uri == null) return false;
   final path = uri.path;
-  return path.contains('.'); // ada ekstensi = ada file
+  return path.contains('.');
 }
 
 String cleanYoutubeUrl(String url) {
@@ -159,9 +166,8 @@ final Map<String, String> errorTranslationMap = {
       'Password must contain at least one letter and one number',
 
   'Password tidak cocok': 'Password does not match',
+  
 
-
-  // current password
   'Password saat ini minimal 8 karakter':
       'Current password must be at least 8 characters',
   'Current password minimal 8 karakter':
@@ -169,13 +175,13 @@ final Map<String, String> errorTranslationMap = {
   'Current password diperlukan': 'Current password is required',
   'Password saat ini salah': 'Current password is incorrect',
   'Password saat ini tidak sesuai': 'Current password is incorrect',
+  
 
-  // new password
   'new password minimal 8 karakter':
       'New password must be at least 8 characters',
   'New password diperlukan': 'New password is required',
 
-  // confirm password
+
   'Konfirmasi password tidak cocok':
       'Confirm password does not match',
   'Confirm password diperlukan': 'Confirm password is required',
@@ -184,7 +190,6 @@ final Map<String, String> errorTranslationMap = {
 };
 
 
-// Map khusus normalisasi bahasa ID (server -> tampilan)
 final Map<String, String> idNormalizationMap = {
   'Nomor telepon minimal 7 karakter': 'Nomor handphone harus minimal 7 karakter',
   'email harus memiliki domain yang valid.': 'Email harus memiliki domain yang valid',
@@ -250,10 +255,9 @@ class EmailInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // Hapus SEMUA spasi
+    
     final text = newValue.text.replaceAll(RegExp(r'\s'), '');
-
-    // Hitung berapa spasi yang dihapus sebelum posisi cursor
+    
     final spacesBeforeCursor = newValue.text
         .substring(0, newValue.selection.baseOffset)
         .replaceAll(RegExp(r'\s'), '')
@@ -291,4 +295,205 @@ extension StringExtension on String {
         : word[0].toUpperCase() + word.substring(1))
       .join(' ');
   }
+}
+
+bool isHtmlEmpty(String? html) {
+  if (html == null || html.isEmpty) return true;
+  
+  final text = html
+      .replaceAll(RegExp(r'<[^>]*>'), '')
+      .replaceAll('&nbsp;', '')
+      .trim();
+
+  return text.isEmpty;
+}
+
+Future<void> openEwalletPay(String url) async {
+  final uri = Uri.parse(url);
+
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  } else {
+    throw Exception('Tidak dapat membuka payment');
+  }
+}
+
+Future<void> openDeepLink(String url) async {
+  final uri = Uri.parse(url);
+
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  } else {
+    throw Exception('Tidak dapat membuka deep link');
+  }
+}
+
+String normalizePartnerUrl(String url) {
+  url = url.trim();
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  return 'https://$url';
+}
+
+Widget buildTopCardSkeleton({required bool isCenter}) {
+  final width = isCenter ? 120.0 : 100.0;
+  
+  return Shimmer.fromColors(
+    baseColor: Colors.grey[300]!,
+    highlightColor: Colors.grey[100]!,
+    child: Container(
+      width: width,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 4 / 5,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            height: 12,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: 12,
+            width: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            height: 32,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget buildSkeletonDukungan() {
+  return Container(
+    width: double.infinity,
+    padding: kGlobalPadding,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: Colors.grey.shade300,),
+    ),
+    child: Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Column(
+              children: [
+                Container(
+                  height: 30,
+                  width: 100,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 12,),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Column(
+              children: [
+                Container(
+                  height: 30,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 12,),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Column(
+              children: [
+                Container(
+                  height: 30,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 12,),
+          Divider(),
+
+          SizedBox(height: 12,),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Column(
+              children: [
+                Container(
+                  height: 30,
+                  width: 100,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      )
+    ),
+  );
 }

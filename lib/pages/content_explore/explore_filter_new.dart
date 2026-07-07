@@ -56,14 +56,12 @@ class ExploreFilterNew extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<String> filters = [];
-
-    // TIME -> gabung jadi satu
+    
     if (timeFilter.isNotEmpty) {
       final timeLabel = timeFilter.map(mapTime).join(", ");
       filters.add(timeLabel);
     }
-
-    // PRICE -> gabung jadi satu
+    
     if (priceFilter.isNotEmpty) {
       final priceLabel = priceFilter.map(mapPrice).join(", ");
       filters.add(priceLabel);
@@ -71,35 +69,11 @@ class ExploreFilterNew extends StatelessWidget {
 
     if (filters.isEmpty) return const SizedBox();
 
-    // return Align(
-    //   alignment: Alignment.centerLeft,
-    //   child: SingleChildScrollView(
-    //     scrollDirection: Axis.horizontal,
-    //     child: Row(
-    //       mainAxisAlignment: MainAxisAlignment.start,
-    //       children: filters.map((label) {
-    //         return Container(
-    //           margin: const EdgeInsets.only(right: 8),
-    //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    //           decoration: BoxDecoration(
-    //             color: Colors.red,
-    //             borderRadius: BorderRadius.circular(8),
-    //           ),
-    //           child: Text(
-    //             label,
-    //             style: const TextStyle(color: Colors.white),
-    //           ),
-    //         );
-    //       }).toList(),
-    //     ),
-    //   ),
-    // );
-
     return Align(
       alignment: Alignment.centerLeft,
       child: Wrap(
-        spacing: 8, // jarak horizontal antar chip
-        runSpacing: 8, // jarak antar baris
+        spacing: 8, 
+        runSpacing: 8, 
         children: filters.map((label) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

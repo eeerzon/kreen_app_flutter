@@ -1,7 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/pick_login_section.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -91,15 +91,10 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
                         if (val != null) {
                           setState(() {
                             langCode = val; 
-                            langNotifier.value = val; // update global
-                            _selectedLang = val; // update local
+                            langNotifier.value = val;
+                            _selectedLang = val;
                           });
                           await StorageService.setLanguage(val);
-                          // Navigator.pushAndRemoveUntil(
-                          //   context,
-                          //   MaterialPageRoute(builder: (_) => const HomePage()),
-                          //   (route) => false,
-                          // );
 
                           Navigator.pop(context, true);
                         }
@@ -107,7 +102,7 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
                       title: Row(
                         children: [
                           Image.asset(
-                            "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
+                            "assets/flags/${entry.key}.png",
                             width: 28,
                             height: 28,
                           ),
@@ -175,7 +170,7 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
                       title: Row(
                         children: [
                           Image.asset(
-                            "assets/currencies/${entry.key.toString().toLowerCase()}.png", // simpan currency di folder assets/currencies
+                            "assets/currencies/${entry.key.toString().toLowerCase()}.png",
                             width: 28,
                             height: 28,
                           ),
@@ -206,10 +201,9 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
           child: Column(
             children: [
               const Spacer(),
-
-              // ilustrasi
+              
               Image.asset(
-                'assets/images/img_picklanguage.png', // ganti sesuai asset kamu
+                'assets/images/img_picklanguage.png',
                 height: 200,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => const Icon(Icons.language, size: 100, color: Colors.grey),
@@ -229,8 +223,6 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
               ),
 
               const SizedBox(height: 32),
-
-              // Pilih Bahasa
               GestureDetector(
                 onTap: () async {
                   changed = await _showLanguageDialog();
@@ -260,8 +252,6 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
               ),
 
               const SizedBox(height: 12),
-
-              // Pilih Mata Uang
               GestureDetector(
                 onTap: _showCurrencyDialog,
                 child: Container(
@@ -288,8 +278,6 @@ class _LanguageCurrencyPageState extends State<LanguageCurrencyPage> {
               ),
 
               const SizedBox(height: 24),
-
-              // Simpan dan Lanjutkan
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),

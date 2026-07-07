@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -173,8 +173,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -221,18 +220,14 @@ class _AddSupportPageState extends State<AddSupportPage> {
 
     if (dateStr.isNotEmpty) {
       try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+        final date = DateTime.parse(dateStr);
         if (langCode == 'id') {
-          // Bahasa Indonesia
           final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
-          // Bahasa Inggris
           final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+          
           final day = date.day;
           String suffix = 'th';
           if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -256,9 +251,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
         });
         return;
       }
-              
-      //kirim ke API
-      // ApiService.post('/support', {'text': dukungan, 'anonymous': isAnonymous});
+      
       Map<String, dynamic>? result;
       final body = {
         "id_vote": widget.id_vote,
@@ -283,7 +276,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                 currencyCode: currencyCode,
               ),
             ),
-            (route) => route.isFirst, // sisakan Home
+            (route) => route.isFirst,
           );
         } else {
           setState(() => isSubmitting = false);
@@ -296,10 +289,6 @@ class _AddSupportPageState extends State<AddSupportPage> {
     void handleSubmit() async {
       
       if (isSubmitting) return;
-
-      // setState(() {
-      //   _showError = true;
-      // });
 
       final isValid = _validateAllForm();
 
@@ -332,7 +321,6 @@ class _AddSupportPageState extends State<AddSupportPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            // Navigator.pop(context);
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
@@ -341,7 +329,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
                   currencyCode: currencyCode,
                 ),
               ),
-              (route) => route.isFirst, // sisakan Home
+              (route) => route.isFirst,
             );
           },
         ),
@@ -414,7 +402,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
               
                       const SizedBox(width: 16,),
               
-                      Expanded( // penting agar tdk overflow
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -452,7 +440,6 @@ class _AddSupportPageState extends State<AddSupportPage> {
                                 ),
               
                                 const SizedBox(width: 12),
-                                //text
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -480,7 +467,6 @@ class _AddSupportPageState extends State<AddSupportPage> {
                                 ),
               
                                 const SizedBox(width: 12),
-                                //text
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,

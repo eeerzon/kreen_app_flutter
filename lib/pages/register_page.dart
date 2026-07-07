@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -109,14 +109,6 @@ class _RegisPageState extends State<RegisPage> {
         emailError2 = null;
         if (data['password'] is List) {
           for (var msg in data['password']) {
-            // final message = msg.toString();
-
-            // if (message.toLowerCase().contains('new password')) {
-            //   newPasswordError = message;
-            // } else if (message.toLowerCase().contains('konfirmasi') ||
-            //           message.toLowerCase().contains('confirm')) {
-            //   confirmPasswordError = message;
-            // }
 
             final translated = translateError(msg.toString(), langCode);
             final lower = translated.toLowerCase();
@@ -237,8 +229,7 @@ class _RegisPageState extends State<RegisPage> {
         if (result != null && result['success'] == true && result['rc'] == 200) {
           final user = result['data']['user'];
           final token = result['data']['token'];
-
-          // simpan ke secure storage
+          
           await StorageService.setLoginMethod('google');
           await StorageService.setToken(token);
           await StorageService.setUser(
@@ -270,7 +261,6 @@ class _RegisPageState extends State<RegisPage> {
         Fluttertoast.showToast(msg: cancelLogin!);
       }
     } catch (e) {
-      debugPrint('Google login error: $e');
       Fluttertoast.showToast(msg: cancelLogin!);
     } finally {
       if (mounted) {
@@ -295,8 +285,7 @@ class _RegisPageState extends State<RegisPage> {
   Map<String, dynamic> bahasa = {};
   Future<void> _getBahasa() async {
     final templangCode = await StorageService.getLanguage();
-
-    // pastikan di-set dulu
+    
     setState(() {
       langCode = templangCode;
     });
@@ -379,8 +368,7 @@ class _RegisPageState extends State<RegisPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               children: [
-                //nama lengkap
-
+                
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Row(
@@ -398,7 +386,6 @@ class _RegisPageState extends State<RegisPage> {
                     FilteringTextInputFormatter.allow(
                       RegExp(r"[a-zA-Z\u00C0-\u017F\s]"),
                     ),
-                    // NameInputFormatter(),
                     LastNameInputFormatter(),
                   ],
                   decoration: InputDecoration(
@@ -417,7 +404,7 @@ class _RegisPageState extends State<RegisPage> {
                 // const SizedBox(height: 16),
                 // Align(
                 //   alignment: AlignmentGeometry.centerLeft,
-                //   child: Text(lastNameLabel ?? "..."), // nama belakang
+                //   child: Text(lastNameLabel ?? "..."),
                 // ),
                 // TextField(
                 //   controller: _lastNameController,
@@ -440,8 +427,7 @@ class _RegisPageState extends State<RegisPage> {
                 //     focusedBorder: _border(true),
                 //   ),
                 // ),
-
-                //email 
+                
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
@@ -509,8 +495,7 @@ class _RegisPageState extends State<RegisPage> {
                         ),
                       ),
                     ))),
-
-                //phone
+                    
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
@@ -549,15 +534,14 @@ class _RegisPageState extends State<RegisPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                      child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           phoneError!,
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
                   ),
-
-                //password
+                  
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
@@ -612,7 +596,7 @@ class _RegisPageState extends State<RegisPage> {
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                       child: Text(
                         bahasa['password_min']!,
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
@@ -625,7 +609,7 @@ class _RegisPageState extends State<RegisPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? PasswordError ?? '' 
@@ -641,7 +625,7 @@ class _RegisPageState extends State<RegisPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? PasswordError2 ?? '' 
@@ -657,7 +641,7 @@ class _RegisPageState extends State<RegisPage> {
                    Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? PasswordError3 ?? '' 
@@ -666,8 +650,7 @@ class _RegisPageState extends State<RegisPage> {
                         ),
                     ),
                   ),
-
-                //confirm password
+                  
                 const SizedBox(height: 16),
                 Align(
                   alignment: AlignmentGeometry.centerLeft,
@@ -720,7 +703,7 @@ class _RegisPageState extends State<RegisPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? confirmPasswordError ?? '' 
@@ -729,8 +712,7 @@ class _RegisPageState extends State<RegisPage> {
                         ),
                     ),
                   ),
-
-                // tombol Login
+                  
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
@@ -756,8 +738,7 @@ class _RegisPageState extends State<RegisPage> {
                     ),
                   ),
                 ),
-
-                // masuk dengan
+                
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -769,8 +750,7 @@ class _RegisPageState extends State<RegisPage> {
                     Expanded(child: Divider(thickness: 1)),
                   ],
                 ),
-
-                // tombol google dan fb
+                
                 const SizedBox(height: 16),
                 InkWell(
                   onTap: _isGoogleLoading ? null : _loginGoogle,
@@ -808,25 +788,7 @@ class _RegisPageState extends State<RegisPage> {
                         ),
                   ),
                 ),
-
-                // Row(
-                //   mainAxisAlignment: MainAxisAlignment.center,
-                //   children: [
-                    // IconButton(
-                    //   onPressed: () {},
-                    //   icon: Image.asset("assets/images/img_facebook.png"),
-                    //   iconSize: 50,
-                    // ),
-                    // const SizedBox(width: 24),
-                //     IconButton(
-                //       onPressed: () {},
-                //       icon: Image.asset("assets/images/img_google.png"),
-                //       iconSize: 50,
-                //     ),
-                //   ],
-                // ),
-
-                // regis
+                
                 const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -872,15 +834,9 @@ class LastNameInputFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     String text = newValue.text;
-
-    // Hilangkan spasi di awal
     text = text.replaceFirst(RegExp(r'^\s+'), '');
-
-    // Hilangkan spasi ganda
     text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
-
-    // Hilangkan spasi di akhir HANYA jika user sedang menghapus
-    // (panjang newValue lebih pendek dari oldValue)
+    
     final isDeleting = newValue.text.length < oldValue.text.length;
     if (isDeleting) {
       text = text.replaceAll(RegExp(r'\s+$'), '');

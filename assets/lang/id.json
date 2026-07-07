@@ -438,6 +438,12 @@
     "boost_desc_1": "Setiap vote yang dibeli selama periode promo ini akan dihitung",
     "boost_desc_2": "Boost Vote berakhir dalam",
     "boost_desc_3": "Periode Boost Vote berlaku hingga",
-    "vote_sekarang": "VOTE SEKARANG!"
+    "vote_sekarang": "VOTE SEKARANG!",
+
+    "free_vote_title": "Vote Gratis Tersedia!",
+    "free_vote_qty": "vote gratis harian",
+    "free_vote_desc": "Hai, kamu memiliki {qty} yang dapat digunakan untuk mendukung finalis favoritmu. Silakan masuk untuk menggunakan vote gratis ini. Jangan lewatkan kesempatan ini untuk memberikan dukungan tanpa biaya!",
+    "free_vote_desc_2": "Silakan masuk untuk menggunakan {qty} {votes} gratis.",
+    "free_vote_desc_3": "Hai, kamu memiliki {qty} {votes} gratis."
   }
 }

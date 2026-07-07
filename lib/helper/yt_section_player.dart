@@ -38,8 +38,7 @@ class _FullscreenYoutubePageState extends State<FullscreenYoutubePage> {
 
     if (!_controller.value.isFullScreen && mounted) {
       _isPopping = true;
-
-      // ⛔ JANGAN pop langsung
+      
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.of(context).pop();

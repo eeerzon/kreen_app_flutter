@@ -438,6 +438,12 @@
     "boost_desc_1" : "Every vote purchased during this promo period will be counted",
     "boost_desc_2" : "Boost Vote ends in",
     "boost_desc_3" : "Boost vote period is valid until",
-    "vote_sekarang" : "VOTE NOW!"
+    "vote_sekarang" : "VOTE NOW!",
+
+    "free_vote_title": "Free Vote Available!",
+    "free_vote_qty": "free daily votes",
+    "free_vote_desc": "Hi, you have {qty} available to support your favorite finalist. Don't miss this opportunity to give support without any cost! Please log in to use your free votes.",
+    "free_vote_desc_2": "Please log in to use your {qty} free {votes}.",
+    "free_vote_desc_3": "Hi, you have {qty} free {votes}."
   }
 }

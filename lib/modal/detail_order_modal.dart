@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
@@ -121,7 +121,6 @@ class DetailOrderModal {
             child: Column(
               children: [
                 const SizedBox(height: 16),
-                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -246,7 +245,6 @@ class DetailOrderModal {
                     },
                     defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                     children: [
-                      // Row 1
                       TableRow(children: [
                         Shimmer.fromColors(
                           baseColor: Colors.grey.shade300,
@@ -279,7 +277,6 @@ class DetailOrderModal {
                         SizedBox(height: 12),
                         SizedBox(height: 12),
                       ]),
-                      // Row 2
                       TableRow(children: [
                         Shimmer.fromColors(
                           baseColor: Colors.grey.shade300,
@@ -357,7 +354,6 @@ class DetailOrderModal {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -495,7 +491,7 @@ class DetailOrderModal {
 
                                   const SizedBox(width: 8,),
 
-                                  Expanded( // penting agar tdk overflow
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -544,19 +540,16 @@ class DetailOrderModal {
                         if (dateStr.isNotEmpty) {
                           try {
                             final wibDate = parseWib(dateStr);
-                            // parsing string ke DateTime
-                            var date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+                            var date = DateTime.parse(dateStr);
                             date = wibDate.toLocal();
+
                             if (langCode == 'id') {
-                              // Bahasa Indonesia
                               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
                               formattedDate = formatter.format(date);
                             } else {
-                              // Bahasa Inggris
                               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
                               formattedDate = formatter.format(date);
-
-                              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                              
                               final day = date.day;
                               String suffix = 'th';
                               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -870,7 +863,6 @@ class DetailOrderModal {
             child: Column(
               children: [
                 const SizedBox(height: 16),
-                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -967,8 +959,7 @@ class DetailOrderModal {
                             const SizedBox(width: 8),
                             Container(width: 1.2, color: Colors.grey, height: 100),
                             const SizedBox(width: 12),
-
-                            // Info Kolom
+                            
                             Flexible(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1043,8 +1034,7 @@ class DetailOrderModal {
                           ],
                         ),
                       ),
-
-                      // QR Fake
+                      
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: Column(
@@ -1115,7 +1105,6 @@ class DetailOrderModal {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1243,7 +1232,7 @@ class DetailOrderModal {
 
                                   const SizedBox(width: 8,),
 
-                                  Expanded( // penting agar tdk overflow
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -1253,11 +1242,6 @@ class DetailOrderModal {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        // const SizedBox(height: 4),
-                                        // Text(
-                                        //   "${vote['nama_penyelenggara']}",
-                                        //   style: TextStyle(color: Colors.grey),
-                                        // ),
                                         const SizedBox(height: 4),
                                         Text(
                                           eventOder['amount'] == 0
@@ -1285,8 +1269,7 @@ class DetailOrderModal {
                     Column(
                       children: List.generate(eventOrderDetail.length, (index) {
                         final order = eventOrderDetail[index];
-
-                        // cari ticket berdasarkan id_event_ticket
+                        
                         final ticket = eventTiket.firstWhere(
                           (e) => e['id_event_ticket'] == order['id_event_ticket'],
                           orElse: () => null,
@@ -1307,7 +1290,6 @@ class DetailOrderModal {
                                 ),
                                 child: Row(
                                   children: [
-                                    // Kiri: Barcode dan info tiket
                                     Expanded(
                                       child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1335,14 +1317,6 @@ class DetailOrderModal {
                                                   "\n${eventOrderDetail[index]['ticket_buyer_phone']}"
                                                 ),
                                                 const SizedBox(height: 8),
-                                                // Text(
-                                                //   eventOrderDetail[index]['ticket_buyer_email'],
-                                                //   overflow: TextOverflow.ellipsis,
-                                                //   maxLines: 1,
-                                                // ),
-                                                // const SizedBox(height: 8),
-                                                // Text(eventOrderDetail[index]['ticket_buyer_phone']),
-                                                // const SizedBox(height: 8),
                                                 Builder(
                                                   builder: (_) {
                                                     final orderedTicketId =
@@ -1406,8 +1380,7 @@ class DetailOrderModal {
                                         ],
                                       ),
                                     ),
-
-                                    // Kanan: QR code
+                                    
                                     if (isSukses)
                                       Padding(
                                         padding: const EdgeInsets.only(left: 8),
@@ -1629,8 +1602,7 @@ class DetailOrderModal {
 
   static Future<void> _showQrFullscreen(BuildContext context, String url) async {
     double currentBrightness = await ScreenBrightness().current;
-
-    // set brightness MAX
+    
     await ScreenBrightness().setScreenBrightness(1.0);
 
     await showDialog(
@@ -1664,8 +1636,7 @@ class DetailOrderModal {
         );
       },
     );
-
-    // restore brightness
+    
     await ScreenBrightness().setScreenBrightness(currentBrightness);
   }
 

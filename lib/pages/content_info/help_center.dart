@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center_sub_category.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -114,27 +114,18 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search skeleton
             _skeletonBox(height: 48, radius: 12),
 
             const SizedBox(height: 24),
-
-            // Kategori title
             _skeletonBox(width: 160, height: 16),
 
             const SizedBox(height: 16),
-
-            // Kategori list
             ...List.generate(4, (_) => _skeletonKategori()),
 
             const SizedBox(height: 16),
-
-            // FAQ title
             _skeletonBox(width: 180, height: 16),
 
             const SizedBox(height: 16),
-
-            // FAQ list
             ...List.generate(4, (index) => _skeletonFaq(index)),
           ],
         ),
@@ -236,25 +227,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // search bar
-                // TextField(
-                //   decoration: InputDecoration(
-                //     hintText: search,
-                //     hintStyle: TextStyle(color: Colors.grey.shade400),
-                //     prefixIcon: Icon(Icons.search),
-                //     border: OutlineInputBorder(
-                //       borderRadius: BorderRadius.circular(8),
-                //     ),
-                //   ),
-                //   onChanged: (value) {
-                //     // _loadContent(false, value);
-                //     setState(() {
-                //       // buildKonten();
-                //     });
-                //   },
-                // ),
-
-                //konten
+                
                 SizedBox(height: 16),
                 Text(
                   bahasa['kategori_informasi'],

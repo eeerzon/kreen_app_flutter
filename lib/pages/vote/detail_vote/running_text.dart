@@ -26,9 +26,8 @@ class RunningTextState extends State<RunningText> with SingleTickerProviderState
       if (_containerWidth == 0 || _textWidth == 0) return;
 
       setState(() {
-        _offset -= 1.5; // kecepatan scroll
-
-        // jika text sudah keluar semua ke kiri, reset dari kanan
+        _offset -= 1.5;
+        
         if (_offset <= -_textWidth) {
           _offset = _containerWidth;
         }
@@ -47,8 +46,7 @@ class RunningTextState extends State<RunningText> with SingleTickerProviderState
     return LayoutBuilder(
       builder: (context, constraints) {
         _containerWidth = constraints.maxWidth;
-
-        // init offset dari kanan saat pertama
+        
         if (_offset == 0 && _textWidth == 0) {
           _offset = _containerWidth;
         }
@@ -71,7 +69,7 @@ class RunningTextState extends State<RunningText> with SingleTickerProviderState
                         if (_textWidth != w) {
                           setState(() {
                             _textWidth = w;
-                            _offset = _containerWidth; // mulai dari kanan
+                            _offset = _containerWidth;
                           });
                         }
                       },

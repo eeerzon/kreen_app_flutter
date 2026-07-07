@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_all.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_event.dart';
 import 'package:kreen_app_flutter/pages/content_explore/explore_filter.dart';
@@ -98,8 +98,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   Future<void> _getBahasa() async {
     final templangCode = await StorageService.getLanguage();
-
-    // pastikan di-set dulu
+    
     setState(() {
       langCode = templangCode;
     });

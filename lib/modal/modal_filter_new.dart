@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 
 class ModalFilterNew {
@@ -21,8 +21,7 @@ class ModalFilterNew {
       1: "Vote",
       2: "Event",
     };
-
-    // copy agar tidak langsung mutate parent sebelum OK
+    
     List<String> paramTime = List.from(initialTime);
     List<String> paramPrice = List.from(initialPrice);
 
@@ -81,16 +80,11 @@ class ModalFilterNew {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
-                    // header
+                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Filter', style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold)),
-                        // IconButton(
-                        //   icon: Icon(Icons.close),
-                        //   onPressed: () => Navigator.pop(context),
-                        // ),
 
                         TextButton(
                           onPressed: () {
@@ -187,8 +181,6 @@ class ModalFilterNew {
                     ),
 
                     SizedBox(height: 20),
-
-                    // tombol apply
                     InkWell(
                       onTap: () {
                         Navigator.pop(context, {

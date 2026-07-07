@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import 'package:qr_code_dart_scan/qr_code_dart_scan.dart';
@@ -147,18 +147,6 @@ class _ScannerPageState extends State<ScannerPage>
                 ),
 
                 const SizedBox(height: 12),
-                // QRCodeDartScanCameraToggleBuilder(
-                //   builder: (context, isOn, toggle) {
-                //     return IconButton(
-                //       onPressed: toggle,
-                //       icon: Icon(
-                //         isOn ? Icons.flash_on : Icons.flash_off,
-                //         color: Colors.white,
-                //         size: 32,
-                //       ),
-                //     );
-                //   },
-                // )
               ],
             ),
           ),
@@ -256,7 +244,7 @@ class _ScannerPageState extends State<ScannerPage>
     if (img == null) return;
 
     try {
-      // final result = await QrCodeToolsPlugin.decodeFrom(img.path);
+      
       final result = null;
 
       if (result != null && result.isNotEmpty) {

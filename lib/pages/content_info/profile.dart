@@ -7,7 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/content_info/change_password.dart';
 import 'package:kreen_app_flutter/pages/content_info/edit_profil.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
@@ -274,18 +274,14 @@ class _ProfileState extends State<Profile> {
 
     if (dob != null) {
       try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(dob!); // pastikan format ISO (yyyy-MM-dd)
+        final date = DateTime.parse(dob!); 
         if (langCode == 'id') {
-          // Bahasa Indonesia
           final formatter = DateFormat(formatDateId, "id_ID");
           formattedDate = formatter.format(date);
         } else {
-          // Bahasa Inggris
           final formatter = DateFormat(formatDateEn, "en_US");
           formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+          
           final day = date.day;
           String suffix = 'th';
           if (day % 10 == 1 && day != 11) { suffix = 'st'; } 
@@ -470,8 +466,7 @@ class _ProfileState extends State<Profile> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            //tanggal lahir
+                            
                             SizedBox(height: 10,),
                             Row(
                               children: [
@@ -483,8 +478,7 @@ class _ProfileState extends State<Profile> {
                                 )
                               ],
                             ),
-
-                            //gender
+                            
                             if (gender != null) ... [
 
                               SizedBox(height: 10,),
@@ -502,8 +496,7 @@ class _ProfileState extends State<Profile> {
                                 ],
                               ),
                             ],
-
-                            //company
+                            
                             if (company != null) ... [
 
                               SizedBox(height: 10,),
@@ -525,8 +518,7 @@ class _ProfileState extends State<Profile> {
                                 ],
                               ),
                             ],
-
-                            //jobTitle
+                            
                             if (jobTitle != null) ... [
 
                               SizedBox(height: 10,),
@@ -575,8 +567,7 @@ class _ProfileState extends State<Profile> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            //email
+                            
                             SizedBox(height: 10,),
                             Row(
                               children: [
@@ -608,8 +599,6 @@ class _ProfileState extends State<Profile> {
 
                             SizedBox(height: 10,),
                             Divider(),
-
-                            //nomor telepon
                             SizedBox(height: 10,),
                             Row(
                               children: [
@@ -652,8 +641,7 @@ class _ProfileState extends State<Profile> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            //linked in
+                            
                             SizedBox(height: 10,),
                             Row(
                               children: [
@@ -673,8 +661,6 @@ class _ProfileState extends State<Profile> {
 
                             SizedBox(height: 10,),
                             Divider(),
-
-                            //instagram
                             SizedBox(height: 10,),
                             Row(
                               children: [
@@ -694,8 +680,6 @@ class _ProfileState extends State<Profile> {
 
                             SizedBox(height: 10,),
                             Divider(),
-
-                            //twitter
                             SizedBox(height: 10,),
                             Row(
                               children: [
@@ -739,8 +723,7 @@ class _ProfileState extends State<Profile> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            //password
+                            
                             SizedBox(height: 10,),
                             SizedBox(
                               width: double.infinity,
@@ -861,7 +844,6 @@ class _ProfileState extends State<Profile> {
                               ],
                             ],
 
-                            //pusat bantuan
                             SizedBox(height: 10,),
                             SizedBox(
                               width: double.infinity,
@@ -889,8 +871,6 @@ class _ProfileState extends State<Profile> {
 
                             SizedBox(height: 10,),
                             Divider(),
-
-                            //kebijakan privasi
                             SizedBox(height: 10,),
                             SizedBox(
                               width: double.infinity,
@@ -946,8 +926,6 @@ class _ProfileState extends State<Profile> {
                               ),
 
                               const SizedBox(height: 10),
-
-                              /// BUTTON Ya, logout
                               SizedBox(
                                 width: double.infinity,
                                 height: 45,
@@ -997,8 +975,6 @@ class _ProfileState extends State<Profile> {
                               ),
 
                               const SizedBox(height: 10),
-
-                              /// BUTTON Kembali
                               SizedBox(
                                 width: double.infinity,
                                 height: 45,
@@ -1082,19 +1058,15 @@ class _ProfileState extends State<Profile> {
     if (!url.contains('/')) return url;
     
     String lastSegment = url.split('/').last;
-
-    // Handle LinkedIn yang kadang pakai "in/" atau "company/"
-    // Contoh: https://www.linkedin.com/in/admingg
+    
     if (url.contains('linkedin.com')) {
       return lastSegment;
     }
-
-    // Twitter / X
+    
     if (url.contains('twitter.com') || url.contains('x.com')) {
       return lastSegment;
     }
-
-    // Instagram
+    
     if (url.contains('instagram.com')) {
       return lastSegment;
     }
@@ -1108,8 +1080,7 @@ class _ProfileState extends State<Profile> {
 
     if (result != null && result['success'] == true && result['rc'] == 200) {
     final user = result['data'];
-
-      // simpan ke secure storage
+    
       await StorageService.setUser(
         id: user['id'], 
         first_name: user['first_name'], 

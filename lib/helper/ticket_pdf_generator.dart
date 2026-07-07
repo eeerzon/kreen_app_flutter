@@ -30,8 +30,7 @@ class TicketPdfGenerator {
 
     final ttf = _cachedFont!;
     final ttfBold = _cachedFontBold!;
-
-    // Load event banner
+    
     Uint8List? bannerBytes;
     try {
       final response = await http.get(

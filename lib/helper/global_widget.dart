@@ -8,8 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/ticket_pdf_generator.dart';
+import 'package:kreen_app_flutter/helper/widget_webview.dart';
 import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_finalis.dart';
@@ -51,20 +52,17 @@ Future<void> handleVoteAction({
     await EmailVerifModal.showLogin(context, bahasa, tema, onLoginSuccess: onAfterLogin);
     return;
   }
-
-  // Tidak perlu login tapi perlu verif -> anggap perlu login dulu
+  
   if (flagLogin == '0' && flagVerifyEmail == '1' && storedToken.isEmpty) {
     await EmailVerifModal.showLogin(context, bahasa, tema, onLoginSuccess: onAfterLogin);
     return;
   }
-
-  // Sudah login, tapi email belum diverifikasi
+  
   if (flagVerifyEmail == '1' && storeUser['verifEmail'] == '0') {
     await EmailVerifModal.show(context, storedToken, langCode, bahasa, storeUser['email'] ?? '', tema);
     return;
   }
-
-  // Semua lolos -> navigate
+  
   if (context.mounted) {
     _navigateToFinalis(context, flagPaket, idFinalis, flagHideNoUrut, persen);
   }
@@ -128,11 +126,18 @@ Future<void> refreshAfterVerification(String token, String email, String lang) a
 }
 
 Widget CommentCard({
-  required List<dynamic> namaFinalis,
+  required dynamic namaFinalis,
   required String name,
   required String time,
   required String message,
 }) {
+
+  final List<String> namaList = namaFinalis is List
+    ? namaFinalis.map((e) => e.toString()).toList()
+    : [namaFinalis.toString()];
+
+  final String parsedMessage = parseNewline(message);
+    
   return Container(
     width: double.infinity,
     padding: kGlobalPadding,
@@ -147,7 +152,7 @@ Widget CommentCard({
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: namaFinalis.map<Widget>((item) {
+          children: namaList.map<Widget>((item) {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -165,7 +170,7 @@ Widget CommentCard({
         const SizedBox(height: 12),
 
         Text(
-          message,
+          parsedMessage,
           softWrap: true,
         ),
 
@@ -376,8 +381,7 @@ void showBoostPopup(
     barrierDismissible: true,
     builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) {
-
-        // start timer khusus dialog
+        
         dialogTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
           if (currentRemaining.inSeconds > 0) {
             setDialogState(() {
@@ -390,15 +394,12 @@ void showBoostPopup(
           try {
             final localDate = DateHelper.parseWibToLocal(multiplier_end_date);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final formatter = DateFormat(formatDateId, "id_ID");
               formattedDate = formatter.format(localDate);
             } else {
-              // Bahasa Inggris
               final formatter = DateFormat(formatDateEn, "en_US");
               formattedDate = formatter.format(localDate);
-
-              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              
               final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -428,7 +429,6 @@ void showBoostPopup(
             ),
             child: Stack(
               children: [
-                // overlay image
                 Positioned.fill(
                   child: Opacity(
                     opacity: 0.75,
@@ -438,8 +438,7 @@ void showBoostPopup(
                     ),
                   ),
                 ),
-
-                // konten utama
+                
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -615,7 +614,376 @@ Widget _separator(Color color) {
           fontWeight: FontWeight.bold,
         ),
       ),
-      SizedBox(height: 20), // biar sejajar dengan label bawah
+      SizedBox(height: 20),
     ],
   );
+}
+
+void showFreeVotePopup(
+  BuildContext context,
+  Map<String, dynamic> bahasa,
+  int freeVote,
+) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  bahasa['free_vote_title'] ?? 'Free Vote Available!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                SizedBox(height: 10),
+                RichText(
+                  textAlign: TextAlign.justify,
+                  text: TextSpan(
+                    style: TextStyle(color: Colors.black),
+                    children: [
+                      TextSpan(
+                        text: bahasa['free_vote_desc']?.split('{qty}').first ?? 'You have ',
+                      ),
+                      TextSpan(
+                        text: freeVote.toString(),
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: " ${bahasa['free_vote_qty']}",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: bahasa['free_vote_desc']?.split('{qty}').last ?? ' free votes available.',
+                      ),
+                    ],
+                  ),
+                ),
+              ]
+            ),
+          ),
+        );
+      }
+    ),
+  );
+}
+
+class AutoPlayCarousel extends StatefulWidget {
+  final List<String> images;
+  final List<dynamic> data;
+  final List<double?> aspectRatios;
+  final Map<String, dynamic> bahasa;
+
+  const AutoPlayCarousel({
+    super.key,
+    required this.images,
+    required this.data,
+    required this.aspectRatios,
+    required this.bahasa,
+  });
+
+  @override
+  State<AutoPlayCarousel> createState() => _AutoPlayCarouselState();
+}
+
+class _AutoPlayCarouselState extends State<AutoPlayCarousel> {
+  late PageController controller;
+  int currentIndex = 0;
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    controller = PageController(viewportFraction: 1.0);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoPlay();
+    });
+  }
+
+  void _startAutoPlay() {
+    if (widget.images.length <= 1) return;
+
+    timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      if (!controller.hasClients) return;
+
+      final next = (currentIndex + 1) % widget.images.length;
+
+      controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+      );
+
+      currentIndex = next;
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final aspect = currentIndex < widget.aspectRatios.length
+      ? widget.aspectRatios[currentIndex]
+      : null;
+    final height = aspect == null ? 150.0 : (screenWidth / aspect);
+
+    return Column(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.red, Colors.white],
+              stops: [0.5, 0.5],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              height: height,
+              child: PageView.builder(
+                controller: controller,
+                physics: const BouncingScrollPhysics(),
+                onPageChanged: (i) => setState(() => currentIndex = i),
+                itemCount: widget.images.length,
+                itemBuilder: (context, i) {
+                  final img = widget.images[i];
+
+                  if (widget.aspectRatios[i] == null) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      color: Colors.grey[200],
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(),
+                    );
+                  }
+
+                  return InkWell(
+                    onTap: () {
+                      if (widget.data[i]['url_detail'] == null || widget.data[i]['url_detail'] == '') {
+                        
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                WidgetWebView(header: widget.bahasa['artikel'], url: widget.data[i]['url_detail']),
+                          ),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Material(
+                        borderRadius: BorderRadius.circular(8),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.network(
+                          img,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, st) => Container(
+                            color: Colors.grey[300],
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.broken_image),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+
+        SizedBox(height: 10, child: Container(color: Colors.white,),),
+        Container(
+          color: Colors.white,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.images.length, (i) {
+              final isActive = i == currentIndex;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: isActive ? 14 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isActive ? Colors.red : Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              );
+            }),
+          ),
+        )
+      ],
+    );
+  }
+}
+
+class CountdownBox extends StatefulWidget {
+  final DateTime deadlineUtc;
+  final Map<String, dynamic> bahasa;
+  final VoidCallback? onExpired;
+
+  const CountdownBox({
+    super.key,
+    required this.deadlineUtc,
+    required this.bahasa,
+    this.onExpired,
+  });
+
+  @override
+  State<CountdownBox> createState() => _CountdownBoxState();
+}
+
+class _CountdownBoxState extends State<CountdownBox> {
+  Duration remaining = Duration.zero;
+  Timer? _timer;
+  bool _expiredCalled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _update();
+
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _update(),
+    );
+  }
+
+  void _update() {
+    final diff = widget.deadlineUtc.difference(
+      DateTime.now().toUtc(),
+    );
+
+    if (!mounted) return;
+
+    if (diff.isNegative || diff.inSeconds == 0) {
+      
+      _timer?.cancel();
+
+      setState(() {
+        remaining = Duration.zero;
+      });
+
+      if (!_expiredCalled) {
+        _expiredCalled = true;
+        widget.onExpired?.call();
+      }
+      return;
+    }
+
+    setState(() {
+      remaining = diff;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Widget _timeBox(String value, String label,) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black),
+        ),
+      ],
+    );
+  }
+
+  Widget _separator() {
+    return Column(
+      children: [
+        Text(
+          ":",
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hours = remaining.inHours % 24;
+    final minutes = remaining.inMinutes % 60;
+    final seconds = remaining.inSeconds % 60;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(
+          color: Colors.red,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: kGlobalPadding,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _timeBox(
+              hours.toString().padLeft(2, '0'),
+              widget.bahasa['hour'],
+            ),
+            const SizedBox(width: 10),
+            _separator(),
+            const SizedBox(width: 10),
+            _timeBox(
+              minutes.toString().padLeft(2, '0'),
+              widget.bahasa['minute'],
+            ),
+            const SizedBox(width: 10),
+            _separator(),
+            const SizedBox(width: 10),
+            _timeBox(
+              seconds.toString().padLeft(2, '0'),
+              widget.bahasa['second'],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

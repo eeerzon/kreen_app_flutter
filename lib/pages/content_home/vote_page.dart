@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -57,18 +57,6 @@ class _VotePageState extends State<VotePage> {
 
   @override
   Widget build(BuildContext context) {
-    // kalau data bahasa belum siap, tampilkan loading
-    // if (cari_vote == null) {
-    //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     showLoadingDialog(context);
-    //   });
-
-    //   return const Scaffold(); // kosongin dulu
-    // } else {
-    //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     hideLoadingDialog(context);
-    //   });
-    // }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -91,7 +79,7 @@ class _VotePageState extends State<VotePage> {
         padding: kGlobalPadding,
         child: Column(
           children: [
-            // search bar
+            
             Row(
               children: [
                 Expanded(
@@ -125,7 +113,6 @@ class _VotePageState extends State<VotePage> {
             ),
             
             const SizedBox(height: 12,),
-            // isi data
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.7,
               child: buildGridView(),
@@ -154,11 +141,11 @@ class _VotePageState extends State<VotePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DetailVotePage(id_event: item['id_event']), // lempar data item kalau perlu
+                builder: (context) => DetailVotePage(id_event: item['id_event']), 
               ),
             );
           },
-          borderRadius: BorderRadius.circular(8), // biar ripple ikut radius
+          borderRadius: BorderRadius.circular(8), 
           child: Card(
             color: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

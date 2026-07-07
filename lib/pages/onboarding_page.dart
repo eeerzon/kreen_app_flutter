@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/language_currency_page.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 import '/services/lang_service.dart';
@@ -60,8 +60,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       currencyCode = code;
     });
   }
-
-  //setting bahasa
+  
   Future<void> _loadLanguage(String langCode) async {
     await StorageService.setLanguage(langCode);
 
@@ -109,8 +108,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
       body: Stack(
         children: [
-
-          //konten page
+          
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -153,16 +151,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   },
                 )
               ),
-
-              // Bottom controls
-              // Navigation bar bawah (hanya tampil kalau bukan halaman terakhir)
+              
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Lewati
+                    
                     TextButton(
                       onPressed: _finishOnboarding,
                       child: Text(
@@ -170,8 +166,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     ),
-
-                    // Indicator
+                    
                     Row(
                       children: List.generate(
                         pages.length,
@@ -188,8 +183,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       ),
                     ),
-
-                    // Lanjut
+                    
                     TextButton(
                       onPressed: _nextPage,
                       child: Text(

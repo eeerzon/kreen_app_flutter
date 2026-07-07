@@ -27,7 +27,6 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
     setState(() {
-      // appVersion = "v${info.version}+${info.buildNumber}";
       appVersion = "v${info.version}";
     });
   }
@@ -36,14 +35,12 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
     await Future.delayed(const Duration(seconds: 2));
     final seen = await StorageService.getOnboardingDone();
     if (seen) {
-      // langsung ke home
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
         (route) => false,
       );
     } else {
-      // ke onboarding
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const OnboardingPage()),
@@ -58,7 +55,7 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
       body: Stack(
         alignment: Alignment.center,
         children: [
-          // LOGO
+          
           Center(
             child: Image.asset(
               'assets/images/img_logo.png',

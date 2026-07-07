@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -116,11 +116,10 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                         return GestureDetector(
                           onTap: () async {
                             final idSubKategori = item['id'];
-                            // openSubKategori[index] = !openSubKategori[index];
                             for (int i = 0; i < openSubKategori.length; i++) {
                               openSubKategori[i] = i == index
-                                  ? !openSubKategori[i] // toggle yang diklik
-                                  : false; // lainnya ditutup
+                                  ? !openSubKategori[i] 
+                                  : false; 
                             }
 
                             if (!questionsBySub.containsKey(index)) {
@@ -164,11 +163,10 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
                                     GestureDetector(
                                       onTap: () async {
                                         final idSubKategori = item['id'];
-                                        // openSubKategori[index] = !openSubKategori[index];
                                         for (int i = 0; i < openSubKategori.length; i++) {
                                           openSubKategori[i] = i == index
-                                              ? !openSubKategori[i] // toggle yang diklik
-                                              : false; // lainnya ditutup
+                                              ? !openSubKategori[i] 
+                                              : false; 
                                         }
 
                                         if (!questionsBySub.containsKey(index)) {

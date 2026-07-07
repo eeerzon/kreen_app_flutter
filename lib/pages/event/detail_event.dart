@@ -9,7 +9,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/tiket_event.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event/tiket_global.dart';
@@ -43,7 +43,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
   bool _isLoading = true;
 
   final Map<String, int> _ticketCounts = {};
-  // List<int> counts = [];
   List<int> counts_tiket = [];
   List<String> ids_tiket = [];
   List<String> names_tiket = [];
@@ -79,8 +78,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
     try {
       final nowUtc = DateTime.now().toUtc();
-
-      // source API = WIB
       final startUtc = DateHelper.parseWibToUtc(ticket['sale_datetime_start']);
 
       final endUtc = DateHelper.parseWibToUtc(ticket['sale_datetime_end']);
@@ -108,8 +105,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
       final id = ticket['id_event_ticket']?.toString() ?? '';
       final count = _countOf(id);
       if (count <= 0) continue;
- 
-      // Jika ada tiket yang sudah non-open tapi qty masih > 0 → invalid, disable
+      
       final status = getTicketStatus(ticket);
       if (status != 'open') return false;
  
@@ -183,9 +179,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
     if (mounted) {
       setState(() {
         event = tempEvent;
-
-        // counts = List<int>.filled(event['event_ticket'].length, 0);
         _ticketCounts.clear();
+
         for (final t in (event['event_ticket'] as List<dynamic>? ?? [])) {
           final id = t['id_event_ticket']?.toString() ?? '';
           if (id.isNotEmpty) _ticketCounts[id] = 0;
@@ -237,11 +232,9 @@ class _DetailEventPageState extends State<DetailEventPage> {
         }
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -309,7 +302,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
           padding: kGlobalPadding,
           child: Column(
             children: [
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -429,8 +422,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
     final formatter = NumberFormat.decimalPattern("en_US");
 
     var detailEvent = event['event'];
-    // List<dynamic> eventTiket = event['event_ticket'] ?? [];
-    // var eventDate = event['eventdate'][0];
     var eventDateTime = event['event_datetime'] ?? [];
 
     if (event['custom_section'] != null && event['custom_section'].isNotEmpty) {
@@ -443,10 +434,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
         };
       }).toList();
     }
-
-    // final activeTickets = eventTiket
-    //   .where((e) => e['flag_aktif'] == 1)
-    //   .toList();
 
     String category_name = '';
 
@@ -517,7 +504,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(detailEvent['title']), // ambil dari api
+        title: Text(detailEvent['title']),
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
@@ -725,7 +712,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icon(Icons.confirmation_number_rounded, color: Colors.white),
+                  
                   SvgPicture.network(
                     '$baseUrl/image/ticket-white.svg',
                     width: 20,
@@ -750,7 +737,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
       body: Column(
         children: [
-          //konten
+          
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -760,13 +747,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image.network(
-                      //   detailEvent['img_organizer']?.toString().isNotEmpty == true
-                      //       ? detailEvent['img_organizer']
-                      //       : 'https://via.placeholder.com/600x300?text=No+Image',
-                      //   fit: BoxFit.cover,
-                      //   width: double.infinity,
-                      // ),
 
                       AspectRatio(
                         aspectRatio: 4 / 5,
@@ -847,7 +827,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                       SizedBox(height: 8),
                       ConstrainedBox(
                         constraints: const BoxConstraints(
-                          maxHeight: 70, // cukup untuk 2 row chip
+                          maxHeight: 70,
                         ),
                         child: Wrap(
                           spacing: 8,
@@ -930,7 +910,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                           ),
 
                           const SizedBox(width: 12),
-                          //text
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -989,33 +968,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         ],
                       ),
 
-                      // if (event['event']['description'] != null) ... [
-
-                      //   SizedBox(height: 20,),
-                      //   Text(
-                      //     eventLang['tentang_event_label'],
-                      //     style: TextStyle( fontWeight: FontWeight.bold),
-                      //   ),
-                        
-                      //   SizedBox(height: 12,),
-                      //   Padding(
-                      //     padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                      //     child: Html(
-                      //       data: event['event']['description'] ?? '-',
-                      //         style: {
-                      //           "p": Style(
-                      //             margin: Margins.zero,
-                      //             padding: HtmlPaddings.zero,
-                      //           ),
-                      //           "body": Style(
-                      //             margin: Margins.zero,
-                      //             padding: HtmlPaddings.zero,
-                      //           ),
-                      //         },
-                      //     ),
-                      //   ),
-                      // ],
-
                       const SizedBox(height: 20),
                       Text(
                         bahasa['tgl_waktu_label'],
@@ -1049,7 +1001,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                     String formattedTime = '-';
 
                                     try {
-                                      // timezone admin/event
+                                      
                                       final start = DateTime.parse(
                                         item['datetime_start_plus_diff'],
                                       );
@@ -1057,8 +1009,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                       final end = DateTime.parse(
                                         item['datetime_end_plus_diff'],
                                       );
-
-                                      // DATE
+                                      
                                       if (langCode == 'id') {
                                         final formatter = DateFormat(
                                           "$formatDay, $formatDateId",
@@ -1092,8 +1043,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                               '$day$suffix',
                                             );
                                       }
-
-                                      // TIME
+                                      
                                       formattedTime =
                                           "${DateFormat("HH:mm").format(start)}"
                                           " - "
@@ -1181,7 +1131,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                   ),
 
                                   const SizedBox(width: 12),
-                                  //text
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1204,63 +1153,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                           ),
                         ) 
                       ),
-
-                      // const SizedBox(height: 20),
-                      // Text(
-                      //   "venue",
-                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                      // ),
-
-                      // const SizedBox(height: 12,),
-                      // Container(
-                      //   color: Colors.white,
-                      //   child: Padding(
-                      //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                      //     child: Column(
-                      //       children: [
-                      //         Row(
-                      //           crossAxisAlignment: CrossAxisAlignment.start,
-                      //           children: <Widget>[
-                      //             SvgPicture.network(
-                      //               "$baseUrlimage/Locations.svg",
-                      //               width: 30,
-                      //               height: 30,
-                      //               fit: BoxFit.contain,
-                      //             ),
-
-                      //             const SizedBox(width: 12),
-                      //             //text
-                      //             Expanded(
-                      //               child: Column(
-                      //                 crossAxisAlignment: CrossAxisAlignment.start,
-                      //                 mainAxisAlignment: MainAxisAlignment.center,
-                      //                 children: [
-                      //                   Text(
-                      //                     detailEvent['venue_name'] ?? '-',
-                      //                     style: TextStyle(
-                      //                       color: Colors.black,
-                      //                     ),
-                      //                   ),
-                      //                 ],
-                      //               ),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //       ],
-                      //     ),
-                      //   ) 
-                      // ),
-
-                      // const SizedBox(height: 12,),
-                      // Text(
-                      //   "Harga",
-                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                      // ),
-                      // const SizedBox(height: 12,),
-                      // Text(
-                      //   hargaFormatted,
-                      //   style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 16),
-                      // ),
 
                       if (event['speaker'] != null && event['speaker'].isNotEmpty) ...[
                         SizedBox(height: 20),
@@ -1316,7 +1208,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
                                         
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1405,7 +1296,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1494,7 +1384,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1581,7 +1470,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1664,7 +1552,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1747,7 +1634,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1829,7 +1715,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1919,7 +1804,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                         ),
 
                                         const SizedBox(width: 12),
-                                        //text
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2009,7 +1893,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                           ),
 
                                           const SizedBox(width: 12),
-                                          //text
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2046,7 +1929,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                         Center(
                           child: Column(
                             children: [
-                              ColorFiltered( //greyscale
+                              ColorFiltered( 
                                 colorFilter: const ColorFilter.matrix([
                                   0.2126, 0.7152, 0.0722, 0, 0,
                                   0.2126, 0.7152, 0.0722, 0, 0,
@@ -2079,19 +1962,15 @@ class _DetailEventPageState extends State<DetailEventPage> {
                           
                           if (dateStr.isNotEmpty) {
                             try {
-                              // parsing string ke DateTime
                               final date = DateHelper.parseWibToLocal(dateStr);
                               if (langCode == 'id') {
-                                // Bahasa Indonesia
                                 final dayName = DateFormat(formatDay, "id_ID").format(date);
                                 final datePart = DateFormat(formatDateId, "id_ID").format(date);
                                 formattedDate = "$dayName,\n$datePart";
                               } else {
-                                // Bahasa Inggris
                                 final dayName = DateFormat(formatDay, "en_US").format(date);
                                 final datePart = DateFormat(formatDateEn, "en_US").format(date);
 
-                                // tambahkan suffix (1st, 2nd, 3rd, 4th...)
                                 final day = date.day;
                                 String suffix = 'th';
                                 if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -2264,10 +2143,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                                 children: [
                                                                   InkWell(
                                                                     onTap: count > 0
-                                                                    // counts[index] > 0
                                                                         ? () {
                                                                             setState(() {
-                                                                              // counts[index]--;
                                                                               _ticketCounts[id] = count - 1;
                                                                               _syncSelectedTickets();
                                                                             });
@@ -2288,7 +2165,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                                   ),
                                                                   const SizedBox(width: 8),
                                                                   Text(
-                                                                    // counts[index].toString(),
                                                                     count.toString(),
                                                                     style: const TextStyle(
                                                                       fontWeight: FontWeight.bold,
@@ -2305,14 +2181,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
                                                                         final maxQty = item['max_qty'];
                                                                         final sisaStok = item['sisa_stok'];
 
-                                                                        final limit =
-                                                                            sisaStok < maxQty ? sisaStok : maxQty;
-
-                                                                        // if (counts[index] < limit) {
-                                                                        //   counts[index]++;
-                                                                        //   _ticketCounts[id] = count + 1;
-                                                                        //   _syncSelectedTickets();
-                                                                        // }
+                                                                        final limit = sisaStok < maxQty ? sisaStok : maxQty;
 
                                                                         if (count < limit) {
                                                                           setState(() {
@@ -2388,18 +2257,6 @@ class _DetailEventPageState extends State<DetailEventPage> {
     counts_tiket.clear();
     prices_tiket.clear();
     prices_tiket_asli.clear();
-
-    // for (int i = 0; i < event['event_ticket'].length; i++) {
-    //   final item = event['event_ticket'][i];
-    //   final count = counts[i];
-    //   if (count > 0) {
-    //     ids_tiket.add(item['id_event_ticket']);
-    //     names_tiket.add(item['name_ticket']);
-    //     counts_tiket.add(count);
-    //     prices_tiket.add(item['price']);
-    //     prices_tiket_asli.add(item['price_asli'] ?? 0);
-    //   }
-    // }
 
     for (final ticket in activeTickets) {
       final id = ticket['id_event_ticket']?.toString() ?? '';

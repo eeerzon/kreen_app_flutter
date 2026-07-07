@@ -8,8 +8,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
@@ -147,6 +146,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
+      await _loadToken();
       await _loadFinalis();
       _startCountdown();
 
@@ -159,8 +159,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       final cleanedUrl = cleanYoutubeUrl(rawUrl);
 
       final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
-
-      // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
       if (videoId != null && mounted) {
         setState(() {
@@ -198,8 +196,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
   }
-
-  // Dipanggil setelah login sukses dari modal
+  
   Future<void> _onAfterLogin() async {
     await _loadToken();
   }
@@ -220,7 +217,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
     final tempFinalis = resultFinalis['data'] ?? {};
 
-    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
+    final storedToken = await StorageService.getToken();
+    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken);
     if (resultDetailVote == null || resultDetailVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -283,15 +281,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
           try {
             final localDate = DateHelper.parseWibToLocal(dateStr);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
               formattedDate = formatter.format(localDate);
             } else {
-              // Bahasa Inggris
               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
               formattedDate = formatter.format(localDate);
-
-              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              
               final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -394,8 +389,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     Map<String, dynamic> finalis
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
+    
     final finalisData = finalis['data'];
     if (finalisData is List) {
       for (var item in finalisData) {
@@ -405,11 +399,9 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
         }
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -417,11 +409,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   final formatter = NumberFormat.decimalPattern("en_US");
   num get totalHarga {
-    // Prioritaskan harga yang dipilih di child
     if (harga_akhir != null && harga_akhir != 0) {
       return harga_akhir!;
     }
-    // Fallback ke nilai dari parent
+    
     if (widget.total_detail != null && widget.total_detail != 0) {
       return widget.total_detail;
     }
@@ -570,8 +561,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -634,6 +624,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
       detailFinalis['video_profile'] != null &&
       detailFinalis['video_profile'].toString().isNotEmpty;
 
+    final isFreeVotePaket = id_paket == 'free_vote';
+    final belumPilihPaket = counts == 0;
+    final paketBerbayarTapiHargaNol = !isFreeVotePaket && totalHarga == 0;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: _isFullscreen ? null : AppBar(
@@ -691,12 +685,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               children: [
                                 PageView(
                                   controller: _pageController,
-                                  physics: const PageScrollPhysics(), // user gesture only
+                                  physics: const PageScrollPhysics(),
                                   onPageChanged: (index) {
                                     _pageIndex.value = index;
                                   },
                                   children: [
-                                    // POSTER
+                                    
                                     Image.network(
                                       detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                                       width: double.infinity,
@@ -708,8 +702,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                         );
                                       },
                                     ),
-
-                                    // VIDEO
+                                    
                                     Container(
                                       color: Colors.white,
                                       child: Align(
@@ -722,8 +715,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                     ),
                                   ],
                                 ),
-
-                                // // BUTTON PREV
+                                
                                 // Positioned(
                                 //   left: 8,
                                 //   top: 0,
@@ -738,8 +730,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                 //     },
                                 //   ),
                                 // ),
-
-                                // // BUTTON NEXT
+                                
                                 // Positioned(
                                 //   right: 8,
                                 //   top: 0,
@@ -838,7 +829,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                         ),
                   
                                         SizedBox(width: 4),
-                                        //text
                                         Text(hargaText!),
                                       ],
                                     ),
@@ -870,7 +860,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                         ),
                   
                                         SizedBox(width: 4),
-                                        //text
                                         Text(
                                           (widget.persen
                                             ? (detailFinalis['percent'] ?? 0) > 1
@@ -950,7 +939,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                         ),
                                       ),
                                       if (!isPaymentClosed && !isBeforeOpen && remaining.inSeconds != 0) ...[
-                                        // SizedBox(width: 10),
                                         Icon(
                                           Icons.keyboard_arrow_down_rounded,
                                           color: Colors.white,
@@ -1137,17 +1125,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                               const SizedBox(height: 12),
                               Align(
                                 alignment: Alignment.center,
-                                // child: SizedBox(
-                                //   child: 
-                                  // VideoSection(
-                                  //   // link: detailFinalis['video_profile'],
-                                  //   // headerText: videoProfilText!, 
-                                  //   // noValidText: noValidText!,
-                                  //   // onFullscreenChanged: onFullscreenChanged,
-                                  //   controller: _ytController,
-                                  // ),
-                                //   buildVideo()
-                                // ),
                                 child: AspectRatio(
                                   aspectRatio: 16 / 9,
                                   child: buildBottomVideo(),
@@ -1164,7 +1141,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                           || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
 
                             SizedBox(height: 12),
-                            // Media Social Section
                             Container(
                               width: double.infinity,
                               padding: kGlobalPadding,
@@ -1242,12 +1218,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // kiri
+              
               isTutup || isBeforeOpen || widget.close_payment == '1' || remaining.inSeconds == 0
               ? SizedBox.shrink()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(totalHargaText!),
                     Text(
@@ -1262,13 +1238,12 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                       ),
                     ),
                     Text(
-                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']}\n1 ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
+                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']} ${detailvote['multiplier'] > 1 ? ' x${detailvote['multiplier']}' : ''} \n1 ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
                 ),
-
-              // kanan
+                
               ElevatedButton(
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.resolveWith<Color>(
@@ -1286,8 +1261,11 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                     RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-                onPressed: (harga != 0 && totalHarga == 0) || counts == 0 || widget.close_payment == '1' || remaining.inSeconds == 0
-                ? null 
+                onPressed: (belumPilihPaket ||
+                    paketBerbayarTapiHargaNol ||
+                    widget.close_payment == '1' ||
+                    remaining.inSeconds == 0)
+                ? null
                 : () async {
                   if (isButtonClicked) return;
 
@@ -1389,7 +1367,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               } else {
-                // fallback ke browser
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },

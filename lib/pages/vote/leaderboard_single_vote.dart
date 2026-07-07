@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use, unused_field
 
 import 'dart:async';
 
@@ -10,8 +10,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
@@ -158,6 +157,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
+      await _loadToken();
       await _loadFinalis();
       _startCountdown();
 
@@ -174,8 +174,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
         videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
       }
-
-      // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
       if (videoId != null && mounted) {
         setState(() {
@@ -202,8 +200,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
           persen = true;
         });
       }
-
-      // ambil dari respon api
+      
       if (detailvote['leaderboard_tipe'] == 'number') {
         view_api = 2;
       } else if (detailvote['leaderboard_tipe'] == 'percent') {
@@ -219,8 +216,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       if (detailvote['multiplier'] != null && detailvote['multiplier'] > 1) {
         _startCountdownBoost(DateHelper.parseWibToUtc(detailvote['multiplier_end_date']));
       }
-
-      // Tampilkan popup hanya sekali
+      
       if (detailvote['multiplier'] != null && detailvote['multiplier'] > 1 && !_boostPopupShown) {
         _boostPopupShown = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -229,15 +225,13 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       }
     });
   }
-
-  // ignore: unused_field
+  
   String _storedToken = '';
   Future<void> _loadToken() async {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
   }
-
-  // Dipanggil setelah login sukses dari modal
+  
   Future<void> _onAfterLogin() async {
     await _loadToken();
   }
@@ -293,7 +287,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   Future<void> _loadFinalis() async {
     final idFinalis = widget.id_finalis;
     
-    final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode);
+    final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultFinalis == null || resultFinalis['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -308,7 +302,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     List<dynamic> tempRanking = [];
 
     if (idVote != null && idVote.isNotEmpty) {
-      final resultDetailVote = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
+      final resultDetailVote = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
       tempDetailVote = resultDetailVote?['data'] ?? {};
       String themeName = tempDetailVote['theme_name'] ?? 'Red';
       if (themeName == "Default Kreen") themeName = "Red";
@@ -361,15 +355,12 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
           try {
             final localDate = DateHelper.parseWibToLocal(dateStr);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
               formattedDate = formatter.format(localDate);
             } else {
-              // Bahasa Inggris
               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
               formattedDate = formatter.format(localDate);
-
-              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              
               final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -416,8 +407,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     List<dynamic> ranking,
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
+    
     final finalisData = finalis['data'];
     if (finalisData is List) {
       for (var item in finalisData) {
@@ -434,11 +424,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
         allImageUrls.add(url);
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -447,20 +435,35 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   final formatter = NumberFormat.decimalPattern("en_US");
   num totalHargaAsli = 0;
   num get totalHarga {
-    num hargaItem = 0;
+    num total = 0;
+    
+    final bool isFreeVoteAvailable = detailvote['free_vote_is_available'] == true;
+    final int freeRemainingQuota = int.tryParse(detailvote['free_vote_remaining_quota']?.toString() ?? '0') ?? 0;
+
+    int billableQty = counts;
+    if (isFreeVoteAvailable && freeRemainingQuota > 0) {
+      billableQty = counts - freeRemainingQuota;
+      if (billableQty < 0) billableQty = 0;
+    }
+    
     if (currencyCode != null) {
-      hargaItem = hargaAsli * counts;
-      totalHargaAsli = hargaItem;
-      hargaItem = hargaItem * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
+      final hargaItem = num.tryParse(detailvote['harga_asli'].toString()) ?? 0;
+      total = billableQty * hargaItem;
+
+      totalHargaAsli = total;
+      total = total * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
+
       if (currencyCode == "IDR") {
-        hargaItem = hargaItem.ceil();
+        total = total.ceil();
       } else {
-        hargaItem = (hargaItem * 100).ceil() / 100;
+        total = (total * 100).ceil() / 100;
       }
     } else {
-      hargaItem = harga * counts;
+      final hargaItem = num.tryParse(detailvote['harga'].toString()) ?? 0;
+      total = billableQty * hargaItem;
+      totalHargaAsli = total;
     }
-    return hargaItem;
+    return total;
   }
 
   void _updateCountFromInput(String value, Map item, Map vote) {
@@ -484,7 +487,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     setState(() {
 
       counts = input;
-      // controllers!.text = parsed.toString();
 
       final idFinalis = item['id_finalis'];
       final namaFinalis = item['nama_finalis'];
@@ -639,8 +641,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -711,18 +712,14 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     
     if (dateStr.isNotEmpty) {
       try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+        final date = DateTime.parse(dateStr);
         if (langCode == 'id') {
-          // Bahasa Indonesia
           final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
-          // Bahasa Inggris
           final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
 
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
           final day = date.day;
           String suffix = 'th';
           if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -753,6 +750,11 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     final bool hasVideo =
       detailFinalis['video_profile'] != null &&
       detailFinalis['video_profile'].toString().isNotEmpty;
+
+    final isFreeVoteAvailable = detailvote['free_vote_is_available'] == true;
+    final freeRemainingQuota = detailvote['free_vote_remaining_quota'] ?? 0;
+    final coveredByFreeQuota = isFreeVoteAvailable && counts > 0 && counts <= freeRemainingQuota;
+    final hargaBermasalah = detailvote['harga'] != 0 && totalHarga == 0 && !coveredByFreeQuota;
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -816,12 +818,12 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                 children: [
                                   PageView(
                                     controller: _pageController,
-                                    physics: const PageScrollPhysics(), // user gesture only
+                                    physics: const PageScrollPhysics(),
                                     onPageChanged: (index) {
                                       _pageIndex.value = index;
                                     },
                                     children: [
-                                      // POSTER
+                                      
                                       Image.network(
                                         detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                                         width: double.infinity,
@@ -833,30 +835,21 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                           );
                                         },
                                       ),
-
-                                      // VIDEO
+                                      
                                       Container(
                                         color: Colors.white,
                                         child: Align(
                                           alignment: Alignment.center,
                                           child: Container(
                                             color: Colors.white,
-                                            child: 
-                                            // VideoSection(
-                                              // link: detailFinalis['video_profile'],
-                                              // headerText: videoProfilText!, 
-                                              // noValidText: noValidText!,
-                                              // onFullscreenChanged: onFullscreenChanged,
-                                              // controller: _ytController,
-                                            // ),
-                                            buildTopVideo()
+                                            child:
+                                              buildTopVideo()
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
-
-                                  // // BUTTON PREV
+                                  
                                   // Positioned(
                                   //   left: 8,
                                   //   top: 0,
@@ -871,8 +864,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   //     },
                                   //   ),
                                   // ),
-
-                                  // // BUTTON NEXT
+                                  
                                   // Positioned(
                                   //   right: 8,
                                   //   top: 0,
@@ -971,7 +963,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                           ),
                     
                                           SizedBox(width: 4),
-                                          //text
                                           Text(hargaText!),
                                         ],
                                       ),
@@ -1003,7 +994,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                           ),
                     
                                           SizedBox(width: 4),
-                                          //text
                                           Text(
                                             (persen
                                               ? detailFinalis['percent'] > 1
@@ -1040,7 +1030,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        // '$voteOpenAgain ${widget.tanggal_buka_vote}',
                                         buttonText,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(color: Colors.white),
@@ -1056,7 +1045,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    //button minus
+                                    
                                     InkWell(
                                       onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                                         ? null
@@ -1096,8 +1085,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                         child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
                                       ),
                                     ),
-                    
-                                    //text field
+                                    
                                     const SizedBox(width: 15),
                                     Container(
                                       height: 40,
@@ -1114,12 +1102,11 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                         enabled: !(remaining.inSeconds == 0 || isPaymentClosed),
                                         decoration: const InputDecoration(
                                           border: InputBorder.none,
-                                          isCollapsed: true, // hilangkan padding bawaan
+                                          isCollapsed: true,
                                           contentPadding: EdgeInsets.all(8),
                                         ),
                                         onChanged: (value) => _updateCountFromInput(value, detailFinalis, detailvote),
                                         onTap: () {
-                                          // langsung block semua teks ketika diklik
                                           controllers!.selection = TextSelection(
                                             baseOffset: 0,
                                             extentOffset: controllers!.text.length,
@@ -1127,8 +1114,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                         },
                                       ),
                                     ),
-                    
-                                    //button plus
+                                    
                                     const SizedBox(width: 15),
                                     InkWell(
                                       onTap: (remaining.inSeconds == 0 || isPaymentClosed)
@@ -1137,7 +1123,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                             setState(() {
 
                                               if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
-                                                return; // tidak menambah lagi
+                                                return;
                                               }
 
                                               counts++;
@@ -1454,17 +1440,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                 const SizedBox(height: 12),
                                 Align(
                                   alignment: Alignment.center,
-                                  // child: SizedBox(
-                                    // child: 
-                                    // VideoSection(
-                                    //   // link: detailFinalis['video_profile'],
-                                    //   // headerText: videoProfilText!, 
-                                    //   // noValidText: noValidText!,
-                                    //   // onFullscreenChanged: onFullscreenChanged,
-                                    //   controller: _ytController,
-                                    // ),
-                                    // buildVideo()
-                                  // ),
                                   child: AspectRatio(
                                     aspectRatio: 16 / 9,
                                     child: buildBottomVideo(),
@@ -1481,7 +1456,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
 
                               SizedBox(height: 12),
-                              // Media Social Section
                               Container(
                                 width: double.infinity,
                                 padding: kGlobalPadding,
@@ -1542,7 +1516,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                               ),
                         ],
 
-                        // DESKRIPSI
+                        // === DESKRIPSI ===
                         const SizedBox(height: 12,),
                         Container(
                           width: double.infinity,
@@ -1570,7 +1544,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                           children: <Widget>[
                                             Image.network(
                                               detailvote['icon_penyelenggara'],
-                                              width: 80,   // atur sesuai kebutuhan
+                                              width: 80,
                                               height: 80,
                                               fit: BoxFit.contain,
                                               errorBuilder: (context, error, stackTrace) {
@@ -1584,7 +1558,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                             ),
 
                                             const SizedBox(width: 12),
-                                            //text
                                             Expanded(
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1599,7 +1572,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                                   Text(
                                                     detailvote['nama_penyelenggara'],
                                                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                                    softWrap: true,          // biar teks bisa kebungkus
+                                                    softWrap: true,
                                                     overflow: TextOverflow.visible, 
                                                   ),
                                                 ],
@@ -1607,59 +1580,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                             ),
                                           ],
                                         ),
-
-                                        // const SizedBox(height: 40,),
-                                        // Text(
-                                        //   "Deskripsi",
-                                        //   style: TextStyle(fontWeight: FontWeight.bold),
-                                        // ),
-
-                                        // const SizedBox(height: 12,),
-                                        // Container(
-                                        //   color: Colors.white,
-                                        //   child: Padding(
-                                        //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                        //     child: Column(
-                                        //       children: [
-                                        //         Column(
-                                        //           crossAxisAlignment: CrossAxisAlignment.start,
-                                        //           mainAxisAlignment: MainAxisAlignment.center,
-                                        //           children: [
-                                        //             if (detailvote['merchant_description'] != null) ... [
-                                        //               Html(
-                                        //                 data: detailvote['merchant_description'],
-                                        //                 style: {
-                                        //                   "p": Style(
-                                        //                     margin: Margins.zero,
-                                        //                     padding: HtmlPaddings.zero,
-                                        //                   ),
-                                        //                   "body": Style(
-                                        //                     margin: Margins.zero,
-                                        //                     padding: HtmlPaddings.zero,
-                                        //                   ),
-                                        //                 },
-                                        //               ),
-                                        //               SizedBox(height: 12,)
-                                        //             ],
-                                        //             Html(
-                                        //               data: detailvote['deskripsi'],
-                                        //                 style: {
-                                        //                   "p": Style(
-                                        //                     margin: Margins.zero,
-                                        //                     padding: HtmlPaddings.zero,
-                                        //                   ),
-                                        //                   "body": Style(
-                                        //                     margin: Margins.zero,
-                                        //                     padding: HtmlPaddings.zero,
-                                        //                   ),
-                                        //                 },
-                                        //             )
-                                        //           ],
-                                        //         ),
-                                        //       ],
-                                        //     ),
-                                        //   ) 
-                                        // ),
 
                                         const SizedBox(height: 20,),
                                         Text(
@@ -1685,7 +1605,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                                     ),
 
                                                     const SizedBox(width: 12),
-                                                    //text
                                                     Expanded(
                                                       child: Column(
                                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1715,7 +1634,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                                     ),
 
                                                     const SizedBox(width: 12),
-                                                    //text
                                                     Expanded(
                                                       child: RichText(
                                                         text: TextSpan(
@@ -1752,100 +1670,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                             ),
                                           ) 
                                         ),
-
-                                        // const SizedBox(height: 20,),
-                                        // Text(
-                                        //   "Lokasi",
-                                        //   style: TextStyle(fontWeight: FontWeight.bold),
-                                        // ),
-
-                                        // const SizedBox(height: 12,),
-                                        // Container(
-                                        //   color: Colors.white,
-                                        //   child: Padding(
-                                        //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                        //     child: Column(
-                                        //       children: [
-                                        //         Row(
-                                        //           crossAxisAlignment: CrossAxisAlignment.center,
-                                        //           children: <Widget>[
-                                        //             SvgPicture.network(
-                                        //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                        //               width: 30,
-                                        //               height: 30,
-                                        //               fit: BoxFit.contain,
-                                        //             ),
-
-                                        //             const SizedBox(width: 12),
-                                        //             //text
-                                        //             Expanded(
-                                        //               child: Column(
-                                        //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                        //                 mainAxisAlignment: MainAxisAlignment.center,
-                                        //                 children: [
-                                        //                   Text(
-                                        //                     detailvote['lokasi_alamat'] ?? '-',
-                                        //                     style: TextStyle(
-                                        //                       color: Colors.black,
-                                        //                     ),
-                                        //                   ),
-                                        //                 ],
-                                        //               ),
-                                        //             ),
-                                        //           ],
-                                        //         ),
-
-                                        //       ],
-                                        //     ),
-                                        //   ) 
-                                        // ),
-
-                                        // const SizedBox(height: 20,),
-                                        // Text(
-                                        //   "Venue",
-                                        //   style: TextStyle(fontWeight: FontWeight.bold),
-                                        // ),
-
-                                        // const SizedBox(height: 12,),
-                                        // Container(
-                                        //   color: Colors.white,
-                                        //   child: Padding(
-                                        //     padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                                        //     child: Column(
-                                        //       children: [
-                                        //         Row(
-                                        //           crossAxisAlignment: CrossAxisAlignment.center,
-                                        //           children: <Widget>[
-                                        //             SvgPicture.network(
-                                        //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                        //               width: 30,
-                                        //               height: 30,
-                                        //               fit: BoxFit.contain,
-                                        //             ),
-
-                                        //             const SizedBox(width: 12),
-                                        //             //text
-                                        //             Expanded(
-                                        //               child: Column(
-                                        //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                        //                 mainAxisAlignment: MainAxisAlignment.center,
-                                        //                 children: [
-                                        //                   Text(
-                                        //                     detailvote['lokasi_nama_tempat'],
-                                        //                     style: TextStyle(
-                                        //                       color: Colors.black,
-                                        //                     ),
-                                        //                   ),
-                                        //                 ],
-                                        //               ),
-                                        //             ),
-                                        //           ],
-                                        //         ),
-
-                                        //       ],
-                                        //     ),
-                                        //   ) 
-                                        // ),
                                       ],
                                     ),
                                   ) 
@@ -1900,7 +1724,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // KIRI (fleksibel)
+              
               Expanded(
                 child: remaining.inSeconds == 0 || isBeforeOpen || detailvote['close_payment'] == '1'
                   ? const SizedBox.shrink()
@@ -1909,8 +1733,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(totalHargaText!),
-
-                        // HARGA AUTO KECIL
+                        
                         AutoSizeText(
                           detailvote['harga'] == 0
                               ? hargaDetail!
@@ -1923,7 +1746,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             fontSize: 14,
                           ),
                           maxLines: 1,
-                          minFontSize: 9, // penting
+                          minFontSize: 9,
                           overflow: TextOverflow.ellipsis,
                         ),
 
@@ -1935,7 +1758,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                             fontSize: 12,
                           ),
                           maxLines: 1,
-                          minFontSize: 9, // penting
+                          minFontSize: 9,
                           overflow: TextOverflow.ellipsis,
                         ),
 
@@ -1950,8 +1773,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                       ],
                     ),
               ),
-
-              // KANAN (TETAP)
+              
               SizedBox(
                 height: 40,
                 child: ElevatedButton(
@@ -1971,8 +1793,11 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
-                  onPressed: (harga != 0 && totalHarga == 0) || counts == 0 || widget.close_payment == '1' || remaining.inSeconds == 0
-                    ? null 
+                  onPressed: (counts == 0 ||
+                        hargaBermasalah ||
+                        detailvote['close_payment'] == '1' ||
+                        remaining.inSeconds == 0)
+                    ? null
                     : () async {
                       if (isButtonClicked) return;
 
@@ -2093,7 +1918,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               } else {
-                // fallback ke browser
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },

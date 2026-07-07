@@ -7,7 +7,7 @@ import 'package:flutter/scheduler.dart';
 class InfiniteSponsorMarquee extends StatefulWidget {
   final List sponsors;
   final double height;
-  final double speed; // pixel per second
+  final double speed;
   final bool showFade;
 
   const InfiniteSponsorMarquee({
@@ -38,11 +38,11 @@ class _InfiniteSponsorMarqueeState extends State<InfiniteSponsorMarquee>
     _ticker = createTicker((elapsed) {
       if (_paused || _singleSetWidth == 0) return;
 
-      final delta = widget.speed / 60; // assuming ~60fps
+      final delta = widget.speed / 60;
       setState(() {
         _offset -= delta;
         if (_offset <= -_singleSetWidth) {
-          _offset += _singleSetWidth; // wrap WITHOUT jump
+          _offset += _singleSetWidth;
         }
       });
     })..start();
@@ -104,7 +104,7 @@ class _InfiniteSponsorMarqueeState extends State<InfiniteSponsorMarquee>
 
             return OverflowBox(
               minWidth: 0,
-              maxWidth: double.infinity, // IZINKAN OVERFLOW
+              maxWidth: double.infinity,
               alignment: Alignment.centerLeft,
               child: Transform.translate(
                 offset: Offset(_offset, 0),
@@ -213,7 +213,6 @@ class _FadeEdge extends StatelessWidget {
   }
 }
 
-/// Utility to measure widget size
 class MeasureSize extends StatefulWidget {
   final Widget child;
   final ValueChanged<Size> onChange;

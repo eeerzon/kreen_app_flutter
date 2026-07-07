@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
@@ -57,18 +57,6 @@ class _EventPageState extends State<EventPage> {
 
   @override
   Widget build(BuildContext context) {
-    // kalau data bahasa belum siap, tampilkan loading
-    // if (cari_event == null) {
-    //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     showLoadingDialog(context);
-    //   });
-
-    //   return const Scaffold(); // kosongin dulu
-    // } else {
-    //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     hideLoadingDialog(context);
-    //   });
-    // }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -91,7 +79,7 @@ class _EventPageState extends State<EventPage> {
         padding: kGlobalPadding,
         child: Column(
           children: [
-            // search bar
+            
             Row(
               children: [
                 Expanded(
@@ -124,7 +112,6 @@ class _EventPageState extends State<EventPage> {
             ),
             
             const SizedBox(height: 12,),
-            // isi data
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.7,
               child: isGrid ? buildGridView() : buildListView(),
@@ -150,7 +137,7 @@ class _EventPageState extends State<EventPage> {
         final item = events[index];
         return InkWell(
           onTap: () {},
-          borderRadius: BorderRadius.circular(8), // biar ripple ikut radius
+          borderRadius: BorderRadius.circular(8), 
           child: Card(
             color: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -184,16 +171,6 @@ class _EventPageState extends State<EventPage> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                // Padding(
-                //   padding: const EdgeInsets.all(8.0),
-                //   child: Text(
-                //     item.price,
-                //     style: const TextStyle(
-                //       color: Colors.red,
-                //       fontWeight: FontWeight.bold,
-                //     ),
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -234,10 +211,6 @@ class _EventPageState extends State<EventPage> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(item['created_at'] ?? ''),
-            // trailing: Text(
-            //   item.price,
-            //   style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14),
-            // ),
           ),
         );
       },

@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/widget_webview.dart';
@@ -45,8 +45,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
   final leaderboardKey = GlobalKey();
   final dukunganKey = GlobalKey();
   final reviewKey = GlobalKey();
-
-  // Simpan posisi tiap section
+  
   final Map<int, double> _sectionOffsets = {};
 
   bool _isLoading = true;
@@ -76,6 +75,13 @@ class _DetailVotePageState extends State<DetailVotePage> {
   Color color = Colors.red;
   int view_api = 0;
 
+  bool _isRankingLoading = true;
+  bool _isSupportLoading = true;
+
+  int freeVote = 0;
+  // bool _freeVotePopupShown = false;
+  String? storedToken;
+
   @override
   void initState() {
     super.initState();
@@ -88,8 +94,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
         await _getBahasa();
         await _getCurrency();
         await _loadVotes();
-
-        // ambil dari respon api
+        
         if (vote['leaderboard_tipe'] == 'number') {
           view_api = 2;
         } else if (vote['leaderboard_tipe'] == 'percent') {
@@ -105,14 +110,20 @@ class _DetailVotePageState extends State<DetailVotePage> {
         if (vote['multiplier'] != null && vote['multiplier'] > 1) {
           _startCountdown(DateHelper.parseWibToUtc(vote['multiplier_end_date']));
         }
-
-        // Tampilkan popup hanya sekali
+        
         if (vote['multiplier'] != null && vote['multiplier'] > 1 && !_boostPopupShown) {
           _boostPopupShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             showBoostPopup(context, langCode!, bahasa!, vote, flag_paket!, color, vote['multiplier'], vote['multiplier_end_date'], remaining, view_api, false);
           });
         }
+
+        // if (vote['free_quota'] > 0 && !_freeVotePopupShown) {
+        //   _freeVotePopupShown = true;
+        //   WidgetsBinding.instance.addPostFrameCallback((_) {
+        //     showFreeVotePopup(context, bahasa!, vote['free_quota']);
+        //   });
+        // }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -124,61 +135,32 @@ class _DetailVotePageState extends State<DetailVotePage> {
   }
 
   Future<void> _loadVotes() async {
+    storedToken = await StorageService.getToken();
+    final results = await Future.wait([
+      ApiService.get("/vote/${widget.id_event}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken),
+      ApiService.get("/order/vote?id_vote=${widget.id_event}&status=success&sort_by=terbaru&page_size=5", xLanguage: langCode, token: storedToken),
+    ]);
 
-    final resultVote = await ApiService.get("/vote/${widget.id_event}", xLanguage: langCode, xCurrency: currencyCode);
-    if (resultVote == null || resultVote['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultVote?['message'];
-      });
-      return;
-    }
+    final resultVote = results[0];
+    final resultListOrderVote = results[1];
 
-    articleData = resultVote['data']['article_data'] ?? {};
+    articleData = resultVote!['data']['article_data'] ?? {};
 
     _articlePopupShown = await StorageService.getArticlePopupShown(widget.id_event);
 
-    final resultLeaderboard = await ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode);
-    if (resultLeaderboard == null || resultLeaderboard['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultLeaderboard?['message'];
-      });
-      return;
-    }
-
-    final resultSupport = await ApiService.get("/vote/${widget.id_event}/support", xLanguage: langCode);
-    if (resultSupport == null || resultSupport['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultSupport?['message'];
-      });
-      return;
-    }
-
-    final resultListOrderVote = await ApiService.get("/order/vote?id_vote=${widget.id_event}&status=success&sort_by=terbaru&page_size=5", xLanguage: langCode);
-    if (resultListOrderVote == null || resultListOrderVote['rc'] != 200) {
-      setState(() {
-        showErrorBar = true;
-        errorMessage = resultListOrderVote?['message'];
-      });
-      return;
-    }
-
-    maplistOrderVote = resultListOrderVote['data'];
+    maplistOrderVote = resultListOrderVote!['data'];
 
     final Map<String, dynamic> tempVote = resultVote['data'] ?? {};
-    final tempRanking = resultLeaderboard['data'] ?? [];
 
-    await _precacheAllImages(context, tempVote, tempRanking);
+    await _precacheVoteImages(context, tempVote);
 
     if (!mounted) return;
     if (mounted) {
       setState(() {
         vote = tempVote;
-        ranking = tempRanking;
-        support = resultSupport['data'] ?? [];
         flag_paket = vote['flag_paket'];
+
+        freeVote = vote['free_quota'] ?? 0;
 
         listOrderVote = maplistOrderVote.map<String>((item) {
           final String rawName = item['nama_finalis'] ?? '';
@@ -197,24 +179,41 @@ class _DetailVotePageState extends State<DetailVotePage> {
         showErrorBar = false;
       });
     }
+
+    _loadDukungan();
   }
 
-  Future<void> _precacheAllImages(
+  Future <void> _loadDukungan() async {
+    storedToken = await StorageService.getToken();
+    final results = await Future.wait([
+      ApiService.get("/vote/${widget.id_event}/support", xLanguage: langCode, token: storedToken),
+      ApiService.get("/vote/${widget.id_event}/leaderboard", xLanguage: langCode, token: storedToken),
+    ]);
+    
+    final resultSupport = results[0];
+    final resultLeaderboard = results[1];
+
+    final tempRanking = resultLeaderboard!['data'] ?? [];
+
+    await _precacheRankingImages(context, tempRanking);
+
+    if (!mounted) return;
+    if (mounted) {
+      setState(() {
+        support = resultSupport!['data'] ?? [];
+        ranking = tempRanking;
+        _isRankingLoading = false;
+        _isSupportLoading = false;
+      });
+    }
+  }
+
+  Future<void> _precacheVoteImages(
     BuildContext context,
     Map<String, dynamic> votes,
-    List<dynamic> ranking,
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
-    for (var item in ranking) {
-      final url = item['poster_finalis']?.toString();
-      if (url != null && url.isNotEmpty) {
-        allImageUrls.add(url);
-      }
-    }
-
-    // Ambil semua img dari vote populer
+    
     final voteData = votes['data'];
     if (voteData is List) {
       for (var item in voteData) {
@@ -224,11 +223,29 @@ class _DetailVotePageState extends State<DetailVotePage> {
         }
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
+    
+    for (String url in allImageUrls) {
+      await precacheImage(NetworkImage(url), context);
+    }
+  }
 
-    // Pre-cache semua gambar
+  Future<void> _precacheRankingImages(
+    BuildContext context,
+    List<dynamic> ranking,
+  ) async {
+    List<String> allImageUrls = [];
+    
+    for (var item in ranking) {
+      final url = item['poster_finalis']?.toString();
+      if (url != null && url.isNotEmpty) {
+        allImageUrls.add(url);
+      }
+    }
+    
+    allImageUrls = allImageUrls.toSet().toList();
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -251,7 +268,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calculateOffsets(); // recalculated setelah rebuild karena bahasa berubah
+      _calculateOffsets();
     });
   }
 
@@ -284,8 +301,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
     if (ctx == null) return 0;
     final box = ctx.findRenderObject() as RenderBox;
     final position = box.localToGlobal(Offset.zero);
-
-    // ambil posisi relatif ke ListView, bukan layar penuh
+    
     final listViewPosition = (context.findRenderObject() as RenderBox)
         .localToGlobal(Offset.zero);
 
@@ -296,20 +312,10 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
   void _onScroll() {
     if ((_sectionOffsets[2] ?? 0) == 0 || (_sectionOffsets[3] ?? 0) == 0) {
-      _calculateOffsets(); // hitung ulang kalau masih 0
+      _calculateOffsets();
     }
 
     final offset = _scrollController.offset;
-
-    // if (offset >= (_sectionOffsets[3] ?? double.infinity) - 100) {
-    //   _setCurrentIndex(3);
-    // } else if (offset >= (_sectionOffsets[2] ?? double.infinity) - 100) {
-    //   _setCurrentIndex(2);
-    // } else if (offset >= (_sectionOffsets[1] ?? double.infinity) - 100) {
-    //   _setCurrentIndex(1);
-    // } else {
-    //   _setCurrentIndex(0);
-    // }
 
     if (offset >= (_sectionOffsets[2] ?? double.infinity) - 100) {
       _setCurrentIndex(2);
@@ -318,15 +324,13 @@ class _DetailVotePageState extends State<DetailVotePage> {
     } else {
       _setCurrentIndex(0);
     }
-
-    // Sticky running text
+    
     if (_runningTextThreshold > 0) {
       final shouldStick = offset >= _runningTextThreshold;
       if (shouldStick != _isStickyRunningText) {
         setState(() => _isStickyRunningText = shouldStick);
       }
     } else {
-      // Coba capture posisi jika belum tersimpan
       _captureRunningTextThreshold();
     }
   }
@@ -377,8 +381,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
               _loadVotes();
             },
           ),
-
-          // Sticky running text di level root — hanya muncul saat loaded
+          
           if (!_isLoading && _isStickyRunningText) ...[
             Builder(builder: (context) {
 
@@ -429,7 +432,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
           padding: kGlobalPadding,
           child: Column(
             children: [
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -638,24 +641,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
 
       body: Column(
         children: [
-          //tab bar
-          // Container(
-          //   color: Colors.white,
-          //   child: Row(
-          //     children: [
-                // _buildTab("Deskripsi", 0, () => _scrollTo(descKey, 0), color),
-                // _buildTab("Leaderboard", 1, () => _scrollTo(leaderboardKey, 1), color),
-
-                // if (view_api != 1)
-                //   _buildTab("Dukungan", 2, () => _scrollTo(dukunganKey, 2), color),
-
-                // _buildTab("Kata Mereka", 3, () => _scrollTo(reviewKey, 3), color),
-          //     ],
-          //   ),  
-          // ),
-          // const Divider(height: 1),
-
-          //konten
+          
           DetailVoteLang(
             values: bahasa!,
             child: Expanded(
@@ -667,9 +653,8 @@ class _DetailVotePageState extends State<DetailVotePage> {
                   SizedBox(
                     key: descKey,
                     width: double.infinity,
-                    child: _buildDeskripsiSection(view_api, vote, listOrderVote, langCode!, currencyCode, _runningTextKey),
+                    child: _buildDeskripsiSection(view_api, vote, listOrderVote, langCode!, currencyCode, _runningTextKey, storedToken),
                   ),
-
 
                   // === LEADERBOARD ===
                   if (vote['leaderboard_limit_tampil'] != -1)
@@ -677,7 +662,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                       color: Colors.white,
                       key: leaderboardKey,
                       padding: kGlobalPadding,
-                      child: _buildLeaderboardSection(view_api, ranking, vote, langCode!),
+                      child: _buildLeaderboardSection(view_api, ranking, vote, langCode!, isLoading: _isRankingLoading,),
                     ),
 
                   // === INFO (hanya ada kalau view_api == 1) ===
@@ -693,7 +678,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                     color: Colors.white,
                     key: reviewKey,
                     padding: kGlobalPadding,
-                    child: _buildDukunganSection(view_api, vote, support, langCode!),
+                    child: _buildDukunganSection(view_api, vote, support, langCode!, isLoading: _isSupportLoading,),
                   ),
                 ],
               ),
@@ -715,7 +700,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // header bar
+            
             Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -741,8 +726,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                 ],
               ),
             ),
-
-            // thumbnail
+            
             if (article['img'] != null)
               Image.network(
                 article['img'],
@@ -751,8 +735,7 @@ class _DetailVotePageState extends State<DetailVotePage> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => SizedBox.shrink(),
               ),
-
-            // konten
+              
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -861,7 +844,6 @@ class _DetailVotePageState extends State<DetailVotePage> {
   }
 }
 
-/// Helper builder untuk pilih Section berdasarkan view_api
 Widget _buildDeskripsiSection(
   int api, 
   Map<String, dynamic> vote, 
@@ -869,6 +851,7 @@ Widget _buildDeskripsiSection(
   String langCode, 
   String? currencyCode, 
   GlobalKey? runningTextKey,
+  String? token
 ) {
   switch (api) {
     case 2:
@@ -878,6 +861,7 @@ Widget _buildDeskripsiSection(
         langCode: langCode, 
         currencyCode: currencyCode,
         runningTextKey: runningTextKey,
+        token: token,
       );
     case 3:
       return DeskripsiSection_3(
@@ -886,6 +870,7 @@ Widget _buildDeskripsiSection(
         langCode: langCode, 
         currencyCode: currencyCode,
         runningTextKey: runningTextKey,
+        token: token,
       );
     case 4:
       return DeskripsiSection_4(
@@ -894,6 +879,7 @@ Widget _buildDeskripsiSection(
         langCode: langCode, 
         currencyCode: currencyCode,
         runningTextKey: runningTextKey,
+        token: token,
       );
     case 5:
       return DeskripsiSection_5(
@@ -902,6 +888,7 @@ Widget _buildDeskripsiSection(
         langCode: langCode, 
         currencyCode: currencyCode,
         runningTextKey: runningTextKey,
+        token: token,
       );
     case 6:
       return DeskripsiSection_6(
@@ -910,6 +897,7 @@ Widget _buildDeskripsiSection(
         langCode: langCode, 
         currencyCode: currencyCode,
         runningTextKey: runningTextKey,
+        token: token,
       );
     default:
       return DeskripsiSection(
@@ -918,24 +906,25 @@ Widget _buildDeskripsiSection(
         langCode: langCode, 
         currencyCode: currencyCode,
         runningTextKey: runningTextKey,
+        token: token,
       );
   }
 }
 
-Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote, String langCode) {
+Widget _buildLeaderboardSection(int api, List<dynamic> ranking, Map<String, dynamic> vote, String langCode, {bool isLoading = false,}) {
   switch (api) {
     case 2:
-      return LeaderboardSection_2(ranking: ranking, data: vote, langCode: langCode,);
+      return LeaderboardSection_2(ranking: ranking, data: vote, langCode: langCode, isLoading: isLoading,);
     case 3:
-      return LeaderboardSection_3(ranking: ranking, data: vote, langCode: langCode,);
+      return LeaderboardSection_3(ranking: ranking, data: vote, langCode: langCode, isLoading: isLoading,);
     case 4:
-      return LeaderboardSection_4(ranking: ranking, data: vote, langCode: langCode,);
+      return LeaderboardSection_4(ranking: ranking, data: vote, langCode: langCode, isLoading: isLoading,);
     case 5:
-      return LeaderboardSection_5(ranking: ranking, data: vote, langCode: langCode,);
+      return LeaderboardSection_5(ranking: ranking, data: vote, langCode: langCode, isLoading: isLoading,);
     case 6:
-      return LeaderboardSection_6(ranking: ranking, data: vote, langCode: langCode,);
+      return LeaderboardSection_6(ranking: ranking, data: vote, langCode: langCode, isLoading: isLoading,);
     default:
-      return LeaderboardSection(ranking: ranking, data: vote, langCode: langCode,);
+      return LeaderboardSection(ranking: ranking, data: vote, langCode: langCode, isLoading: isLoading,);
   }
 }
 
@@ -946,20 +935,20 @@ Widget _buildInfoSection(int api, Map<String, dynamic> vote, String langCode) {
   }
 }
 
-Widget _buildDukunganSection(int api, Map<String, dynamic> vote, List<dynamic> reviews, String langCode) {
+Widget _buildDukunganSection(int api, Map<String, dynamic> vote, List<dynamic> reviews, String langCode, {bool isLoading = false,}) {
   switch (api) {
     case 2:
-      return DukunganSection_2(data: vote, support: reviews, langCode: langCode,);
+      return DukunganSection_2(data: vote, support: reviews, langCode: langCode, isLoading: isLoading,);
     case 3:
-      return DukunganSection_3(data: vote, support: reviews, langCode: langCode,);
+      return DukunganSection_3(data: vote, support: reviews, langCode: langCode, isLoading: isLoading,);
     case 4:
-      return DukunganSection_4(data: vote, support: reviews, langCode: langCode,);
+      return DukunganSection_4(data: vote, support: reviews, langCode: langCode, isLoading: isLoading,);
     case 5:
-      return DukunganSection_5(data: vote, support: reviews, langCode: langCode,);
+      return DukunganSection_5(data: vote, support: reviews, langCode: langCode, isLoading: isLoading,);
     case 6:
-      return DukunganSection_6(data: vote, support: reviews, langCode: langCode,);
+      return DukunganSection_6(data: vote, support: reviews, langCode: langCode, isLoading: isLoading,);
     default:
-      return DukunganSection(data: vote, support: reviews, langCode: langCode,);
+      return DukunganSection(data: vote, support: reviews, langCode: langCode, isLoading: isLoading,);
   }
 }
 

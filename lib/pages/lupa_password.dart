@@ -2,7 +2,7 @@
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/loading_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -140,7 +140,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
 
                     if (_emailTouched && !isValidEmail(_emailController.text.trim()))
                       Padding(
-                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           bahasa['error_email_1'],
                           style: TextStyle(color: Colors.red[900], fontSize: 12),

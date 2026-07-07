@@ -9,8 +9,9 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/stripe_pay.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
@@ -37,8 +38,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now().toUtc();
-  Duration remaining = Duration.zero;
-  Timer? _timer;
 
   Map<String, dynamic> detailOrder = {};
   Map<String, dynamic> voteOder = {};
@@ -63,7 +62,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   late List<bool> openStates;
 
   Timer? _paymentTimer;
-  // bool _waitingPayment = true;
 
   late final formatter = NumberFormat.currency(
     locale: "en_US",
@@ -73,59 +71,38 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   String? currencyCode;
 
   bool isCheckingPayment = false;
+  bool isOpenedLink = false;
+  String? currencyRegion;
+  var formaterNumber;
+  num displayTotalAmount = 0;
+  num displayUserCurrencyAmount = 0;
+  num displayFee = 0;
+  num displayUserCurrencyTotalPayment = 0;
+  String formattedDate = '';
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _getBahasa();
-      await _getCurrency();
-      await _loadOrder();
-      _startCountdown();
+      final code = await StorageService.getLanguage();
+      final codecurrency = await StorageService.getCurrency();
 
-      // startPaymentStatusListener();
-    });
-  }
-
-  void _startCountdown() {
-    _updateRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateRemaining();
-    });
-  }
-
-  void _updateRemaining() {
-    final now = DateTime.now().toUtc();
-    final difference = deadline.difference(now);
-
-    setState(() {
-      // if (difference.isNegative) {
-      //   remaining = Duration.zero;
-      //   isExpired = true;
-      //   _timer?.cancel();
-      // } else {
-      //   remaining = difference;
-      // }
-
-      if (difference.isNegative) {
-        _timer?.cancel();
-        _handleExpiredFlow();
-      } else {
-        remaining = difference;
-      }
+      setState(() {
+        langCode = code;
+        currencyCode = codecurrency;
+      });
+      
+      await Future.wait([
+        _getBahasa(),
+        _loadOrder(),
+      ]);
     });
   }
 
   Map<String, dynamic> bahasa = {};
 
   Future<void> _getBahasa() async {
-    final code = await StorageService.getLanguage();
-
-    setState(() {
-      langCode = code;
-    });
-
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
@@ -133,18 +110,15 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     });
   }
 
-  Future<void> _getCurrency() async {
-    final code = await StorageService.getCurrency();
-    setState(() {
-      currencyCode = code;
-    });
-  }
-
   var expiresAt;
 
   Future<void> _loadOrder() async {
+    final resultOrder = await ApiService.get(
+      "/order/vote/${widget.id_order}",
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+    );
 
-    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode);
     if (resultOrder == null || resultOrder['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -154,60 +128,121 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     }
 
     final tempOrder = resultOrder['data'] ?? {};
-
     final temp_vote_order = tempOrder['vote_order'] ?? {};
     final temp_vote_order_detail = tempOrder['vote_order_detail'] ?? [];
     final tempFinalis = tempOrder['vote_finalis'] ?? [];
-
     final temp_payment_detail = tempOrder['payment_detail'] ?? {};
     final temp_instruction = temp_payment_detail['instruction'] ?? [];
-
     final temp_vote = tempOrder['vote'] ?? {};
     final temp_indikator_answer = tempOrder['indikator_answer'] ?? [];
 
-    await _precacheAllImages(context, tempFinalis);
-
     if (!mounted) return;
-    if (mounted) {
-      setState(() {
-        detailOrder = tempOrder;
+    setState(() {
+      detailOrder = tempOrder;
+      voteOder = temp_vote_order;
+      voteOrderDetail = temp_vote_order_detail;
+      finalis = tempFinalis;
+      paymentDetail = temp_payment_detail;
+      instruction = temp_instruction;
+      vote = temp_vote;
+      indikator = temp_indikator_answer;
+      openStates = List.generate(instruction.length, (_) => false);
 
-        voteOder = temp_vote_order;
-        voteOrderDetail = temp_vote_order_detail;
-        finalis = tempFinalis;
+      final rawExpires = voteOder['order_created_at'];
+      if (rawExpires != null && rawExpires.toString().isNotEmpty) {
+        final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
+        // final newDate = date.add(Duration(seconds: paymentDetail['expired_duration']));
+        final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive']));
+        expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
+      } else {
+        expiresAt = '';
+      }
 
-        paymentDetail = temp_payment_detail;
-        instruction = temp_instruction;
+      deadline = DateHelper.parseWibToUtc(expiresAt);
 
-        vote = temp_vote;
-        indikator = temp_indikator_answer;
+      _isLoading = false;
+      showErrorBar = false;
+    });
+    
+    _setCurrencyRegion();
+    _calculateDisplayAmounts();
+    _formatExpiredDate();
+    _precacheAllImages(context, tempFinalis);
+  }
 
-        final rawExpires = voteOder['order_created_at'];
-        if (rawExpires != null && rawExpires.toString().isNotEmpty) {
-          final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
-          // final date = DateHelper.parseWibToUtc(rawExpires.toString());
+  void _setCurrencyRegion() {
+    final region = voteOder['order_region'];
+    currencyRegion = {
+      'EU': 'EUR', 
+      'ID': 'IDR', 
+      'MY': 'MYR',
+      'PH': 'PHP', 
+      'SG': 'SGD', 
+      'TH': 'THB',
+      'US': 'USD', 
+      'VN': 'VND',
+    }[region];
 
-          // tambahkan 1 jam untuk durasi expired payment
-          // var newDate = date.add(const Duration(hours: 1));
-          // if (voteOder['payment_method_id'] == "6387457643547345") {
-            // final newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
-          // }
+    formaterNumber = NumberFormat.currency(
+      locale: "en_US",
+      symbol: "",
+      decimalDigits: currencyRegion == "IDR" ? 0 : 2,
+    );
 
-          final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive'] ?? 0));
-          
-          expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
-        } else {
-          expiresAt = '';
-        }
+    if (mounted) setState(() {});
+  }
 
-        openStates = List.generate(instruction.length, (_) => false);
+  void _calculateDisplayAmounts() {
+    num sumAmount = voteOder['total_amount'] * voteOder['currency_value_region'];
+    num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5));
 
-        // deadline = DateTime.parse(expiresAt).toLocal();
-        deadline = DateHelper.parseWibToUtc(expiresAt);
-        _isLoading = false;
-        showErrorBar = false;
-      });
+    if (currencyRegion == "IDR") {
+      displayTotalAmount = totalAmountPg.ceil();
+    } else {
+      displayTotalAmount = (totalAmountPg * 100).ceil() / 100;
     }
+
+    num userCurrencyAmount = num.parse(voteOder['user_currency_amount'].toStringAsFixed(5));
+    if (widget.currency_session == "IDR") {
+      displayUserCurrencyAmount = userCurrencyAmount.ceil();
+    } else {
+      displayUserCurrencyAmount = (userCurrencyAmount * 100).ceil() / 100;
+    }
+
+    num userCurrencyTotalPayment = num.parse(voteOder['user_currency_total_payment'].toStringAsFixed(5));
+    if (widget.currency_session == "IDR") {
+      displayUserCurrencyTotalPayment = userCurrencyTotalPayment.ceil();
+    } else {
+      displayUserCurrencyTotalPayment = (userCurrencyTotalPayment * 100).ceil() / 100;
+    }
+
+    displayFee = displayUserCurrencyTotalPayment - displayUserCurrencyAmount;
+
+    if (mounted) setState(() {});
+  }
+
+  void _formatExpiredDate() {
+    if (expiresAt == null || expiresAt.toString().isEmpty) return;
+
+    try {
+      final date = DateTime.parse(expiresAt.toString());
+      if (langCode == 'id') {
+        formattedDate = DateFormat("dd MMMM yyyy, HH:mm", "id_ID").format(date);
+      } else {
+        final formatter = DateFormat("MMMM d yyyy, hh:mm a", "en_US");
+        formattedDate = formatter.format(date);
+        final day = date.day;
+        String suffix = 'th';
+        if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+        else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+        else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+        formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+      }
+    } catch (e) {
+      formattedDate = '-';
+    }
+
+    if (mounted) setState(() {});
   }
 
   Future<void> _precacheAllImages(
@@ -215,19 +250,16 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     List<dynamic> finalis
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
+    
     for (var item in finalis) {
       final url = item['poster_finalis']?.toString();
       if (url != null && url.isNotEmpty) {
         allImageUrls.add(url);
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -268,7 +300,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     _paymentTimer?.cancel();
     super.dispose();
   }
@@ -356,8 +387,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -398,102 +428,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   Widget buildKontenOrder() {
-    
-    final hours = remaining.inHours % 24;
-    final minutes = remaining.inMinutes % 60;
-    final seconds = remaining.inSeconds % 60;
-
-    String formattedDate = '-';
-
-    String? currencyRegion;
-    if (voteOder['order_region'] == "EU"){
-      currencyRegion = "EUR";
-    } else if (voteOder['order_region'] == "ID"){
-      currencyRegion = "IDR";
-    } else if (voteOder['order_region'] == "MY"){
-      currencyRegion = "MYR";
-    } else if (voteOder['order_region'] == "PH"){
-      currencyRegion = "PHP";
-    } else if (voteOder['order_region'] == "SG"){
-      currencyRegion = "SGD";
-    } else if (voteOder['order_region'] == "TH"){
-      currencyRegion = "THB";
-    } else if (voteOder['order_region'] == "US"){
-      currencyRegion = "USD";
-    } else if (voteOder['order_region'] == "VN"){
-      currencyRegion = "VND";
-    }
-
-    final formaterNumber = NumberFormat.currency(
-      locale: "en_US",
-      symbol: "",
-      decimalDigits: currencyRegion == "IDR" ? 0 : 2,
-    );
-    
-    num sum_amount = voteOder['total_amount'] * voteOder['currency_value_region'];
-    num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
-    num displayTotalAmount;
-    if (currencyRegion == "IDR") {
-      total_amount_pg = total_amount_pg.ceil();
-      displayTotalAmount = num.parse(total_amount_pg.toString());
-    } else {
-      total_amount_pg = (total_amount_pg * 100).ceil() / 100;
-      displayTotalAmount = num.parse(total_amount_pg.toStringAsFixed(2));
-    }
-
-    num user_currency_amount = num.parse(voteOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
-    num displayUserCurrencyAmount;
-    if (widget.currency_session == "IDR") {
-      user_currency_amount = user_currency_amount.ceil();
-      displayUserCurrencyAmount = num.parse(user_currency_amount.toString());
-    } else {
-      user_currency_amount = (user_currency_amount * 100).ceil() / 100;
-      displayUserCurrencyAmount = num.parse(user_currency_amount.toStringAsFixed(2));
-    }
-
-    num user_currency_total_payment = num.parse(voteOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
-    num displayUserCurrencyTotalPayment;
-    if (widget.currency_session == "IDR") {
-      user_currency_total_payment = user_currency_total_payment.ceil();
-      displayUserCurrencyTotalPayment = num.parse(user_currency_total_payment.toString());
-    } else {
-      user_currency_total_payment = (user_currency_total_payment * 100).ceil() / 100;
-      displayUserCurrencyTotalPayment = num.parse(user_currency_total_payment.toStringAsFixed(2));
-    }
-    
-    num fee = user_currency_total_payment - user_currency_amount;
-    num displayFee;
-    if (widget.currency_session == "IDR") {
-      displayFee = num.parse(fee.toString());
-    } else {
-      displayFee = num.parse(fee.toStringAsFixed(2));
-    }
-
-    if (expiresAt.isNotEmpty) {
-      try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(expiresAt); // pastikan format ISO (yyyy-MM-dd)
-        if (langCode == 'id') {
-          // Bahasa Indonesia
-          final formatter = DateFormat("dd MMMM yyyy, HH:mm", "id_ID");
-          formattedDate = formatter.format(date);
-        } else {
-          // Bahasa Inggris
-          final formatter = DateFormat("MMMM d yyyy, hh:mm a", "en_US");
-          formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-          final day = date.day;
-          String suffix = 'th';
-          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-        }
-      } catch (e) {
-        formattedDate = '-';
-      }
-    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -566,33 +500,12 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                       Text(bahasa['sisa_waktu']),
 
                       const SizedBox(height: 10),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _timeBox("$hours".padLeft(2, "0"), bahasa['hour']),
-                                  const SizedBox(width: 10),
-                                  _separator(),
-                                  const SizedBox(width: 10),
-                                  _timeBox("$minutes".padLeft(2, "0"), bahasa['minute']),
-                                  const SizedBox(width: 10),
-                                  _separator(),
-                                  const SizedBox(width: 10),
-                                  _timeBox("$seconds".padLeft(2, "0"), bahasa['second']),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                      CountdownBox(
+                        deadlineUtc: deadline,
+                        bahasa: bahasa,
+                        onExpired: () async {
+                          await _handleExpiredFlow();
+                        },
                       ),
 
                       const SizedBox(height: 16),
@@ -698,7 +611,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                               if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
 
                                 if (voteOder['bank_code'] != "apple_pay") ...[
-                                  // const SizedBox(height: 10,),
                                   SizedBox(
                                     height: 48,
                                     width: double.infinity,
@@ -730,6 +642,49 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 ],
                               ],
 
+                              if (paymentDetail['mobile_deeplink_checkout_url'] != null && paymentDetail['mobile_deeplink_checkout_url'] != "") ...[
+                                SizedBox(
+                                  height: 48,
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      
+                                      if (isOpenedLink) return;
+                                    
+                                        isOpenedLink = true;
+                                        
+                                        try {
+                                          await openEwalletPay(
+                                            paymentDetail['mobile_deeplink_checkout_url'],
+                                          );
+                                        } finally {
+                                          if (mounted) setState(() => isOpenedLink = false);
+                                        }
+                                    },
+                                    child: isOpenedLink 
+                                      ? SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          bahasa['bayar_sekarang'],
+                                          style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                                        ),
+                                  ),
+                                ),
+                              ],
+
                               const SizedBox(height: 16,),
                               Text(
                                 bahasa['kode_pesanan'],
@@ -756,10 +711,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                     final vaNumber = paymentDetail['va_number']?.toString() ?? '';
 
                                     if (vaNumber.isNotEmpty) {
-                                      // Salin ke clipboard
                                       await Clipboard.setData(ClipboardData(text: vaNumber));
 
-                                      // Tampilkan snackbar konfirmasi
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text(bahasa['copyVA']),
@@ -797,7 +750,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                // '$currencyRegion ${formatter.format(displayTotalAmount)}',
                                 '$currencyRegion ${formaterNumber.format(displayTotalAmount)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
@@ -809,6 +761,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red.shade50,
+                                    disabledBackgroundColor: Colors.grey.shade300,
+                                    splashFactory: isCheckingPayment ? NoSplash.splashFactory : null,
                                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
@@ -834,10 +788,19 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                       if (mounted) setState(() => isCheckingPayment = false);
                                     }
                                   },
-                                  child: Text(
-                                    bahasa['check_status'],
-                                    style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
-                                  ),
+                                  child: isCheckingPayment 
+                                    ? SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: Colors.red,
+                                        ),
+                                      )
+                                    : Text(
+                                        bahasa['check_status'],
+                                        style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
+                                      ),
                                 ),
                               ),
 
@@ -1110,7 +1073,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          // KIRI
+                                          
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
@@ -1137,12 +1100,11 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                               ],
                                             ],
                                           ),
-
-                                          // KANAN
+                                          
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.end,
                                             children: [
-                                              // qty asli dicoret
+                                              
                                               Text(
                                                 '${realQty.toInt()} Vote',
                                                 style: const TextStyle(
@@ -1278,25 +1240,27 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   }
 
   Future<void> _handleExpiredFlow() async {
-    // prevent multiple call
     if (_didMarkExpired) return;
-
-    // refresh order dulu
-    await _loadOrder();
-
-    // kalau ternyata sudah bayar
-    if (voteOder['order_status'] == '1') {
-      await _handleSuccessRedirect();
-      return;
-    }
-
-    // kalau masih belum bayar → baru expired
+    
     if (!mounted) return;
-
     setState(() {
-      remaining = Duration.zero;
       isExpired = true;
     });
+    
+    final result = await ApiService.get(
+      "/order/vote/${widget.id_order}",
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+    );
+
+    if (result != null && result['rc'] == 200) {
+      final order = result['data']['vote_order'] ?? {};
+      
+      if (order['order_status'] == '1') {
+        await _handleSuccessRedirect();
+        return;
+      }
+    }
   }
 
   Future<void> _handleSuccessRedirect() async {
@@ -1372,9 +1336,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
 
     // Status 20 = expired, status 2 = batal
     if (status == '20' || status == '2') {
-      _timer?.cancel();
       setState(() {
-        remaining = Duration.zero;
         isExpired = true;
       });
     }
@@ -1520,41 +1482,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _timeBox(String value, String label,) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.black),
-        ),
-      ],
-    );
-  }
-
-  Widget _separator() {
-    return Column(
-      children: [
-        Text(
-          ":",
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 20), // biar sejajar dengan label bawah
-      ],
     );
   }
 }

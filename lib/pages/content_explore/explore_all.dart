@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
@@ -262,11 +262,7 @@ class _ExploreAllState extends State<ExploreAll> {
         hasMore = true;
         isLoadingMore = false;
         allDataCombained = [];
-
-        // setState(() => _isSearching = true);
-        // _loadContent(false, widget.keyword);
-        // if (!mounted) return;
-        // setState(() => _isSearching = false);
+        
         setState(() {
           _isSearching = true;
           isFirstLoad = true;
@@ -313,7 +309,7 @@ class _ExploreAllState extends State<ExploreAll> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.65, // sesuaikan dengan card asli
+        childAspectRatio: 0.65, 
       ),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
@@ -327,7 +323,7 @@ class _ExploreAllState extends State<ExploreAll> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // image placeholder
+                
                 Container(
                   height: 140,
                   decoration: BoxDecoration(
@@ -339,8 +335,6 @@ class _ExploreAllState extends State<ExploreAll> {
                 ),
 
                 const SizedBox(height: 12),
-
-                // title
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Container(
@@ -351,8 +345,6 @@ class _ExploreAllState extends State<ExploreAll> {
                 ),
 
                 const SizedBox(height: 8),
-
-                // subtitle
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Container(
@@ -450,13 +442,9 @@ class _ExploreAllState extends State<ExploreAll> {
                           formattedDate = formatter.format(date);
                           final day = date.day;
                           String suffix = 'th';
-                          if (day % 10 == 1 && day != 11) {
-                            suffix = 'st';
-                          } else if (day % 10 == 2 && day != 12) {
-                            suffix = 'nd';
-                          } else if (day % 10 == 3 && day != 13) {
-                            suffix = 'rd';
-                          }
+                          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+                          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
                           formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
                         }
                       } catch (e) {
@@ -525,7 +513,7 @@ class _ExploreAllState extends State<ExploreAll> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              //gambar
+                              
                               Stack(
                                 children: [
                                   ClipRRect(
@@ -533,17 +521,14 @@ class _ExploreAllState extends State<ExploreAll> {
                                     child: AspectRatio(
                                       aspectRatio: 4 / 5,
                                       child: img.isNotEmpty
-                                        ? Image.network(
-                                            img,
+                                        ? FadeInImage.assetNetwork(
+                                            placeholder: 'assets/images/img_placeholder.jpg',
+                                            image: img,
                                             fit: BoxFit.cover,
-                                            loadingBuilder: (context, child, loadingProgress) {
-                                              if (loadingProgress == null) return child;
-                                              return Image.asset(
-                                                'assets/images/img_placeholder.jpg',
-                                                fit: BoxFit.cover,
-                                              );
-                                            },
-                                            errorBuilder: (context, error, stackTrace) {
+                                            width: double.infinity,
+                                            fadeInDuration: const Duration(milliseconds: 200),
+                                            fadeOutDuration: const Duration(milliseconds: 100),
+                                            imageErrorBuilder: (context, error, stackTrace) {
                                               return Image.asset(
                                                 'assets/images/img_broken.jpg',
                                                 fit: BoxFit.cover,
@@ -597,8 +582,7 @@ class _ExploreAllState extends State<ExploreAll> {
                                         ),
                                       ),
                                     ),
-
-                                    //penyelenggara
+                                    
                                     const SizedBox(height: 4),
                                     Text(
                                       item['organizer'],
@@ -606,17 +590,6 @@ class _ExploreAllState extends State<ExploreAll> {
                                     ),
 
                                     const SizedBox(height: 4),
-                                    // SizedBox(
-                                    //   height: 38,
-                                    //     child: Text(
-                                    //     formattedDate,
-                                    //     maxLines: 1,
-                                    //     overflow: TextOverflow.ellipsis,
-                                    //     style: const TextStyle(
-                                    //       fontSize: 12, color: Colors.grey
-                                    //     ),
-                                    //   ),
-                                    // ),
                                     Text(
                                       formattedDate,
                                       maxLines: 1,
@@ -630,7 +603,7 @@ class _ExploreAllState extends State<ExploreAll> {
                                       const SizedBox(height: 4),
                                       Text(
                                         item['price'] == 0
-                                        ? '' //"Harga"
+                                        ? '' 
                                         : bahasa['mulai_dari'] //"Mulai dari",
                                       ),
                                     ] else ...[
@@ -671,7 +644,6 @@ class _ExploreAllState extends State<ExploreAll> {
                         padding: EdgeInsets.all(16),
                         child: Center(
                           child: Text(
-                            //"Tidak ada data lagi",
                             bahasa['no_more'] ?? "",
                             style: TextStyle(color: Colors.grey),
                           ),
@@ -703,7 +675,7 @@ class _ExploreAllState extends State<ExploreAll> {
   }
 
   DateTime parseDate(String date) {
-    return DateTime.parse(date); // yyyy-MM-dd
+    return DateTime.parse(date);
   }
 
   void sortByNearestDate(List<dynamic> list) {

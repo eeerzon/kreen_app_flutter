@@ -9,8 +9,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
@@ -128,6 +127,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
+      await _loadToken();
       await _loadFinalis();
       _startCountdown();
 
@@ -139,8 +139,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       final cleanedUrl = cleanYoutubeUrl(rawUrl);
 
       final videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
-
-      // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
       if (videoId != null && mounted) {
         setState(() {
@@ -172,8 +170,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
   }
-
-  // Dipanggil setelah login sukses dari modal
+  
   Future<void> _onAfterLogin() async {
     await _loadToken();
   }
@@ -181,7 +178,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   Future<void> _loadFinalis() async {
     final idFinalis = widget.id_finalis;
     
-    final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode);
+    final resultFinalis = await ApiService.get("/finalis/$idFinalis", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultFinalis == null || resultFinalis['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -196,7 +193,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     Map<String, dynamic> tempDetailVote = {};
 
     if (idVote != null && idVote.isNotEmpty) {
-      final resultDetailVote = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
+      final resultDetailVote = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
       tempDetailVote = resultDetailVote?['data'] ?? {};
     }
     
@@ -241,15 +238,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
           try {
             final localDate = DateHelper.parseWibToLocal(dateStr);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
               formattedDate = formatter.format(localDate);
             } else {
-              // Bahasa Inggris
               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
               formattedDate = formatter.format(localDate);
 
-              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
               final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -343,8 +337,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     Map<String, dynamic> finalis
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
+    
     final finalisData = finalis['data'];
     if (finalisData is List) {
       for (var item in finalisData) {
@@ -354,11 +347,9 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
         }
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -367,20 +358,35 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   final formatter = NumberFormat.decimalPattern("en_US");
   num totalHargaAsli = 0;
   num get totalHarga {
-    num hargaItem = 0;
+    num total = 0;
+    
+    final bool isFreeVoteAvailable = detailvote['free_vote_is_available'] == true;
+    final int freeRemainingQuota = int.tryParse(detailvote['free_vote_remaining_quota']?.toString() ?? '0') ?? 0;
+
+    int billableQty = counts;
+    if (isFreeVoteAvailable && freeRemainingQuota > 0) {
+      billableQty = counts - freeRemainingQuota;
+      if (billableQty < 0) billableQty = 0;
+    }
+    
     if (currencyCode != null) {
-      hargaItem = hargaAsli * counts;
-      totalHargaAsli = hargaItem;
-      hargaItem = hargaItem * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
+      final hargaItem = num.tryParse(detailvote['harga_asli'].toString()) ?? 0;
+      total = billableQty * hargaItem;
+
+      totalHargaAsli = total;
+      total = total * (detailvote['rate_currency_user'] / detailvote['rate_currency_vote']);
+
       if (currencyCode == "IDR") {
-        hargaItem = hargaItem.ceil();
+        total = total.ceil();
       } else {
-        hargaItem = (hargaItem * 100).ceil() / 100;
+        total = (total * 100).ceil() / 100;
       }
     } else {
-      hargaItem = harga * counts;
+      final hargaItem = num.tryParse(detailvote['harga'].toString()) ?? 0;
+      total = billableQty * hargaItem;
+      totalHargaAsli = total;
     }
-    return hargaItem;
+    return total;
   }
 
   void _updateCountFromInput(String value, Map item, Map vote) {
@@ -404,7 +410,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     setState(() {
 
       counts = input;
-      // controllers!.text = parsed.toString();
 
       final idFinalis = item['id_finalis'];
       final namaFinalis = item['nama_finalis'];
@@ -532,8 +537,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -597,6 +601,11 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
       detailFinalis['video_profile'] != null &&
       detailFinalis['video_profile'].toString().isNotEmpty;
 
+    final isFreeVoteAvailable = detailvote['free_vote_is_available'] == true;
+    final freeRemainingQuota = detailvote['free_vote_remaining_quota'] ?? 0;
+    final coveredByFreeQuota = isFreeVoteAvailable && counts > 0 && counts <= freeRemainingQuota;
+    final hargaBermasalah = detailvote['harga'] != 0 && totalHarga == 0 && !coveredByFreeQuota;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: _isFullscreen ? null : AppBar(
@@ -659,12 +668,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 children: [
                                   PageView(
                                     controller: _pageController,
-                                    physics: const PageScrollPhysics(), // user gesture only
+                                    physics: const PageScrollPhysics(),
                                     onPageChanged: (index) {
                                       _pageIndex.value = index;
                                     },
                                     children: [
-                                      // POSTER
+                                      
                                       Image.network(
                                         detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                                         width: double.infinity,
@@ -676,8 +685,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                           );
                                         },
                                       ),
-
-                                      // VIDEO
+                                      
                                       Container(
                                         color: Colors.white,
                                         child: Align(
@@ -690,8 +698,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       ),
                                     ],
                                   ),
-
-                                  // // BUTTON PREV
+                                  
                                   // Positioned(
                                   //   left: 8,
                                   //   top: 0,
@@ -706,8 +713,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   //     },
                                   //   ),
                                   // ),
-
-                                  // // BUTTON NEXT
+                                  
                                   // Positioned(
                                   //   right: 8,
                                   //   top: 0,
@@ -804,7 +810,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                           ),
                     
                                           SizedBox(width: 4),
-                                          //text
                                           Text(hargaText!),
                                         ],
                                       ),
@@ -836,7 +841,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                           ),
                     
                                           SizedBox(width: 4),
-                                          //text
                                           Text(
                                             (widget.persen
                                               ? (detailFinalis['percent'] ?? 0) > 1
@@ -871,7 +875,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        // '$voteOpenAgain ${widget.tanggal_buka_payment}',
                                         buttonText,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(color: Colors.white),
@@ -887,7 +890,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    //button minus
+                                    
                                     InkWell(
                                       onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                                         ? null
@@ -927,8 +930,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         child: Icon(FontAwesomeIcons.minus, size: 15, color: Colors.white),
                                       ),
                                     ),
-                    
-                                    //text field
+                                    
                                     const SizedBox(width: 15),
                                     Container(
                                       height: 40,
@@ -943,15 +945,13 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         textAlign: TextAlign.center,
                                         keyboardType: TextInputType.number,
                                         enabled: !(remaining.inSeconds == 0 || isPaymentClosed),
-                                        // readOnly: isTutup || isPaymentClosed,
                                         decoration: const InputDecoration(
                                           border: InputBorder.none,
-                                          isCollapsed: true, // hilangkan padding bawaan
+                                          isCollapsed: true,
                                           contentPadding: EdgeInsets.all(8),
                                         ),
                                         onChanged: (value) => _updateCountFromInput(value, detailFinalis, detailvote),
                                         onTap: () {
-                                          // langsung block semua teks ketika diklik
                                           controllers!.selection = TextSelection(
                                             baseOffset: 0,
                                             extentOffset: controllers!.text.length,
@@ -959,17 +959,15 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         },
                                       ),
                                     ),
-                    
-                                    //button plus
+                                    
                                     const SizedBox(width: 15),
                                     InkWell(
                                       onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                                         ? null
                                         : () {
                                             setState(() {
-                                              // Jika batas > 0 dan sudah mencapai batas -> stop
                                               if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
-                                                return; // tidak menambah lagi
+                                                return;
                                               }
                                               
                                               counts++;
@@ -1262,17 +1260,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 const SizedBox(height: 12),
                                 Align(
                                   alignment: Alignment.center,
-                                  // child: SizedBox(
-                                  //   child: 
-                                    // VideoSection(
-                                    //   // link: detailFinalis['video_profile'],
-                                    //   // headerText: videoProfilText!, 
-                                    //   // noValidText: noValidText!,
-                                    //   // onFullscreenChanged: onFullscreenChanged,
-                                    //   controller: _ytController,
-                                    // ),
-                                  //   buildVideo()
-                                  // ),
                                   child: AspectRatio(
                                     aspectRatio: 16 / 9,
                                     child: buildBottomVideo(),
@@ -1289,7 +1276,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                             || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
 
                               SizedBox(height: 12),
-                              // Media Social Section
                               Container(
                                 width: double.infinity,
                                 padding: kGlobalPadding,
@@ -1368,7 +1354,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // KIRI (fleksibel)
+              
               Expanded(
                 child: isTutup || isBeforeOpen || widget.close_payment == '1' || remaining.inSeconds == 0
                   ? const SizedBox.shrink()
@@ -1377,8 +1363,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(totalHargaText!),
-
-                        // HARGA AUTO KECIL
+                        
                         AutoSizeText(
                           detailvote['harga'] == 0
                               ? hargaDetail!
@@ -1391,7 +1376,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                             fontSize: 14,
                           ),
                           maxLines: 1,
-                          minFontSize: 9, // penting
+                          minFontSize: 9,
                           overflow: TextOverflow.ellipsis,
                         ),
 
@@ -1403,7 +1388,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                             fontSize: 12,
                           ),
                           maxLines: 1,
-                          minFontSize: 9, // penting
+                          minFontSize: 9,
                           overflow: TextOverflow.ellipsis,
                         ),
 
@@ -1420,8 +1405,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
               ),
 
               const SizedBox(width: 12),
-
-              // KANAN (TETAP)
               SizedBox(
                 height: 40,
                 child: ElevatedButton(
@@ -1437,7 +1420,10 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
-                  onPressed: (harga != 0 && totalHarga == 0) || counts == 0 || widget.close_payment == '1' || remaining.inSeconds == 0
+                  onPressed: (counts == 0 ||
+                        hargaBermasalah ||
+                        detailvote['close_payment'] == '1' ||
+                        remaining.inSeconds == 0)
                     ? null
                     : () async {
                       if (isButtonClicked) return;
@@ -1547,7 +1533,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               } else {
-                // fallback ke browser
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },

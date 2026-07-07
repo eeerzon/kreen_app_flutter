@@ -9,9 +9,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
+import 'package:kreen_app_flutter/helper/vote_free_notifcation.dart';
 import 'package:kreen_app_flutter/helper/vote_notification.dart';
 import 'package:kreen_app_flutter/modal/faq_modal.dart';
 import 'package:kreen_app_flutter/modal/s_k_modal.dart';
@@ -28,6 +28,7 @@ class DeskripsiSection_2 extends StatefulWidget {
   final String langCode;
   final String? currencyCode;
   final GlobalKey? runningTextKey;
+  final String? token;
 
   const DeskripsiSection_2({
     super.key, 
@@ -35,7 +36,8 @@ class DeskripsiSection_2 extends StatefulWidget {
     required this.dataNotif, 
     required this.langCode, 
     this.currencyCode,
-    this.runningTextKey
+    this.runningTextKey,
+    this.token
   });
 
   @override
@@ -63,11 +65,9 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
 
         final position = sponsorController.position;
         final offset = sponsorController.offset;
-
-        // PANJANG SATU SET DATA ASLI
+        
         final singleSetWidth = position.maxScrollExtent / 2;
-
-        // PUTAR OFFSET TANPA LOMPAT
+        
         if (offset >= singleSetWidth) {
           sponsorController.jumpTo(offset - singleSetWidth);
         } else {
@@ -111,18 +111,14 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
     
     if (dateStr.isNotEmpty) {
       try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+        final date = DateTime.parse(dateStr);
         if (widget.langCode == 'id') {
-          // Bahasa Indonesia
           final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
-          // Bahasa Inggris
           final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+          
           final day = date.day;
           String suffix = 'th';
           if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -150,14 +146,12 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
       sponsors = json.decode(strSponsor);
     }
 
-    Color textColor = color; // fallback ke theme color
+    Color textColor = color; 
     final rawColor = (widget.data['running_text_color'] ?? '').toString().trim();
     if (rawColor.isNotEmpty) {
       try {
         final hex = rawColor.replaceAll('#', '');
         textColor = Color(int.parse('FF$hex', radix: 16));
-        
-        // textColor = Color(int.parse('FF2ea8ab', radix: 16));
       } catch (_) {}
     }
 
@@ -225,6 +219,18 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                 },
               ),
             ),
+
+            if (widget.data['free_quota'] > 0) ...[
+              Positioned(
+                top: 60,
+                left: 4,
+                child: FreeVoteFloatingNotif(
+                  bahasa: lang,
+                  freeVote: widget.data['free_quota'],
+                  token: widget.token,
+                ),
+              ),
+            ],
 
             if (widget.dataNotif.isNotEmpty) ... [
               Positioned(
@@ -303,9 +309,8 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                   )
                 ],
               ),
-              const SizedBox(height: 12),
 
-              // tombol list horizontal
+              const SizedBox(height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -348,7 +353,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                           color: bgColor,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: color, // outline merah
+                            color: color, 
                             width: 1,
                           ),
                         ),
@@ -377,7 +382,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                             color: bgColor,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: color, // outline merah
+                              color: color, 
                               width: 1,
                             ),
                           ),
@@ -419,8 +424,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
             },
           ),
         ),
-
-        // const SizedBox(height: 12),
+        
         Padding(
           padding: EdgeInsetsGeometry.fromLTRB(20, 0, 20, 0),
           child: Column(
@@ -439,7 +443,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                         children: <Widget>[
                           Image.network(
                             widget.data['icon_penyelenggara'],
-                            width: 80,   // atur sesuai kebutuhan
+                            width: 80,   
                             height: 80,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
@@ -453,7 +457,6 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                           ),
 
                           const SizedBox(width: 12),
-                          //text
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,7 +471,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                 Text(
                                   widget.data['nama_penyelenggara'] ?? '-',
                                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                  softWrap: true,          // biar teks bisa kebungkus
+                                  softWrap: true,
                                   overflow: TextOverflow.visible, 
                                 ),
                               ],
@@ -488,7 +491,7 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                         InfiniteSponsorMarquee(
                           sponsors: sponsors,
                           height: 48,
-                          speed: 35, // atur kecepatan
+                          speed: 35, 
                           showFade: false,
                         ),
                       ],
@@ -511,22 +514,6 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // if (widget.data['merchant_description'] != null) ... [
-                                    //   Html(
-                                    //     data: widget.data['merchant_description'],
-                                    //     style: {
-                                    //       "p": Style(
-                                    //         margin: Margins.zero,
-                                    //         padding: HtmlPaddings.zero,
-                                    //       ),
-                                    //       "body": Style(
-                                    //         margin: Margins.zero,
-                                    //         padding: HtmlPaddings.zero,
-                                    //       ),
-                                    //     },
-                                    //   ),
-                                    //   SizedBox(height: 12,)
-                                    // ],
                                     Html(
                                       data: widget.data['deskripsi'],
                                         style: {
@@ -579,7 +566,6 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                       ),
 
                                   const SizedBox(width: 12),
-                                  //text
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,7 +602,6 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                       ),
 
                                   const SizedBox(width: 12),
-                                  //text
                                   Expanded(
                                     child: RichText(
                                       text: TextSpan(
@@ -690,7 +675,6 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                         ),
 
                                     const SizedBox(width: 12),
-                                    //text
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -746,7 +730,6 @@ class _DeskripsiSection_2State extends State<DeskripsiSection_2> {
                                         ),
 
                                     const SizedBox(width: 12),
-                                    //text
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -803,7 +786,15 @@ class LeaderboardSection_2 extends StatefulWidget {
   final List<dynamic> ranking;
   final Map<String, dynamic> data;
   final String langCode;
-  const LeaderboardSection_2({super.key, required this.ranking, required this.data, required this.langCode});
+  final bool isLoading;
+
+  const LeaderboardSection_2({
+    super.key, 
+    required this.ranking, 
+    required this.data, 
+    required this.langCode,
+    this.isLoading = false,
+  });
 
   @override
   State<LeaderboardSection_2> createState() => _LeaderboardSection_2State();
@@ -826,8 +817,7 @@ class _LeaderboardSection_2State extends State<LeaderboardSection_2> {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
   }
-
-  // Dipanggil setelah login sukses dari modal
+  
   Future<void> _onAfterLogin() async {
     await _loadToken();
   }
@@ -914,13 +904,13 @@ class _LeaderboardSection_2State extends State<LeaderboardSection_2> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(6), // jarak icon ke lingkaran
+                padding: const EdgeInsets.all(6), 
                 decoration: const BoxDecoration(
-                  color: Colors.white, // background lingkaran
+                  color: Colors.white,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  FontAwesomeIcons.crown, // icon mahkota
+                  FontAwesomeIcons.crown,
                   color: color,
                   size: 20,
                 ),
@@ -941,11 +931,20 @@ class _LeaderboardSection_2State extends State<LeaderboardSection_2> {
             ],
           ),
         ),
-
-        // konten data dari data api
-
-
-        if (widget.ranking.isNotEmpty) ... [
+        
+        if (widget.isLoading) ...[
+          const SizedBox(height: 60),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              buildTopCardSkeleton(isCenter: false),
+              buildTopCardSkeleton(isCenter: true),
+              buildTopCardSkeleton(isCenter: false),
+            ],
+          ),
+        ]
+        else if (widget.ranking.isNotEmpty) ... [
           const SizedBox(height: 60,),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -999,7 +998,7 @@ class _LeaderboardSection_2State extends State<LeaderboardSection_2> {
               children: others.map((item) {
                 if ((item['total_voters'] ?? 0) > 0) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 20), // jarak antar item
+                    padding: const EdgeInsets.only(bottom: 20),
                       child: buildListCard(
                         context: context,
                         rank: item['rank'],
@@ -1049,7 +1048,15 @@ class DukunganSection_2 extends StatelessWidget {
   final Map<String, dynamic> data;
   final List<dynamic> support;
   final String langCode;
-  const DukunganSection_2({super.key, required this.data, required this.support, required this.langCode});
+  final bool isLoading;
+
+  const DukunganSection_2({
+    super.key, 
+    required this.data, 
+    required this.support, 
+    required this.langCode,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1109,61 +1116,66 @@ class DukunganSection_2 extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Column(
-          children: (support.isNotEmpty)
-          ? support.map<Widget>((item) {
-            final dateStr = item['created_at'];
-            var hideNama = item['hide_name'];
-            var nama = item['nama'] ?? '-';
-    
-            String formattedDate = '-';
-  
-            if (dateStr.isNotEmpty) {
-              try {
-                final date = DateTime.parse(dateStr).toLocal();
-
-                if (langCode == 'id') {
-                  // Bahasa Indonesia
-                  final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
-                  formattedDate = "${formatter.format(date)} WIB";
-                } else {
-                  // Bahasa Inggris
-                  final formatter = DateFormat("$formatDateEn h:mm a", "en_US");
-                  formattedDate = formatter.format(date);
-
-                  // Tambahkan suffix hari
-                  final day = date.day;
-                  String suffix = 'th';
-                  if (day % 10 == 1 && day != 11) { suffix = 'st'; } 
-                  else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-                  else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-                  formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                }
-              } catch (e) {
-                formattedDate = '-';
-              }
-            }
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 20), // jarak antar item
-              child: CommentCard(
-                namaFinalis: item['nama_finalis'] ?? '-',
-                name: hideNama == '0' ? nama : 'Anonymous',
-                time: formattedDate,
-                message: item['dukungan']
-              ),
-            );
-          }).toList()
-          : [
-            Center(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  lang['no_support'],
-                  style: TextStyle(color: Colors.grey),
+          children: isLoading
+            ? List.generate(
+                1,
+                (index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: buildSkeletonDukungan(),
                 ),
-              ),
-            ),
-          ],
+              ) 
+            : (support.isNotEmpty)
+                ? support.map<Widget>((item) {
+                    final dateStr = item['created_at'];
+                    var hideNama = item['hide_name'];
+                    var nama = item['nama'] ?? '-';
+            
+                    String formattedDate = '-';
+          
+                    if (dateStr.isNotEmpty) {
+                      try {
+                        final date = DateTime.parse(dateStr).toLocal();
+
+                        if (langCode == 'id') {
+                          final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
+                          formattedDate = "${formatter.format(date)} WIB";
+                        } else {
+                          final formatter = DateFormat("$formatDateEn h:mm a", "en_US");
+                          formattedDate = formatter.format(date);
+                          
+                          final day = date.day;
+                          String suffix = 'th';
+                          if (day % 10 == 1 && day != 11) { suffix = 'st'; } 
+                          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+                          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+                        }
+                      } catch (e) {
+                        formattedDate = '-';
+                      }
+                    }
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: CommentCard(
+                        namaFinalis: item['nama_finalis'] ?? '-',
+                        name: hideNama == '0' ? nama : 'Anonymous',
+                        time: formattedDate,
+                        message: item['dukungan']
+                      ),
+                    );
+                  }).toList()
+                : [
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text(
+                        lang['no_support'],
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                ],
         ),
       ],
     );

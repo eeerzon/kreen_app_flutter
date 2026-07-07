@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FaqModal {
@@ -46,8 +46,6 @@ class FaqModal {
                     const Divider(),
 
                     const SizedBox(height: 8),
-
-                    //isi konten
                     ListView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,

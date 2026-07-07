@@ -59,7 +59,7 @@ Future<Map<String, dynamic>?> getFeeNew(
     }
 }
 
-// SERTAKAN FROM CURRENCY KALAU TERIMA NILAI ASLI, PAHAM!
+// SERTAKAN FROM CURRENCY KALAU TERIMA NILAI ASLI!
 Map<String, dynamic> convertCurrency({
   required num fromRate,
   required num toRate,
@@ -81,14 +81,13 @@ Map<String, dynamic> convertCurrency({
     // selain IDR -> ceil 2 desimal
     formatted = (convertedFixed5 * 100).ceil() / 100;
   }
-
-  // formatter ribuan
+  
   final formatter = NumberFormat.decimalPattern('en_US');
 
   return {
     'result': toCurrency == 'IDR'
         ? '$toCurrency ${formatter.format(formatted)}'
-        : '$toCurrency ${formatter.format(num.parse(formatted.toStringAsFixed(2)))}', // '$toCurrency ${formatter.format(num.parse(formatted).toStringAsFixed(2))}',
+        : '$toCurrency ${formatter.format(num.parse(formatted.toStringAsFixed(2)))}',
 
     'number': toCurrency == 'IDR'
         ? formatted.toInt()
@@ -130,7 +129,7 @@ Map<String, dynamic> getPriceCurrency ({
     calculatedFee = calculatedFee.ceil();
   } else {
     int scaled = (calculatedFee * 100000).round(); // fix 5 decimal -> int
-    int resultScaled = (scaled / 1000).ceil();     // jadi 2 decimal (ceil)
+    int resultScaled = (scaled / 1000).ceil(); // jadi 2 decimal (ceil)
     calculatedFee = resultScaled / 100;
   }
   

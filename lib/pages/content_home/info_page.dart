@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
 import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/profile.dart';
@@ -113,14 +113,9 @@ class _InfoPageState extends State<InfoPage> {
                         if (val != null) {
                           setState(() {
                             langCode = val; 
-                            langNotifier.value = val; // update global
+                            langNotifier.value = val; 
                           });
                           await StorageService.setLanguage(val);
-                          // Navigator.pushAndRemoveUntil(
-                          //   context,
-                          //   MaterialPageRoute(builder: (_) => const HomePage()),
-                          //   (route) => false,
-                          // );
 
                           Navigator.pop(context, true);
                         }
@@ -128,7 +123,7 @@ class _InfoPageState extends State<InfoPage> {
                       title: Row(
                         children: [
                           Image.asset(
-                            "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
+                            "assets/flags/${entry.key}.png",
                             width: 28,
                             height: 28,
                           ),
@@ -178,17 +173,6 @@ class _InfoPageState extends State<InfoPage> {
                       value: entry.key,
                       groupValue: tempCurr,
                       onChanged: (val) async {
-                        // if (val != null) {
-                        //   setState(() {
-                        //     currencyCode = val; // update global
-                        //   });
-                        //   await StorageService.setCurrency(val);
-                        //   Navigator.pushAndRemoveUntil(
-                          //   context,
-                          //   MaterialPageRoute(builder: (_) => const HomePage()),
-                          //   (route) => false,
-                          // );
-                        // }
 
                         if (val == null) return;
                         setState(() {
@@ -209,7 +193,7 @@ class _InfoPageState extends State<InfoPage> {
                       title: Row(
                         children: [
                           Image.asset(
-                            "assets/currencies/${entry.key.toString().toLowerCase()}.png", // simpan currency di folder assets/currencies
+                            "assets/currencies/${entry.key.toString().toLowerCase()}.png", 
                             width: 28,
                             height: 28,
                           ),
@@ -304,7 +288,7 @@ class _InfoPageState extends State<InfoPage> {
             children: [
               SizedBox(height: 20,),
 
-              //profile section
+              //--------------------------profile section----------------------------
               token != null
                 ? InkWell(
                     onTap: () async {
@@ -410,7 +394,7 @@ class _InfoPageState extends State<InfoPage> {
                     ),
                   ),
 
-              // Bahasa section
+              // --------------------------Bahasa section--------------------------
               SizedBox(height: 20,),
               Container(
                 padding: EdgeInsets.all(14),
@@ -453,7 +437,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
-              //currency
+              // --------------------------currency section--------------------------
               SizedBox(height: 20,),
               Container(
                 padding: EdgeInsets.all(14),
@@ -488,7 +472,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
-              // Pusat Bantuan section
+              // --------------------------Pusat Bantuan section--------------------------
               SizedBox(height: 20,),
               Container(
                 padding: EdgeInsets.all(14),
@@ -530,7 +514,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
-              // Tentang section
+              // --------------------------Tentang section--------------------------
               SizedBox(height: 20,),
               InkWell(
                 onTap: () {
@@ -572,7 +556,7 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ),
 
-              // Kebijakan Privasi section
+              // --------------------------Kebijakan Privasi section--------------------------
               SizedBox(height: 20,),
               InkWell(
                 onTap: () {

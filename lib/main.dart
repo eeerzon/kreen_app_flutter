@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:kreen_app_flutter/helper/deep_link_handler.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/splash_logo_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         textSelectionTheme: const TextSelectionThemeData(
           cursorColor: Colors.orange,
-          selectionColor: Color(0x33FFA500), // optional
+          selectionColor: Color(0x33FFA500),
           selectionHandleColor: Colors.orange,
         ),
       ),
@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       debugShowCheckedModeBanner: false,
-      home: const SplashLogoPage(), // langsung splash logo
+      home: const SplashLogoPage(),
     );
   }
 }

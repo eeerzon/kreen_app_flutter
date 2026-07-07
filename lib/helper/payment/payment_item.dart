@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 
 class PaymentItem extends StatefulWidget {
   final String paymentTipe;
@@ -606,7 +606,6 @@ class CardNumberFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // hapus semua spasi
     final text = newValue.text.replaceAll(' ', '');
 
     final buffer = StringBuffer();

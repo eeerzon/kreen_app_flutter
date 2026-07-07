@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/get_login_user.dart';
@@ -254,8 +254,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     if (gender.isNotEmpty) {
       selectedGender = gender.toLowerCase() == 'male' ? bahasa['gender_1'] : bahasa['gender_2'];
     }
-
-    final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
+    
+    final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (detailResp == null || detailResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -264,7 +264,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       return;
     }
 
-    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods", xLanguage: langCode, xCurrency: currencyCode);
+    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods", xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (paymentResp == null || paymentResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -381,13 +381,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       final cleaned = text.replaceAll(RegExp(r'[^0-9/]'), '');
 
       String newText = cleaned;
-
-      // Kalau user baru ketik 2 digit dan belum ada '/'
+      
       if (cleaned.length == 2 && !cleaned.contains('/')) {
         newText = "$cleaned/";
       }
-
-      // Potong kalau lebih dari 5 karakter
+      
       if (newText.length > 5) {
         newText = newText.substring(0, 5);
       }
@@ -416,7 +414,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       final position = await getCurrentLocationWithValidation(context);
 
       if (position == null) {
-        // Stop, jangan lanjut submit
         return;
       }
 
@@ -501,8 +498,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           }
         }
       }
-
-      // lanjutkan aksi konfirmasi
+      
       if (widget.totalHargaAsli != 0) {
 
         String genderValue;
@@ -513,7 +509,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         } else if (rawGender == 'perempuan' || rawGender == 'female') {
           genderValue = 'female';
         } else {
-          genderValue = ''; // handle error
+          genderValue = '';
         }
 
         String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
@@ -558,10 +554,10 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             final tempOrder = resultVoteOrder['data'];
 
             var id_order = tempOrder['id_order'];
-            Navigator.pop(context);//tutup modal
+            Navigator.pop(context);
 
             if (widget.fromDetail) {
-              Navigator.pop(context);//tutup page detail finalis
+              Navigator.pop(context);
             }
 
             Navigator.push(
@@ -616,7 +612,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               dialogType: DialogType.noHeader,
               animType: AnimType.topSlide,
               title: bahasa['maaf'],
-              // desc: bahasa['error'],
               desc: "${bahasa['error']}\n${bahasa['error_payment']}",
               btnOkOnPress: () {},
               btnOkColor: Colors.red,
@@ -642,8 +637,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             showCloseIcon: true,
           ).show();
         }
-
-      //gratis
       } else {
 
         String genderValue;
@@ -654,7 +647,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         } else if (rawGender == 'perempuan' || rawGender == 'female') {
           genderValue = 'female';
         } else {
-          genderValue = ''; // handle error
+          genderValue = '';
         }
 
         final body = {
@@ -688,10 +681,10 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             final tempOrder = resultVoteOrder['data'];
 
             var id_order = tempOrder['id_order'];
-            Navigator.pop(context);//tutup modal
+            Navigator.pop(context);
 
             if (widget.fromDetail) {
-              Navigator.pop(context);//tutup page detail finalis
+              Navigator.pop(context);
             }
 
             Navigator.push(
@@ -850,11 +843,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 Expanded(
                   child: InkWell(
                     onTap: isConfirmLoading 
-                      // || _nameController.text.isEmpty
-                      // || selectedGender == null
-                      // || !isValidEmail(_emailController.text) 
-                      // || !isValidPhone(_phoneController.text) 
-                      // || selectedIndex == null
                         ? null 
                         : handleConfirm,
                     child: Container(
@@ -862,11 +850,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isConfirmLoading 
-                          // || _nameController.text.isEmpty
-                          // || selectedGender == null
-                          // || !isValidEmail(_emailController.text) 
-                          // || !isValidPhone(_phoneController.text) 
-                          // || selectedIndex == null
                             ? Colors.grey.shade400 
                             : Colors.red,
                         borderRadius: BorderRadius.circular(8),
@@ -918,7 +901,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        // bahasa['header'],
                         bahasa['selesaikan_vote_kamu'],
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
@@ -942,7 +924,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                         children: [
             
                           const SizedBox(height: 4),
-                          //konten
                           Text(
                             bahasa['sub_titel_1'],
                             style: TextStyle(fontWeight: FontWeight.bold),
@@ -984,7 +965,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                           ),
                           if (_showError && _nameController.text.trim().isEmpty)
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
                                 bahasa['nama_lengkap_error'],
                                 style: TextStyle(
@@ -1071,7 +1052,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             
                           if (_showError && selectedGender == null)
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
                                 bahasa['gender_error'],
                                 style: TextStyle(
@@ -1126,7 +1107,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                           if (_emailTouched && !isValidEmail(_emailController.text))
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
                                 bahasa['error_email_1'],
                                 style: TextStyle(
@@ -1138,7 +1119,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             
                           if (_showError && indikator.any((e) => e['id_indikator_vote'] == 12) && _emailController.text.trim().isEmpty)
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
                                 bahasa['error_email_3'],
                                 style: TextStyle(
@@ -1214,14 +1195,12 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             setState(() {});
                                           }
                                         } else if (!isEmailField) {
-                                          // tandai field ini sudah disentuh
                                           if (!_answerTouched[idx]) {
                                             setState(() => _answerTouched[idx] = true);
                                           } else {
                                             setState(() {});
                                           }
                                         }
-                                        // answerControllers[idx].text = value;
                                         answers[idx] = value;
                                         setState(() {});
                                       },
@@ -1273,7 +1252,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             && _phoneController.text.trim().isNotEmpty 
                                             && (_phoneTouched || _showError))
                                           Padding(
-                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                             child: Text(
                                               bahasa['nomor_hp_error_idr'],
                                               style: TextStyle(
@@ -1287,7 +1266,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             && _phoneController.text.trim().isNotEmpty 
                                             && (_phoneTouched || _showError))
                                           Padding(
-                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                             child: Text(
                                               bahasa['nomor_hp_error'],
                                               style: TextStyle(
@@ -1301,7 +1280,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       const SizedBox(height: 4),
                                       if (_showError && _phoneController.text.trim().isEmpty)
                                         Padding(
-                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
                                             bahasa['error_indikator_phone'],
                                             style: TextStyle(
@@ -1326,7 +1305,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     ] else if (isEmailField) ... [
                                       if (!isValidEmail(_emailController.text) && _emailTouched)
                                         Padding(
-                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
                                             bahasa['error_email_1'],
                                             style: TextStyle(
@@ -1337,7 +1316,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         ),
                                       if (_showError && _emailController.text.trim().isEmpty)
                                         Padding(
-                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
                                             bahasa['error_email_3'],
                                             style: TextStyle(
@@ -1349,7 +1328,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     ] else ... [
                                       if (_showError && answerControllers[idx].text.trim().isEmpty)
                                         Padding(
-                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
                                             bahasa['tiket_template_answer_error'],
                                             style: TextStyle(
@@ -1370,8 +1349,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             thickness: 1,
                             color: Color.fromARGB(255, 224, 224, 224),
                           ),
-            
-                          //pembayaran
                           if (widget.totalHargaAsli != 0) ...[
                             const SizedBox(height: 20,),
                             Container(
@@ -1541,7 +1518,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -1640,8 +1616,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               curve: Curves.easeOut,
                                             );
                                           });
-          
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -1658,7 +1633,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -1755,8 +1729,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               curve: Curves.easeOut,
                                             );
                                           });
-          
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -1773,7 +1746,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -1875,8 +1847,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           } else {
                                             hasAttribute = true;
                                           }
-          
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -1893,7 +1864,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -2011,8 +1981,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               curve: Curves.easeOut,
                                             );
                                           });
-          
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -2029,7 +1998,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -2130,8 +2098,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               curve: Curves.easeOut,
                                             );
                                           });
-          
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -2148,7 +2115,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -2249,8 +2215,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               curve: Curves.easeOut,
                                             );
                                           });
-          
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -2267,7 +2232,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -2372,8 +2336,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               );
                                             });
                                           }
-            
-                                          // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                          
                                           var resultFee = await getFeeNew(
                                             currencyCode!,
                                             voteCurrency!, 
@@ -2391,7 +2354,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           
                                           setState(() {
                                             totalPayment = resultFee!['total_payment'];
-                                            // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                             feeLayanan = resultFee['fee_layanan'];
                                             totalVotes = resultFee['total_votes'];
                                           });
@@ -2453,41 +2415,70 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               ),
             
                               const SizedBox(height: 16,),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                padding: EdgeInsets.zero,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: widget.names_finalis.length,
-                                itemBuilder: (context, index) {
-                                  final int count = widget.counts_finalis[index];
-                                  num hargaVote = count * widget.price;
-                                  hargaVote = hargaVote * (widget.rateCurrencyUser / widget.rateCurrency);
-                                  hargaVote = num.parse(hargaVote.toStringAsFixed(5));
-                                  if (currencyCode == "IDR") {
-                                    hargaVote = hargaVote.ceil();
-                                  } else {
-                                    hargaVote = (100 * hargaVote).ceil() / 100;
-                                  }
-            
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: index == widget.names_finalis.length - 1 ? 0 : 16,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          count > 1
-                                            ? "${widget.names_finalis[index]} ($count ${bahasa['text_votes']})"
-                                            : "${widget.names_finalis[index]} ($count ${bahasa['text_vote']})",
+                              Builder(
+                                builder: (context) {
+                                  final bool isFreeVoteAvailable = detailVote['free_vote_is_available'] == true;
+                                  int remainingFreeQuota = detailVote['free_vote_remaining_quota'];
+
+                                  return ListView.builder(
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.zero,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: widget.names_finalis.length,
+                                    itemBuilder: (context, index) {
+                                      final int count = widget.counts_finalis[index];
+
+                                      int billableCount;
+                                      if (isFreeVoteAvailable && remainingFreeQuota > 0) {
+                                        final int coveredByFree = remainingFreeQuota >= count ? count : remainingFreeQuota;
+                                        billableCount = count - coveredByFree;
+                                        remainingFreeQuota -= coveredByFree;
+                                      } else {
+                                        billableCount = count;
+                                      }
+                                      
+                                      num hargaVote = 0;
+                                      if (remainingFreeQuota > 0) {
+                                        hargaVote = billableCount * 0;
+                                        hargaVote = hargaVote * (widget.rateCurrencyUser / widget.rateCurrency);
+                                        hargaVote = num.parse(hargaVote.toStringAsFixed(5));
+                                        if (currencyCode == "IDR") {
+                                          hargaVote = hargaVote.ceil();
+                                        } else {
+                                          hargaVote = (100 * hargaVote).ceil() / 100;
+                                        }
+                                      } else {
+                                        hargaVote = billableCount * widget.price;
+                                        hargaVote = hargaVote * (widget.rateCurrencyUser / widget.rateCurrency);
+                                        hargaVote = num.parse(hargaVote.toStringAsFixed(5));
+                                        if (currencyCode == "IDR") {
+                                          hargaVote = hargaVote.ceil();
+                                        } else {
+                                          hargaVote = (100 * hargaVote).ceil() / 100;
+                                        }
+                                      }
+
+                                      return Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: index == widget.names_finalis.length - 1 ? 0 : 16,
                                         ),
-                                        Text(
-                                          currencyCode == null
-                                              ? "$voteCurrency ${formatter.format(hargaVote)}"
-                                              : "$currencyCode ${formatter.format(hargaVote)}",
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              count > 1
+                                                ? "${widget.names_finalis[index]} ($count ${bahasa['text_votes']})"
+                                                : "${widget.names_finalis[index]} ($count ${bahasa['text_vote']})",
+                                            ),
+                                            Text(
+                                              currencyCode == null
+                                                  ? "$voteCurrency ${formatter.format(hargaVote)}"
+                                                  : "$currencyCode ${formatter.format(hargaVote)}",
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      );
+                                    },
                                   );
                                 },
                               ),
@@ -2718,6 +2709,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         text: TextSpan(
                                           style: TextStyle(
                                             color: Colors.black,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.normal,
                                           ),
                                           children: [
@@ -2728,7 +2720,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                 : "$totalVotes ${bahasa['text_vote']}", 
                                               style: TextStyle(
                                                 color: Colors.black,
-                                                fontWeight: FontWeight.bold,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                             ),
                                             TextSpan(text: bahasa['kebijakan_privasi_8']),
@@ -2738,7 +2730,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   : "$currencyCode ${formatter.format(totalPayment)}",
                                                 style: TextStyle(
                                                   color: Colors.black,
-                                                  fontWeight: FontWeight.bold,
+                                                  fontWeight: FontWeight.w700
                                                 ),
                                             ),
                                             TextSpan(
@@ -2755,7 +2747,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               const SizedBox(height: 4),
                               if (_showError && !_isChecked3)
                                 Padding(
-                                  padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                  padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                   child: Text(
                                     bahasa['checkbox_error'],
                                     style: TextStyle(
@@ -2764,8 +2756,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     ),
                                   ),
                                 ),
-            
-                            // dulunya posisi button konfirmasi di sini
                             ]
                           ]
             
@@ -2851,14 +2841,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 ),
                               ],
                             ),
-                            // dulunya posisi button konfirmasi di sini
                           ],
             
                           const SizedBox(height: 4),
                           if (widget.totalHargaAsli != 0) ... [
                             if (_showError && selectedIndex == null)
                               Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                 child: Text(
                                   bahasa['checkbox_error'],
                                   style: TextStyle(
@@ -2913,14 +2902,12 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     bool genderError = false;
     bool agreementError = false;
     bool paymentError = false;
-
-    // nama
+    
     if (_nameController.text.trim().isEmpty) {
       isValid = false;
       firstErrorFocus ??= _nameFocus;
     }
-
-    // gender
+    
     if (selectedGender == null) {
       isValid = false;
       genderError = true;
@@ -2943,23 +2930,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     }
 
     if (indikator.isNotEmpty) {
-
-    //   // email
-    //   if (_emailController.text.trim().isEmpty ||
-    //       !isValidEmail(_emailController.text)) {
-    //     isValid = false;
-    //     firstErrorFocus ??= _emailFocus;
-    //   }
-
-    //   // phone
-    //   if (_phoneController.text.trim().isEmpty ||
-    //       !isValidPhone(_phoneController.text)) {
-    //     isValid = false;
-    //     firstErrorFocus ??= _phoneFocus;
-    //   }
-    // }
-
-      //email
+      
       final bool isEmailRequired = indikator.any((e) {
         final label =
             (e['indikator_vote'] ?? '').toString().toLowerCase();
@@ -2970,18 +2941,15 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       final email = _emailController.text.trim();
 
       if (email.isNotEmpty && !isValidEmail(email)) {
-        // format salah
         isValid = false;
         firstErrorFocus ??= _emailFocus;
       }
 
       if (isEmailRequired && email.isEmpty) {
-        // wajib tapi kosong
         isValid = false;
         firstErrorFocus ??= _emailFocus;
       }
-
-      //phone
+      
       final bool isPhoneRequired = indikator.any((e) {
         final label =
             (e['indikator_vote'] ?? '').toString().toLowerCase();
@@ -2995,38 +2963,32 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
       if (currencyVote == 'IDR') {
         if (isPhoneRequired && phone.isNotEmpty && !isValidPhoneIDR(phone)) {
-          // format salah
           isValid = false;
           firstErrorFocus ??= _phoneFocus;
         }
       } else {
         if (isPhoneRequired && phone.isNotEmpty && !isValidPhone(phone)) {
-          // format salah
           isValid = false;
           firstErrorFocus ??= _phoneFocus;
         }
       }
 
       if (isPhoneRequired && phone.isEmpty) {
-        // wajib tapi kosong
         isValid = false;
         firstErrorFocus ??= _phoneFocus;
       }
-
-      // form indikator
+      
       for (int j = 0; j < indikator.length; j++) {
 
         if (answers[j].toString().trim().isEmpty) {
           isValid = false;
-          // tandai field ini sudah "disentuh" supaya error muncul di UI
           setState(() => _answerTouched[j] = true);
           firstErrorFocus ??= indikatorFocus[j];
           break;
         }
       }
     }
-
-    // validasi credit card jika dipilih
+    
     if (typePayment == 'credit_card' && selectedIndex != null) {
       final selectedItem = creditCard.firstWhere(
         (e) => e['id_metod'] == id_payment_method,
@@ -3151,5 +3113,33 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
         alignment: 0.1,
       );
     });
+  }
+  
+  List<int> get billableQtyPerFinalis {
+    final bool isFreeVoteAvailable = detailVote['free_vote_is_available'] == true;
+    final int freeRemainingQuota = int.tryParse(
+      detailVote['free_vote_remaining_quota']?.toString() ?? '0'
+    ) ?? 0;
+
+    List<int> result = List.filled(widget.counts_finalis.length, 0);
+
+    if (!isFreeVoteAvailable || freeRemainingQuota <= 0) {
+      return List.from(widget.counts_finalis);
+    }
+
+    int remainingFreeQuota = freeRemainingQuota;
+
+    for (int i = 0; i < widget.counts_finalis.length; i++) {
+      final qty = widget.counts_finalis[i];
+      if (remainingFreeQuota >= qty) {
+        result[i] = 0;
+        remainingFreeQuota -= qty;
+      } else {
+        result[i] = qty - remainingFreeQuota;
+        remainingFreeQuota = 0;
+      }
+    }
+
+    return result;
   }
 }

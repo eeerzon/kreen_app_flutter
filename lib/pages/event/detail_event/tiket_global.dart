@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/payment/state_payment_global.dart';
@@ -92,7 +92,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   Set<int> _duplicateGenderIndexes = {};
 
   void checkDuplicateInputs() {
-    // JIKA MODE SAMAKAN AKTIF, DUPLIKASI BOLEH
     if (widget.flag_samakan_input_tiket_pertama == '1') {
       setState(() {
         _duplicateEmailIndexes = {};
@@ -147,7 +146,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
   }
 
   void _autoCheckIfMatchFirst(int index) {
-    // if (index == 0) return;
     if (index == 0) {
       for (int i = 1; i < totalQty; i++) {
         if (_isCheckedList[i]) {
@@ -277,13 +275,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     };
 
     final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode);
-    // if (resultTiket == null || resultTiket['rc'] != 200) {
-    //   setState(() {
-    //     showErrorBar = true;
-    //     errorMessage = resultTiket?['message'];
-    //   });
-    //   return;
-    // }
+    
     final List<dynamic> tempTiket = resultTiket!['data'] ?? [];
 
     final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
@@ -339,11 +331,9 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
         }
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -627,7 +617,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        //header
+                        
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -688,13 +678,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                     _isCheckedList[index] = value ?? false;
 
                                     if (_isCheckedList[index]) {
-                                      // copy dari tiket pertama
+                                      
                                       emailControllers[index].text = emailControllers[0].text;
                                       nameControllers[index].text = nameControllers[0].text;
                                       phoneControllers[index].text = phoneControllers[0].text;
                                       selectedGenders[index] = selectedGenders[0];
                                     } else {
-                                      // reset
+                                      
                                       emailControllers[index].clear();
                                       nameControllers[index].clear();
                                       phoneControllers[index].clear();
@@ -703,7 +693,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                   });
                                 },
                               ),
-                              // SizedBox(width: 8),
+                              
                               Expanded(
                                 child: InkWell(
                                   child: Text("${bahasa['samakan_input']} ${bahasa['tiket']} 1"),
@@ -731,7 +721,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         ],
 
                         Divider(),
-                        // input form
                         Text(
                           expandedNames[index],
                           style: TextStyle(
@@ -807,7 +796,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                         if (_emailTouched[index] && !isValidEmail(emailControllers[index].text)) ...[
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                             child: Text(
                               bahasa['error_email_1'],
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -816,7 +805,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
                                   _duplicateEmailIndexes.contains(index)) ...[
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                             child: Text(
                               bahasa['error_email_2'],
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -830,7 +819,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ),
                         if (_showError && emailControllers[index].text.trim().isEmpty)
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                             child: Text(
                               bahasa['error_email_3'],
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -895,7 +884,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                         if (widget.flag_samakan_input_tiket_pertama == '0' &&
                             _duplicateNameIndexes.contains(index)) ...[
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                             child: Text(
                               bahasa['error_nama_1'],
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -905,7 +894,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                         if (_showError && nameControllers[index].text.trim().isEmpty)
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                             child: Text(
                               bahasa['error_nama_2'],
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -937,8 +926,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                       onTap: () {
                                         setState(() {
                                           selectedGenders[index] = item['label'];
-
-                                          // copy ke tiket lain jika mode samakan aktif
+                                          
                                           if (index == 0) {
                                             for (int i = 1; i < totalQty; i++) {
                                               if (_isCheckedList[i]) {
@@ -1069,7 +1057,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           if (phoneControllers[index].text.isNotEmpty &&
                             !isValidPhoneIDR(phoneControllers[index].text) && _phoneTouched) ...[
                               Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   bahasa['nomor_hp_error_idr'],
                                   style: TextStyle(
@@ -1081,7 +1069,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
                                     _duplicatePhoneIndexes.contains(index)) ...[
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                               child: Text(
                                 bahasa['error_nohp_1'],
                                 style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1092,7 +1080,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           if (phoneControllers[index].text.isNotEmpty &&
                             !isValidPhone(phoneControllers[index].text) && _phoneTouched) ...[
                               Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   nohpError!,
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1101,7 +1089,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           ] else if (widget.flag_samakan_input_tiket_pertama == '0' &&
                                     _duplicatePhoneIndexes.contains(index)) ...[
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                               child: Text(
                                 bahasa['error_nohp_1'],
                                 style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1112,7 +1100,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
                         if (_showError && phoneControllers[index].text.trim().isEmpty)
                           Padding(
-                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                            padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                             child: Text(
                               bahasa['error_nohp_2'],
                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1228,7 +1216,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                 ),
                                 if (formTiket[idx]['required'] == 1 && _showError && answerControllers[idx].text.trim().isEmpty)
                                   Padding(
-                                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                    padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                     child: Text(
                                       bahasa['tiket_template_answer_error'],
                                       style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1252,7 +1240,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           if (result != null && result.files.single.path != null) {
                                             final picked = result.files.single;
 
-                                            final maxFileSize = 1 * 1024 * 1024; // 1 MB
+                                            final maxFileSize = 1 * 1024 * 1024; 
                                             
                                             if (picked.size > maxFileSize) {
                                               ScaffoldMessenger.of(context).showSnackBar(
@@ -1319,7 +1307,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           _showError &&
                                           answerControllers[idx].text.trim().isEmpty)
                                         Padding(
-                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                           child: Text(
                                             bahasa['tiket_template_answer_error'],
                                             style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1337,7 +1325,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                     child: Row(
                                       children: List.generate(genders.length, (indx) {
                                         final item = genders[indx];
-                                        // final isSelected = selected == item['label'];
                                         final isSelected = answerControllers[idx].text == item['label'];
                                         
                                         return Expanded(
@@ -1416,7 +1403,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           _showError &&
                                           answerControllers[idx].text.trim().isEmpty)
                                         Padding(
-                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                          padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                           child: Text(
                                             bahasa['tiket_template_answer_error'],
                                             style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1472,7 +1459,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                             _showError &&
                                             answerControllers[idx].text.trim().isEmpty)
                                           Padding(
-                                            padding: const EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                            padding: const EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                             child: Text(
                                               bahasa['tiket_template_answer_error'],
                                               style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1544,7 +1531,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           _showError &&
                                           answerControllers[idx].text.trim().isEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                          padding: const EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                           child: Text(
                                             bahasa['tiket_template_answer_error'],
                                             style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1633,7 +1620,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           _showError &&
                                           answerControllers[idx].text.trim().isEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                          padding: const EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                           child: Text(
                                             bahasa['tiket_template_answer_error'],
                                             style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1712,9 +1699,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                       onTap: isConfirmLoading 
                       ? null 
                       : () async {
-                        // answers = List.generate(answerControllers.length, (index) {
-                        //   return answerControllers[index].text.trim();
-                        // });
 
                         if (isConfirmLoading) return;
 
@@ -1740,13 +1724,11 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                           final position = await getCurrentLocationWithValidation(context);
 
                           if (position == null) {
-                            // Stop, jangan lanjut submit
                             return;
                           }
 
                           final latitude = position.latitude;
                           final longitude = position.longitude;
-                          //payment
                           String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
 
                           final tickets = <Map<String, dynamic>>[];
@@ -1933,7 +1915,6 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     checkDuplicateInputs();
 
     for (int i = 0; i < totalQty; i++) {
-      // email
       if (emailControllers[i].text.trim().isEmpty ||
           !isValidEmail(emailControllers[i].text) ||
           (widget.flag_samakan_input_tiket_pertama == '0' &&
@@ -1942,21 +1923,18 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
         firstErrorFocus ??= emailFocusNodes[i];
       }
 
-      // nama
       if (nameControllers[i].text.trim().isEmpty ||
           (widget.flag_samakan_input_tiket_pertama == '0' &&
           _duplicateNameIndexes.contains(i))) {
         isValid = false;
         firstErrorFocus ??= nameFocusNodes[i];
       }
-
-      // gender
+      
       if (selectedGenders[i] == null) {
         isValid = false;
         firstErrorFocus ??= genderFocusNodes[i];
       }
-
-      // phone
+      
       if (currencyEvent == 'IDR') {
         if (phoneControllers[i].text.trim().isEmpty ||
             !isValidPhoneIDR(phoneControllers[i].text) ||
@@ -1974,8 +1952,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
           firstErrorFocus ??= phoneFocusNodes[i];
         }
       }
-
-      // form tiket
+      
       for (int j = 0; j < formTiket.length; j++) {
         final field = formTiket[j];
 

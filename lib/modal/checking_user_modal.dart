@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
@@ -31,7 +31,6 @@ class CheckingUserModal {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 16),
-                    // Header
                     if (!onboarding) ... [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -92,15 +91,6 @@ class CheckingUserModal {
                     ),
 
                     SizedBox(height: 12),
-                    // TextButton(
-                    // onPressed: () {
-                    //   Navigator.pop(context);
-                    // },
-                    // child: Text(
-                    //     loginAs ?? "",
-                    //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red), 
-                    //   )
-                    // )
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),

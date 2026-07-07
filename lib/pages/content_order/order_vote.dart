@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
@@ -584,19 +584,15 @@ class _VoteSuccessState extends State<VoteSuccess> {
 
               if (item['created_at'].isNotEmpty) {
                 try {
-                  // parsing string ke DateTime
-                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  
                   final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
-                    // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
-                    // Bahasa Inggris
                     final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
-
-                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                    
                     final day = date.day;
                     String suffix = 'th';
                     if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -677,7 +673,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                     ),
                     child: Column(
                       children: [
-                        //tgl
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -757,8 +753,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                             ],
                           ),
                         ),
-
-                        // image
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -786,7 +781,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
 
                               const SizedBox(width: 8,),
 
-                              Expanded( // penting agar tdk overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -815,8 +810,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                             ],
                           ),
                         ),
-
-                        // button
+                        
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -845,7 +839,6 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                        //"Vote Lagi",
                                         bahasa['vote_lagi'] ?? "",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
@@ -901,7 +894,6 @@ class _VoteSuccessState extends State<VoteSuccess> {
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      //"Tidak ada data lagi",
                       bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -1090,19 +1082,15 @@ class _VotePendingState extends State<VotePending> {
 
               if (item['created_at'].isNotEmpty) {
                 try {
-                  // parsing string ke DateTime
-                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  
                   final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
-                    // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
-                    // Bahasa Inggris
                     final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
-
-                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                    
                     final day = date.day;
                     String suffix = 'th';
                     if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -1183,7 +1171,7 @@ class _VotePendingState extends State<VotePending> {
                     ),
                     child: Column(
                       children: [
-                        //tgl
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1263,8 +1251,7 @@ class _VotePendingState extends State<VotePending> {
                             ],
                           ),
                         ),
-
-                        // image
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1292,7 +1279,7 @@ class _VotePendingState extends State<VotePending> {
 
                               const SizedBox(width: 8,),
 
-                              Expanded( // penting agar tdk overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1321,8 +1308,7 @@ class _VotePendingState extends State<VotePending> {
                             ],
                           ),
                         ),
-
-                        // button
+                        
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1352,7 +1338,6 @@ class _VotePendingState extends State<VotePending> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                        //"Kembali ke Pembayaran",
                                         bahasa['back_payment'] ?? "",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
@@ -1408,7 +1393,6 @@ class _VotePendingState extends State<VotePending> {
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      //"Tidak ada data lagi",
                       bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -1593,19 +1577,15 @@ class _VoteFailState extends State<VoteFail> {
 
               if (item['created_at'].isNotEmpty) {
                 try {
-                  // parsing string ke DateTime
-                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  
                   final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
-                    // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
-                    // Bahasa Inggris
                     final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
-
-                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                    
                     final day = date.day;
                     String suffix = 'th';
                     if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -1686,7 +1666,7 @@ class _VoteFailState extends State<VoteFail> {
                     ),
                     child: Column(
                       children: [
-                        //tgl
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1766,8 +1746,7 @@ class _VoteFailState extends State<VoteFail> {
                             ],
                           ),
                         ),
-
-                        // image
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1795,7 +1774,7 @@ class _VoteFailState extends State<VoteFail> {
 
                               const SizedBox(width: 8,),
 
-                              Expanded( // penting agar tdk overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1824,8 +1803,7 @@ class _VoteFailState extends State<VoteFail> {
                             ],
                           ),
                         ),
-
-                        // button
+                        
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1854,7 +1832,6 @@ class _VoteFailState extends State<VoteFail> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      //"Ulangi Pembelian",
                                       bahasa['retry_payment'] ?? "",
                                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                     ),
@@ -1906,7 +1883,6 @@ class _VoteFailState extends State<VoteFail> {
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      //"Tidak ada data lagi",
                       bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -1992,7 +1968,6 @@ class _NoOrderState extends State<NoOrder> {
 
                   const SizedBox(height: 20),
                   Text(
-                    // 'maaaf...',
                     bahasa['maaf'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -2003,7 +1978,6 @@ class _NoOrderState extends State<NoOrder> {
 
                   const SizedBox(height: 8),
                   Text(
-                    // 'Belum ada Transaksi',
                     bahasa['belum_ada_transaksi'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(

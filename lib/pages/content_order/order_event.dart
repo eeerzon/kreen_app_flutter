@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
@@ -347,7 +347,6 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                // physics: NeverScrollableScrollPhysics(),
                 children: [
                   isLoadingSukses
                     ? _buildSkeletonLoader() 
@@ -586,19 +585,15 @@ class _EventSuccessState extends State<EventSuccess> {
 
               if (item['created_at'].isNotEmpty) {
                 try {
-                  // parsing string ke DateTime
-                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  
                   final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
-                    // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
-                    // Bahasa Inggris
                     final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
-
-                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                    
                     final day = date.day;
                     String suffix = 'th';
                     if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -681,7 +676,7 @@ class _EventSuccessState extends State<EventSuccess> {
                     ),
                     child: Column(
                       children: [
-                        //tgl
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -761,8 +756,7 @@ class _EventSuccessState extends State<EventSuccess> {
                             ],
                           ),
                         ),
-
-                        // image
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -790,7 +784,7 @@ class _EventSuccessState extends State<EventSuccess> {
 
                               const SizedBox(width: 8,),
 
-                              Expanded( // penting agar tdk overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -819,8 +813,7 @@ class _EventSuccessState extends State<EventSuccess> {
                             ],
                           ),
                         ),
-
-                        // button
+                        
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -849,7 +842,6 @@ class _EventSuccessState extends State<EventSuccess> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      // "Beli Lagi",
                                         bahasa['beli_lagi'] ?? "",
                                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                     ),
@@ -901,7 +893,6 @@ class _EventSuccessState extends State<EventSuccess> {
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      //"Tidak ada data lagi",
                       bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -1090,19 +1081,15 @@ class _EventPendingState extends State<EventPending> {
 
               if (item['created_at'].isNotEmpty) {
                 try {
-                  // parsing string ke DateTime
-                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  
                   final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
-                    // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
-                    // Bahasa Inggris
                     final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
-
-                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                    
                     final day = date.day;
                     String suffix = 'th';
                     if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -1183,7 +1170,7 @@ class _EventPendingState extends State<EventPending> {
                     ),
                     child: Column(
                       children: [
-                        //tgl
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1263,8 +1250,7 @@ class _EventPendingState extends State<EventPending> {
                             ],
                           ),
                         ),
-
-                        // image
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1292,7 +1278,7 @@ class _EventPendingState extends State<EventPending> {
 
                               const SizedBox(width: 8,),
 
-                              Expanded( // penting agar tdk overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1321,8 +1307,7 @@ class _EventPendingState extends State<EventPending> {
                             ],
                           ),
                         ),
-
-                        // button
+                        
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1352,7 +1337,6 @@ class _EventPendingState extends State<EventPending> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                        //"Kembali ke Pembayaran",
                                         bahasa['back_payment'] ?? "",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
@@ -1408,7 +1392,6 @@ class _EventPendingState extends State<EventPending> {
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      //"Tidak ada data lagi",
                       bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -1592,19 +1575,15 @@ class _EventFailState extends State<EventFail> {
 
               if (item['created_at'].isNotEmpty) {
                 try {
-                  // parsing string ke DateTime
-                  // final date = DateTime.parse(item['created_at']); // pastikan format ISO (yyyy-MM-dd)
+                  
                   final date = DateHelper.parseWibToUtc(item['created_at']);
                   if (langCode == 'id') {
-                    // Bahasa Indonesia
                     final formatter = DateFormat(formatDateId, "id_ID");
                     formattedDate = formatter.format(date);
                   } else {
-                    // Bahasa Inggris
                     final formatter = DateFormat(formatDateEn, "en_US");
                     formattedDate = formatter.format(date);
-
-                    // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                    
                     final day = date.day;
                     String suffix = 'th';
                     if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -1687,7 +1666,7 @@ class _EventFailState extends State<EventFail> {
                     ),
                     child: Column(
                       children: [
-                        //tgl
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1767,8 +1746,7 @@ class _EventFailState extends State<EventFail> {
                             ],
                           ),
                         ),
-
-                        // image
+                        
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1796,7 +1774,7 @@ class _EventFailState extends State<EventFail> {
 
                               const SizedBox(width: 8,),
 
-                              Expanded( // penting agar tdk overflow
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1825,8 +1803,7 @@ class _EventFailState extends State<EventFail> {
                             ],
                           ),
                         ),
-
-                        // button
+                        
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           child: Row(
@@ -1855,7 +1832,6 @@ class _EventFailState extends State<EventFail> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      // "Ulangi Pembelian",
                                       bahasa['retry_payment'] ?? "",
                                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                     ),
@@ -1907,7 +1883,6 @@ class _EventFailState extends State<EventFail> {
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: Text(
-                      //"Tidak ada data lagi",
                       bahasa['no_more'] ?? "",
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -1994,7 +1969,6 @@ class _NoOrderState extends State<NoOrder> {
 
                   const SizedBox(height: 20),
                   Text(
-                    // 'maaaf...',
                     bahasa['maaf'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -2005,7 +1979,6 @@ class _NoOrderState extends State<NoOrder> {
 
                   const SizedBox(height: 8),
                   Text(
-                    // 'Belum ada Transaksi',
                     bahasa['belum_ada_transaksi'] ?? "",
                     textAlign: TextAlign.center,
                     style: TextStyle(

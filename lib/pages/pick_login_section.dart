@@ -1,7 +1,7 @@
 // ignore_for_file: non_constant_identifier_names, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
@@ -70,7 +70,7 @@ class _PickLoginSectionState extends State<PickLoginSection> {
           padding: kGlobalPadding,
           child: Column(
             children: [
-              // tengah — image, title, desc
+              
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -83,7 +83,7 @@ class _PickLoginSectionState extends State<PickLoginSection> {
                     ),
                     const SizedBox(height: 12),
                     if (pages.isEmpty)
-                      const CircularProgressIndicator() // atau SizedBox.shrink()
+                      const CircularProgressIndicator()
                     else ...[
                       Text(
                         pages[0]["title"]!,
@@ -99,8 +99,7 @@ class _PickLoginSectionState extends State<PickLoginSection> {
                   ],
                 ),
               ),
-
-              // bawah — buttons
+              
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),

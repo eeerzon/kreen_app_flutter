@@ -15,7 +15,6 @@ Future<void> StripePay(
   Map<String, dynamic>? eventOrder,
 ) async {
   try {
-    // final clientSecret = await createPaymentIntent();
 
     await Stripe.instance.initPaymentSheet(
       paymentSheetParameters: SetupPaymentSheetParameters(
@@ -66,7 +65,6 @@ Future<void> GooglePay(
   Map<String, dynamic>? eventOrder,
 ) async {
   try {
-    // final clientSecret = await createPaymentIntent();
 
     await Stripe.instance.initPaymentSheet(
       paymentSheetParameters: SetupPaymentSheetParameters(

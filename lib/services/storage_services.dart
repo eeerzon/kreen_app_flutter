@@ -11,8 +11,6 @@ class StorageService {
   }
 
   static Future<bool> getOnboardingDone() async {
-    // final value = await _storage.read(key: 'hasSeenOnboarding');
-    // return value == 'true';
     return await _storage.read(key: 'hasSeenOnboarding') == 'true';
   }
 

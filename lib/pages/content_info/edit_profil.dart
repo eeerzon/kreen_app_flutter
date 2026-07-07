@@ -10,7 +10,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
@@ -357,7 +357,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         context,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
-        alignment: 0.1, // sedikit padding dari atas
+        alignment: 0.1, 
       );
     }
   }
@@ -372,7 +372,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } else if (rawGender == 'perempuan' || rawGender == 'female') {
       genderValue = 'female';
     } else {
-      genderValue = ''; // handle error
+      genderValue = ''; 
     }
 
     if (dobController.text.trim().isEmpty) {
@@ -455,12 +455,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       showErrorBar = false;
       isImage = false;
-
-      // Navigator.pushAndRemoveUntil(
-      //   context, 
-      //   MaterialPageRoute(builder: (context) => HomePage()), 
-      //   (route) => false
-      // );
 
       Navigator.pop(context, true);
       
@@ -577,8 +571,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
 
               const SizedBox(height: 20),
-
-              /// BUTTON LOGIN
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -603,8 +595,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
 
               const SizedBox(height: 10),
-
-              /// BUTTON LOGIN SEBAGAI TAMU
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -680,17 +670,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return DateFormat(formatDateId, "id_ID").format(date);
     } else {
       final datePart = DateFormat(formatDateEn, "en_US").format(date);
-
-      // tambahkan suffix
+      
       final day = date.day;
       String suffix = 'th';
-      if (day % 10 == 1 && day != 11) {
-        suffix = 'st';
-      } else if (day % 10 == 2 && day != 12) {
-        suffix = 'nd';
-      } else if (day % 10 == 3 && day != 13) {
-        suffix = 'rd';
-      }
+      if (day % 10 == 1 && day != 11) { suffix = 'st'; } 
+      else if (day % 10 == 2 && day != 12) { suffix = 'nd'; } 
+      else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
 
       final datePartWithSuffix = datePart.replaceFirst('$day', '$day$suffix');
       return datePartWithSuffix;
@@ -712,27 +697,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
     
     if (widget.user['dob'] != null) {
       try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(widget.user['dob']); // pastikan format ISO (yyyy-MM-dd)
+        final date = DateTime.parse(widget.user['dob']);
         if (langCode == 'id') {
-          // Bahasa Indonesia
           final datePart = DateFormat(formatDateId, "id_ID").format(date);
           formattedDate = datePart;
           dobController.text = formattedDate;
         } else {
-          // Bahasa Inggris
           final datePart = DateFormat(formatDateEn, "en_US").format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+          
           final day = date.day;
           String suffix = 'th';
-          if (day % 10 == 1 && day != 11) {
-            suffix = 'st';
-          } else if (day % 10 == 2 && day != 12) {
-            suffix = 'nd';
-          }else if (day % 10 == 3 && day != 13) {
-            suffix = 'rd';
-          }
+          if (day % 10 == 1 && day != 11) { suffix = 'st'; } 
+          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; } 
+          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
 
           final datePartWithSuffix = datePart.replaceFirst('$day', '$day$suffix');
           formattedDate = datePartWithSuffix;
@@ -742,8 +719,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         formattedDate = '-';
       }
     }
-
-    // selectedGender = gender;
     
     return Scaffold(
       appBar: AppBar(
@@ -772,7 +747,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ? Center(child: CircularProgressIndicator(color: Colors.red,))
               : SingleChildScrollView(
                   child: Container(
-                    // height: MediaQuery.of(context).size.height,
                     color: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
                     child: Container(
@@ -866,9 +840,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                 child: Text(
-                                  // errorMessage['first_name'][0],
                                   bahasa['nama_lengkap_req'],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
                                 ),
@@ -880,7 +853,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   bahasa['nama_lengkap_req'],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -944,7 +917,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                 child: Text(
                                   bahasa['dob_required'],
                                   style: TextStyle(
@@ -954,18 +927,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ),
                               ),
                             ),
-                          // if (errorCode == 422 && errorMessage.containsKey('date_of_birth')) ... [
-                          //   Align(
-                          //     alignment: AlignmentGeometry.centerLeft,
-                          //     child: Padding(
-                          //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                          //       child: Text(
-                          //         errorMessage['date_of_birth'][0],
-                          //         style: TextStyle(color: Colors.red[900], fontSize: 12),
-                          //       ),
-                          //     )
-                          //   )
-                          // ],
 
                           SizedBox(height: 20,),
                           Align(
@@ -1044,7 +1005,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), //left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                 child: Text(
                                   bahasa['gender_error'],
                                   style: TextStyle(
@@ -1069,7 +1030,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             maxLines: 1,
                             scrollPhysics: const BouncingScrollPhysics(),
                             inputFormatters: [
-                              //batasi emoji
+                              
                               FilteringTextInputFormatter.deny(
                                 RegExp(
                                   r'[\u{1F600}-\u{1F64F}'
@@ -1206,7 +1167,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   bahasa['error_email_1'],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1218,7 +1179,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   langCode == "id"
                                     ? errorMessage['email'][0] 
@@ -1233,7 +1194,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   bahasa['error_email_3'],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1317,7 +1278,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   phoneError!,
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1329,7 +1290,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   errorMessage['phone'][0],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1342,7 +1303,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             Align(
                               alignment: AlignmentGeometry.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
                                 child: Text(
                                   bahasa['error_nohp_2'],
                                   style: TextStyle(color: Colors.red[900], fontSize: 12),
@@ -1513,10 +1474,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           
                           SizedBox(height: 30,),
                           InkWell(
-                            // onTap: () async {
-                            //   await saveProfile();
-                            //   // Navigator.pop(context, true);
-                            // },
                             onTap: isConfirmLoading
                               ? null
                               : _handleSave,
@@ -1652,11 +1609,7 @@ class NameInputFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     String text = newValue.text;
-
-    // Hapus spasi di AWAL saja
     text = text.replaceFirst(RegExp(r'^\s+'), '');
-
-    // Rapikan multiple space jadi satu
     text = text.replaceAll(RegExp(r'\s{2,}'), ' ');
 
     return TextEditingValue(

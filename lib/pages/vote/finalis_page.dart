@@ -7,7 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/modal/email_verif_modal.dart';
@@ -76,6 +76,12 @@ class _FinalisPageState extends State<FinalisPage> {
   String formattedDate = '-';
   String buttonText = '';
 
+  int currentPage = 1;
+  bool isLoadingMore = false;
+  bool hasMore = true;
+  bool isFirstLoad = true;
+  ScrollController _scrollController = ScrollController();
+
   Future<void> checkPaymentStatus(String? close_payment, String? tanggal_buka_payment) async {
     if (close_payment != '1') {
       isPaymentClosed = false;
@@ -102,9 +108,12 @@ class _FinalisPageState extends State<FinalisPage> {
   void initState() {
     super.initState();
 
+    _scrollController = ScrollController();
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
+      await _loadToken();
       await _loadVotes();
       _startCountdown();
 
@@ -120,8 +129,7 @@ class _FinalisPageState extends State<FinalisPage> {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
   }
-
-  // Dipanggil setelah login sukses dari modal
+  
   Future<void> _onAfterLogin() async {
     await _loadToken();
   }
@@ -132,7 +140,8 @@ class _FinalisPageState extends State<FinalisPage> {
       persen = true;
     }
 
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode);
+    final storedToken = await StorageService.getToken();
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken);
     if (resultVote == null || resultVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -141,7 +150,11 @@ class _FinalisPageState extends State<FinalisPage> {
       return;
     }
 
-    final resultFinalis = await ApiService.get("/vote/${widget.id_vote}/finalis?page_size=100", xLanguage: langCode, xCurrency: currencyCode);
+    final resultFinalis = await ApiService.get(
+      "/vote/${widget.id_vote}/finalis?"
+      "page_size=6"
+      "&current_page=1", 
+      xLanguage: langCode);
     if (resultFinalis == null || resultFinalis['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -179,15 +192,12 @@ class _FinalisPageState extends State<FinalisPage> {
           try {
             final localDate = DateHelper.parseWibToLocal(dateStr);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
               formattedDate = formatter.format(localDate);
             } else {
-              // Bahasa Inggris
               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
               formattedDate = formatter.format(localDate);
-
-              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              
               final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -199,8 +209,7 @@ class _FinalisPageState extends State<FinalisPage> {
             formattedDate = '-';
           }
         }
-
-        // final bukaVoteUtc = DateTime.parse(vote['real_tanggal_buka_vote']);
+        
         final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
         final bukaVote = DateHelper.parseWibToLocal(vote['real_tanggal_buka_vote']);
         final nowUtc = DateTime.now().toUtc();
@@ -214,6 +223,10 @@ class _FinalisPageState extends State<FinalisPage> {
         } else if (vote['close_payment'] == '1') {
           buttonText = '$voteOpenAgain $formattedDate';
         }
+
+        currentPage = 1;
+        hasMore = tempFinalis.length >= 6;
+        isFirstLoad = false;
 
         _isLoading = false;
         showErrorBar = false;
@@ -274,19 +287,16 @@ class _FinalisPageState extends State<FinalisPage> {
     List<dynamic> finalis
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
+    
     for (var item in finalis) {
       final url = item['poster_finalis']?.toString();
       if (url != null && url.isNotEmpty) {
         allImageUrls.add(url);
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -297,24 +307,33 @@ class _FinalisPageState extends State<FinalisPage> {
 
   num get totalHarga {
     num total = 0;
+
+    final int totalSelectedQty = counts.fold<int>(0, (sum, c) => sum + c);
+    final bool isFreeVoteAvailable = vote['free_vote_is_available'] == true;
+    final int freeRemainingQuota = int.tryParse(vote['free_vote_remaining_quota']?.toString() ?? '0') ?? 0;
+
+    int billableQty = totalSelectedQty;
+    if (isFreeVoteAvailable && freeRemainingQuota > 0) {
+      billableQty = totalSelectedQty - freeRemainingQuota;
+      if (billableQty < 0) billableQty = 0;
+    }
     
     if (currencyCode != null) {
-      for (int i = 0; i < counts.length; i++) {
-        final hargaItem = num.tryParse(vote['harga_asli'].toString()) ?? 0;
-        total += counts[i] * hargaItem;
-      }
+      final hargaItem = num.tryParse(vote['harga_asli'].toString()) ?? 0;
+      total = billableQty * hargaItem;
+
       totalHargaAsli = total;
       total = total * (vote['rate_currency_user'] / vote['rate_currency_vote']);
+
       if (currencyCode == "IDR") {
         total = total.ceil();
       } else {
         total = (total * 100).ceil() / 100;
       }
     } else {
-      for (int i = 0; i < counts.length; i++) {
-        final hargaItem = num.tryParse(vote['harga'].toString()) ?? 0;
-        total += counts[i] * hargaItem;
-      }
+      final hargaItem = num.tryParse(vote['harga'].toString()) ?? 0;
+      total = billableQty * hargaItem;
+      totalHargaAsli = total;
     }
     return total;
   }
@@ -341,7 +360,6 @@ class _FinalisPageState extends State<FinalisPage> {
 
       counts[index] = input;
       totalCount = counts.reduce((a, b) => a + b);
-      // controllers[index].text = parsed.toString();
 
       final idFinalis = item['id_finalis'];
       final namaFinalis = item['nama_finalis'];
@@ -428,13 +446,6 @@ class _FinalisPageState extends State<FinalisPage> {
 
   Future<void> _searchFinalis(String keyword) async {
     final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode);
-    // if (result == null || result['rc'] != 200) {
-    //   setState(() {
-    //     showErrorBar = true;
-    //     errorMessage = result?['message'];
-    //   });
-    //   return;
-    // }
 
     if (!mounted) return;
     if (mounted) {
@@ -447,6 +458,52 @@ class _FinalisPageState extends State<FinalisPage> {
 
   void _resetFinalis() {
     _loadVotes();
+  }
+
+  Future<void> _loadMoreKonten() async {
+    currentPage++;
+    await _fetchKonten(loadMore: true);
+  }
+
+  Future<void> _fetchKonten({bool loadMore = false}) async {
+    if (loadMore) {
+      if (isLoadingMore || !hasMore) return;
+      setState(() => isLoadingMore = true);
+    } else {
+      if (!mounted) return;
+      setState(() => isFirstLoad = true);
+      hasMore = true;
+    }
+
+    isFirstLoad = false;
+
+    final resultFinalis = await ApiService.get(
+      "/vote/${widget.id_vote}/finalis?"
+      "page_size=6"
+      "&current_page=$currentPage", 
+      xLanguage: langCode);
+
+    List newData = [];
+    if (resultFinalis!['rc'] == 200) {
+      newData = List.from(resultFinalis['data'] ?? []);
+      hasMore = newData.length >= 6;
+    } else {
+      hasMore = false;
+      showErrorBar = false;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      if (loadMore) {
+        finalis.addAll(newData);
+        isLoadingMore = false;
+      } else {
+        finalis = newData;
+        isFirstLoad = false;
+      }
+
+      showErrorBar = false;
+    });
   }
 
   @override
@@ -529,8 +586,7 @@ class _FinalisPageState extends State<FinalisPage> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -595,6 +651,11 @@ class _FinalisPageState extends State<FinalisPage> {
 
     final timerColor = remaining <= Duration.zero ? Colors.grey : color;
 
+    final isFreeVoteAvailable = vote['free_vote_is_available'] == true;
+    final freeRemainingQuota = vote['free_vote_remaining_quota'] ?? 0;
+    final coveredByFreeQuota = isFreeVoteAvailable && totalCount > 0 && totalCount <= freeRemainingQuota;
+    final hargaBermasalah = vote['harga'] != 0 && totalHarga == 0 && !coveredByFreeQuota;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -619,17 +680,16 @@ class _FinalisPageState extends State<FinalisPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // KIRI (fleksibel)
+              
               Expanded(
                 child: remaining.inSeconds == 0 || isBeforeOpen || vote['close_payment'] == '1'
                   ? SizedBox.shrink()
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(totalHargaText!),
-
-                        // HARGA AUTO KECIL
+                        
                         AutoSizeText(
                           vote['harga'] == 0
                             ? hargaDetail!
@@ -642,19 +702,19 @@ class _FinalisPageState extends State<FinalisPage> {
                             fontSize: 14,
                           ),
                           maxLines: 1,
-                          minFontSize: 9, // penting
+                          minFontSize: 9,
                           overflow: TextOverflow.ellipsis,
                         ),
 
                         AutoSizeText(
                           totalQty > 1
-                            ? "Qty $totalQty ${bahasa['text_votes']}"
-                            : "Qty $totalQty ${bahasa['text_vote']}",
+                            ? "Qty $totalQty ${bahasa['text_votes']}  ${vote['multiplier'] > 1 ? ' x${vote['multiplier']}' : ''} "
+                            : "Qty $totalQty ${bahasa['text_vote']}  ${vote['multiplier'] > 1 ? ' x${vote['multiplier']}' : ''} ",
                           style: TextStyle(
                             fontSize: 12,
                           ),
                           maxLines: 1,
-                          minFontSize: 9, // penting
+                          minFontSize: 9,
                           overflow: TextOverflow.ellipsis,
                         ),
                         
@@ -671,8 +731,6 @@ class _FinalisPageState extends State<FinalisPage> {
               ),
               
               const SizedBox(width: 12),
-
-              // KANAN (TETAP)
               SizedBox(
                 height: 40,
                 child: ElevatedButton(
@@ -692,8 +750,11 @@ class _FinalisPageState extends State<FinalisPage> {
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
-                  onPressed: (vote['harga'] != 0 && totalHarga == 0) || totalCount == 0 || vote['close_payment'] == '1' || remaining.inSeconds == 0
-                    ? null 
+                  onPressed: (totalCount == 0 ||
+                        hargaBermasalah ||
+                        vote['close_payment'] == '1' ||
+                        remaining.inSeconds == 0)
+                    ? null
                     : () async {
                       if (isButtonClicked) return;
 
@@ -775,89 +836,91 @@ class _FinalisPageState extends State<FinalisPage> {
         onTap: () {
           FocusManager.instance.primaryFocus?.unfocus();
         },
-        child: CustomScrollView(
-          slivers: [
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (scrollInfo) {
+            if (!isLoadingMore &&
+                hasMore &&
+                scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              _loadMoreKonten();
+            }
+            return false;
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
 
-            if (
-              vote['flag_cd'] == '1' &&
-              vote['real_tanggal_tutup_vote'] != null &&
-              DateHelper.parseWibToUtc(
-                vote['real_tanggal_tutup_vote'].toString(),
-              ).isAfter(DateTime.now().toUtc())
-            ) ...[
-              // konten atas (countdown)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: color, width: 1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Padding(
-                      padding: kGlobalPadding,
-                      child: Column(
-                        children: [
-                          Text(countDownText!),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _timeBox("$days", daysText!, timerColor),
-                              const SizedBox(width: 20),
-                              _timeBox("$hours".padLeft(2, "0"), hoursText!, timerColor),
-                              const SizedBox(width: 10),
-                              _separator(timerColor),
-                              const SizedBox(width: 10),
-                              _timeBox("$minutes".padLeft(2, "0"), minutesText!, timerColor),
-                              const SizedBox(width: 10),
-                              _separator(timerColor),
-                              const SizedBox(width: 10),
-                              _timeBox("$seconds".padLeft(2, "0"), secondsText!, timerColor),
-                            ],
-                          ),
-                        ],
+              if (
+                vote['flag_cd'] == '1' &&
+                vote['real_tanggal_tutup_vote'] != null &&
+                DateHelper.parseWibToUtc(
+                  vote['real_tanggal_tutup_vote'].toString(),
+                ).isAfter(DateTime.now().toUtc())
+              ) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: color, width: 1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: kGlobalPadding,
+                        child: Column(
+                          children: [
+                            Text(countDownText!),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _timeBox("$days", daysText!, timerColor),
+                                const SizedBox(width: 20),
+                                _timeBox("$hours".padLeft(2, "0"), hoursText!, timerColor),
+                                const SizedBox(width: 10),
+                                _separator(timerColor),
+                                const SizedBox(width: 10),
+                                _timeBox("$minutes".padLeft(2, "0"), minutesText!, timerColor),
+                                const SizedBox(width: 10),
+                                _separator(timerColor),
+                                const SizedBox(width: 10),
+                                _timeBox("$seconds".padLeft(2, "0"), secondsText!, timerColor),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
+              ],
+              
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickySearchBarDelegate(
+                  color: color,
+                  onSearchChanged: _onSearchChanged,
+                  searchHintText: searchHintText!,
+                ),
+              ),
+              
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                  child: _isSearching
+                    ? buildSkeletonGrid()
+                    : buildGridView(
+                        vote,
+                        finalis,
+                        color,
+                        bgColor,
+                        themeName,
+                      ),
+                ),
               ),
             ],
-
-            //sticky search bar
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickySearchBarDelegate(
-                color: color,
-                onSearchChanged: _onSearchChanged,
-                searchHintText: searchHintText!,
-              ),
-            ),
-
-            // grid view
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                child: _isSearching
-                  // ? Center(
-                  //     child: Padding(
-                  //       padding: EdgeInsets.symmetric(vertical: 40),
-                  //       child: CircularProgressIndicator(color: Colors.red,),
-                  //     ),
-                  //   )
-                  ? buildSkeletonGrid()
-                  : buildGridView(
-                      vote,
-                      finalis,
-                      color,
-                      bgColor,
-                      themeName,
-                    ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -893,7 +956,7 @@ class _FinalisPageState extends State<FinalisPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 20), // biar sejajar dengan label bawah
+        SizedBox(height: 20),
       ],
     );
   }
@@ -919,8 +982,7 @@ class _FinalisPageState extends State<FinalisPage> {
             ],
           ),
         ),
-
-        // Header shimmer
+        
         Shimmer.fromColors(
           baseColor: Colors.grey[300]!,
           highlightColor: Colors.grey[100]!,
@@ -1000,677 +1062,493 @@ class _FinalisPageState extends State<FinalisPage> {
       );
     }
 
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
-      itemCount: listFinalis.length,
-      itemBuilder: (context, index) {
-        final item = listFinalis[index];
-        bool ishas = true;
-        if (item['poster_finalis'] == null) {
-          ishas = false;
-        }
-        final int currentCount = counts[index];
+    return Column(
+      children: [
+        ListView.separated(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemCount: listFinalis.length,
+          itemBuilder: (context, index) {
+            final item = listFinalis[index];
+            bool ishas = true;
+            if (item['poster_finalis'] == null) {
+              ishas = false;
+            }
+            final int currentCount = counts[index];
 
-        final int? resolvedSelectedIndex =
-            filteredOptions.contains(currentCount)
-                ? filteredOptions.indexOf(currentCount)
-                : null;
+            final int? resolvedSelectedIndex =
+                filteredOptions.contains(currentCount)
+                    ? filteredOptions.indexOf(currentCount)
+                    : null;
+                    
+            if (selectedIndexes[index] != resolvedSelectedIndex) {
+              selectedIndexes[index] = resolvedSelectedIndex;
+            }
 
-        // sinkronkan state (opsional tapi direkomendasikan)
-        if (selectedIndexes[index] != resolvedSelectedIndex) {
-          selectedIndexes[index] = resolvedSelectedIndex;
-        }
-
-        return Card(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-            decoration: BoxDecoration(
+            return Card(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300,),
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: AspectRatio(
-                      aspectRatio: 4 / 5,
-                      child: ishas 
-                        ? FadeInImage.assetNetwork(
-                            placeholder: 'assets/images/img_placeholder.jpg',
-                            image: item['poster_finalis'],
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 200),
-                            imageErrorBuilder: (context, error, stackTrace) {
-                              return Image.network(
-                                "$baseUrl/noimage_finalis.png",
-                                width: double.infinity,
-                                fit: BoxFit.cover, 
-                              );
-                            },
-                          )
-                        : FadeInImage.assetNetwork(
-                            placeholder: 'assets/images/img_placeholder.jpg',
-                            image: "$baseUrl/noimage_finalis.png",
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 200),
-                            imageErrorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/img_broken.jpg',
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300,),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.all(Radius.circular(8)),
+                        child: AspectRatio(
+                          aspectRatio: 4 / 5,
+                          child: ishas 
+                            ? FadeInImage.assetNetwork(
+                                placeholder: 'assets/images/img_placeholder.jpg',
+                                image: item['poster_finalis'],
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                              );
-                            },
-                          ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-                  Text(
-                    item['nama_finalis'],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-
-                  if (item['nama_tambahan'] != null && item['nama_tambahan'].toString().trim().isNotEmpty) ...[
-                    SizedBox(height: 10,),
-                    Text(item['nama_tambahan'],
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-
-                  const SizedBox(height: 15),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: <Widget>[
-                              SvgPicture.network(
-                                "$baseUrl/image/icon-vote/$theme_name/dollar-coin.svg",
-                                width: 25,
-                                height: 25,
-                                fit: BoxFit.contain,
+                                fadeInDuration: const Duration(milliseconds: 200),
+                                imageErrorBuilder: (context, error, stackTrace) {
+                                  return Image.network(
+                                    "$baseUrl/noimage_finalis.png",
+                                    width: double.infinity,
+                                    fit: BoxFit.cover, 
+                                  );
+                                },
+                              )
+                            : FadeInImage.assetNetwork(
+                                placeholder: 'assets/images/img_placeholder.jpg',
+                                image: "$baseUrl/noimage_finalis.png",
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                fadeInDuration: const Duration(milliseconds: 200),
+                                imageErrorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/images/img_broken.jpg',
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  );
+                                },
                               ),
-
-                              const SizedBox(width: 4),
-                              //text
-                              Text(bahasa['harga']),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            vote['harga'] == 0
-                              ? hargaDetail!
-                              : currencyCode == null
-                                ? "${vote['currency']} $hargaFormatted"
-                                : "$currencyCode $hargaFormatted",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                        ),
                       ),
 
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      const SizedBox(height: 10),
+                      Text(
+                        item['nama_finalis'],
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+
+                      if (item['nama_tambahan'] != null && item['nama_tambahan'].toString().trim().isNotEmpty) ...[
+                        SizedBox(height: 10,),
+                        Text(item['nama_tambahan'],
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+
+                      const SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: <Widget>[
-                              SvgPicture.network(
-                                "$baseUrl/image/icon-vote/$theme_name/chart.svg",
-                                width: 25,
-                                height: 25,
-                                fit: BoxFit.contain,
+                          Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  SvgPicture.network(
+                                    "$baseUrl/image/icon-vote/$theme_name/dollar-coin.svg",
+                                    width: 25,
+                                    height: 25,
+                                    fit: BoxFit.contain,
+                                  ),
+
+                                  const SizedBox(width: 4),
+                                  Text(bahasa['harga']),
+                                ],
                               ),
-        
-                              SizedBox(width: 4),
-                              //text
+                              const SizedBox(height: 10),
                               Text(
-                                (persen
-                                  ? (item['percent'] ?? 0) > 1
-                                  : (item['total_voters'] ?? 0) > 1)
-                                    ? bahasa['text_votes']
-                                    : bahasa['text_vote'],
+                                vote['harga'] == 0
+                                  ? hargaDetail!
+                                  : currencyCode == null
+                                    ? "${vote['currency']} $hargaFormatted"
+                                    : "$currencyCode $hargaFormatted",
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
-        
-                          const SizedBox(height: 10,),
-                          Text(
-                            persen 
-                              ? "${item['percent'] ?? 0}%"
-                              : formatter.format(item['total_voters'] ?? 0),
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          )
+
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  SvgPicture.network(
+                                    "$baseUrl/image/icon-vote/$theme_name/chart.svg",
+                                    width: 25,
+                                    height: 25,
+                                    fit: BoxFit.contain,
+                                  ),
+            
+                                  SizedBox(width: 4),
+                                  Text(
+                                    (persen
+                                      ? (item['percent'] ?? 0) > 1
+                                      : (item['total_voters'] ?? 0) > 1)
+                                        ? bahasa['text_votes']
+                                        : bahasa['text_vote'],
+                                  ),
+                                ],
+                              ),
+            
+                              const SizedBox(height: 10,),
+                              Text(
+                                persen 
+                                  ? "${item['percent'] ?? 0}%"
+                                  : formatter.format(item['total_voters'] ?? 0),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DetailFinalisPage(
-                              id_finalis: item['id_finalis'],
-                              count: counts[index],
-                              indexWrap: selectedIndexes[index],
-                              close_payment: vote['close_payment'],
-                              tanggal_buka_payment: formattedDate,
-                              flag_hide_no_urut: vote['flag_hide_nomor_urut'],
-                              persen: persen,
+                      const SizedBox(height: 15),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailFinalisPage(
+                                  id_finalis: item['id_finalis'],
+                                  count: counts[index],
+                                  indexWrap: selectedIndexes[index],
+                                  close_payment: vote['close_payment'],
+                                  tanggal_buka_payment: formattedDate,
+                                  flag_hide_no_urut: vote['flag_hide_nomor_urut'],
+                                  persen: persen,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 60),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              detailfinalisText!,
+                              style: TextStyle(color: color, fontWeight: FontWeight.bold),
                             ),
                           ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 60),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          detailfinalisText!,
-                          style: TextStyle(color: color, fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
-                  ),
 
-                  if (isPaymentClosed || isBeforeOpen) ... [
-                    SizedBox(height: 15),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
-                      decoration: BoxDecoration(
-                        color: (isPaymentClosed || isBeforeOpen)
-                          ? Colors.grey
-                          : color,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            buttonText,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white),
-                            softWrap: true,
+                      if (isPaymentClosed || isBeforeOpen) ... [
+                        SizedBox(height: 15),
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
+                          decoration: BoxDecoration(
+                            color: (isPaymentClosed || isBeforeOpen)
+                              ? Colors.grey
+                              : color,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ],
-                      ),
-                    ),
-                  ]
-                  else ... [
-                    const SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // button minus
-                        InkWell(
-                          onTap: (remaining.inSeconds == 0 || isPaymentClosed)
-                              ? null
-                              : () {
-                                  if (counts[index] > 0) {
-                                    setState(() {
-                                      counts[index]--;
-                                      controllers[index].text = counts[index].toString();
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                buttonText,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.white),
+                                softWrap: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]
+                      else ... [
+                        const SizedBox(height: 15),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
 
-                                      totalCount = counts.reduce((a, b) => a + b);
+                            InkWell(
+                              onTap: (remaining.inSeconds == 0 || isPaymentClosed)
+                                  ? null
+                                  : () {
+                                      if (counts[index] > 0) {
+                                        setState(() {
+                                          counts[index]--;
+                                          controllers[index].text = counts[index].toString();
 
-                                      final idFinalis = item['id_finalis'];
-                                      final namaFinalis = item['nama_finalis'];
+                                          totalCount = counts.reduce((a, b) => a + b);
 
-                                      final existingIndex = ids_finalis.indexOf(idFinalis);
+                                          final idFinalis = item['id_finalis'];
+                                          final namaFinalis = item['nama_finalis'];
 
-                                      if (counts[index] == 0) {
-                                        selectedVotes[index] = null;
-                                        if (existingIndex != -1) {
+                                          final existingIndex = ids_finalis.indexOf(idFinalis);
+
+                                          if (counts[index] == 0) {
+                                            selectedVotes[index] = null;
+                                            if (existingIndex != -1) {
+                                              ids_finalis.removeAt(existingIndex);
+                                              names_finalis.removeAt(existingIndex);
+                                              counts_finalis.removeAt(existingIndex);
+                                            }
+                                          } else {
+                                            if (existingIndex != -1) {
+                                              counts_finalis[existingIndex] = counts[index];
+                                              names_finalis[existingIndex] = namaFinalis;
+                                            }
+                                          }
+
+                                          slctedIdVote = item['id_vote'];
+
+                                          totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                          countData = counts_finalis.length;
+                                        });
+                                      }
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: (remaining.inSeconds == 0) || isPaymentClosed
+                                      ? Colors.grey
+                                      : color,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  FontAwesomeIcons.minus,
+                                  size: 15,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            
+                            const SizedBox(width: 15),
+                            Container(
+                              height: 40,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300,),
+                              ),
+                              child: TextField(
+                                controller: controllers[index],
+                                textAlign: TextAlign.center,
+                                keyboardType: TextInputType.number,
+                                enabled: remaining.inSeconds != 0 && !isPaymentClosed,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isCollapsed: true,
+                                  contentPadding: EdgeInsets.all(8),
+                                ),
+                                onChanged: (value) => _updateCountFromInput(index, value, item, vote),
+                                onTap: () {
+                                  controllers[index].selection = TextSelection(
+                                    baseOffset: 0,
+                                    extentOffset: controllers[index].text.length,
+                                  );
+                                },
+                              ),
+                            ),
+                            
+                            const SizedBox(width: 15),
+                            InkWell(
+                              onTap: (remaining.inSeconds == 0 || isPaymentClosed)
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        
+                                        if (vote['batas_qty'] > 0 && counts[index] >= vote['batas_qty']) {
+                                          return;
+                                        }
+
+                                        counts[index]++;
+                                        controllers[index].text = counts[index].toString();
+
+                                        totalCount = counts.reduce((a, b) => a + b);
+
+                                        final idFinalis = item['id_finalis'];
+                                        final namaFinalis = item['nama_finalis'];
+
+                                        final existingIndex = ids_finalis.indexOf(idFinalis);
+
+                                        if (counts[index] > 0) {
+                                          if (existingIndex == -1) {
+                                            ids_finalis.add(idFinalis);
+                                            names_finalis.add(namaFinalis);
+                                            counts_finalis.add(counts[index]);
+                                          } else {
+                                            counts_finalis[existingIndex] = counts[index];
+                                            names_finalis[existingIndex] = namaFinalis;
+                                          }
+                                        }
+
+                                        if (counts[index] == 0 && existingIndex != -1) {
                                           ids_finalis.removeAt(existingIndex);
                                           names_finalis.removeAt(existingIndex);
                                           counts_finalis.removeAt(existingIndex);
                                         }
-                                      } else {
-                                        if (existingIndex != -1) {
-                                          counts_finalis[existingIndex] = counts[index];
-                                          names_finalis[existingIndex] = namaFinalis;
-                                        }
-                                      }
 
-                                      slctedIdVote = item['id_vote'];
+                                        slctedIdVote = item['id_vote'];
 
-                                      totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
-                                      countData = counts_finalis.length;
-                                    });
-                                  }
-                                },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: (remaining.inSeconds == 0) || isPaymentClosed
-                                  ? Colors.grey
-                                  : color,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              FontAwesomeIcons.minus,
-                              size: 15,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-
-                        // text field
-                        const SizedBox(width: 15),
-                        Container(
-                          height: 40,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300,),
-                          ),
-                          child: TextField(
-                            controller: controllers[index],
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            enabled: remaining.inSeconds != 0 && !isPaymentClosed,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              contentPadding: EdgeInsets.all(8),
-                            ),
-                            onChanged: (value) => _updateCountFromInput(index, value, item, vote),
-                            onTap: () {
-                              controllers[index].selection = TextSelection(
-                                baseOffset: 0,
-                                extentOffset: controllers[index].text.length,
-                              );
-                            },
-                          ),
-                        ),
-
-                        // button plus
-                        const SizedBox(width: 15),
-                        InkWell(
-                          onTap: (remaining.inSeconds == 0 || isPaymentClosed)
-                              ? null
-                              : () {
-                                  setState(() {
-
-                                    // Jika batas > 0 dan sudah mencapai batas -> stop
-                                    if (vote['batas_qty'] > 0 && counts[index] >= vote['batas_qty']) {
-                                      return; // tidak menambah lagi
-                                    }
-
-                                    counts[index]++;
-                                    controllers[index].text = counts[index].toString();
-
-                                    totalCount = counts.reduce((a, b) => a + b);
-
-                                    final idFinalis = item['id_finalis'];
-                                    final namaFinalis = item['nama_finalis'];
-
-                                    final existingIndex = ids_finalis.indexOf(idFinalis);
-
-                                    if (counts[index] > 0) {
-                                      if (existingIndex == -1) {
-                                        ids_finalis.add(idFinalis);
-                                        names_finalis.add(namaFinalis);
-                                        counts_finalis.add(counts[index]);
-                                      } else {
-                                        counts_finalis[existingIndex] = counts[index];
-                                        names_finalis[existingIndex] = namaFinalis;
-                                      }
-                                    }
-
-                                    if (counts[index] == 0 && existingIndex != -1) {
-                                      ids_finalis.removeAt(existingIndex);
-                                      names_finalis.removeAt(existingIndex);
-                                      counts_finalis.removeAt(existingIndex);
-                                    }
-
-                                    slctedIdVote = item['id_vote'];
-
-                                    totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
-                                    countData = counts_finalis.length;
-                                  });
-                                },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: (remaining.inSeconds == 0) || isPaymentClosed
-                                  ? Colors.grey
-                                  : color,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              FontAwesomeIcons.plus,
-                              size: 15,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  if (counts[index] == vote['batas_qty'] && vote['batas_qty'] > 0) ...[
-                    SizedBox(height: 8,),
-                    Text(
-                      "* $text",
-                      style: const TextStyle(color: Colors.red),
-                    )
-                  ],
-                  
-                  if (counts[index] >= 1) ... [
-                    if (filteredOptions.isNotEmpty) ...[
-                      const SizedBox(height: 15,),
-                      Wrap(
-                        spacing: 5,
-                        runSpacing: 5,
-                        alignment: WrapAlignment.center,
-                        children: filteredOptions.asMap().entries.map((entry) {
-                          final optionIndex = entry.key;
-                          final voteCount = entry.value;
-                          
-                          final isSelected = resolvedSelectedIndex == optionIndex;
-
-                          return IgnorePointer(
-                            ignoring: counts[index] == 0,
-                            child: Opacity(
-                              opacity: counts[index] == 0 ? 0.4 : 1,
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    selectedVotes[index] = voteCount;
-                                    selectedIndexes[index] = optionIndex;
-                                    counts[index] = voteCount;
-                                    controllers[index].text = counts[index].toString();
-
-                                    totalCount = counts.reduce((a, b) => a + b);
-
-                                    final idFinalis = item['id_finalis'];
-                                    final namaFinalis = item['nama_finalis'];
-                                    final existingIndex = ids_finalis.indexOf(idFinalis);
-
-                                    if (counts[index] > 0) {
-                                      if (existingIndex == -1) {
-                                        ids_finalis.add(idFinalis);
-                                        names_finalis.add(namaFinalis);
-                                        counts_finalis.add(counts[index]);
-                                      } else {
-                                        counts_finalis[existingIndex] = counts[index];
-                                        names_finalis[existingIndex] = namaFinalis;
-                                      }
-                                    } else if (counts[index] == 0 && existingIndex != -1) {
-                                      ids_finalis.removeAt(existingIndex);
-                                      names_finalis.removeAt(existingIndex);
-                                      counts_finalis.removeAt(existingIndex);
-                                    }
-
-                                    slctedIdVote = item['id_vote'];
-                                    totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? color : Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: color),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        NumberFormat.decimalPattern("en_US").format(voteCount),
-                                        style: TextStyle(
-                                          color: isSelected ? Colors.white : Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        "vote",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isSelected ? Colors.white : Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                        totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                        countData = counts_finalis.length;
+                                      });
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: (remaining.inSeconds == 0) || isPaymentClosed
+                                      ? Colors.grey
+                                      : color,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  FontAwesomeIcons.plus,
+                                  size: 15,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
+                          ],
+                        ),
+                      ],
+
+                      if (counts[index] == vote['batas_qty'] && vote['batas_qty'] > 0) ...[
+                        SizedBox(height: 8,),
+                        Text(
+                          "* $text",
+                          style: const TextStyle(color: Colors.red),
+                        )
+                      ],
+                      
+                      if (counts[index] >= 1) ... [
+                        if (filteredOptions.isNotEmpty) ...[
+                          const SizedBox(height: 15,),
+                          Wrap(
+                            spacing: 5,
+                            runSpacing: 5,
+                            alignment: WrapAlignment.center,
+                            children: filteredOptions.asMap().entries.map((entry) {
+                              final optionIndex = entry.key;
+                              final voteCount = entry.value;
+                              
+                              final isSelected = resolvedSelectedIndex == optionIndex;
+
+                              return IgnorePointer(
+                                ignoring: counts[index] == 0,
+                                child: Opacity(
+                                  opacity: counts[index] == 0 ? 0.4 : 1,
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedVotes[index] = voteCount;
+                                        selectedIndexes[index] = optionIndex;
+                                        counts[index] = voteCount;
+                                        controllers[index].text = counts[index].toString();
+
+                                        totalCount = counts.reduce((a, b) => a + b);
+
+                                        final idFinalis = item['id_finalis'];
+                                        final namaFinalis = item['nama_finalis'];
+                                        final existingIndex = ids_finalis.indexOf(idFinalis);
+
+                                        if (counts[index] > 0) {
+                                          if (existingIndex == -1) {
+                                            ids_finalis.add(idFinalis);
+                                            names_finalis.add(namaFinalis);
+                                            counts_finalis.add(counts[index]);
+                                          } else {
+                                            counts_finalis[existingIndex] = counts[index];
+                                            names_finalis[existingIndex] = namaFinalis;
+                                          }
+                                        } else if (counts[index] == 0 && existingIndex != -1) {
+                                          ids_finalis.removeAt(existingIndex);
+                                          names_finalis.removeAt(existingIndex);
+                                          counts_finalis.removeAt(existingIndex);
+                                        }
+
+                                        slctedIdVote = item['id_vote'];
+                                        totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? color : Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: color),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            NumberFormat.decimalPattern("en_US").format(voteCount),
+                                            style: TextStyle(
+                                              color: isSelected ? Colors.white : Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            "vote",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: isSelected ? Colors.white : Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
                     ],
-                  ],
-                ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        if (isLoadingMore)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.red),
+            ),
+          ),
+
+        if (!hasMore)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                bahasa['no_more'] ?? 'Semua data sudah ditampilkan',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ),
           ),
-        );
-      },
+
+        const SizedBox(height: 20),
+      ]
     );
-
-    
-    // return GridView.builder(
-    //   physics: const NeverScrollableScrollPhysics(),
-    //   shrinkWrap: true,
-    //   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-    //     crossAxisCount: 1,
-    //     mainAxisSpacing: 10,
-    //     mainAxisExtent: 670
-    //   ),
-    //   itemCount: listFinalis.length,
-    //   itemBuilder: (context, index) {
-    //     final item = listFinalis[index];
-    //     return Card(
-    //       color: Colors.white,
-    //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    //       child: Padding(
-    //         padding: kGlobalPadding,
-    //         child: Column(
-    //           crossAxisAlignment: CrossAxisAlignment.center,
-    //           children: [
-    //             ClipRRect(
-    //               borderRadius: const BorderRadius.all(Radius.circular(20)),
-    //               child: Image.network(
-    //                 item['poster_finalis'],
-    //                 width: double.maxFinite,
-    //               ),
-    //             ),
-
-    //             const SizedBox(height: 10,),
-    //             Text(
-    //               item['nama_finalis'],
-    //               style: TextStyle(fontWeight: FontWeight.bold),
-    //             ),
-
-    //             const SizedBox(height: 10,),
-    //             Text(
-    //               item['nama_tambahan'],
-    //               style: TextStyle(color: Colors.grey),
-    //             ),
-
-    //             const SizedBox(height: 10,),
-    //             Text(
-    //               item['nomor_urut'].toString(),
-    //             ),
-
-    //             const SizedBox(height: 15,),
-    //             Row(
-    //               mainAxisAlignment: MainAxisAlignment.center,
-    //               children: [
-    //                 Column(
-    //                   mainAxisAlignment: MainAxisAlignment.end,
-    //                   crossAxisAlignment: CrossAxisAlignment.end,
-    //                   children: [
-    //                     Row(
-    //                       mainAxisAlignment: MainAxisAlignment.end,
-    //                       crossAxisAlignment: CrossAxisAlignment.end,
-    //                       children: [
-    //                         Icon(FontAwesomeIcons.dollarSign, size: 15, color: color,),
-    //                         Text(
-    //                           "Harga",
-    //                         )
-    //                       ],
-    //                     ),
-
-    //                     SizedBox(height: 10,),
-    //                     Text(
-    //                       "Rp. $hargaFormatted",
-    //                       style: TextStyle(fontWeight: FontWeight.bold),
-    //                     )
-    //                   ],
-    //                 ),
-
-    //                 const SizedBox(width: 30,),
-    //                 Column(
-    //                   mainAxisAlignment: MainAxisAlignment.start,
-    //                   crossAxisAlignment: CrossAxisAlignment.start,
-    //                   children: [
-    //                     Row(
-    //                       mainAxisAlignment: MainAxisAlignment.start,
-    //                       children: [
-    //                         Icon(Icons.stacked_bar_chart, size: 15, color: color,),
-    //                         Text(
-    //                           "vote",
-    //                         )
-    //                       ],
-    //                     ),
-
-    //                     const SizedBox(height: 10,),
-    //                     Text(
-    //                       item['total_voters'].toString(),
-    //                       style: TextStyle(fontWeight: FontWeight.bold),
-    //                     )
-    //                   ],
-    //                 )
-    //               ],
-    //             ),
-
-    //             const SizedBox(height: 15,),
-    //             Container(
-    //               padding: EdgeInsets.symmetric(vertical: 12, horizontal: 60),
-    //               decoration: BoxDecoration(
-    //                 color: bgColor,
-    //                 borderRadius: BorderRadius.circular(8),
-    //               ),
-    //               child: InkWell(
-    //                 onTap: () {
-    //                   showModalBottomSheet(
-    //                     context: context,
-    //                     isScrollControlled: true, // biar tinggi penuh
-    //                     backgroundColor: Colors.transparent,
-    //                     builder: (BuildContext context) {
-    //                       return FractionallySizedBox(
-    //                         heightFactor: 0.9, // popup tinggi 90% layar
-    //                         child: Container(
-    //                           decoration: const BoxDecoration(
-    //                             color: Colors.white,
-    //                             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    //                           ),
-    //                           child: DetailFinalisPage(id_finalis: item['id_finalis']),
-    //                         ),
-    //                       );
-    //                     },
-    //                   );
-    //                 },
-    //                 child: Text(
-    //                     "Detail Finalis",
-    //                     style: TextStyle(color: color, fontWeight: FontWeight.bold),
-    //                   ),
-    //               )
-    //             ),
-
-    //             const SizedBox(height: 15,),
-    //             Row(
-    //               mainAxisAlignment: MainAxisAlignment.center,
-    //               children: [
-    //                 Container(
-    //                   padding: EdgeInsets.all(10),
-    //                   decoration: BoxDecoration(
-    //                     color: color,
-    //                     borderRadius: BorderRadius.circular(8),
-    //                   ),
-    //                   child: InkWell(
-    //                     onTap: () {
-    //                       if (counts[index] > 0) {
-    //                         setState(() {
-    //                           counts[index]--;
-    //                         });
-    //                       }
-    //                     },
-    //                     child: Icon(
-    //                       FontAwesomeIcons.minus,size: 15, color: Colors.white,
-    //                     )
-    //                   )
-    //                 ),
-
-    //                 const SizedBox(width: 15,),
-    //                 Container(
-    //                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 50),
-    //                   decoration: BoxDecoration(
-    //                     color: Colors.grey[200],
-    //                     borderRadius: BorderRadius.circular(8),
-    //                   ),
-    //                   child: Text(
-    //                     "${counts[index]}",
-    //                     style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-    //                   ),
-    //                 ),
-
-    //                 const SizedBox(width: 15,),
-    //                 Container(
-    //                   padding: EdgeInsets.all(10),
-    //                   decoration: BoxDecoration(
-    //                     color: color,
-    //                     borderRadius: BorderRadius.circular(8),
-    //                   ),
-    //                   child: InkWell(
-    //                     onTap: () {
-    //                       setState(() {
-    //                         counts[index]++;
-    //                       });
-    //                     },
-    //                     child: Icon(
-    //                       FontAwesomeIcons.plus,size: 15, color: Colors.white,
-    //                     )
-    //                   )
-    //                 ),
-
-    //                 if (counts[index] > 0)
-    //                   Row(
-    //                     children: [
-    //                       InkWell(
-    //                       )
-    //                     ],
-    //                   )
-    //               ],
-    //             )
-    //           ],
-    //         ),
-    //       )
-    //     );
-    //   },
-    // );
   }
 }
 

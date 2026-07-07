@@ -7,7 +7,7 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
 import 'package:kreen_app_flutter/helper/get_fee_new.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
@@ -320,13 +320,9 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       final cleaned = text.replaceAll(RegExp(r'[^0-9/]'), '');
 
       String newText = cleaned;
-
-      // Kalau user baru ketik 2 digit dan belum ada '/'
       if (cleaned.length == 2 && !cleaned.contains('/')) {
         newText = "$cleaned/";
       }
-
-      // Potong kalau lebih dari 5 karakter
       if (newText.length > 5) {
         newText = newText.substring(0, 5);
       }
@@ -354,13 +350,12 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       final position = await getCurrentLocationWithValidation(context);
 
       if (position == null) {
-        // Stop, jangan lanjut submit
         return;
       }
 
       final latitude = position.latitude;
       final longitude = position.longitude;
-      //payment
+      
       String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : Platform.operatingSystem;
 
       if (typePayment == 'credit_card' && payment['Credit Card'][selectedIndex]['flag_client'] == "0") {
@@ -439,7 +434,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
           } else if (rawGender == 'perempuan' || rawGender == 'female') {
             genderValue = 'female';
           } else {
-            genderValue = ''; // handle error
+            genderValue = '';
           }
 
           final formMasterIds = (widget.ids_order_form_master.length > globalIndex)
@@ -465,22 +460,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
               },
             ),
           });
-
-          // tickets.add({
-          //   "id_ticket": idTicket,
-          //   "first_name": widget.first_names[globalIndex].text,
-          //   "email": widget.emails[globalIndex].text,
-          //   "phone": widget.phones[globalIndex].text,
-          //   "gender": genderValue,
-          //   "order_form_answers": List.generate(
-          //     widget.ids_order_form_master[j].length,
-          //     (index) => {
-          //       "id_order_form_master": widget.ids_order_form_master[j][index],
-          //       "id_order_form_detail": widget.ids_order_form_details[j][index],
-          //       "answer": widget.answers[globalIndex][index],
-          //     },
-          //   ),
-          // });
           globalIndex++;
         }
       }
@@ -509,7 +488,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
           final tempOrder = resultEventOrder['data'];
 
           var id_order = tempOrder['data']['id_order'];
-          Navigator.pop(context);//tutup modal
+          Navigator.pop(context);
 
           Navigator.push(
             context,
@@ -620,7 +599,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    //pembayaran
+                    
                     Container(
                       height: 40,
                       width: 40,
@@ -783,7 +762,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
 
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -881,8 +859,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                       curve: Curves.easeOut,
                                     );
                                   });
-  
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -899,7 +876,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -995,8 +971,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                       curve: Curves.easeOut,
                                     );
                                   });
-  
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -1013,7 +988,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -1114,8 +1088,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   } else {
                                     hasAttribute = true;
                                   }
-  
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -1132,7 +1105,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -1249,8 +1221,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                       curve: Curves.easeOut,
                                     );
                                   });
-  
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -1267,7 +1238,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -1367,8 +1337,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                       curve: Curves.easeOut,
                                     );
                                   });
-  
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -1385,7 +1354,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -1485,8 +1453,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                       curve: Curves.easeOut,
                                     );
                                   });
-  
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -1503,7 +1470,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -1607,8 +1573,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                       );
                                     });
                                   }
-    
-                                  // final resultFee = await getFee(voteCurrency!, item['currency_pg'], widget.totalHargaAsli, item['fee_percent'], item['ppn'], item['fee'], item['exchange_rate_new'], widget.counts_finalis);
+                                  
                                   var resultFee = await getFeeNew(
                                     currencyCode!,
                                     eventCurrency!, 
@@ -1625,7 +1590,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                   
                                   setState(() {
                                     totalPayment = resultFee!['total_payment'];
-                                    // feeLayanan = (resultFee['fee_layanan'] * 100).ceil() / 100;
                                     feeLayanan = resultFee['fee_layanan'];
                                   });
                                 },
@@ -1731,7 +1695,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              //"Total Bayar",
                               Text(bahasa['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
                               Text(
                                 currencyCode == null
@@ -1832,8 +1795,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
   bool _validateAllForm() {
     bool isValid = true;
     FocusNode? firstErrorFocus;
-
-    // validasi credit card jika dipilih
+    
     if (typePayment == 'credit_card' && selectedIndex != null) {
       final selectedItem = creditCard.firstWhere(
         (e) => e['id_metod'] == id_payment_method,

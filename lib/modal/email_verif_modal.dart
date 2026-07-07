@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 
@@ -118,7 +118,7 @@ class EmailVerifModal {
     Map<String, dynamic> bahasa,
     Color color,
     {
-      VoidCallback? onLoginSuccess,  // <-- tambah ini
+      VoidCallback? onLoginSuccess,
     }
   ) async {
     final completer = Completer<bool>();

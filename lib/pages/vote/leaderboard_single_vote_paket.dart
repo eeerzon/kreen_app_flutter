@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously, prefer_typing_uninitialized_variables
+// ignore_for_file: non_constant_identifier_names, deprecated_member_use, use_build_context_synchronously, prefer_typing_uninitialized_variables, unused_field
 
 import 'dart:async';
 
@@ -9,8 +9,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
-import 'package:kreen_app_flutter/helper/checking_html.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/video_section.dart';
@@ -160,6 +159,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getBahasa();
       await _getCurrency();
+      await _loadToken();
       await _loadFinalis();
       _startCountdown();
 
@@ -176,8 +176,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
 
         videoId = YoutubePlayer.convertUrlToId(cleanedUrl);
       }
-
-      // final videoId = YoutubePlayer.convertUrlToId(detailFinalis['video_profile'] ?? "");
 
       if (videoId != null && mounted) {
         setState(() {
@@ -204,8 +202,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
           persen = true;
         });
       }
-
-      // ambil dari respon api
+      
       if (detailvote['leaderboard_tipe'] == 'number') {
         view_api = 2;
       } else if (detailvote['leaderboard_tipe'] == 'percent') {
@@ -221,8 +218,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       if (detailvote['multiplier'] != null && detailvote['multiplier'] > 1) {
         _startCountdownBoost(DateHelper.parseWibToUtc(detailvote['multiplier_end_date']));
       }
-
-      // Tampilkan popup hanya sekali
+      
       if (detailvote['multiplier'] != null && detailvote['multiplier'] > 1 && !_boostPopupShown) {
         _boostPopupShown = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -231,15 +227,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
       }
     });
   }
-
-  // ignore: unused_field
+  
   String _storedToken = '';
   Future<void> _loadToken() async {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
   }
-
-  // Dipanggil setelah login sukses dari modal
+  
   Future<void> _onAfterLogin() async {
     await _loadToken();
   }
@@ -296,7 +290,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
   List<Map<String, dynamic>> paketLainnya = [];
 
   Future<void> _loadFinalis() async {
-    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode);
+    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultFinalis == null || resultFinalis['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -306,7 +300,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     }
     Map<String, dynamic> tempFinalis = resultFinalis['data'] ?? {};
 
-    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
+    final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultDetailVote == null || resultDetailVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -383,15 +377,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
           try {
             final localDate = DateHelper.parseWibToLocal(dateStr);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final formatter = DateFormat("$formatDateId HH:mm", "id_ID");
               formattedDate = formatter.format(localDate);
             } else {
-              // Bahasa Inggris
               final formatter = DateFormat("$formatDateEn HH:mm", "en_US");
               formattedDate = formatter.format(localDate);
-
-              // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+              
               final day = localDate.day;
               String suffix = 'th';
               if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -440,8 +431,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     List<dynamic> ranking,
   ) async {
     List<String> allImageUrls = [];
-
-    // Ambil semua file_upload dari ranking (juara / banner)
+    
     final finalisData = finalis['data'];
     if (finalisData is List) {
       for (var item in finalisData) {
@@ -458,11 +448,9 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
         allImageUrls.add(url);
       }
     }
-
-    // Hilangkan duplikat supaya efisien
+    
     allImageUrls = allImageUrls.toSet().toList();
-
-    // Pre-cache semua gambar
+    
     for (String url in allImageUrls) {
       await precacheImage(NetworkImage(url), context);
     }
@@ -638,8 +626,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -716,18 +703,14 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     
     if (dateStr.isNotEmpty) {
       try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+        final date = DateTime.parse(dateStr);
         if (langCode == 'id') {
-          // Bahasa Indonesia
           final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
           formattedDate = formatter.format(date);
         } else {
-          // Bahasa Inggris
           final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
           formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+          
           final day = date.day;
           String suffix = 'th';
           if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -751,6 +734,10 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     final bool hasVideo =
       detailFinalis['video_profile'] != null &&
       detailFinalis['video_profile'].toString().isNotEmpty;
+
+    final isFreeVotePaket = id_paket == 'free_vote';
+    final belumPilihPaket = counts == 0;
+    final paketBerbayarTapiHargaNol = !isFreeVotePaket && totalHarga == 0;
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -809,12 +796,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                               children: [
                                 PageView(
                                   controller: _pageController,
-                                  physics: const PageScrollPhysics(), // user gesture only
+                                  physics: const PageScrollPhysics(),
                                   onPageChanged: (index) {
                                     _pageIndex.value = index;
                                   },
                                   children: [
-                                    // POSTER
+                                    
                                     Image.network(
                                       detailFinalis['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
                                       width: double.infinity,
@@ -826,8 +813,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                         );
                                       },
                                     ),
-
-                                    // VIDEO
+                                    
                                     Container(
                                       color: Colors.white,
                                       child: Align(
@@ -835,21 +821,13 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                         child: Container(
                                           color: Colors.white,
                                           child: 
-                                          // VideoSection(
-                                            // link: detailFinalis['video_profile'],
-                                            // headerText: videoProfilText!, 
-                                            // noValidText: noValidText!,
-                                            // onFullscreenChanged: onFullscreenChanged,
-                                            // controller: _ytController,
-                                          // ),
                                           buildTopVideo()
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-
-                                // // BUTTON PREV
+                                
                                 // Positioned(
                                 //   left: 8,
                                 //   top: 0,
@@ -864,8 +842,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                 //     },
                                 //   ),
                                 // ),
-
-                                // // BUTTON NEXT
+                                
                                 // Positioned(
                                 //   right: 8,
                                 //   top: 0,
@@ -961,7 +938,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                         ),
                   
                                         SizedBox(width: 4),
-                                        //text
                                         Text(hargaText!),
                                       ],
                                     ),
@@ -993,7 +969,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                         ),
                   
                                         SizedBox(width: 4),
-                                        //text
                                         Text(
                                           (persen
                                             ? detailFinalis['percent'] > 1
@@ -1070,7 +1045,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                         ),
                                       ),
                                       if (!isPaymentClosed && !isBeforeOpen && remaining.inSeconds != 0) ...[
-                                        // SizedBox(width: 10),
                                         Icon(
                                           Icons.keyboard_arrow_down_rounded,
                                           color: Colors.white,
@@ -1281,17 +1255,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                               const SizedBox(height: 12),
                               Align(
                                 alignment: Alignment.center,
-                                // child: SizedBox(
-                                //   child: 
-                                  // VideoSection(
-                                  //   // link: detailFinalis['video_profile'],
-                                  //   // headerText: videoProfilText!, 
-                                  //   // noValidText: noValidText!,
-                                  //   // onFullscreenChanged: onFullscreenChanged,
-                                  //   controller: _ytController,
-                                  // ),
-                                //   buildVideo()
-                                // ),
                                 child: AspectRatio(
                                   aspectRatio: 16 / 9,
                                   child: buildBottomVideo(),
@@ -1308,7 +1271,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                           || detailFinalis['instagram'] != null && detailFinalis['instagram'].toString().trim().isNotEmpty) ...[
 
                             SizedBox(height: 12),
-                            // Media Social Section
                             Container(
                               width: double.infinity,
                               padding: kGlobalPadding,
@@ -1369,7 +1331,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                             ),
                       ],
 
-                      // DESKRIPSI
+                      // === DESKRIPSI ===
                       const SizedBox(height: 12,),
                       Container(
                         width: double.infinity,
@@ -1397,7 +1359,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                         children: <Widget>[
                                           Image.network(
                                             detailvote['icon_penyelenggara'],
-                                            width: 80,   // atur sesuai kebutuhan
+                                            width: 80,
                                             height: 80,
                                             fit: BoxFit.contain,
                                             errorBuilder: (context, error, stackTrace) {
@@ -1411,7 +1373,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                           ),
 
                                           const SizedBox(width: 12),
-                                          //text
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1426,7 +1387,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                                 Text(
                                                   detailvote['nama_penyelenggara'],
                                                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                                  softWrap: true,          // biar teks bisa kebungkus
+                                                  softWrap: true,
                                                   overflow: TextOverflow.visible, 
                                                 ),
                                               ],
@@ -1434,59 +1395,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                           ),
                                         ],
                                       ),
-
-                                      // const SizedBox(height: 40,),
-                                      // Text(
-                                      //   "Deskripsi",
-                                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                                      // ),
-
-                                      // const SizedBox(height: 12,),
-                                      // Container(
-                                      //   color: Colors.white,
-                                      //   child: Padding(
-                                      //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                      //     child: Column(
-                                      //       children: [
-                                      //         Column(
-                                      //           crossAxisAlignment: CrossAxisAlignment.start,
-                                      //           mainAxisAlignment: MainAxisAlignment.center,
-                                      //           children: [
-                                      //             if (detailvote['merchant_description'] != null) ... [
-                                      //               Html(
-                                      //                 data: detailvote['merchant_description'],
-                                      //                 style: {
-                                      //                   "p": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                   "body": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                 },
-                                      //               ),
-                                      //               SizedBox(height: 12,)
-                                      //             ],
-                                      //             Html(
-                                      //               data: detailvote['deskripsi'],
-                                      //                 style: {
-                                      //                   "p": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                   "body": Style(
-                                      //                     margin: Margins.zero,
-                                      //                     padding: HtmlPaddings.zero,
-                                      //                   ),
-                                      //                 },
-                                      //             )
-                                      //           ],
-                                      //         ),
-                                      //       ],
-                                      //     ),
-                                      //   ) 
-                                      // ),
 
                                       const SizedBox(height: 20,),
                                       Text(
@@ -1512,7 +1420,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                                   ),
 
                                                   const SizedBox(width: 12),
-                                                  //text
                                                   Expanded(
                                                     child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1542,7 +1449,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                                   ),
 
                                                   const SizedBox(width: 12),
-                                                  //text
                                                   Expanded(
                                                     child: RichText(
                                                       text: TextSpan(
@@ -1579,100 +1485,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                                           ),
                                         ) 
                                       ),
-
-                                      // const SizedBox(height: 20,),
-                                      // Text(
-                                      //   "Lokasi",
-                                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                                      // ),
-
-                                      // const SizedBox(height: 12,),
-                                      // Container(
-                                      //   color: Colors.white,
-                                      //   child: Padding(
-                                      //     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                                      //     child: Column(
-                                      //       children: [
-                                      //         Row(
-                                      //           crossAxisAlignment: CrossAxisAlignment.center,
-                                      //           children: <Widget>[
-                                      //             SvgPicture.network(
-                                      //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                      //               width: 30,
-                                      //               height: 30,
-                                      //               fit: BoxFit.contain,
-                                      //             ),
-
-                                      //             const SizedBox(width: 12),
-                                      //             //text
-                                      //             Expanded(
-                                      //               child: Column(
-                                      //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                      //                 mainAxisAlignment: MainAxisAlignment.center,
-                                      //                 children: [
-                                      //                   Text(
-                                      //                     detailvote['lokasi_alamat'] ?? '-',
-                                      //                     style: TextStyle(
-                                      //                       color: Colors.black,
-                                      //                     ),
-                                      //                   ),
-                                      //                 ],
-                                      //               ),
-                                      //             ),
-                                      //           ],
-                                      //         ),
-
-                                      //       ],
-                                      //     ),
-                                      //   ) 
-                                      // ),
-
-                                      // const SizedBox(height: 20,),
-                                      // Text(
-                                      //   "Venue",
-                                      //   style: TextStyle(fontWeight: FontWeight.bold),
-                                      // ),
-
-                                      // const SizedBox(height: 12,),
-                                      // Container(
-                                      //   color: Colors.white,
-                                      //   child: Padding(
-                                      //     padding: EdgeInsetsGeometry.symmetric(vertical: 0, horizontal: 20),
-                                      //     child: Column(
-                                      //       children: [
-                                      //         Row(
-                                      //           crossAxisAlignment: CrossAxisAlignment.center,
-                                      //           children: <Widget>[
-                                      //             SvgPicture.network(
-                                      //               "$baseUrl/image/icon-vote/$themeName/Locations.svg",
-                                      //               width: 30,
-                                      //               height: 30,
-                                      //               fit: BoxFit.contain,
-                                      //             ),
-
-                                      //             const SizedBox(width: 12),
-                                      //             //text
-                                      //             Expanded(
-                                      //               child: Column(
-                                      //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                      //                 mainAxisAlignment: MainAxisAlignment.center,
-                                      //                 children: [
-                                      //                   Text(
-                                      //                     detailvote['lokasi_nama_tempat'],
-                                      //                     style: TextStyle(
-                                      //                       color: Colors.black,
-                                      //                     ),
-                                      //                   ),
-                                      //                 ],
-                                      //               ),
-                                      //             ),
-                                      //           ],
-                                      //         ),
-
-                                      //       ],
-                                      //     ),
-                                      //   ) 
-                                      // ),
                                     ],
                                   ),
                                 ) 
@@ -1728,12 +1540,12 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // kiri
+              
               isTutup || isBeforeOpen || widget.close_payment == '1' || remaining.inSeconds == 0
               ? SizedBox.shrink()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // penting biar nggak overflow
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(totalHargaText!),
                     Text(
@@ -1771,8 +1583,11 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                     RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-                onPressed: (harga != 0 && totalHarga == 0) || counts == 0 || widget.close_payment == '1' || remaining.inSeconds == 0
-                ? null 
+                onPressed: (belumPilihPaket ||
+                    paketBerbayarTapiHargaNol ||
+                    widget.close_payment == '1' ||
+                    remaining.inSeconds == 0)
+                ? null
                 : () async {
                   if (isButtonClicked) return;
 
@@ -1891,7 +1706,6 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               } else {
-                // fallback ke browser
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },

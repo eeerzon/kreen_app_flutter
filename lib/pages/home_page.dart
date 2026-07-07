@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:kreen_app_flutter/helper/get_geo_location.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/modal/checking_user_modal.dart';
 import 'package:kreen_app_flutter/pages/content_home/explore_page.dart';
 import 'package:kreen_app_flutter/pages/content_home/home_content.dart';
@@ -39,15 +39,15 @@ class _HomePageState extends State<HomePage> {
 
   int _selectedIndex = 0;
   int _exploreTabIndex = 0;
-  // daftar halaman
+  
   List<Widget> get _pages => [
     HomeContent(
       onSeeMoreVote: () => _openExplore(1),
       onSeeMoreEvent: () => _openExplore(2),
-    ),   // bikin widget khusus isi Home
-    ExplorePage(initialTab: _exploreTabIndex),   // halaman Eksplore
-    const OrderPage(),    // halaman Pesanan
-    const InfoPage(),      // halaman Info
+    ),
+    ExplorePage(initialTab: _exploreTabIndex),
+    const OrderPage(),
+    const InfoPage(),
   ];
 
   final prefs = FlutterSecureStorage();
@@ -62,7 +62,6 @@ class _HomePageState extends State<HomePage> {
       await Future.delayed(const Duration(milliseconds: 300));
     
       if (!mounted) return;
-      // deepLinkHandler.processPendingLink();
       
       await _getBahasa();
       await _checkToken();
@@ -73,14 +72,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _getBahasa() async {
     if (!mounted) return;
     final templangCode = await StorageService.getLanguage();
-
-    // pastikan di-set dulu
+    
     if (!mounted) return;
     setState(() {
       langCode = templangCode;
     });
-
-    // baru load content
+    
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     if (!mounted) return;
@@ -140,7 +137,7 @@ class _HomePageState extends State<HomePage> {
           return false;
         }
 
-        return true; // keluar dari aplikasi
+        return true;
       },
       child: Scaffold(
         backgroundColor: Colors.grey[200],
@@ -180,7 +177,6 @@ class _HomePageState extends State<HomePage> {
           builder: (context, value, _) {
 
             if (mounted) {
-              // Hanya reload kalau bahasa berubah
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) _getBahasa();
               });
@@ -238,8 +234,8 @@ class _HomePageState extends State<HomePage> {
   
   void _openExplore(int tabIndex) {
     setState(() {
-      _exploreTabIndex = tabIndex; // vote / event
-      _selectedIndex = 1;          // tab Explore
+      _exploreTabIndex = tabIndex;
+      _selectedIndex = 1;
     });
   }
 
@@ -260,8 +256,7 @@ class _HomePageState extends State<HomePage> {
       if (result == true) {
         await _checkToken();
       }
-
-      // setelah OrderPage di-pop
+      
       setState(() {
         _selectedIndex = previousIndex;
       });

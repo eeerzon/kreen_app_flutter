@@ -9,7 +9,6 @@ plugins {
 }
 
 android {
-    // namespace = "com.example.kreenappflutter"
     namespace = "com.kreen.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -35,7 +34,6 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        // applicationId = "com.example.kreenappflutter"
         applicationId = "com.kreen.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -46,9 +44,9 @@ android {
         versionName = flutter.versionName
         
         //default set ke dev
-        manifestPlaceholders["appHost"] = "dev.kreenconnect.com"
+        // manifestPlaceholders["appHost"] = "dev.kreenconnect.com"
         // manifestPlaceholders["appHost"] = "kreenconnect.com"
-        // manifestPlaceholders["appHost"] = "bc.kreenconnect.com"
+        manifestPlaceholders["appHost"] = "bc.kreenconnect.com"
     }
 
     flavorDimensions += "env"
@@ -79,11 +77,6 @@ android {
           isMinifyEnabled = true
           isShrinkResources = true
           signingConfig = signingConfigs.getByName("release")
-
-          // proguardFiles(
-          //     getDefaultProguardFile("proguard-android-optimize.txt"),
-          //     "proguard-rules.pro"
-          // )
         }
     }
 

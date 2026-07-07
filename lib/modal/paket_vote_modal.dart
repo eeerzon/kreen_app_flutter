@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
@@ -103,7 +103,6 @@ class PaketVoteModal {
                   isLoading = false;
                   
                   if (selectedPaketId != null) {
-                    // cari di paketTerbaik
                     for (int i = 0; i < paketTerbaik.length; i++) {
                       if (paketTerbaik[i]['id'] == selectedPaketId) {
                         selectedIndex = i;
@@ -115,8 +114,7 @@ class PaketVoteModal {
                         break;
                       }
                     }
-
-                    // cari di paketLainnya jika tidak ketemu
+                    
                     if (selectedVotes == null) {
                       for (int i = 0; i < paketLainnya.length; i++) {
                         if (paketLainnya[i]['id'] == selectedPaketId) {
@@ -143,7 +141,6 @@ class PaketVoteModal {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const SizedBox(height: 20,),
-                      // Header
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -169,7 +166,6 @@ class PaketVoteModal {
                         height: MediaQuery.of(context).size.height * 0.5,
                         child: ListView(
                           children: [
-                            // SECTION 1 — Paket Terbaik
                             if (paketTerbaik.isNotEmpty) ...[
                               Text(
                                 bahasa["paket_terbaik"] ?? "", //"Paket Terbaik buat kamu",
@@ -187,7 +183,6 @@ class PaketVoteModal {
                                 final hargaAkhirAsli = double.tryParse(item['harga_akhir_asli'].toString());
                                 final diskon = int.tryParse(item['diskon_persen']?.toString() ?? '0') ?? 0;
 
-                                // final isSelected = selectedIndex == idx;
                                 final isSelected = selectedPaketId != null
                                   ? selectedPaketId == item['id']
                                   : selectedIndex == idx;
@@ -218,7 +213,7 @@ class PaketVoteModal {
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          // kiri
+                                          
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
@@ -241,7 +236,7 @@ class PaketVoteModal {
                                                 ),
                                             ],
                                           ),
-                                          // kanan
+                                          
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.end,
                                             children: [
@@ -272,8 +267,7 @@ class PaketVoteModal {
                               }),
                               const SizedBox(height: 16),
                             ],
-
-                            // SECTION 2 — Paket Lainnya
+                            
                             if (paketLainnya.isNotEmpty) ...[
                               Text(
                                 bahasa["paket_lainnya"] ?? "", //"Paket Lainnya",
@@ -289,7 +283,6 @@ class PaketVoteModal {
                                 final harga = double.tryParse(item['harga_akhir'].toString()) ?? 0;
                                 final hargaAsli = double.tryParse(item['harga_akhir_asli'].toString()) ?? 0;
 
-                                // final isSelected = selectedIndex == idx;
                                 final isSelected = selectedPaketId != null
                                   ? selectedPaketId == item['id']
                                   : selectedIndex == idx;
@@ -348,8 +341,6 @@ class PaketVoteModal {
                       ),
 
                       const SizedBox(height: 16),
-
-                      // Tombol
                       Row(
                         children: [
                           Expanded(

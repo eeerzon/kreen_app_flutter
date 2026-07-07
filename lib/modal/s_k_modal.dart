@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 
 class SKModal {
   static Future<void> show(BuildContext context, String snk, String snkText) async {
@@ -22,7 +22,7 @@ class SKModal {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    //header
+                    
                     SizedBox(height: 20,),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -43,8 +43,6 @@ class SKModal {
                     const Divider(),
 
                     const SizedBox(height: 8),
-
-                    //isi konten
                     Html(
                       data: snk,
                     ),

@@ -1,7 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use, dead_code
 
 import 'package:flutter/material.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
 
 class ModalFilterVote {
@@ -81,12 +81,8 @@ class ModalFilterVote {
           builder: (context, setState) {
 
             final bool hasChanged = hasChangedFuction(paramTime, paramPrice);
-
-            // Reset visible jika: ada filter aktif awal ATAU ada filter dipilih sekarang
+            
             final bool showReset = paramCount > 0;
-
-            // Apply bisa diklik jika ada perubahan
-            // Kasus khusus: jika semua di-reset (paramCount==0) dari kondisi ada filter → tetap bisa apply
             bool canApply = hasChanged && !isSubmitting;
 
             return SafeArea(
@@ -95,8 +91,7 @@ class ModalFilterVote {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
-                    // header
+                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -110,8 +105,7 @@ class ModalFilterVote {
                             const Text('Filter', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           ],
                         ),
-
-                        // Reset hanya tampil jika ada filter terpilih
+                        
                         if (showReset)
                           TextButton(
                             onPressed: () {
@@ -194,8 +188,6 @@ class ModalFilterVote {
                     ),
 
                     const SizedBox(height: 20),
-
-                    // tombol apply
                     SizedBox(
                       width: double.infinity,
                       height: 48,

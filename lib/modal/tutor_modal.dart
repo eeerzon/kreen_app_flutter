@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 
 class TutorModal {
 
@@ -22,7 +22,7 @@ class TutorModal {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    //header
+                    
                     SizedBox(height: 20,),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -43,8 +43,6 @@ class TutorModal {
                     const Divider(),
 
                     const SizedBox(height: 8),
-
-                    //isi konten
                     Html(
                       data: tutorialVote,
                     ),

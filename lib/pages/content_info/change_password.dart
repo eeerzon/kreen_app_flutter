@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/loading_page.dart';
 import 'package:kreen_app_flutter/helper/session_manager.dart';
@@ -266,25 +266,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                             )
                           ),
                         ),
-                        // if (errorCode == 500) ... [
-                        //   Padding(
-                        //     padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                        //     child: Text(
-                        //       errorMessage500,
-                        //       style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        //     ),
-                        //   ),
-                        // ]
-                        // else if (errorCode == 422) ... [
-                        //   if (errorMessage['password'] != null)
-                        //     Padding(
-                        //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                        //       child: Text(
-                        //         newPasswordError ?? '',
-                        //         style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        //       ),
-                        //     ),
-                        // ],
 
                         if (newPasswordError != null) ... [
                           Padding(
@@ -347,25 +328,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                             )
                           ),
                         ),
-                        // if (errorCode == 500) ... [
-                        //   Padding(
-                        //     padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                        //     child: Text(
-                        //       errorMessage500,
-                        //       style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        //     ),
-                        //   ),
-                        // ]
-                        // else if (errorCode == 422) ...[
-                        //   if (confirmPasswordError != null)
-                        //     Padding(
-                        //       padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
-                        //       child: Text(
-                        //         confirmPasswordError ?? '',
-                        //         style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        //       ),
-                        //     )
-                        // ],
 
                         if (confirmPasswordError != null) ... [
                           Padding(
@@ -424,7 +386,6 @@ class _ChangePasswordState extends State<ChangePassword> {
     final normalized = message.toLowerCase().trim().replaceAll(RegExp(r'\.+$'), '');
 
     if (langCode == 'id') {
-      // Sort by key length descending — lebih spesifik duluan
       final sortedEntries = idNormalizationMap.entries.toList()
         ..sort((a, b) => b.key.length.compareTo(a.key.length));
 
@@ -436,8 +397,7 @@ class _ChangePasswordState extends State<ChangePassword> {
       }
       return message;
     }
-
-    // Sort by key length descending — more specific first
+    
     final sortedEntries = errorTranslationMap.entries.toList()
       ..sort((a, b) => b.key.length.compareTo(a.key.length));
 
@@ -525,8 +485,6 @@ class _ChangePasswordState extends State<ChangePassword> {
               ),
 
               const SizedBox(height: 20),
-
-              /// BUTTON LOGIN
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -551,8 +509,6 @@ class _ChangePasswordState extends State<ChangePassword> {
               ),
 
               const SizedBox(height: 10),
-
-              /// BUTTON LOGIN SEBAGAI TAMU
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -598,11 +554,6 @@ class _ChangePasswordState extends State<ChangePassword> {
       confirmPasswordErrorTemp = null;
 
       if (data is Map) {
-        // final errorMessages = data.values
-        //     .whereType<List>()
-        //     .expand((e) => e)
-        //     .whereType<String>()
-        //     .toList();
 
         final errorMessages = data.values
           .whereType<List>()
@@ -680,12 +631,10 @@ class _ChangePasswordState extends State<ChangePassword> {
       if (response['rc'] == 500 && response['message'].toString().toLowerCase().contains('saat ini salah')) {
         setState(() {
           currentPasswordError = translateError(response['message'].toString(), langCode);
-          // errorMessage500 = translated;
         });
       } else if (response['rc'] == 500 && response['message'].toString().toLowerCase().contains('saat ini tidak sesuai')) {
         setState(() {
           currentPasswordError = translateError(response['message'].toString(), langCode);
-          // errorMessage500 = translated;
         });
       }
       

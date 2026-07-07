@@ -3,7 +3,7 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/order/order_event_paid.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -11,804 +11,811 @@ import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class CheckPaymentModal {
+  // ─── VOTE ───────────────────────────────────────────────────────────────────
   static Future<bool?> show(BuildContext context, String idOrder) async {
-    final formatter = NumberFormat.decimalPattern("en_US");
+    final langCode = await StorageService.getLanguage();
+    final bahasa = await LangService.getJsonData(langCode!, "bahasa");
 
-    Map<String, dynamic> voteOrder = {};
-    List<dynamic> voteOrderDetail = [];
-    List<dynamic> voteFinalis = [];
-    Map<String, dynamic> vote = {};
-    String? statusOrder;
-
-    String? langCode;
-    Map<String, dynamic> bahasa = {};
-    Future<void> getBahasa() async {
-      langCode = await StorageService.getLanguage();
-
-      bahasa = await LangService.getJsonData(langCode!, "bahasa");
-    }
-
-    bool isRedirecting = false;
-    bool redirected = false;
-
-    bool isExpired = false;
-
-    Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
-      if (resultOrder != null) {
-        if (resultOrder['rc'] == 200) {
-          final tempOrder = resultOrder['data'] ?? {};
-
-          voteOrder = tempOrder['vote_order'] ?? {};
-          voteOrderDetail = tempOrder['vote_order_detail'] ?? [];
-          voteFinalis = tempOrder['vote_finalis'] ?? [];
-          vote = tempOrder['vote'] ?? {};
-
-          if (voteOrder['order_status'] == '0'){
-            statusOrder = bahasa['status_order_0']; //gagal
-          } else if (voteOrder['order_status'] == '1'){
-            statusOrder = bahasa['status_order_1']; // selesai
-          } else if (voteOrder['order_status'] == '2'){
-            statusOrder = bahasa['status_order_2']; // batal
-          } else if (voteOrder['order_status'] == '3'){
-            statusOrder = bahasa['status_order_3']; // menunggu
-          } else if (voteOrder['order_status'] == '4'){
-            statusOrder = bahasa['status_order_4']; // refund
-          } else if (voteOrder['order_status'] == '20'){
-            statusOrder = bahasa['status_order_20']; // expired
-          } else if (voteOrder['order_status'] == '404'){
-            statusOrder = bahasa['status_order_404']; // hidden
-          }
-
-          if (voteOrder['order_status'] == '20' || voteOrder['order_status'] == '2') {
-            isExpired = true;
-          }
-        } else {
-          AwesomeDialog(
-            context: context,
-            dialogType: DialogType.noHeader,
-            animType: AnimType.topSlide,
-            title: bahasa['maaf'],
-            desc: bahasa['error'],
-            btnOkOnPress: () {},
-            btnOkColor: Colors.red,
-            buttonsTextStyle: TextStyle(color: Colors.white),
-            headerAnimationLoop: false,
-            dismissOnTouchOutside: true,
-            showCloseIcon: true,
-          ).show();
-        }
-      }
-    }
-
-    await getBahasa();
-    await loadOrder();
-
-    String? currencyRegion;
-    if (voteOrder['order_region'] == "EU"){
-      currencyRegion = 'EUR';
-    } else if (voteOrder['order_region'] == "ID"){
-      currencyRegion = 'IDR';
-    } else if (voteOrder['order_region'] == "PH"){
-      currencyRegion = 'PHP';
-    } else if (voteOrder['order_region'] == "SG"){
-      currencyRegion = 'SGD';
-    } else if (voteOrder['order_region'] == "US"){
-      currencyRegion = 'USD';
-    } else if (voteOrder['order_region'] == "TH"){
-      currencyRegion = 'THB';
-    } else if (voteOrder['order_region'] == "MY"){
-      currencyRegion = 'MYR';
-    } else if (voteOrder['order_region'] == "VN"){
-      currencyRegion = 'VND';
-    }
-
-    num sumAmount = voteOrder['total_amount'] * voteOrder['currency_value_region'];
-    num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5)); // konversi ke double (num())
-    if (currencyRegion == "IDR") {
-      totalAmountPg = totalAmountPg.ceil();
-    } else {
-      totalAmountPg = (totalAmountPg * 100).ceil() / 100;
-    }
-
-    Future<void> handleRedirectIfNeeded(BuildContext context, StateSetter setState) async {
-      
-      if (voteOrder['order_status'] == '1' && !isRedirecting) {
-        setState(() {
-          isRedirecting = true;
-        });
-
-        int countdown = 3;
-
-        late AwesomeDialog dialog;
-        late void Function(void Function()) dialogSetState;
-
-        dialog = AwesomeDialog(
-          context: context,
-          dialogType: DialogType.noHeader,
-          animType: AnimType.scale,
-          dismissOnTouchOutside: false,
-          dismissOnBackKeyPress: false,
-          body: StatefulBuilder(
-            builder: (context, setDialogState) {
-              dialogSetState = setDialogState;
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              );
-            },
-          ),
-        )..show();
-
-        for (int i = countdown; i > 0; i--) {
-          await Future.delayed(const Duration(seconds: 1));
-          countdown--;
-
-          if (context.mounted) {
-            dialogSetState(() {});
-          }
-        }
-
-        if (!context.mounted) return;
-
-        dialog.dismiss();
-
-        redirected = true;
-
-        Navigator.of(context).pop(true);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AddSupportPage(
-              id_vote: vote['id_vote'],
-              id_order: voteOrder['id_order'],
-              nama: voteOrder['voter_name'],
-            ),
-          ),
-        );
-      }
-
-      // ← Handle expired redirect
-      if ((voteOrder['order_status'] == '20' || voteOrder['order_status'] == '2') && !isRedirecting) {
-        setState(() => isRedirecting = true);
-
-        int countdown = 2;
-        late AwesomeDialog dialog;
-        late void Function(void Function()) dialogSetState;
-
-        dialog = AwesomeDialog(
-          context: context,
-          dialogType: DialogType.noHeader,
-          animType: AnimType.scale,
-          dismissOnTouchOutside: false,
-          dismissOnBackKeyPress: false,
-          body: StatefulBuilder(
-            builder: (context, setDialogState) {
-              dialogSetState = setDialogState;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  const CircularProgressIndicator(color: Colors.red),
-                  const SizedBox(height: 12),
-                  // Text(
-                  //   bahasa['link_kadaluarsa'] ?? 'Pembayaran Kadaluarsa',
-                  //   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  //   textAlign: TextAlign.center,
-                  // ),
-                  // const SizedBox(height: 8),
-                  // Text(
-                  //   "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                  //   style: const TextStyle(fontWeight: FontWeight.bold),
-                  // ),
-                ],
-              );
-            },
-          ),
-        )..show();
-
-        for (int i = countdown; i > 0; i--) {
-          await Future.delayed(const Duration(seconds: 1));
-          countdown--;
-          if (context.mounted) dialogSetState(() {});
-        }
-
-        if (!context.mounted) return;
-        dialog.dismiss();
-
-        // Pop modal dengan signal null = expired
-        Navigator.of(context).pop(null);
-      }
-    }
-
-    bool handlerCalled = false;
-
-    await showModalBottomSheet<bool?>(
+    return await showModalBottomSheet<bool?>(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (handlerCalled) return;
-              handlerCalled = true;
-              handleRedirectIfNeeded(context, setState);
-            });
-            
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: kGlobalPadding,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 16),
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          bahasa['info_pesanan'],
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-
-                    // Konten
-                    Table(
-                      columnWidths: {
-                        0: IntrinsicColumnWidth(),
-                        1: FixedColumnWidth(20),
-                        2: FlexColumnWidth(),
-                      },
-                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                      children: [
-                        TableRow(children: [
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text('Event'),
-                          ),
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text(' :  '),
-                          ),
-                          Text(
-                            vote['judul_vote'] ?? '-',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ]),
-                        const TableRow(children: [
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                        ]),
-                        TableRow(children: [
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text(bahasa['finalis']),
-                          ),
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text(' :  '),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: voteOrderDetail.map((detail) {
-                              // cari finalis yang sesuai id_finalis-nya
-                              final finalis = voteFinalis.firstWhere(
-                                (f) => f['id_finalis'] == detail['id_finalis'],
-                                orElse: () => {'nama_finalis': bahasa['no_data']},
-                              );
-
-                              return Text(
-                                detail['qty'] > 1
-                                  ? "${finalis['nama_finalis']} (${detail['qty']} ${bahasa['text_votes']})"
-                                  : "- ${finalis['nama_finalis']} (${detail['qty']} ${bahasa['text_vote']})",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              );
-                            }).toList(),
-                          ),
-                        ]),
-                        const TableRow(children: [
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                        ]),
-                        TableRow(children: [
-                          Text(bahasa['total_bayar']),
-                          const Text(' :  '),
-                          Text(
-                            voteOrder.isNotEmpty
-                                ? "$currencyRegion ${formatter.format(totalAmountPg)}"
-                                : '-',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ]),
-                        const TableRow(children: [
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                        ]),
-                        TableRow(children: [
-                          Text(bahasa['status_pembayaran']),
-                          const Text(' :  '),
-                          Text(
-                            statusOrder ?? '-',
-                            style: TextStyle(
-                              color: (voteOrder['order_status'] == '0')
-                                      ? Colors.red
-                                      : (voteOrder['order_status'] == '1')
-                                        ? Colors.green
-                                        : (voteOrder['order_status'] == '2') 
-                                          ? Colors.red
-                                          : (voteOrder['order_status'] == '3') 
-                                            ? Colors.orange
-                                            : (voteOrder['order_status'] == '4')
-                                              ? Colors.red
-                                              : (voteOrder['order_status'] == '20')
-                                                ? Colors.red
-                                                : Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ]),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Tombol refresh status
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.refresh, color: Colors.white),
-                      label: Text(
-                        isRedirecting
-                          ? bahasa['redirecting']
-                          : bahasa['check_status'],
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: isRedirecting
-                      ? null 
-                      : () async {
-                        await loadOrder();
-                        setState(() {});
-
-                        await handleRedirectIfNeeded(context, setState);
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      builder: (_) => _VotePaymentModalContent(
+        idOrder: idOrder,
+        langCode: langCode,
+        bahasa: bahasa,
+      ),
     );
-    
-    if (isExpired) return null;
-    return redirected;
   }
 
-
+  // ─── EVENT ──────────────────────────────────────────────────────────────────
   static Future<bool?> showEvent(BuildContext context, String idOrder) async {
-    final formatter = NumberFormat.decimalPattern("en_US");
+    final langCode = await StorageService.getLanguage();
+    final bahasa = await LangService.getJsonData(langCode!, "bahasa");
 
-    Map<String, dynamic> eventOrder = {};
-    List<dynamic> eventOrderDetail = [];
-    List<dynamic> eventTiket = [];
-    Map<String, dynamic> event = {};
-    String? statusOrder;
-
-    String? langCode;
-    Map<String, dynamic> bahasa = {};
-    Future<void> getBahasa() async {
-      langCode = await StorageService.getLanguage();
-
-      bahasa = await LangService.getJsonData(langCode!, "bahasa");
-    }
-
-    bool isRedirecting = false;
-    bool redirected = false;
-
-    bool isExpired = false;
-
-    Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
-      final tempOrder = resultOrder?['data'] ?? {};
-
-      eventOrder = tempOrder['event_order'] ?? {};
-      eventOrderDetail = tempOrder['event_order_detail'] ?? [];
-      eventTiket = tempOrder['event_ticket'] ?? [];
-      event = tempOrder['event'] ?? {};
-
-      if (eventOrder['order_status'] == '0'){
-        statusOrder = bahasa['status_order_0'];
-      } else if (eventOrder['order_status'] == '1'){
-        statusOrder = bahasa['status_order_1'];
-      } else if (eventOrder['order_status'] == '2'){
-        statusOrder = bahasa['status_order_2'];
-      } else if (eventOrder['order_status'] == '3'){
-        statusOrder = bahasa['status_order_3'];
-      } else if (eventOrder['order_status'] == '4'){
-        statusOrder = bahasa['status_order_4'];
-      } else if (eventOrder['order_status'] == '20'){
-        statusOrder = bahasa['status_order_20'];
-      } else if (eventOrder['order_status'] == '404'){
-        statusOrder = bahasa['status_order_404'];
-      }
-
-      if (eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') {
-        isExpired = true;
-      }
-    }
-
-    await getBahasa();
-    await loadOrder();
-
-    String? currencyRegion;
-    if (eventOrder['order_region'] == "EU"){
-      currencyRegion = 'EUR';
-    } else if (eventOrder['order_region'] == "ID"){
-      currencyRegion = 'IDR';
-    } else if (eventOrder['order_region'] == "PH"){
-      currencyRegion = 'PHP';
-    } else if (eventOrder['order_region'] == "SG"){
-      currencyRegion = 'SGD';
-    } else if (eventOrder['order_region'] == "US"){
-      currencyRegion = 'USD';
-    } else if (eventOrder['order_region'] == "TH"){
-      currencyRegion = 'THB';
-    } else if (eventOrder['order_region'] == "MY"){
-      currencyRegion = 'MYR';
-    } else if (eventOrder['order_region'] == "VN"){
-      currencyRegion = 'VND';
-    }
-
-    num sumAmount = (eventOrder['amount'] + eventOrder['fees']) * eventOrder['currency_value_region'];
-    num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5)); // konversi ke double (num())
-    if (currencyRegion == "IDR") {
-      totalAmountPg = totalAmountPg.ceil();
-    } else {
-      totalAmountPg = (totalAmountPg * 100).ceil() / 100;
-    }
-
-    Future<void> handleRedirectIfNeeded(BuildContext context, StateSetter setState) async {
-      
-      if (eventOrder['order_status'] == '1' && !isRedirecting) {
-        setState(() {
-          isRedirecting = true;
-        });
-
-        int countdown = 3;
-
-        late AwesomeDialog dialog;
-        late void Function(void Function()) dialogSetState;
-
-        dialog = AwesomeDialog(
-          context: context,
-          dialogType: DialogType.noHeader,
-          animType: AnimType.scale,
-          dismissOnTouchOutside: false,
-          dismissOnBackKeyPress: false,
-          body: StatefulBuilder(
-            builder: (context, setDialogState) {
-              dialogSetState = setDialogState;
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              );
-            },
-          ),
-        )..show();
-
-        for (int i = countdown; i > 0; i--) {
-          await Future.delayed(const Duration(seconds: 1));
-          countdown--;
-
-          if (context.mounted) {
-            dialogSetState(() {});
-          }
-        }
-
-        if (!context.mounted) return;
-
-        dialog.dismiss();
-
-        redirected = true;
-
-        Navigator.of(context).pop(true);
-
-        Navigator.pushReplacement(
-          context, 
-          MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOrder['id_order'], isSukses: true,)),
-        );
-      }
-
-      // ← Handle expired redirect
-      if ((eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') && !isRedirecting) {
-        setState(() => isRedirecting = true);
-
-        int countdown = 2;
-        late AwesomeDialog dialog;
-        late void Function(void Function()) dialogSetState;
-
-        dialog = AwesomeDialog(
-          context: context,
-          dialogType: DialogType.noHeader,
-          animType: AnimType.scale,
-          dismissOnTouchOutside: false,
-          dismissOnBackKeyPress: false,
-          body: StatefulBuilder(
-            builder: (context, setDialogState) {
-              dialogSetState = setDialogState;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 12),
-                  const CircularProgressIndicator(color: Colors.red),
-                  const SizedBox(height: 12),
-                  // Text(
-                  //   bahasa['link_kadaluarsa'] ?? 'Pembayaran Kadaluarsa',
-                  //   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  //   textAlign: TextAlign.center,
-                  // ),
-                  // const SizedBox(height: 8),
-                  // Text(
-                  //   "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                  //   style: const TextStyle(fontWeight: FontWeight.bold),
-                  // ),
-                ],
-              );
-            },
-          ),
-        )..show();
-
-        for (int i = countdown; i > 0; i--) {
-          await Future.delayed(const Duration(seconds: 1));
-          countdown--;
-          if (context.mounted) dialogSetState(() {});
-        }
-
-        if (!context.mounted) return;
-        dialog.dismiss();
-
-        // Pop modal dengan signal null = expired
-        Navigator.of(context).pop(null);
-      }
-    }
-
-    bool handlerCalled = false;
-
-    await showModalBottomSheet<bool?>(
+    return await showModalBottomSheet<bool?>(
       backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (BuildContext context) {
+      builder: (_) => _EventPaymentModalContent(
+        idOrder: idOrder,
+        langCode: langCode,
+        bahasa: bahasa,
+      ),
+    );
+  }
+}
 
-        final Map<String, Map<String, dynamic>> groupedTickets = {};
+// ─── VOTE MODAL CONTENT ───────────────────────────────────────────────────────
+class _VotePaymentModalContent extends StatefulWidget {
+  final String idOrder;
+  final String langCode;
+  final Map<String, dynamic> bahasa;
 
-        for (var detail in eventOrderDetail) {
-          final id = detail['id_event_ticket'];
-          final ticket = eventTiket.firstWhere(
-            (f) => f['id_event_ticket'] == id,
-            orElse: () => {'ticket_name': bahasa['no_data']},
-          );
+  const _VotePaymentModalContent({
+    required this.idOrder,
+    required this.langCode,
+    required this.bahasa,
+  });
 
-          if (groupedTickets.containsKey(id)) {
-            groupedTickets[id]!['qty'] += 1;
-          } else {
-            groupedTickets[id] = {
-              'ticket_name': ticket['ticket_name'],
-              'qty': 1,
-            };
-          }
-        }
-        return StatefulBuilder(
-          builder: (context, setState) {
+  @override
+  State<_VotePaymentModalContent> createState() => _VotePaymentModalContentState();
+}
 
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (handlerCalled) return;
-              handlerCalled = true;
-              handleRedirectIfNeeded(context, setState);
-            });
+class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
+  final formatter = NumberFormat.decimalPattern("en_US");
 
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: kGlobalPadding,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 16),
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          bahasa['info_pesanan'],
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
+  Map<String, dynamic> voteOrder = {};
+  List<dynamic> voteOrderDetail = [];
+  List<dynamic> voteFinalis = [];
+  Map<String, dynamic> vote = {};
+  String? statusOrder;
+  String? currencyRegion;
+  num totalAmountPg = 0;
 
-                    // Konten
-                    Table(
-                      columnWidths: {
-                        0: IntrinsicColumnWidth(),
-                        1: FixedColumnWidth(20),
-                        2: FlexColumnWidth(),
-                      },
-                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                      children: [
-                        TableRow(children: [
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text('Event'),
-                          ),
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text(' :  '),
-                          ),
-                          Text(
-                            event['event_title'] ?? '-',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ]),
-                        const TableRow(children: [
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                        ]),
-                        TableRow(children: [
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text(bahasa['tiket']),
-                          ),
-                          TableCell(
-                            verticalAlignment: TableCellVerticalAlignment.top,
-                            child: Text(' :  '),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: groupedTickets.values.map((tiket) {
-                              return Text(
-                                "- ${tiket['ticket_name']} ${tiket['qty']} x",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              );
-                            }).toList(),
-                          ),
-                        ]),
-                        const TableRow(children: [
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                        ]),
-                        TableRow(children: [
-                          Text(bahasa['total_bayar']),
-                          const Text(' :  '),
-                          Text(
-                            eventOrder.isNotEmpty
-                                ? "$currencyRegion ${formatter.format(totalAmountPg)}"
-                                : '-',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ]),
-                        const TableRow(children: [
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                          SizedBox(height: 8),
-                        ]),
-                        TableRow(children: [
-                          Text(bahasa['status_pembayaran']),
-                          const Text(' :  '),
-                          Text(
-                            statusOrder ?? '-',
-                            style: TextStyle(
-                              color: (eventOrder['order_status'] == '0')
-                                      ? Colors.red
-                                      : (eventOrder['order_status'] == '1')
-                                        ? Colors.green
-                                        : (eventOrder['order_status'] == '2') 
-                                          ? Colors.red
-                                          : (eventOrder['order_status'] == '3') 
-                                            ? Colors.orange
-                                            : (eventOrder['order_status'] == '4')
-                                              ? Colors.red
-                                              : (eventOrder['order_status'] == '20')
-                                                ? Colors.red
-                                                : Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ]),
-                      ],
-                    ),
+  bool isLoading = true;
+  bool isRedirecting = false;
+  bool isCheckingPayment = false;
+  bool isExpired = false;
+  bool redirected = false;
+  bool handlerCalled = false;
 
-                    const SizedBox(height: 24),
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadOrder();
+      if (mounted) {
+        setState(() => isLoading = false);
+        _handleRedirectIfNeeded();
+      }
+    });
+  }
 
-                    // Tombol refresh status
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.refresh, color: Colors.white),
-                      label: Text(
-                        isRedirecting
-                          ? bahasa['redirecting']
-                          : bahasa['check_status'],
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: isRedirecting
-                      ? null 
-                      : () async {
-                        await loadOrder();
-                        setState(() {});
-                        await handleRedirectIfNeeded(context, setState);
-                      },
-                    ),
+  Future<void> _loadOrder() async {
+    final resultOrder = await ApiService.get(
+      "/order/vote/${widget.idOrder}",
+      xLanguage: widget.langCode,
+    );
 
-                    const SizedBox(height: 24),
-                  ],
+    if (resultOrder != null && resultOrder['rc'] == 200) {
+      final tempOrder = resultOrder['data'] ?? {};
+      voteOrder = tempOrder['vote_order'] ?? {};
+      voteOrderDetail = tempOrder['vote_order_detail'] ?? [];
+      voteFinalis = tempOrder['vote_finalis'] ?? [];
+      vote = tempOrder['vote'] ?? {};
+
+      _setStatusOrder();
+      _setCurrency();
+      _calcTotal();
+
+      if (voteOrder['order_status'] == '20' || voteOrder['order_status'] == '2') {
+        isExpired = true;
+      }
+    } else {
+      if (mounted) {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.noHeader,
+          animType: AnimType.topSlide,
+          title: widget.bahasa['maaf'],
+          desc: widget.bahasa['error'],
+          btnOkOnPress: () {},
+          btnOkColor: Colors.red,
+          buttonsTextStyle: const TextStyle(color: Colors.white),
+          headerAnimationLoop: false,
+          dismissOnTouchOutside: true,
+          showCloseIcon: true,
+        ).show();
+      }
+    }
+  }
+
+  void _setStatusOrder() {
+    statusOrder = {
+      '0': widget.bahasa['status_order_0'],
+      '1': widget.bahasa['status_order_1'],
+      '2': widget.bahasa['status_order_2'],
+      '3': widget.bahasa['status_order_3'],
+      '4': widget.bahasa['status_order_4'],
+      '20': widget.bahasa['status_order_20'],
+      '404': widget.bahasa['status_order_404'],
+    }[voteOrder['order_status']];
+  }
+
+  void _setCurrency() {
+    currencyRegion = {
+      'EU': 'EUR', 
+      'ID': 'IDR', 
+      'PH': 'PHP',
+      'SG': 'SGD', 
+      'US': 'USD', 
+      'TH': 'THB',
+      'MY': 'MYR', 
+      'VN': 'VND',
+    }
+    [voteOrder['order_region']];
+  }
+
+  void _calcTotal() {
+    num sumAmount = voteOrder['total_amount'] * voteOrder['currency_value_region'];
+    totalAmountPg = num.parse(sumAmount.toStringAsFixed(5));
+    if (currencyRegion == "IDR") {
+      totalAmountPg = totalAmountPg.ceil();
+    } else {
+      totalAmountPg = (totalAmountPg * 100).ceil() / 100;
+    }
+  }
+
+  Future<void> _handleRedirectIfNeeded() async {
+    if (handlerCalled) return;
+    handlerCalled = true;
+    
+    if (voteOrder['order_status'] == '1' && !isRedirecting) {
+      setState(() => isRedirecting = true);
+
+      int countdown = 3;
+      late AwesomeDialog dialog;
+      late void Function(void Function()) dialogSetState;
+
+      dialog = AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.scale,
+        dismissOnTouchOutside: false,
+        dismissOnBackKeyPress: false,
+        body: StatefulBuilder(
+          builder: (context, setDialogState) {
+            dialogSetState = setDialogState;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  "${widget.bahasa['redirect']} $countdown ${widget.bahasa['second']}...",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ),
+              ],
             );
           },
-        );
-      },
-    );
+        ),
+      )..show();
+
+      for (int i = countdown; i > 0; i--) {
+        await Future.delayed(const Duration(seconds: 1));
+        countdown--;
+        if (mounted) dialogSetState(() {});
+      }
+
+      if (!mounted) return;
+      dialog.dismiss();
+      redirected = true;
+      Navigator.of(context).pop(true);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AddSupportPage(
+            id_vote: vote['id_vote'],
+            id_order: voteOrder['id_order'],
+            nama: voteOrder['voter_name'],
+          ),
+        ),
+      );
+      return;
+    }
     
-    if (isExpired) return null;
-    return redirected;
+    if ((voteOrder['order_status'] == '20' || voteOrder['order_status'] == '2') && !isRedirecting) {
+      setState(() => isRedirecting = true);
+
+      int countdown = 2;
+      late AwesomeDialog dialog;
+      late void Function(void Function()) dialogSetState;
+
+      dialog = AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.scale,
+        dismissOnTouchOutside: false,
+        dismissOnBackKeyPress: false,
+        body: StatefulBuilder(
+          builder: (context, setDialogState) {
+            dialogSetState = setDialogState;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                const CircularProgressIndicator(color: Colors.red),
+                const SizedBox(height: 12),
+              ],
+            );
+          },
+        ),
+      )..show();
+
+      for (int i = countdown; i > 0; i--) {
+        await Future.delayed(const Duration(seconds: 1));
+        countdown--;
+        if (mounted) dialogSetState(() {});
+      }
+
+      if (!mounted) return;
+      dialog.dismiss();
+      Navigator.of(context).pop(null);
+    }
+  }
+
+  Color _statusColor(String? status) {
+    return {
+      '0': Colors.red,
+      '1': Colors.green,
+      '2': Colors.red,
+      '3': Colors.orange,
+      '4': Colors.red,
+      '20': Colors.red,
+    }[status] ?? Colors.black;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: kGlobalPadding,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.bahasa['info_pesanan'],
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(),
+
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CircularProgressIndicator(color: Colors.red)),
+              )
+            else ...[
+              Table(
+                columnWidths: const {
+                  0: IntrinsicColumnWidth(),
+                  1: FixedColumnWidth(20),
+                  2: FlexColumnWidth(),
+                },
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                children: [
+                  TableRow(children: [
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: const Text('Event'),
+                    ),
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: const Text(' :  '),
+                    ),
+                    Text(
+                      vote['judul_vote'] ?? '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ]),
+                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                  TableRow(children: [
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: Text(widget.bahasa['finalis']),
+                    ),
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: const Text(' :  '),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: voteOrderDetail.map((detail) {
+                        final finalis = voteFinalis.firstWhere(
+                          (f) => f['id_finalis'] == detail['id_finalis'],
+                          orElse: () => {'nama_finalis': widget.bahasa['no_data']},
+                        );
+                        return Text(
+                          detail['qty'] > 1
+                            ? "${finalis['nama_finalis']} (${detail['qty']} ${widget.bahasa['text_votes']})"
+                            : "- ${finalis['nama_finalis']} (${detail['qty']} ${widget.bahasa['text_vote']})",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        );
+                      }).toList(),
+                    ),
+                  ]),
+                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                  TableRow(children: [
+                    Text(widget.bahasa['total_bayar']),
+                    const Text(' :  '),
+                    Text(
+                      voteOrder.isNotEmpty
+                        ? "$currencyRegion ${formatter.format(totalAmountPg)}"
+                        : '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ]),
+                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                  TableRow(children: [
+                    Text(widget.bahasa['status_pembayaran']),
+                    const Text(' :  '),
+                    Text(
+                      statusOrder ?? '-',
+                      style: TextStyle(
+                        color: _statusColor(voteOrder['order_status']),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: isCheckingPayment
+                    ? const SizedBox(
+                        width: 22, height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      )
+                    : const Icon(Icons.refresh, color: Colors.white),
+                  label: Text(
+                    isRedirecting
+                      ? widget.bahasa['redirecting']
+                      : isCheckingPayment
+                        ? widget.bahasa['loading']
+                        : widget.bahasa['check_status'],
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    disabledBackgroundColor: Colors.red.shade300,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 40),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: isRedirecting || isCheckingPayment
+                    ? null
+                    : () async {
+                        setState(() {
+                          isCheckingPayment = true;
+                          handlerCalled = false;
+                        });
+                        try {
+                          await _loadOrder();
+                          if (mounted) setState(() {});
+                          await _handleRedirectIfNeeded();
+                        } finally {
+                          if (mounted) setState(() => isCheckingPayment = false);
+                        }
+                      },
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── EVENT MODAL CONTENT ──────────────────────────────────────────────────────
+class _EventPaymentModalContent extends StatefulWidget {
+  final String idOrder;
+  final String langCode;
+  final Map<String, dynamic> bahasa;
+
+  const _EventPaymentModalContent({
+    required this.idOrder,
+    required this.langCode,
+    required this.bahasa,
+  });
+
+  @override
+  State<_EventPaymentModalContent> createState() => _EventPaymentModalContentState();
+}
+
+class _EventPaymentModalContentState extends State<_EventPaymentModalContent> {
+  final formatter = NumberFormat.decimalPattern("en_US");
+
+  Map<String, dynamic> eventOrder = {};
+  List<dynamic> eventOrderDetail = [];
+  List<dynamic> eventTiket = [];
+  Map<String, dynamic> event = {};
+  String? statusOrder;
+  String? currencyRegion;
+  num totalAmountPg = 0;
+  Map<String, Map<String, dynamic>> groupedTickets = {};
+
+  bool isLoading = true;
+  bool isRedirecting = false;
+  bool isCheckingPayment = false;
+  bool isExpired = false;
+  bool redirected = false;
+  bool handlerCalled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadOrder();
+      if (mounted) {
+        setState(() => isLoading = false);
+        _handleRedirectIfNeeded();
+      }
+    });
+  }
+
+  Future<void> _loadOrder() async {
+    final resultOrder = await ApiService.get(
+      "/order/event/${widget.idOrder}",
+      xLanguage: widget.langCode,
+    );
+
+    final tempOrder = resultOrder?['data'] ?? {};
+    eventOrder = tempOrder['event_order'] ?? {};
+    eventOrderDetail = tempOrder['event_order_detail'] ?? [];
+    eventTiket = tempOrder['event_ticket'] ?? [];
+    event = tempOrder['event'] ?? {};
+
+    _setStatusOrder();
+    _setCurrency();
+    _calcTotal();
+    _groupTickets();
+
+    if (eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') {
+      isExpired = true;
+    }
+  }
+
+  void _setStatusOrder() {
+    statusOrder = {
+      '0': widget.bahasa['status_order_0'],
+      '1': widget.bahasa['status_order_1'],
+      '2': widget.bahasa['status_order_2'],
+      '3': widget.bahasa['status_order_3'],
+      '4': widget.bahasa['status_order_4'],
+      '20': widget.bahasa['status_order_20'],
+      '404': widget.bahasa['status_order_404'],
+    }[eventOrder['order_status']];
+  }
+
+  void _setCurrency() {
+    currencyRegion = {
+      'EU': 'EUR', 
+      'ID': 'IDR', 
+      'PH': 'PHP',
+      'SG': 'SGD', 
+      'US': 'USD', 
+      'TH': 'THB',
+      'MY': 'MYR', 
+      'VN': 'VND',
+    }
+    [eventOrder['order_region']];
+  }
+
+  void _calcTotal() {
+    num sumAmount = (eventOrder['amount'] + eventOrder['fees']) * eventOrder['currency_value_region'];
+    totalAmountPg = num.parse(sumAmount.toStringAsFixed(5));
+    if (currencyRegion == "IDR") {
+      totalAmountPg = totalAmountPg.ceil();
+    } else {
+      totalAmountPg = (totalAmountPg * 100).ceil() / 100;
+    }
+  }
+
+  void _groupTickets() {
+    groupedTickets = {};
+    for (var detail in eventOrderDetail) {
+      final id = detail['id_event_ticket'];
+      final ticket = eventTiket.firstWhere(
+        (f) => f['id_event_ticket'] == id,
+        orElse: () => {'ticket_name': widget.bahasa['no_data']},
+      );
+      if (groupedTickets.containsKey(id)) {
+        groupedTickets[id]!['qty'] += 1;
+      } else {
+        groupedTickets[id] = {
+          'ticket_name': ticket['ticket_name'],
+          'qty': 1,
+        };
+      }
+    }
+  }
+
+  Future<void> _handleRedirectIfNeeded() async {
+    if (handlerCalled) return;
+    handlerCalled = true;
+
+    if (eventOrder['order_status'] == '1' && !isRedirecting) {
+      setState(() => isRedirecting = true);
+
+      int countdown = 3;
+      late AwesomeDialog dialog;
+      late void Function(void Function()) dialogSetState;
+
+      dialog = AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.scale,
+        dismissOnTouchOutside: false,
+        dismissOnBackKeyPress: false,
+        body: StatefulBuilder(
+          builder: (context, setDialogState) {
+            dialogSetState = setDialogState;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  "${widget.bahasa['redirect']} $countdown ${widget.bahasa['second']}...",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            );
+          },
+        ),
+      )..show();
+
+      for (int i = countdown; i > 0; i--) {
+        await Future.delayed(const Duration(seconds: 1));
+        countdown--;
+        if (mounted) dialogSetState(() {});
+      }
+
+      if (!mounted) return;
+      dialog.dismiss();
+      redirected = true;
+      Navigator.of(context).pop(true);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderEventPaid(
+            idOrder: eventOrder['id_order'],
+            isSukses: true,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if ((eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') && !isRedirecting) {
+      setState(() => isRedirecting = true);
+
+      int countdown = 2;
+      late AwesomeDialog dialog;
+      late void Function(void Function()) dialogSetState;
+
+      dialog = AwesomeDialog(
+        context: context,
+        dialogType: DialogType.noHeader,
+        animType: AnimType.scale,
+        dismissOnTouchOutside: false,
+        dismissOnBackKeyPress: false,
+        body: StatefulBuilder(
+          builder: (context, setDialogState) {
+            dialogSetState = setDialogState;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                const CircularProgressIndicator(color: Colors.red),
+                const SizedBox(height: 12),
+              ],
+            );
+          },
+        ),
+      )..show();
+
+      for (int i = countdown; i > 0; i--) {
+        await Future.delayed(const Duration(seconds: 1));
+        countdown--;
+        if (mounted) dialogSetState(() {});
+      }
+
+      if (!mounted) return;
+      dialog.dismiss();
+      Navigator.of(context).pop(null);
+    }
+  }
+
+  Color _statusColor(String? status) {
+    return {
+      '0': Colors.red,
+      '1': Colors.green,
+      '2': Colors.red,
+      '3': Colors.orange,
+      '4': Colors.red,
+      '20': Colors.red,
+    }[status] ?? Colors.black;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: kGlobalPadding,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.bahasa['info_pesanan'],
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(),
+
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CircularProgressIndicator(color: Colors.red)),
+              )
+            else ...[
+              Table(
+                columnWidths: const {
+                  0: IntrinsicColumnWidth(),
+                  1: FixedColumnWidth(20),
+                  2: FlexColumnWidth(),
+                },
+                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                children: [
+                  TableRow(children: [
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: const Text('Event'),
+                    ),
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: const Text(' :  '),
+                    ),
+                    Text(
+                      event['event_title'] ?? '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ]),
+                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                  TableRow(children: [
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: Text(widget.bahasa['tiket']),
+                    ),
+                    TableCell(
+                      verticalAlignment: TableCellVerticalAlignment.top,
+                      child: const Text(' :  '),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: groupedTickets.values.map((tiket) {
+                        return Text(
+                          "- ${tiket['ticket_name']} ${tiket['qty']} x",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        );
+                      }).toList(),
+                    ),
+                  ]),
+                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                  TableRow(children: [
+                    Text(widget.bahasa['total_bayar']),
+                    const Text(' :  '),
+                    Text(
+                      eventOrder.isNotEmpty
+                        ? "$currencyRegion ${formatter.format(totalAmountPg)}"
+                        : '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ]),
+                  const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                  TableRow(children: [
+                    Text(widget.bahasa['status_pembayaran']),
+                    const Text(' :  '),
+                    Text(
+                      statusOrder ?? '-',
+                      style: TextStyle(
+                        color: _statusColor(eventOrder['order_status']),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: isCheckingPayment
+                    ? const SizedBox(
+                        width: 22, height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      )
+                    : const Icon(Icons.refresh, color: Colors.white),
+                  label: Text(
+                    isRedirecting
+                      ? widget.bahasa['redirecting']
+                      : isCheckingPayment
+                        ? widget.bahasa['loading']
+                        : widget.bahasa['check_status'],
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    disabledBackgroundColor: Colors.red.shade300,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 40),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: isRedirecting || isCheckingPayment
+                    ? null
+                    : () async {
+                        setState(() {
+                          isCheckingPayment = true;
+                          handlerCalled = false;
+                        });
+                        try {
+                          await _loadOrder();
+                          if (mounted) setState(() {});
+                          await _handleRedirectIfNeeded();
+                        } finally {
+                          if (mounted) setState(() => isCheckingPayment = false);
+                        }
+                      },
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 }

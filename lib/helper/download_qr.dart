@@ -39,15 +39,13 @@ Future<void> downloadQrImage(
     
     Directory dir; 
     
-    if (Platform.isAndroid) { 
-      // Public Download folder 
+    if (Platform.isAndroid) {
       dir = Directory('/storage/emulated/0/Download'); 
       final outFile = File('${dir.path}/${file.uri.pathSegments.last}');
       await outFile.writeAsBytes(borderedQr);
 
       _showSnack( context, downloadScanBerhasil, ); 
-    } else { 
-      // iOS sandbox Documents 
+    } else {
       dir = await getApplicationDocumentsDirectory(); 
 
       await file.writeAsBytes(borderedQr);

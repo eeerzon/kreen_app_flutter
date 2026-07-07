@@ -107,14 +107,6 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
             SizedBox(width: 4,),
             IconButton(
               onPressed: () async {
-                // final result = await ModalFilter.show(
-                //   context,
-                //   langCode!,
-                //   paramTime,
-                //   paramPrice,
-                //   paramPage,
-                //   selectedIndex: widget.selectedIndex,
-                // );
 
                 final result = await ModalFilterVote.show(
                   context,
@@ -139,7 +131,6 @@ class _ExploreSearchBarState extends State<ExploreSearchBar> {
                 clipBehavior: Clip.none,
                 children: [
                   const Icon(Icons.filter_alt_outlined, size: 34),
-                  // Hitung total filter aktif
                   Builder(
                     builder: (context) {
                       final totalFilter = paramTime.length + paramPrice.length;

@@ -5,7 +5,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
@@ -37,12 +37,10 @@ class DeepLinkHandler {
 
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(_observer);
-
-    // Native MethodChannel — paling reliable
+    
     _methodChannel.setMethodCallHandler((call) async {
       if (call.method == 'onNewLink') {
         final url = call.arguments as String?;
-        debugPrint('=== NATIVE CHANNEL: $url ===');
         if (url != null) {
           final uri = Uri.tryParse(url);
           if (uri != null && uri != _lastProcessedUri) {
@@ -52,25 +50,20 @@ class DeepLinkHandler {
         }
       }
     });
-
-    // Ambil pending dari native
+    
     try {
       final pendingUrl = await _methodChannel.invokeMethod<String>('getPendingLink');
       if (pendingUrl != null) {
-        debugPrint('=== NATIVE PENDING: $pendingUrl ===');
         _pendingUri = Uri.tryParse(pendingUrl);
       }
     } catch (e) {
-      debugPrint('getPendingLink error: $e');
+      // debugPrint('Error ambil pending link: $e');
     }
-
-    // Stream sebagai backup
+    
     _subscribeLinkStream();
-
-    // Cold start
+    
     final initialUri = await _appLinks.getInitialLink();
     if (initialUri != null) {
-      debugPrint('Deep link cold start: $initialUri');
       _pendingUri = initialUri;
     }
   }
@@ -79,40 +72,34 @@ class DeepLinkHandler {
     _linkSubscription?.cancel();
     _linkSubscription = _appLinks.uriLinkStream.listen(
       (uri) {
-        debugPrint('=== STREAM EMIT: $uri ===');
         if (uri != _lastProcessedUri) {
           _lastProcessedUri = uri;
           _handleLink(uri);
         }
       },
       onError: (e) {
-        debugPrint('STREAM ERROR: $e — re-subscribe');
         Future.delayed(const Duration(seconds: 1), _subscribeLinkStream);
       },
       onDone: () {
-        debugPrint('STREAM DONE — re-subscribe');
         Future.delayed(const Duration(seconds: 1), _subscribeLinkStream);
       },
     );
   }
 
   void onAppResumed() {
-    debugPrint('App resumed | isNavigating: $_isNavigating');
 
     _subscribeLinkStream();
 
     if (_isNavigating || _isProcessing) {
-      debugPrint('Sedang navigasi/processing, skip onAppResumed check');
       return;
     }
 
     Future.delayed(const Duration(milliseconds: 500), () async {
-      if (_isNavigating || _isProcessing) return; // double check
+      if (_isNavigating || _isProcessing) return;
 
       try {
         final uri = await _appLinks.getLatestLink();
         if (uri != null && uri != _lastProcessedUri) {
-          debugPrint('resumed getLatestLink: $uri');
           _lastProcessedUri = uri;
           if (_pendingUri == null) {
             _handleLink(uri);
@@ -120,23 +107,20 @@ class DeepLinkHandler {
           }
         }
       } catch (e) {
-        debugPrint('getLatestLink error: $e');
+        // debugPrint('getLatestLink error: $e');
       }
 
       if (_pendingUri != null) {
         final uri = _pendingUri!;
         _pendingUri = null;
-        debugPrint('Proses pending di resumed: $uri');
         _waitAndProcess(uri);
       }
     });
   }
 
   void _handleLink(Uri uri) {
-    debugPrint('_handleLink | isNavigating: $_isNavigating | lifecycle: ${WidgetsBinding.instance.lifecycleState}');
 
     if (_isNavigating) {
-      debugPrint('Sedang navigasi, pending: $uri');
       _pendingUri = uri;
       return;
     }
@@ -146,23 +130,18 @@ class DeepLinkHandler {
 
   Future<void> _waitAndProcess(Uri uri, {int maxRetries = 30}) async {
     if (_isProcessing) {
-      debugPrint('_waitAndProcess sudah berjalan, skip: $uri');
-      _pendingUri = uri; // simpan yang terbaru
+      _pendingUri = uri;
       return;
     }
     _isProcessing = true;
-    debugPrint('_waitAndProcess START');
 
     try {
       for (int i = 0; i < maxRetries; i++) {
         final lifecycle = WidgetsBinding.instance.lifecycleState;
         final hasContext = navigatorKey.currentContext != null;
-        debugPrint('Retry $i: lifecycle=$lifecycle | hasContext=$hasContext | isNavigating=$_isNavigating');
 
         if (_isNavigating) {
-          // Kalau masih navigasi setelah 10 retry, force reset
           if (i >= 10) {
-            debugPrint('FORCE RESET isNavigating setelah $i retry');
             _isNavigating = false;
           }
           await Future.delayed(const Duration(milliseconds: 300));
@@ -171,8 +150,7 @@ class DeepLinkHandler {
 
         if (hasContext && 
             (lifecycle == AppLifecycleState.resumed || 
-            lifecycle == null)) { // null = belum ada lifecycle event, proses saja
-          debugPrint('READY di retry $i: proses uri');
+            lifecycle == null)) {
           _processUri(uri, navigatorKey.currentContext!);
           return;
         }
@@ -180,18 +158,14 @@ class DeepLinkHandler {
         await Future.delayed(const Duration(milliseconds: 300));
       }
 
-      debugPrint('TIMEOUT, fallback proses langsung');
       final ctx = navigatorKey.currentContext;
       if (ctx != null && !_isNavigating) {
         _processUri(uri, ctx);
       } else {
-        // Simpan kembali sebagai pending, akan diproses saat resumed
-        debugPrint('Simpan kembali sebagai pending');
         _pendingUri = uri;
       }
     } finally {
       _isProcessing = false;
-      debugPrint('_waitAndProcess DONE');
     }
   }
 
@@ -216,16 +190,12 @@ class DeepLinkHandler {
     final rawData = uri.queryParameters['data'];
     if (rawData == null) return;
 
-    debugPrint('Deep link rawData: $rawData');
-
     final parts = rawData.split(':');
     if (parts.length < 3) return;
 
     final lang = parts[0];
     final currency = parts[1];
     final destination = parts[2];
-
-    debugPrint('Lang: $lang | Currency: $currency | Destination: $destination');
 
     switch (destination.toLowerCase()) {
       case 'home':
@@ -249,22 +219,15 @@ class DeepLinkHandler {
   Future<bool> _resetToHome() async {
     final navigator = navigatorKey.currentState;
     if (navigator == null) {
-      debugPrint('_resetToHome: navigatorState null');
       return false;
     }
-
-    debugPrint('_resetToHome: mulai clear stack');
-
-    // Jangan await — langsung fire and forget, lalu delay
+    
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const HomePage()),
       (route) => false,
     );
-
-    // Tunggu animasi selesai + HomePage build
-    await Future.delayed(const Duration(milliseconds: 800));
     
-    debugPrint('_resetToHome: selesai, context: ${navigatorKey.currentContext != null}');
+    await Future.delayed(const Duration(milliseconds: 800));
     return navigatorKey.currentContext != null;
   }
 
@@ -272,13 +235,11 @@ class DeepLinkHandler {
     for (int i = 0; i < maxRetries; i++) {
       final ctx = navigatorKey.currentContext;
       if (ctx != null) {
-        debugPrint('_waitForContext: dapat context di retry $i');
         return ctx;
       }
-      debugPrint('_waitForContext retry $i: null');
+      
       await Future.delayed(const Duration(milliseconds: 150));
     }
-    debugPrint('_waitForContext: TIMEOUT');
     return null;
   }
 
@@ -294,8 +255,6 @@ class DeepLinkHandler {
     _isNavigating = true;
     try {
       await _resetToHome();
-    } catch (e, s) {
-      debugPrint('ERROR _navigateToHome: $e\n$s');
     } finally {
       _isNavigating = false;
       _checkPendingLink();
@@ -306,26 +265,18 @@ class DeepLinkHandler {
     if (_isNavigating) return;
     _isNavigating = true;
     try {
-      debugPrint('_resetToHome START (vote)');
       final ok = await _resetToHome();
-      debugPrint('_resetToHome result: $ok');
       if (!ok) return;
 
       final ctx = await _waitForContext();
-      debugPrint('_waitForContext result: ${ctx != null}');
       if (ctx == null) return;
-
-      debugPrint('Push DetailVotePage NOW');
+      
       Navigator.push(
         ctx,
         MaterialPageRoute(builder: (_) => DetailVotePage(id_event: voteId)),
       );
-      debugPrint('Push DetailVotePage DONE');
-    } catch (e, s) {
-      debugPrint('ERROR _navigateToVote: $e\n$s');
     } finally {
       _isNavigating = false;
-      debugPrint('_navigateToVote DONE');
       _checkPendingLink();
     }
   }
@@ -339,22 +290,16 @@ class DeepLinkHandler {
     if (_isNavigating) return;
     _isNavigating = true;
     try {
-      // Fetch data DULU sebelum clear stack
       await getInfoVote(voteId, lang, currency);
-      debugPrint('getInfoVote done: ${vote.keys}');
 
       if (vote.isEmpty) {
-        debugPrint('ERROR: vote data kosong');
         return;
       }
-
-      debugPrint('_resetToHome START (finalis)');
+      
       final ok = await _resetToHome();
-      debugPrint('_resetToHome result: $ok');
       if (!ok) return;
 
       final ctx = await _waitForContext();
-      debugPrint('_waitForContext result: ${ctx != null}');
       if (ctx == null) return;
 
       final tanggal = _formatDate(
@@ -363,10 +308,8 @@ class DeepLinkHandler {
         includeTime: true,
       );
       final viewApi = _getViewApi(vote['leaderboard_tipe']);
-      debugPrint('flag_paket: ${vote['flag_paket']} | viewApi: $viewApi');
 
       if (vote['flag_paket'] == '0') {
-        debugPrint('Push LeaderboardSingleVote NOW');
         Navigator.push(
           ctx,
           MaterialPageRoute(
@@ -382,14 +325,12 @@ class DeepLinkHandler {
             ),
           ),
         );
-        debugPrint('Push LeaderboardSingleVote DONE');
       } else {
         final idFinalis = vote['id_finalis']?.toString();
         if (idFinalis == null) {
-          debugPrint('ERROR: vote[id_finalis] null');
           return;
         }
-        debugPrint('Push LeaderboardSingleVotePaket NOW');
+        
         Navigator.push(
           ctx,
           MaterialPageRoute(
@@ -404,13 +345,9 @@ class DeepLinkHandler {
             ),
           ),
         );
-        debugPrint('Push LeaderboardSingleVotePaket DONE');
       }
-    } catch (e, s) {
-      debugPrint('ERROR _navigateToFinalis: $e\n$s');
     } finally {
       _isNavigating = false;
-      debugPrint('_navigateToFinalis DONE');
       _checkPendingLink();
     }
   }
@@ -420,31 +357,24 @@ class DeepLinkHandler {
     _isNavigating = true;
     try {
       await getInfoEvent(eventId, lang, currency);
-      debugPrint('getInfoEvent done: ${event.keys}');
 
       if (event.isEmpty) {
-        debugPrint('ERROR: event data kosong, batalkan navigasi');
         return;
       }
 
       final tickets = event['event_ticket'];
       if (tickets == null || tickets.isEmpty) {
-        debugPrint('ERROR: event_ticket kosong');
         return;
       }
-
-      debugPrint('_resetToHome START');
+      
       final ok = await _resetToHome();
-      debugPrint('_resetToHome result: $ok');
       if (!ok) return;
 
       final ctx = await _waitForContext();
       if (ctx == null) {
-        debugPrint('ERROR: context null setelah _resetToHome');
         return;
       }
-
-      debugPrint('Push DetailEventPage');
+      
       Navigator.push(
         ctx,
         MaterialPageRoute(
@@ -455,11 +385,8 @@ class DeepLinkHandler {
           ),
         ),
       );
-    } catch (e, s) {
-      debugPrint('ERROR _navigateToEvent: $e\n$s');
     } finally {
       _isNavigating = false;
-      debugPrint('_navigateToEvent DONE');
       _checkPendingLink();
     }
   }
@@ -514,14 +441,12 @@ class DeepLinkHandler {
   }
 }
 
-// Observer terpisah — bebas dari conflict method
 class _AppLifecycleObserver extends WidgetsBindingObserver {
   final DeepLinkHandler handler;
   _AppLifecycleObserver(this.handler);
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    debugPrint('=== AppLifecycle: $state ===');
     if (state == AppLifecycleState.resumed) {
       handler.onAppResumed();
     }

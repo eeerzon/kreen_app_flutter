@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/pages/home_page.dart';
@@ -101,14 +101,11 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
         
         if (dateStr.isNotEmpty) {
           try {
-            // parsing string ke DateTime
-            final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+            final date = DateTime.parse(dateStr);
             if (langCode == 'id') {
-              // Bahasa Indonesia
               final dayName = DateFormat(formatDay, "id_ID").format(date);
               formattedDate = dayName;
             } else {
-              // Bahasa Inggris
               final dayName = DateFormat(formatDay, "en_US").format(date);
               formattedDate = dayName;
             }
@@ -243,8 +240,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -287,18 +283,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   Widget buildKonten() {
 
     return SafeArea(
-      // backgroundColor: Colors.white,
-      // appBar: AppBar(
-      //   backgroundColor: Colors.white,
-      //   title: Text("test menu order"),
-      //   centerTitle: false,
-      //   leading: IconButton(
-      //     icon: Icon(Icons.arrow_back_ios),
-      //     onPressed: () {
-      //       Navigator.pop(context);
-      //     },
-      //   ),
-      // ),
       child: Column(
         children: [
           Expanded(
@@ -322,15 +306,13 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        //'Selamat... Pesananmu Berhasil',
-                        bahasa['order_sukses'],
+                        bahasa['order_sukses'], //'Selamat... Pesananmu Berhasil',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 8),
                       Text(
-                        //'Cek email kamu. Jika kamu tidak ketemu, jangan lupa cek SPAM atau PROMOSI.',
-                        bahasa['order_sukses_desc'],
+                        bahasa['order_sukses_desc'], //'Cek email kamu. Jika kamu tidak ketemu, jangan lupa cek SPAM atau PROMOSI.',
                         softWrap: true,
                         textAlign: TextAlign.center,
                       ),
@@ -389,7 +371,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
 
                           const SizedBox(width: 16,),
 
-                          Expanded( // penting agar tdk overflow
+                          Expanded( 
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -405,7 +387,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      //'Diselenggarakan Oleh: ',
                                       "${bahasa['penyelenggara']}: ",
                                       style: TextStyle(color: Colors.grey),
                                     ),
@@ -428,7 +409,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                     ),
 
                                     const SizedBox(width: 12),
-                                    //text
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,18 +419,14 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
           
                                           if (dateStr.isNotEmpty) {
                                             try {
-                                              // parsing string ke DateTime
-                                              final date = DateTime.parse(dateStr); // pastikan format ISO (yyyy-MM-dd)
+                                              final date = DateTime.parse(dateStr);
                                               if (langCode == 'id') {
-                                                // Bahasa Indonesia
                                                 final formatter = DateFormat("$formatDay, $formatDateId", "id_ID");
                                                 formattedDate = formatter.format(date);
                                               } else {
-                                                // Bahasa Inggris
                                                 final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
                                                 formattedDate = formatter.format(date);
-
-                                                // tambahkan suffix (1st, 2nd, 3rd, 4th...)
+                                                
                                                 final day = date.day;
                                                 String suffix = 'th';
                                                 if (day % 10 == 1 && day != 11) { suffix = 'st'; }
@@ -504,7 +480,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                     ),
 
                                     const SizedBox(width: 12),
-                                    //text
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,7 +508,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          //"Total Pembayaran",
                           bahasa['total_pembayaran'],
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
@@ -595,8 +569,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                       Column(
                         children: List.generate(eventOrderDetail.length, (index) {
                           final order = eventOrderDetail[index];
-
-                          // cari ticket berdasarkan id_event_ticket
+                          
                           final ticket = eventTiket.firstWhere(
                             (e) => e['id_event_ticket'] == order['id_event_ticket'],
                             orElse: () => null,
@@ -615,7 +588,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                               ),
                               child: Row(
                                 children: [
-                                  // Kiri: Barcode dan info tiket
+                                  
                                   Expanded(
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -636,21 +609,15 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                                 '${bahasa['tiket']} ${index + 1} $ticketName',
                                                 style: const TextStyle(fontWeight: FontWeight.bold),
                                               ),
+
                                               const SizedBox(height: 8),
                                               Text(
                                                 "${eventOrderDetail[index]['ticket_buyer_name']}" 
                                                 "\n${eventOrderDetail[index]['ticket_buyer_email']}"
                                                 "\n${eventOrderDetail[index]['ticket_buyer_phone']}"
                                               ),
+
                                               const SizedBox(height: 8),
-                                              // Text(
-                                              //   eventOrderDetail[index]['ticket_buyer_email'],
-                                              //   overflow: TextOverflow.ellipsis,
-                                              //   maxLines: 1,
-                                              // ),
-                                              // const SizedBox(height: 8),
-                                              // Text(eventOrderDetail[index]['ticket_buyer_phone']),
-                                              // const SizedBox(height: 8),
                                               Builder(
                                                 builder: (_) {
                                                   final orderedTicketId =
@@ -665,8 +632,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                                     return const Text("-");
                                                   }
                                                   
-                                                  final end =
-                                                      DateTime.parse(dataEvents['event_datetime'][0]['datetime_end_plus_diff']);
+                                                  final end = DateTime.parse(dataEvents['event_datetime'][0]['datetime_end_plus_diff']);
 
                                                   String formatDate(DateTime date) {
                                                     if (langCode == 'id') {
@@ -700,7 +666,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
-                                                        //berlaku hingga
                                                         '${bahasa['expired_at']} \n${formatDate(end)}',
                                                         style: const TextStyle(color: Colors.black),
                                                       ),
@@ -720,8 +685,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                       ],
                                     ),
                                   ),
-
-                                  // Kanan: QR code
+                                  
                                   if (widget.isSukses)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 8),
@@ -825,18 +789,6 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                               MaterialPageRoute(builder: (context) => HomePage()), 
                               (route) => false
                             );
-
-                            // Navigator.pushAndRemoveUntil(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (_) => DetailEventPage(
-                            //       id_event: event['id_event'],
-                            //       currencyCode: currencyCode, 
-                            //       price: dataEvents['event_ticket'][0]['price'],
-                            //     ),
-                            //   ),
-                            //   (route) => route.isFirst, // sisakan Home
-                            // );
                           },
                           child: Text(
                           bahasa['selesai'], //"Selesai",

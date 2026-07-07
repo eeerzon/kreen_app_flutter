@@ -15,7 +15,6 @@ import Photos
   ) -> Bool {
     let controller = window?.rootViewController as! FlutterViewController
     
-    // ─── Save Image Channel ───────────────────────────────────────────────────
     let channel = FlutterMethodChannel(
       name: "save_image_channel",
       binaryMessenger: controller.binaryMessenger
@@ -30,8 +29,7 @@ import Photos
         self.saveImage(path: path, result: result)
       }
     }
-
-    // ─── Deep Link Channel ────────────────────────────────────────────────────
+    
     methodChannel = FlutterMethodChannel(
       name: "com.kreen.app/deep_link",
       binaryMessenger: controller.binaryMessenger
@@ -45,16 +43,14 @@ import Photos
         result(FlutterMethodNotImplemented)
       }
     }
-
-    // Handle cold start dari Universal Link
+    
     if let url = launchOptions?[.url] as? URL {
       let urlString = url.absoluteString
       if urlString.contains("mobile-deeplink") {
         pendingLink = urlString
       }
     }
-
-    // Handle cold start dari Universal Link (NSUserActivity)
+    
     if let userActivity = launchOptions?[.userActivityDictionary] as? [String: Any],
        let webpageURL = userActivity[UIApplication.LaunchOptionsKey.url.rawValue] as? URL {
       let urlString = webpageURL.absoluteString
@@ -67,8 +63,7 @@ import Photos
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-
-  // ─── Save Image ───────────────────────────────────────────────────────────
+  
   private func saveImage(path: String, result: @escaping FlutterResult) {
     PHPhotoLibrary.requestAuthorization { status in
       guard status == .authorized else {
@@ -103,8 +98,7 @@ import Photos
       }
     }
   }
-
-  // ─── Universal Link (foreground / background) ─────────────────────────────
+  
   override func application(
     _ application: UIApplication,
     continue userActivity: NSUserActivity,
@@ -119,8 +113,6 @@ import Photos
     let urlString = url.absoluteString
     guard urlString.contains("mobile-deeplink") else { return false }
 
-    print("iOS Universal Link: \(urlString)")
-
     if methodChannel != nil {
       methodChannel?.invokeMethod("onNewLink", arguments: urlString)
     } else {
@@ -129,8 +121,7 @@ import Photos
 
     return true
   }
-
-  // ─── URL Scheme fallback ──────────────────────────────────────────────────
+  
   override func application(
     _ app: UIApplication,
     open url: URL,
@@ -139,8 +130,6 @@ import Photos
 
     let urlString = url.absoluteString
     guard urlString.contains("mobile-deeplink") else { return false }
-
-    print("iOS URL Scheme: \(urlString)")
 
     if methodChannel != nil {
       methodChannel?.invokeMethod("onNewLink", arguments: urlString)

@@ -9,8 +9,9 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
+import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/modal/check_payment_modal.dart';
 import 'package:kreen_app_flutter/modal/payment/stripe_pay.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
@@ -37,8 +38,14 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now();
-  Duration remaining = Duration.zero;
-  Timer? _timer;
+
+  Map<String, dynamic> detailOrder = {};
+  Map<String, dynamic> eventOder = {};
+  List<dynamic> eventOrderDetail = [];
+  List<dynamic> eventTiket = [];
+  Map<String, dynamic> paymentDetail = {};
+  List<dynamic> instruction = [];
+  Map<String, dynamic> event = {};
 
   bool _isLoading = true;
 
@@ -55,132 +62,38 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   String? currencyCode;
 
   bool isCheckingPayment = false;
+  bool isOpenedLink = false;
+  String? currencyRegion;
+  var formaterNumber;
+  num displayTotalAmount = 0;
+  num displayUserCurrencyAmount = 0;
+  num displayFee = 0;
+  num displayUserCurrencyTotalPayment = 0;
+  String formattedDate = '';
 
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _getBahasa();
-      await _getCurrency();
-      await _loadOrder();
-      _startCountdown();
+      final code = await StorageService.getLanguage();
+      final codecurrency = await StorageService.getCurrency();
+
+      setState(() {
+        langCode = code;
+        currencyCode = codecurrency;
+      });
+      
+      await Future.wait([
+        _getBahasa(),
+        _loadOrder(),
+      ]);
     });
-  }
-
-  void _startCountdown() {
-    _updateRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateRemaining();
-    });
-  }
-
-  void _updateRemaining() {
-    final now = DateTime.now();
-    final difference = deadline.difference(now);
-
-    setState(() {
-      // if (difference.isNegative) {
-      //   remaining = Duration.zero;
-      //   isExpired = true;
-      //   _timer?.cancel();
-      // } else {
-      //   remaining = difference;
-      // }
-
-      if (difference.isNegative) {
-        _timer?.cancel();
-        _handleExpiredFlow();
-      } else {
-        remaining = difference;
-      }
-    });
-  }
-
-  Future<void> _handleExpiredFlow() async {
-    // prevent multiple call
-    if (_didMarkExpired) return;
-
-    // refresh order dulu
-    await _loadOrder();
-
-    // kalau ternyata sudah bayar
-    if (eventOder['order_status'] == '1') {
-      await _handleSuccessRedirect();
-      return;
-    }
-
-    // kalau masih belum bayar → baru expired
-    if (!mounted) return;
-
-    setState(() {
-      remaining = Duration.zero;
-      isExpired = true;
-    });
-  }
-
-  Future<void> _handleSuccessRedirect() async {
-    if (_didRedirect) return;
-    _didRedirect = true;
-
-    int countdown = 3;
-
-    late AwesomeDialog dialog;
-    late void Function(void Function()) dialogSetState;
-
-    dialog = AwesomeDialog(
-      context: context,
-      dialogType: DialogType.noHeader,
-      animType: AnimType.scale,
-      dismissOnTouchOutside: false,
-      dismissOnBackKeyPress: false,
-      body: StatefulBuilder(
-        builder: (context, setDialogState) {
-          dialogSetState = setDialogState;
-
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                "${bahasa['redirect']} $countdown ${bahasa['second']}...",
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          );
-        },
-      ),
-    )..show();
-
-    for (int i = countdown; i > 0; i--) {
-      await Future.delayed(const Duration(seconds: 1));
-      countdown--;
-
-      if (mounted) {
-        dialogSetState(() {});
-      }
-    }
-
-    if (!mounted) return;
-
-    dialog.dismiss();
-
-    Navigator.pushReplacement(
-      context, 
-      MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOder['id_order'], isSukses: true,)),
-    );
   }
 
   Map<String, dynamic> bahasa = {};
 
   Future<void> _getBahasa() async {
-    final code = await StorageService.getLanguage();
-
-    setState(() {
-      langCode = code;
-    });
-
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
@@ -188,26 +101,16 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     });
   }
 
-  Future<void> _getCurrency() async {
-    final code = await StorageService.getCurrency();
-    setState(() {
-      currencyCode = code;
-    });
-  }
-
-  Map<String, dynamic> detailOrder = {};
-  Map<String, dynamic> eventOder = {};
-  List<dynamic> eventOrderDetail = [];
-  List<dynamic> eventTiket = [];
-  Map<String, dynamic> paymentDetail = {};
-  List<dynamic> instruction = [];
-  Map<String, dynamic> event = {};
-
   var expiresAt;
 
   Future<void> _loadOrder() async {
 
-    final resultOrder = await ApiService.get("/order/event/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode);
+    final resultOrder = await ApiService.get(
+      "/order/event/${widget.id_order}", 
+      xLanguage: langCode, 
+      xCurrency: currencyCode
+    );
+
     if (resultOrder == null || resultOrder['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -217,54 +120,118 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     }
 
     final tempOrder = resultOrder['data'] ?? {};
-
     final temp_event_order = tempOrder['event_order'] ?? {};
     final temp_event_order_detail = tempOrder['event_order_detail'] ?? [];
     final temp_event_tiket = tempOrder['event_ticket'] ?? [];
-
     final temp_payment_detail = tempOrder['payment_detail'] ?? {};
     final temp_instruction = temp_payment_detail['instruction'] ?? [];
-
     final temp_event = tempOrder['event'] ?? {};
 
     if (!mounted) return;
-    if (mounted) {
-        detailOrder = tempOrder;
+    setState(() {
+      detailOrder = tempOrder;
+      eventOder = temp_event_order;
+      eventOrderDetail = temp_event_order_detail;
+      eventTiket = temp_event_tiket;
+      paymentDetail = temp_payment_detail;
+      instruction = temp_instruction;
+      event = temp_event;
+      openStates = List.generate(instruction.length, (_) => false);
 
-        eventOder = temp_event_order;
-        eventOrderDetail = temp_event_order_detail;
-        eventTiket = temp_event_tiket;
+      final rawExpires = eventOder['order_created_at'];
+      if (rawExpires != null && rawExpires.toString().isNotEmpty) {
+        final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
+        // final newDate = date.add(Duration(seconds: paymentDetail['expired_duration']));
+        final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive']));
+        expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
+      } else {
+        expiresAt = '';
+      }
 
-        paymentDetail = temp_payment_detail;
-        instruction = temp_instruction;
+      deadline = DateHelper.parseWibToUtc(expiresAt);
 
-        event = temp_event;
+      _isLoading = false;
+      showErrorBar = false;
+    });
+    
+    _setCurrencyRegion();
+    _calculateDisplayAmounts();
+    _formatExpiredDate();
+  }
 
-        final rawExpires = eventOder['order_created_at'];
-        if (rawExpires != null && rawExpires.toString().isNotEmpty) {
-          final date = DateTime.parse(rawExpires.replaceAll(' ', 'T'));
-          // final date = DateHelper.parseWibToUtc(rawExpires.toString());
+  void _setCurrencyRegion() {
+    final region = eventOder['order_region'];
+    currencyRegion = {
+      'EU': 'EUR', 
+      'ID': 'IDR', 
+      'MY': 'MYR',
+      'PH': 'PHP', 
+      'SG': 'SGD', 
+      'TH': 'THB',
+      'US': 'USD', 
+      'VN': 'VND',
+    }[region];
 
-          // tambahkan 1 jam untuk durasi expired payment
-          // var newDate = date.add(const Duration(hours: 1));
-          // if (voteOder['payment_method_id'] == "6387457643547345") {
-            // final newDate = date.add( Duration(seconds: paymentDetail['expired_duration']));
-          // }
-          
-          final newDate = date.add(Duration(seconds: paymentDetail['expired_duration_adaptive'] ?? 0));
-          
-          expiresAt = DateFormat('yyyy-MM-dd HH:mm:ss').format(newDate);
-        } else {
-          expiresAt = '';
-        }
+    formaterNumber = NumberFormat.currency(
+      locale: "en_US",
+      symbol: "",
+      decimalDigits: currencyRegion == "IDR" ? 0 : 2,
+    );
 
-        openStates = List.generate(instruction.length, (_) => false);
+    if (mounted) setState(() {});
+  }
 
-        // deadline = DateTime.parse(expiresAt).toLocal();
-        deadline = DateHelper.parseWibToUtc(expiresAt);
-        _isLoading = false;
-        showErrorBar = false;
+  void _calculateDisplayAmounts() {
+    num sumAmount = eventOder['total_amount'] * eventOder['currency_value_region'];
+    num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5));
+
+    if (currencyRegion == "IDR") {
+      displayTotalAmount = totalAmountPg.ceil();
+    } else {
+      displayTotalAmount = (totalAmountPg * 100).ceil() / 100;
     }
+
+    num userCurrencyAmount = num.parse(eventOder['user_currency_amount'].toStringAsFixed(5));
+    if (widget.currency_session == "IDR") {
+      displayUserCurrencyAmount = userCurrencyAmount.ceil();
+    } else {
+      displayUserCurrencyAmount = (userCurrencyAmount * 100).ceil() / 100;
+    }
+
+    num userCurrencyTotalPayment = num.parse(eventOder['user_currency_total_payment'].toStringAsFixed(5));
+    if (widget.currency_session == "IDR") {
+      displayUserCurrencyTotalPayment = userCurrencyTotalPayment.ceil();
+    } else {
+      displayUserCurrencyTotalPayment = (userCurrencyTotalPayment * 100).ceil() / 100;
+    }
+
+    displayFee = displayUserCurrencyTotalPayment - displayUserCurrencyAmount;
+
+    if (mounted) setState(() {});
+  }
+
+  void _formatExpiredDate() {
+    if (expiresAt == null || expiresAt.toString().isEmpty) return;
+
+    try {
+      final date = DateTime.parse(expiresAt.toString());
+      if (langCode == 'id') {
+        formattedDate = DateFormat("dd MMMM yyyy, HH:mm", "id_ID").format(date);
+      } else {
+        final formatter = DateFormat("MMMM d yyyy, hh:mm a", "en_US");
+        formattedDate = formatter.format(date);
+        final day = date.day;
+        String suffix = 'th';
+        if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+        else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+        else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+        formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+      }
+    } catch (e) {
+      formattedDate = '-';
+    }
+
+    if (mounted) setState(() {});
   }
 
   late final formatter = NumberFormat.currency(
@@ -275,7 +242,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     super.dispose();
   }
   
@@ -362,8 +328,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                   ],
                 ),
               ),
-
-              // Header shimmer
+              
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -404,117 +369,9 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   }
 
   Widget buildKontenOrder() {
-    // Cek waktu kadaluarsa
-    if (expiresAt.isNotEmpty) {
-      final expiredDate = DateTime.parse(expiresAt);
-      final now = DateTime.now();
-
-      if (now.isAfter(expiredDate)) {
-        // waktu sudah lewat, tampilkan halaman kadaluarsa
-        return buildLinkKadaluarsa();
-      }
-    }
-    
-    final hours = remaining.inHours % 24;
-    final minutes = remaining.inMinutes % 60;
-    final seconds = remaining.inSeconds % 60;
-
-    String formattedDate = '-';
-
-    String? currencyRegion;
-    if (eventOder['order_region'] == "EU"){
-      currencyRegion = "EUR";
-    } else if (eventOder['order_region'] == "ID"){
-      currencyRegion = "IDR";
-    } else if (eventOder['order_region'] == "MY"){
-      currencyRegion = "MYR";
-    } else if (eventOder['order_region'] == "PH"){
-      currencyRegion = "PHP";
-    } else if (eventOder['order_region'] == "SG"){
-      currencyRegion = "SGD";
-    } else if (eventOder['order_region'] == "TH"){
-      currencyRegion = "THB";
-    } else if (eventOder['order_region'] == "US"){
-      currencyRegion = "USD";
-    } else if (eventOder['order_region'] == "VN"){
-      currencyRegion = "VND";
-    }
-
-    final formaterNumber = NumberFormat.currency(
-      locale: "en_US",
-      symbol: "",
-      decimalDigits: currencyRegion == "IDR" ? 0 : 2,
-    );
-
-    num sum_amount = (eventOder['amount'] + eventOder['fees']) * eventOder['currency_value_region'];
-    num total_amount_pg = num.parse(sum_amount.toStringAsFixed(5)); // konversi ke double (num())
-    num displayTotalAmount;
-    if (currencyRegion == "IDR") {
-      total_amount_pg = total_amount_pg.ceil();
-      displayTotalAmount = num.parse(total_amount_pg.toString());
-    } else {
-      total_amount_pg = (total_amount_pg * 100).ceil() / 100;
-      displayTotalAmount = num.parse(total_amount_pg.toStringAsFixed(2));
-    }
-
-    num user_currency_amount = num.parse(eventOder['user_currency_amount'].toStringAsFixed(5)); // konversi ke double (num())
-    num displayUserCurrencyAmount;
-    if (widget.currency_session == "IDR") {
-      user_currency_amount = user_currency_amount.ceil();
-      displayUserCurrencyAmount = num.parse(user_currency_amount.toString());
-    } else {
-      user_currency_amount = (user_currency_amount * 100).ceil() / 100;
-      displayUserCurrencyAmount = num.parse(user_currency_amount.toStringAsFixed(2));
-    }
-
-    num user_currency_total_payment = num.parse(eventOder['user_currency_total_payment'].toStringAsFixed(5)); // konversi ke double (num())
-    num displayUserCurrencyTotalPayment;
-    if (widget.currency_session == "IDR") {
-      user_currency_total_payment = user_currency_total_payment.ceil();
-      displayUserCurrencyTotalPayment = num.parse(user_currency_total_payment.toString());
-    } else {
-      user_currency_total_payment = (user_currency_total_payment * 100).ceil() / 100;
-      displayUserCurrencyTotalPayment = num.parse(user_currency_total_payment.toStringAsFixed(2));
-    }
-
-    num fee = user_currency_total_payment - user_currency_amount;
-    num displayFee;
-    if (widget.currency_session == "IDR") {
-      displayFee = num.parse(fee.toString());
-    } else {
-      displayFee = num.parse(fee.toStringAsFixed(2));
-    }
-
-    if (expiresAt.isNotEmpty) {
-      try {
-        // parsing string ke DateTime
-        final date = DateTime.parse(expiresAt); // pastikan format ISO (yyyy-MM-dd)
-        if (langCode == 'id') {
-          // Bahasa Indonesia
-          final formatter = DateFormat("dd MMMM yyyy, HH:mm", "id_ID");
-          formattedDate = formatter.format(date);
-        } else {
-          // Bahasa Inggris
-          final formatter = DateFormat("MMMM d yyyy, hh:mm a", "en_US");
-          formattedDate = formatter.format(date);
-
-          // tambahkan suffix (1st, 2nd, 3rd, 4th...)
-          final day = date.day;
-          String suffix = 'th';
-          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-        }
-      } catch (e) {
-        formattedDate = '-';
-      }
-    }
 
     List<dynamic> orderDetails = detailOrder['event_order_detail'] ?? [];
     List<dynamic> tickets = detailOrder['event_ticket'] ?? [];
-
-    // 1. Grouping qty per id_event_ticket
     Map<String, num> grouped = {};
 
     for (var detail in orderDetails) {
@@ -525,8 +382,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
       grouped[id] = (grouped[id] ?? 0) + qty;
     }
-
-    // 2. Mapping ke nama tiket
+    
     List<String> tiketInfo = grouped.entries.map((entry) {
       final ticket = tickets.firstWhere(
         (t) => t['id_event_ticket'] == entry.key,
@@ -607,36 +463,15 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                   child: Column(
                     children: [
 
-                      Text(bahasa['sisa_waktu']), //const Text("Sisa Waktu Pembayaran"),
+                      Text(bahasa['sisa_waktu']),
 
                       const SizedBox(height: 10),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: kGlobalPadding,
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _timeBox("$hours".padLeft(2, "0"), bahasa['hour']), //"Jam"
-                                  const SizedBox(width: 10),
-                                  _separator(),
-                                  const SizedBox(width: 10),
-                                  _timeBox("$minutes".padLeft(2, "0"), bahasa['minute']), //"Menit"
-                                  const SizedBox(width: 10),
-                                  _separator(),
-                                  const SizedBox(width: 10),
-                                  _timeBox("$seconds".padLeft(2, "0"), bahasa['second']), //"Detik"
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                      CountdownBox(
+                        deadlineUtc: deadline,
+                        bahasa: bahasa,
+                        onExpired: () async {
+                          await _handleExpiredFlow();
+                        },
                       ),
 
                       const SizedBox(height: 16),
@@ -740,7 +575,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                               if (paymentDetail['client_secret'] != null && paymentDetail['client_secret'] != "") ...[
                                 if (eventOder['bank_code'] != "apple_pay") ...[
-                                  // const SizedBox(height: 10,),
                                   SizedBox(
                                     height: 48,
                                     width: double.infinity,
@@ -772,6 +606,49 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 ],
                               ],
 
+                              if (paymentDetail['mobile_deeplink_checkout_url'] != null && paymentDetail['mobile_deeplink_checkout_url'] != "") ...[
+                                SizedBox(
+                                  height: 48,
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      
+                                      if (isOpenedLink) return;
+                                    
+                                        isOpenedLink = true;
+                                        
+                                        try {
+                                          await openEwalletPay(
+                                            paymentDetail['mobile_deeplink_checkout_url'],
+                                          );
+                                        } finally {
+                                          if (mounted) setState(() => isOpenedLink = false);
+                                        }
+                                    },
+                                    child: isOpenedLink 
+                                      ? SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          bahasa['bayar_sekarang'],
+                                          style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                                        ),
+                                  ),
+                                ),
+                              ],
+
                               const SizedBox(height: 16,),
                               Text(
                                 bahasa['kode_pesanan'], //'Kode Pesanan',
@@ -798,10 +675,8 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     final vaNumber = paymentDetail['va_number']?.toString() ?? '';
 
                                     if (vaNumber.isNotEmpty) {
-                                      // Salin ke clipboard
                                       await Clipboard.setData(ClipboardData(text: vaNumber));
 
-                                      // Tampilkan snackbar konfirmasi
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           content: Text(bahasa['copyVA']), //content: Text('Nomor VA berhasil disalin'),
@@ -839,17 +714,19 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
                               const SizedBox(height: 10,),
                               Text(
-                                // '$currencyRegion ${formatter.format(paymentDetail['amount'])}',
                                 '$currencyRegion ${formaterNumber.format(displayTotalAmount)}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                               ),
 
                               const SizedBox(height: 10,),
                               SizedBox(
+                                height: 48,
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red.shade50,
+                                    disabledBackgroundColor: Colors.grey.shade300,
+                                    splashFactory: isCheckingPayment ? NoSplash.splashFactory : null,
                                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
@@ -859,26 +736,35 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     if (isCheckingPayment) return;
                                     
                                     isCheckingPayment = true;
-
+                                    
                                     try {
-                                      final didRedirect = await CheckPaymentModal.showEvent(
+                                      final didRedirect = await CheckPaymentModal.show(
                                         context,
-                                        widget.id_order
+                                        widget.id_order,
                                       );
+                                      
                                       if (didRedirect == true) {
                                         _didRedirect = true;
                                       } else if (didRedirect == null) {
                                         await _checkIfExpiredFromModal();
-                                      } 
+                                      }
                                     } finally {
                                       if (mounted) setState(() => isCheckingPayment = false);
                                     }
-                                    
                                   },
-                                  child: Text(
-                                    bahasa['check_status'],
-                                    style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
-                                  ),
+                                  child: isCheckingPayment 
+                                    ? SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: Colors.red,
+                                        ),
+                                      )
+                                    : Text(
+                                        bahasa['check_status'],
+                                        style: TextStyle( fontWeight: FontWeight.bold, color: Colors.red),
+                                      ),
                                 ),
                               ),
 
@@ -1109,10 +995,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                       ),
 
                                       const SizedBox(height: 8,),
-                                      // Text(
-                                      //   '${eventTiket[0]['ticket_name']} (${eventOrderDetail[0]['qty']}x)',
-                                      //   style: TextStyle(color: Colors.grey),
-                                      // ),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: tiketInfo.map((e) => Text(e)).toList(),
@@ -1176,31 +1058,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                         ),
                       ),
 
-
-                      // const SizedBox(height: 30,),
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   child: ElevatedButton(
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: Colors.red,
-                      //       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                      //       shape: RoundedRectangleBorder(
-                      //         borderRadius: BorderRadius.circular(8),
-                      //       ),
-                      //     ),
-                      //     onPressed: () async {
-                      //       await CheckPaymentModal.showEvent(
-                      //         context,
-                      //         widget.id_order
-                      //       );
-                      //     },
-                      //     child: Text(
-                      //       bahasa['check_status'],
-                      //       style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
-                      //     ),
-                      //   ),
-                      // ),
-
                       if (!widget.formHistory) ... [
                         const SizedBox(height: 20,),
                         SizedBox(
@@ -1239,6 +1096,101 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     );
   }
 
+  Future<void> setExpired() async {
+    final result = await ApiService.patch(
+      "/order/set-expired",
+      body: {
+        "id_order": widget.id_order,
+        "type": "vote"
+      },
+      xLanguage: langCode
+    );
+
+    if (result != null && result['rc'] == 200) {
+      paymentExpired = true;
+      _didMarkExpired = true;
+
+      orderNeedRefresh.value = true;
+    }
+  }
+
+  Future<void> _handleExpiredFlow() async {
+    if (_didMarkExpired) return;
+    
+    if (!mounted) return;
+    setState(() {
+      isExpired = true;
+    });
+    
+    final result = await ApiService.get(
+      "/order/vote/${widget.id_order}",
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+    );
+
+    if (result != null && result['rc'] == 200) {
+      final order = result['data']['vote_order'] ?? {};
+      
+      if (order['order_status'] == '1') {
+        await _handleSuccessRedirect();
+        return;
+      }
+    }
+  }
+
+  Future<void> _handleSuccessRedirect() async {
+    if (_didRedirect) return;
+    _didRedirect = true;
+
+    int countdown = 3;
+
+    late AwesomeDialog dialog;
+    late void Function(void Function()) dialogSetState;
+
+    dialog = AwesomeDialog(
+      context: context,
+      dialogType: DialogType.noHeader,
+      animType: AnimType.scale,
+      dismissOnTouchOutside: false,
+      dismissOnBackKeyPress: false,
+      body: StatefulBuilder(
+        builder: (context, setDialogState) {
+          dialogSetState = setDialogState;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                "${bahasa['redirect']} $countdown ${bahasa['second']}...",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          );
+        },
+      ),
+    )..show();
+
+    for (int i = countdown; i > 0; i--) {
+      await Future.delayed(const Duration(seconds: 1));
+      countdown--;
+
+      if (mounted) {
+        dialogSetState(() {});
+      }
+    }
+
+    if (!mounted) return;
+
+    dialog.dismiss();
+
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: eventOder['id_order'], isSukses: true,)),
+    );
+  }
+
   Future<void> _checkIfExpiredFromModal() async {
     final result = await ApiService.get(
       "/order/event/${widget.id_order}",
@@ -1253,29 +1205,9 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
 
     // Status 20 = expired, status 2 = batal
     if (status == '20' || status == '2') {
-      _timer?.cancel();
       setState(() {
-        remaining = Duration.zero;
         isExpired = true;
       });
-    }
-  }
-
-  Future<void> setExpired() async {
-    final result = await ApiService.patch(
-      "/order/set-expired",
-      body: {
-        "id_order": widget.id_order,
-        "type": "event"
-      },
-      xLanguage: langCode
-    );
-
-    if (result != null && result['rc'] == 200) {
-      paymentExpired = true;
-      _didMarkExpired = true;
-
-      orderNeedRefresh.value = true;
     }
   }
 
@@ -1424,41 +1356,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _timeBox(String value, String label,) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.black),
-        ),
-      ],
-    );
-  }
-
-  Widget _separator() {
-    return Column(
-      children: [
-        Text(
-          ":",
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 20),
-      ],
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kreen_app_flutter/pages/login_page.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 
 class LoginPrompt extends StatelessWidget {
   final Map bahasa;

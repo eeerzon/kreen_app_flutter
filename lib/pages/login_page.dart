@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kreen_app_flutter/helper/global_var.dart';
+import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/lupa_password.dart';
 import 'package:kreen_app_flutter/pages/register_page.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
@@ -70,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _doLogin() async {
-    showLoadingDialog(context, bahasa!['loading']); // tampilkan loading
+    showLoadingDialog(context, bahasa!['loading']);
     
     final body = {
       "email": _emailController.text.trim(),
@@ -86,8 +86,7 @@ class _LoginPageState extends State<LoginPage> {
     if (result != null && result['success'] == true && result['rc'] == 200) {
       final user = result['data']['user'];
       final token = result['data']['token'];
-
-      // simpan ke secure storage
+      
       await StorageService.setToken(token);
       await StorageService.setLoginMethod('email');
       await StorageService.setUser(
@@ -111,10 +110,8 @@ class _LoginPageState extends State<LoginPage> {
       SessionManager.checkingUserModalShown = true;
 
       if (widget.notLog) {
-        // jika login dari halaman lain
         Navigator.pop(context, true);
       } else {
-        // jika login dari splashscreen
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
@@ -209,7 +206,6 @@ class _LoginPageState extends State<LoginPage> {
         showCloseIcon: true,
       ).show();
     } else {
-      // gagal login
       AwesomeDialog(
         context: context,
         dialogType: DialogType.noHeader,
@@ -253,8 +249,7 @@ class _LoginPageState extends State<LoginPage> {
         if (result != null && result['success'] == true && result['rc'] == 200) {
           final user = result['data']['user'];
           final token = result['data']['token'];
-
-          // simpan ke secure storage
+          
           await StorageService.setLoginMethod('google');
           await StorageService.setToken(token);
           await StorageService.setUser(
@@ -275,7 +270,6 @@ class _LoginPageState extends State<LoginPage> {
           );
 
           if (widget.notLog) {
-            // jika login dari halaman lain
             Navigator.pop(context, true);
           } else {
             Navigator.pushAndRemoveUntil(
@@ -291,7 +285,6 @@ class _LoginPageState extends State<LoginPage> {
         Fluttertoast.showToast(msg: cancelLogin!);
       }
     } catch (e) {
-      debugPrint('Google login error: $e');
       Fluttertoast.showToast(msg: cancelLogin!);
     } finally {
       if (mounted) {
@@ -299,13 +292,11 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-
-  //setting bahasa
+  
   Map<String, dynamic>? bahasa;
   Future<void> _getBahasa() async {
     final templangCode = await StorageService.getLanguage();
-
-    // pastikan di-set dulu
+    
     setState(() {
       langCode = templangCode;
     });
@@ -330,77 +321,6 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = false;
     });
   }
-
-  final Map<String, String> languages = {
-    "id": "Indonesia",
-    "en": "English"
-  };
-
-  // Future<bool?> _showLanguageDialog() {
-  //   return showDialog<bool>(
-  //     context: context,
-  //     builder: (context) {
-  //       String tempLang = langCode!;
-  //       return StatefulBuilder(
-  //         builder: (context, setStateDialog) {
-  //           return AlertDialog(
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(8),
-  //             ),
-  //             title: Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //               children: [
-  //                 Text(dialog_language),
-  //                 IconButton(
-  //                   icon: Icon(Icons.close),
-  //                   onPressed: () => Navigator.pop(context),
-  //                 ),
-  //               ],
-  //             ),
-  //             content: SingleChildScrollView(
-  //               child: Column(
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 children: languages.entries.map((entry) {
-  //                   return RadioListTile<String>(
-  //                     value: entry.key,
-  //                     groupValue: tempLang,
-  //                     onChanged: (val) async {
-  //                       if (val != null) {
-  //                         setState(() {
-  //                           langCode = val; 
-  //                           langNotifier.value = val; // update global
-  //                         });
-  //                         await StorageService.setLanguage(val);
-  //                         // Navigator.pushAndRemoveUntil(
-  //                         //   context,
-  //                         //   MaterialPageRoute(builder: (_) => const HomePage()),
-  //                         //   (route) => false,
-  //                         // );
-
-  //                         Navigator.pop(context, true);
-  //                       }
-  //                     },
-  //                     title: Row(
-  //                       children: [
-  //                         Image.asset(
-  //                           "assets/flags/${entry.key}.png", // simpan bendera di folder assets/flags
-  //                           width: 28,
-  //                           height: 28,
-  //                         ),
-  //                         const SizedBox(width: 12),
-  //                         Text(entry.value),
-  //                       ],
-  //                     ),
-  //                   );
-  //                 }).toList(),
-  //               ),
-  //             ),
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
 
   @override
   void initState() {
@@ -440,34 +360,6 @@ class _LoginPageState extends State<LoginPage> {
             }
           },
         ),
-        // actions: [
-        //   Container(
-        //     margin: const EdgeInsets.only(right: 20),
-        //     child: GestureDetector(
-        //       onTap: () async {
-        //         changed = await _showLanguageDialog();
-
-        //         if (changed == true) {
-        //           setState(() {
-        //             _getBahasa();
-        //           });
-        //         }
-        //       },
-        //       child: Row(
-        //         mainAxisSize: MainAxisSize.min,
-        //         children: [
-        //           Image.asset("assets/flags/${langCode ?? 'id'}.png",
-        //               width: 24, height: 24),
-        //           const SizedBox(width: 4),
-        //           Text(
-        //             (langCode ?? 'id').toUpperCase(),
-        //             style: const TextStyle(fontWeight: FontWeight.bold),
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //   )
-        // ],
       ),
 
       body: Listener(
@@ -481,20 +373,19 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               children: [
-                //logo
+                
                 Column(
                   children: [
                     Image.asset(
                       "assets/images/img_homekreen.png",
-                      width: 200,   // atur sesuai kebutuhan
+                      width: 200,
                       height: 200,
-                      fit: BoxFit.contain, // biar proporsional tanpa crop
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 12),
                   ],
                 ),
-
-                //email
+                
                 const SizedBox(height: 35),
                 TextField(
                   controller: _emailController,
@@ -536,15 +427,14 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           bahasa!['error_email_1'],
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
                   ),
-
-                //password
+                  
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
@@ -592,7 +482,7 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? PasswordError ?? ''
@@ -608,7 +498,7 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? PasswordError2 ?? '' 
@@ -624,7 +514,7 @@ class _LoginPageState extends State<LoginPage> {
                    Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           langCode == "id"
                             ? PasswordError3 ?? '' 
@@ -638,15 +528,14 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: AlignmentGeometry.centerLeft,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0), // left, top, right, bottom
+                      padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                         child: Text(
                           bahasa!['password_invalid'],
                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                         ),
                     ),
                   ),
-
-                // lupa Password
+                  
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerRight,
@@ -665,8 +554,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
-                // tombol Login
+                
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
@@ -692,8 +580,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
-                // masuk dengan
+                
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -705,8 +592,7 @@ class _LoginPageState extends State<LoginPage> {
                     Expanded(child: Divider(thickness: 1)),
                   ],
                 ),
-
-                // tombol google dan fb
+                
                 const SizedBox(height: 16),
                 InkWell(
                   onTap: _isGoogleLoading ? null : _loginGoogle,
@@ -744,25 +630,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                   ),
                 ),
-
-                // Row(
-                  // mainAxisAlignment: MainAxisAlignment.center,
-                  // children: [
-                    // IconButton(
-                    //   onPressed: () {},
-                    //   icon: Image.asset("assets/images/img_facebook.png"),
-                    //   iconSize: 50,
-                    // ),
-                    // const SizedBox(width: 24),
-                    // IconButton(
-                    //   onPressed: () {},
-                    //   icon: Image.asset("assets/images/img_google.png"),
-                    //   iconSize: 50,
-                    // ),
-                  // ],
-                // ),
-
-                // regis
+                
                 const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -770,7 +638,6 @@ class _LoginPageState extends State<LoginPage> {
                     Text(belum),
                     GestureDetector(
                       onTap: () {
-                        // navigasi ke register
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => RegisPage(fromProfil: false,)),
