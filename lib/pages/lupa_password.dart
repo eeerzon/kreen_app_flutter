@@ -16,7 +16,7 @@ class LupaPasswordPage extends StatefulWidget {
 }
 
 class _LupaPasswordPageState extends State<LupaPasswordPage> {
-  String? langCode;
+  String? langCode, token;
   String? lupaPassword, lupaPasswordDesc, emailHint, sendEmail, requestSend;
   Map<String, dynamic> bahasa = {};
 
@@ -33,6 +33,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
 
     setState(() {
@@ -208,7 +209,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
       "email": _emailController.text
     };
 
-    final result = await ApiService.post('/forgot-password', body: body, xLanguage: langCode);
+    final result = await ApiService.post('/forgot-password', body: body, xLanguage: langCode, token: token);
     if(result?['rc'] == 200) {
       setState(() => errorCode = 200);
       AwesomeDialog(

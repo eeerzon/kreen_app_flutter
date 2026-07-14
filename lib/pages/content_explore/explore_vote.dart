@@ -32,7 +32,7 @@ class ExploreVote extends StatefulWidget {
 }
 
 class _ExploreVoteState extends State<ExploreVote> {
-  String? langCode;
+  String? langCode, token;
   bool isLoadingMore = false;
   bool isFirstLoad = true;
 
@@ -50,6 +50,8 @@ class _ExploreVoteState extends State<ExploreVote> {
   bool showErrorBar = false;
   String errorMessage = "";
   String? currencyCode;
+
+  bool isOpenedLink = false;
 
   Future<void> _loadContent(bool isFirst, String? term) async {
     String filterTime = "";
@@ -79,7 +81,7 @@ class _ExploreVoteState extends State<ExploreVote> {
       "&order=asc"
       "&order_by=start_date";
 
-    final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode);
+    final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
         showErrorBar = false;
@@ -106,6 +108,7 @@ class _ExploreVoteState extends State<ExploreVote> {
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -337,182 +340,235 @@ class _ExploreVoteState extends State<ExploreVote> {
           }
           return false;
         },
-        child: MasonryGridView.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
+        child: CustomScrollView(
           controller: _scrollController,
-          physics: AlwaysScrollableScrollPhysics(),
-          itemCount: pageVotes.length,
-          itemBuilder: (context, index) {
-            if (index < pageVotes.length) {
-              final item = pageVotes[index];
-              final title = item['title']?.toString() ?? 'Tanpa Judul';
-              final dateStr = item['start_date']?.toString() ?? '-';
-              final img = item['banner'].toString();
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(0),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 12,
+                childCount: pageVotes.length,
+                itemBuilder: (context, index) {
+                  if (index < pageVotes.length) {
+                    final item = pageVotes[index];
+                    final title = item['title']?.toString() ?? 'Tanpa Judul';
+                    final dateStr = item['start_date']?.toString() ?? '-';
+                    final img = item['banner'].toString();
+                    final urlPartner = item['url_partner'];
 
-              String formattedDate = '-';
-              if (dateStr.isNotEmpty) {
-                try {
-                  final date = DateTime.parse(dateStr);
-                  if (langCode == 'id') {
-                    formattedDate = DateFormat("$formatDay, $formatDateId", "id_ID").format(date);
-                  } else {
-                    final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
-                    formattedDate = formatter.format(date);
-                    final day = date.day;
-                    String suffix = 'th';
-                    if (day % 10 == 1 && day != 11) { suffix = 'st'; }
-                    else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
-                    else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
-                    formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
-                  }
-                } catch (e) {
-                  formattedDate = '-';
-                }
-              }
-
-              final formatter = NumberFormat.decimalPattern("en_US");
-              final hargaFormatted = formatter.format(item['price'] ?? 0);
-
-              return Padding(
-                padding: const EdgeInsets.all(0),
-                child: InkWell(
-                  onTap: () async {
-                    if (isChoosed == 0) {
-                        currencyCode = item['currency'];
-                        lastCurrency = item['currency'];
-                        await StorageService.setCurrency(currencyCode!);
+                    String formattedDate = '-';
+                    if (dateStr.isNotEmpty) {
+                      try {
+                        final date = DateTime.parse(dateStr);
+                        if (langCode == 'id') {
+                          formattedDate = DateFormat("$formatDay, $formatDateId", "id_ID").format(date);
+                        } else {
+                          final formatter = DateFormat("$formatDay, $formatDateEn", "en_US");
+                          formattedDate = formatter.format(date);
+                          final day = date.day;
+                          String suffix = 'th';
+                          if (day % 10 == 1 && day != 11) { suffix = 'st'; }
+                          else if (day % 10 == 2 && day != 12) { suffix = 'nd'; }
+                          else if (day % 10 == 3 && day != 13) { suffix = 'rd'; }
+                          formattedDate = formatter.format(date).replaceFirst('$day', '$day$suffix');
+                        }
+                      } catch (e) {
+                        formattedDate = '-';
                       }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailVotePage(
-                          id_event: item['id'].toString(),
-                          currencyCode: currencyCode,
-                        ),
-                      ),
-                    ).then((_) {
-                      if (item['price'] != 0 || isChoosed == 1) {
-                        _handleBackFromDetail();
-                      }
-                    });
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300,),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                          child: AspectRatio(
-                            aspectRatio: 4 / 5,
-                            child: img.isNotEmpty
-                              ? FadeInImage.assetNetwork(
-                                  placeholder: 'assets/images/img_placeholder.jpg',
-                                  image: img,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  fadeInDuration: const Duration(milliseconds: 200),
-                                  fadeOutDuration: const Duration(milliseconds: 100),
-                                  imageErrorBuilder: (context, error, stackTrace) {
-                                    return Image.asset(
-                                      'assets/images/img_broken.jpg',
-                                      fit: BoxFit.cover,
-                                    );
-                                  },
-                                )
-                              : Image.asset(
-                                  'assets/images/img_broken.jpg',
-                                  fit: BoxFit.cover,
+                    }
+
+                    final formatter = NumberFormat.decimalPattern("en_US");
+                    final hargaFormatted = formatter.format(item['price'] ?? 0);
+
+                    return Padding(
+                      padding: const EdgeInsets.all(0),
+                      child: InkWell(
+                        onTap: () async {
+                          if (isChoosed == 0) {
+                              currencyCode = item['currency'];
+                              lastCurrency = item['currency'];
+                              await StorageService.setCurrency(currencyCode!);
+                            }
+
+                          if (urlPartner != null && urlPartner.isNotEmpty) {
+                            if (isOpenedLink) return;
+                                      
+                            isOpenedLink = true;
+                            
+                            try {
+                              await openDeepLink(
+                                urlPartner,
+                              );
+                            } finally {
+                              if (mounted) setState(() => isOpenedLink = false);
+                            }
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailVotePage(
+                                  id_event: item['id'].toString(),
+                                  currencyCode: currencyCode,
                                 ),
+                              ),
+                            ).then((_) {
+                              if (item['price'] != 0 || isChoosed == 1) {
+                                _handleBackFromDetail();
+                              }
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300,),
                           ),
-                        ),
-
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
                           child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                height: 38,
-                                child: Text(
-                                  title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 4),
-                              Text(
-                                item['organizer'],
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
-                              ),
-
-                              const SizedBox(height: 4),
-                              Text(
-                                formattedDate,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                                child: AspectRatio(
+                                  aspectRatio: 4 / 5,
+                                  child: img.isNotEmpty
+                                    ? FadeInImage.assetNetwork(
+                                        placeholder: 'assets/images/img_placeholder.jpg',
+                                        image: img,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        fadeInDuration: const Duration(milliseconds: 200),
+                                        fadeOutDuration: const Duration(milliseconds: 100),
+                                        imageErrorBuilder: (context, error, stackTrace) {
+                                          return Image.asset(
+                                            'assets/images/img_broken.jpg',
+                                            fit: BoxFit.cover,
+                                          );
+                                        },
+                                      )
+                                    : Image.asset(
+                                        'assets/images/img_broken.jpg',
+                                        fit: BoxFit.cover,
+                                      ),
                                 ),
                               ),
 
                               const SizedBox(height: 4),
-                              Text(
-                                item['price'] == 0
-                                ? bahasa['harga_detail']  //'Gratis'
-                                : currencyCode == null
-                                  ? "${item['currency']} $hargaFormatted"
-                                  : "$currencyCode $hargaFormatted",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      height: 38,
+                                      child: Text(
+                                        title,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['organizer'],
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      formattedDate,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12, color: Colors.grey
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['price'] == 0
+                                      ? bahasa['harga_detail']  //'Gratis'
+                                      : currencyCode == null
+                                        ? "${item['currency']} $hargaFormatted"
+                                        : "$currencyCode $hargaFormatted",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
+                    );
+                  } else {
+                    // if (isLoadingMore) {
+                    //   return const Padding(
+                    //     padding: EdgeInsets.all(16),
+                    //     child: Center(child: CircularProgressIndicator(color: Colors.red,)),
+                    //   );
+                    // } else if (!hasMore) {
+                    //   return Padding(
+                    //     padding: EdgeInsets.all(16),
+                    //     child: Center(
+                    //       child: Text(
+                    //         bahasa['no_more'] ?? "",
+                    //         style: TextStyle(color: Colors.grey),
+                    //       ),
+                    //     ),
+                    //   );
+                    // } else {
+                      return const SizedBox.shrink();
+                    // }
+                  }
+                }
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Visibility(
+                visible: isLoadingMore,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.red,
                     ),
                   ),
                 ),
-              );
-            } else {
-              if (isLoadingMore) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator(color: Colors.red,)),
-                );
-              } else if (!hasMore) {
-                return Padding(
-                  padding: EdgeInsets.all(16),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Visibility(
+                visible: !hasMore,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
                     child: Text(
                       bahasa['no_more'] ?? "",
-                      style: TextStyle(color: Colors.grey),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
-                );
-              } else {
-                return const SizedBox.shrink();
-              }
-            }
-          }
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

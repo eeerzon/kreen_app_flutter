@@ -99,9 +99,11 @@ class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
   }
 
   Future<void> _loadOrder() async {
+    String? token = await StorageService.getToken();
     final resultOrder = await ApiService.get(
       "/order/vote/${widget.idOrder}",
       xLanguage: widget.langCode,
+      token: token,
     );
 
     if (resultOrder != null && resultOrder['rc'] == 200) {
@@ -486,9 +488,11 @@ class _EventPaymentModalContentState extends State<_EventPaymentModalContent> {
   }
 
   Future<void> _loadOrder() async {
+    String? token = await StorageService.getToken();
     final resultOrder = await ApiService.get(
       "/order/event/${widget.idOrder}",
       xLanguage: widget.langCode,
+      token: token,
     );
 
     final tempOrder = resultOrder?['data'] ?? {};

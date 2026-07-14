@@ -78,8 +78,8 @@ DateTime parseWib(String value) {
 String formatHtmlContent(String? text) {
   if (text == null) return "";
   return text
-      .replaceAll('\r\n', '<br>')
-      .replaceAll('\n\n', '<br><br>')
+      .replaceAll('\r\n', '')
+      .replaceAll('\n\n', '<br>')
       .replaceAll('\n', '<br>');
 }
 

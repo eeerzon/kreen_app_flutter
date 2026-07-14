@@ -23,7 +23,7 @@ class OrderEventPaid extends StatefulWidget {
 
 class _OrderEventPaidState extends State<OrderEventPaid> {
   final formatter = NumberFormat.decimalPattern("en_US");
-  String? langCode;
+  String? langCode, token;
   bool _isLoading = true;
 
   Map<String, dynamic> detailOrder = {};
@@ -46,8 +46,8 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   bool _isGeneratingPdf = false;
 
   Future<void> _loadOrder() async {
-
-    final resultOrder = await ApiService.get("/order/event/${widget.idOrder}", xLanguage: langCode);
+    token = await StorageService.getToken();
+    final resultOrder = await ApiService.get("/order/event/${widget.idOrder}", xLanguage: langCode, token: token);
     if (resultOrder == null || resultOrder['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -72,7 +72,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
       "id_event": temp_event['id_event'],
     };
 
-    final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode, token: token);
     final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
     final temp_event_tiket = tempEventDetail['event_ticket'] ?? [];
 

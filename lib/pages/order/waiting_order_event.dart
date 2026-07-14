@@ -34,7 +34,7 @@ class WaitingOrderEvent extends StatefulWidget {
 }
 
 class _WaitingOrderEventState extends State<WaitingOrderEvent> {
-  String? langCode;
+  String? langCode, token;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now();
@@ -94,6 +94,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   Map<String, dynamic> bahasa = {};
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
@@ -108,7 +109,8 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     final resultOrder = await ApiService.get(
       "/order/event/${widget.id_order}", 
       xLanguage: langCode, 
-      xCurrency: currencyCode
+      xCurrency: currencyCode,
+      token: token
     );
 
     if (resultOrder == null || resultOrder['rc'] != 200) {
@@ -1126,6 +1128,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       "/order/vote/${widget.id_order}",
       xLanguage: langCode,
       xCurrency: currencyCode,
+      token: token
     );
 
     if (result != null && result['rc'] == 200) {
@@ -1196,6 +1199,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       "/order/event/${widget.id_order}",
       xLanguage: langCode,
       xCurrency: currencyCode,
+      token: token
     );
 
     if (result == null || result['rc'] != 200) return;

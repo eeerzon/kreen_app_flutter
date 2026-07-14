@@ -38,7 +38,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
   List<dynamic> voteOrderDetail = [];
   List<dynamic> finalis = [];
 
-  String? langCode;
+  String? langCode, token;
   Map<String, dynamic> bahasa = {};
 
   bool isSubmitting = false;
@@ -60,6 +60,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
 
     setState(() {
@@ -81,9 +82,9 @@ class _AddSupportPageState extends State<AddSupportPage> {
   }
 
   Future<void> _loadkonten() async {
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode);
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode, token: token);
 
-    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode);
+    final resultOrder = await ApiService.get("/order/vote/${widget.id_order}", xLanguage: langCode, xCurrency: currencyCode, token: token);
     final tempOrder = resultOrder?['data'] ?? {};
     final temp_vote_order = tempOrder['vote_order'] ?? {};
     final temp_vote_order_detail = tempOrder['vote_order_detail'] ?? [];
@@ -260,7 +261,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
         "support_text": dukungan,
         "anonymous": isAnonymous.toString()
       };
-      result = await ApiService.post('/vote/send-support', body: body, xLanguage: langCode);
+      result = await ApiService.post('/vote/send-support', body: body, xLanguage: langCode, xCurrency: currencyCode, token: token);
 
       if (result != null) {
         final temprc = result['rc'];

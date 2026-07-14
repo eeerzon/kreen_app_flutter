@@ -424,21 +424,21 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       bool isGenderEmpty = selectedGender == null;
       bool isCheckboxUnchecked = !_isChecked3;
 
-      if (widget.totalHargaAsli != 0) {
+      // if (widget.totalHargaAsli != 0) {
         if (isNameEmpty || isGenderEmpty || isCheckboxUnchecked) {
           setState(() {
             _showError = true;
           });
           return;
         }
-      } else {
-        if (isNameEmpty || isGenderEmpty ) {
-          setState(() {
-            _showError = true;
-          });
-          return;
-        }
-      }
+      // } else {
+      //   if (isNameEmpty || isGenderEmpty ) {
+      //     setState(() {
+      //       _showError = true;
+      //     });
+      //     return;
+      //   }
+      // }
       
 
       if (typePayment == 'credit_card' && payment['Credit Card'][selectedIndex]['flag_client'] == "0") {
@@ -674,7 +674,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode, token: token);
         
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
@@ -1219,11 +1219,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         isEmailField
                                           ? EmailInputFormatter()
                                           : FilteringTextInputFormatter.singleLineFormatter,
-                                        
 
-                                        FilteringTextInputFormatter.allow(
-                                          RegExp(r"[a-zA-Z0-9@._+\-]"),
-                                        ),
+                                        if (isPhoneField || isEmailField)
+                                          FilteringTextInputFormatter.allow(
+                                            RegExp(r"[a-zA-Z0-9@._+\-]"),
+                                          ),
                                       ],
                                       
                                       decoration: InputDecoration(
@@ -2427,10 +2427,13 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     itemCount: widget.names_finalis.length,
                                     itemBuilder: (context, index) {
                                       final int count = widget.counts_finalis[index];
+                                      final String namaFinalis = widget.names_finalis[index];
+                                      int multiplier = detailVote['multiplier'] ?? 1;
 
                                       int billableCount;
+                                      int coveredByFree = 0;
                                       if (isFreeVoteAvailable && remainingFreeQuota > 0) {
-                                        final int coveredByFree = remainingFreeQuota >= count ? count : remainingFreeQuota;
+                                        coveredByFree = remainingFreeQuota >= count ? count : remainingFreeQuota;
                                         billableCount = count - coveredByFree;
                                         remainingFreeQuota -= coveredByFree;
                                       } else {
@@ -2457,25 +2460,81 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           hargaVote = (100 * hargaVote).ceil() / 100;
                                         }
                                       }
+                                      
+                                      int bonusQty = count * multiplier;
 
                                       return Padding(
                                         padding: EdgeInsets.only(
                                           bottom: index == widget.names_finalis.length - 1 ? 0 : 16,
                                         ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              count > 1
-                                                ? "${widget.names_finalis[index]} ($count ${bahasa['text_votes']})"
-                                                : "${widget.names_finalis[index]} ($count ${bahasa['text_vote']})",
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    multiplier == 1 
+                                                      ? '$namaFinalis ($count ${count > 1 ? bahasa['text_votes'] : bahasa['text_vote']})'
+                                                      : namaFinalis,
+                                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+
+                                                Text(
+                                                  hargaVote == 0
+                                                    ? bahasa['gratis'] ?? 'Gratis'
+                                                    : currencyCode == null
+                                                        ? "$voteCurrency ${formatter.format(hargaVote)}"
+                                                        : "$currencyCode ${formatter.format(hargaVote)}",
+                                                  style: TextStyle(fontWeight: hargaVote == 0 ? FontWeight.bold : FontWeight.normal),
+                                                ),
+                                              ],
                                             ),
-                                            Text(
-                                              currencyCode == null
-                                                  ? "$voteCurrency ${formatter.format(hargaVote)}"
-                                                  : "$currencyCode ${formatter.format(hargaVote)}",
-                                            ),
-                                          ],
+
+                                            if (coveredByFree > 0) ...[
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    bahasa['free_vote'] ?? 'Vote Gratis',
+                                                    style: TextStyle(color: Colors.blue.shade700),
+                                                  ),
+                                                  Text(
+                                                    coveredByFree > 1
+                                                      ? "$coveredByFree ${bahasa['text_votes']}"
+                                                      : "$coveredByFree ${bahasa['text_vote']}",
+                                                    style: TextStyle(color: Colors.blue.shade700),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+
+                                            if (multiplier > 1) ...[
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    'Boost Vote (x$multiplier)',
+                                                    style: TextStyle(color: Colors.green.shade700),
+                                                  ),
+                                                  Text(
+                                                    '$bonusQty Vote',
+                                                    style: TextStyle(
+                                                      color: Colors.green.shade700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                            const Divider(
+                                              thickness: 1,
+                                              color: Color.fromARGB(255, 224, 224, 224),
+                                            )
+                                          ]
                                         ),
                                       );
                                     },
@@ -2714,24 +2773,49 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           ),
                                           children: [
                                             TextSpan(text: bahasa['kebijakan_privasi_7']),
-                                            TextSpan(
-                                              text: totalVotes > 1 
-                                                ? "$totalVotes ${bahasa['text_votes']}" 
-                                                : "$totalVotes ${bahasa['text_vote']}", 
-                                              style: TextStyle(
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
+
+                                            ...List.generate(widget.names_finalis.length, (i) {
+                                              final name = widget.names_finalis[i];
+                                              final qty = widget.counts_finalis[i];
+                                              final isLast = i == widget.names_finalis.length - 1;
+                                              int multiplier = detailVote['multiplier'] ?? 1;
+                                              int boostVote = qty * multiplier;
+
+                                              return TextSpan(
+                                                children: [
+                                                  TextSpan(
+                                                    text: name,
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.w700,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                  TextSpan(text: ' ${bahasa['dengan'] ?? 'dengan'} '),
+                                                  TextSpan(
+                                                    text: boostVote > 1
+                                                      ? "$boostVote ${bahasa['text_votes']}"
+                                                      : "$boostVote ${bahasa['text_vote']}",
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.w700,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                  
+                                                  if (!isLast)
+                                                    TextSpan(text: ', '),
+                                                ],
+                                              );
+                                            }),
+
                                             TextSpan(text: bahasa['kebijakan_privasi_8']),
                                             TextSpan(
-                                                text: currencyCode == null
-                                                  ? "$voteCurrency ${formatter.format(totalPayment)}"
-                                                  : "$currencyCode ${formatter.format(totalPayment)}",
-                                                style: TextStyle(
-                                                  color: Colors.black,
-                                                  fontWeight: FontWeight.w700
-                                                ),
+                                              text: currencyCode == null
+                                                ? "$voteCurrency ${formatter.format(totalPayment)}"
+                                                : "$currencyCode ${formatter.format(totalPayment)}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
+                                              ),
                                             ),
                                             TextSpan(
                                                 text:
@@ -2841,6 +2925,106 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 ),
                               ],
                             ),
+
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Checkbox(
+                                  value: _isChecked3,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _isChecked3 = value ?? false;
+                                      if (_isChecked3) _showError = false;
+                                    });
+                                  },
+                                  activeColor: Colors.red,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _isChecked3 = !_isChecked3;
+                                      });
+                                    },
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                        children: [
+                                          TextSpan(text: bahasa['kebijakan_privasi_7']),
+
+                                          ...List.generate(widget.names_finalis.length, (i) {
+                                            final name = widget.names_finalis[i];
+                                            final qty = widget.counts_finalis[i];
+                                            final isLast = i == widget.names_finalis.length - 1;
+                                            int multiplier = detailVote['multiplier'] ?? 1;
+                                            int boostVote = qty * multiplier;
+                                            totalPayment = 0;
+
+                                            return TextSpan(
+                                              children: [
+                                                TextSpan(
+                                                  text: name,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                TextSpan(text: ' ${bahasa['dengan'] ?? 'dengan'} '),
+                                                TextSpan(
+                                                  text: boostVote > 1
+                                                    ? "$boostVote ${bahasa['text_votes']}"
+                                                    : "$boostVote ${bahasa['text_vote']}",
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                
+                                                if (!isLast)
+                                                  TextSpan(text: ', '),
+                                              ],
+                                            );
+                                          }),
+
+                                          TextSpan(text: bahasa['kebijakan_privasi_8']),
+                                          TextSpan(
+                                            text: currencyCode == null
+                                              ? "$voteCurrency ${formatter.format(totalPayment)}"
+                                              : "$currencyCode ${formatter.format(totalPayment)}",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                              text:
+                                                  bahasa['kebijakan_privasi_9']),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+          
+                            const SizedBox(height: 4),
+                            if (_showError && !_isChecked3)
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                                child: Text(
+                                  bahasa['checkbox_error'],
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ),
                           ],
             
                           const SizedBox(height: 4),
@@ -3050,7 +3234,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       }
     }
 
-    if (widget.totalHargaAsli != 0 && !_isChecked3) {
+    // if (widget.totalHargaAsli != 0 && !_isChecked3) {
+    if (!_isChecked3) {
       isValid = false;
       agreementError = true;
     }

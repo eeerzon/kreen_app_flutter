@@ -160,18 +160,27 @@ class PaketVoteModal {
                         alignment: Alignment.centerLeft,
                         child: Text(bahasa["pilih_paket_desc"] ?? ""), //"Silahkan pilih paket vote anda.."
                       ),
-                      const SizedBox(height: 16),
 
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          bahasa["paket_vote"] ?? "", //"Vote Package",
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        )
+                      ),
+
+                      const SizedBox(height: 8),
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.5,
                         child: ListView(
                           children: [
                             if (paketTerbaik.isNotEmpty) ...[
-                              Text(
-                                bahasa["paket_terbaik"] ?? "", //"Paket Terbaik buat kamu",
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              const SizedBox(height: 8),
+                              // Text(
+                              //   bahasa["paket_terbaik"] ?? "", //"Paket Terbaik buat kamu",
+                              //   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              // ),
+                              // const SizedBox(height: 8),
 
                               ...paketTerbaik.asMap().entries.map((entry) {
                                 final idx = entry.key;
@@ -269,11 +278,11 @@ class PaketVoteModal {
                             ],
                             
                             if (paketLainnya.isNotEmpty) ...[
-                              Text(
-                                bahasa["paket_lainnya"] ?? "", //"Paket Lainnya",
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              const SizedBox(height: 8),
+                              // Text(
+                              //   bahasa["paket_lainnya"] ?? "", //"Paket Lainnya",
+                              //   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              // ),
+                              // const SizedBox(height: 8),
 
                               ...paketLainnya.asMap().entries.map((entry) {
                                 final idx = paketTerbaik.length + entry.key;
@@ -324,7 +333,7 @@ class PaketVoteModal {
                                           Text(
                                             "$currency ${formatter.format(harga)}",
                                             style: TextStyle(
-                                              color: Colors.red.shade700,
+                                              color: item['harga'] == 0 ? Colors.green.shade700 : Colors.red.shade700,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14,
                                             ),

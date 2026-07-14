@@ -204,7 +204,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
   List<FocusNode> phoneFocusNodes = [];
   List<FocusNode> genderFocusNodes = [];
   List<List<FocusNode>> indikatorFocus = [];
-  String? currencyCode;
+  String? currencyCode, token;
 
   @override
   void initState() {
@@ -244,6 +244,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
 
     setState(() {
@@ -278,12 +279,12 @@ class _TiketEventPageState extends State<TiketEventPage> {
       "id_event": widget.id_event,
     };
 
-    final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode);
+    final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode, token: token);
 
     final List<dynamic> tempTiket = resultTiket!['data'] ?? [];
 
 
-    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode, token: token);
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -534,9 +535,14 @@ class _TiketEventPageState extends State<TiketEventPage> {
                         ),
 
                         SizedBox(width: 20,),
-                        Text(
-                          detailEvent['title']?.toString() ?? '-',
-                        )
+                        Expanded(
+                          child: Text(
+                            detailEvent['title']?.toString() ?? '-',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
+                          ),
+                        ),
                       ],
                     ),
 
@@ -566,8 +572,14 @@ class _TiketEventPageState extends State<TiketEventPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '${widget.namas_tiket![index]} (${widget.qty[index]}x)'
+
+                              Expanded(
+                                child: Text(
+                                  '${widget.namas_tiket![index]} (${widget.qty[index]}x)',
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: true,
+                                ),
                               ),
 
                               Text(
@@ -1785,7 +1797,7 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
                           if (_isFree) {
 
-                            var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode);
+                            var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode, xCurrency: currencyCode, token: token);
 
                             if (resultEventOrder != null) {
                               if (resultEventOrder['rc'] == 200) {

@@ -124,7 +124,7 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   // ignore: unused_field
-  String _storedToken = '';
+  String? _storedToken;
   Future<void> _loadToken() async {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
@@ -139,9 +139,8 @@ class _FinalisPageState extends State<FinalisPage> {
     if (widget.view_api == 3 || widget.view_api == 5) {
       persen = true;
     }
-
-    final storedToken = await StorageService.getToken();
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken);
+    
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultVote == null || resultVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -154,7 +153,9 @@ class _FinalisPageState extends State<FinalisPage> {
       "/vote/${widget.id_vote}/finalis?"
       "page_size=6"
       "&current_page=1", 
-      xLanguage: langCode);
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+      token: _storedToken);
     if (resultFinalis == null || resultFinalis['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -178,13 +179,10 @@ class _FinalisPageState extends State<FinalisPage> {
 
         deadlineUtc = DateHelper.parseWibToUtc(vote['real_tanggal_tutup_vote'],);
         
-        counts = List<int>.filled(finalis.length, 0);
-        selectedVotes = List.filled(finalis.length, null);
-        selectedIndexes = List.filled(finalis.length, null);
-
-        controllers = List.generate(vote.length, (i) {
-          return TextEditingController(text: "0");
-        });
+        counts = List<int>.filled(finalis.length, 0, growable: true,);
+        controllers = List.generate(finalis.length, (_) => TextEditingController(text: '0'));
+        selectedVotes = List.filled(finalis.length, 0, growable: true);
+        selectedIndexes = List.filled(finalis.length, 0, growable: true);
 
         final dateStr = vote['real_tanggal_buka_payment']?.toString() ?? '-';
 
@@ -445,7 +443,7 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   Future<void> _searchFinalis(String keyword) async {
-    final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode);
+    final result = await ApiService.get('/vote/${widget.id_vote}/finalis?search=$keyword', xLanguage: langCode, token: _storedToken);
 
     if (!mounted) return;
     if (mounted) {
@@ -481,7 +479,9 @@ class _FinalisPageState extends State<FinalisPage> {
       "/vote/${widget.id_vote}/finalis?"
       "page_size=6"
       "&current_page=$currentPage", 
-      xLanguage: langCode);
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+      token: _storedToken);
 
     List newData = [];
     if (resultFinalis!['rc'] == 200) {
@@ -497,9 +497,25 @@ class _FinalisPageState extends State<FinalisPage> {
       if (loadMore) {
         finalis.addAll(newData);
         isLoadingMore = false;
+
+        final int prevLength = counts.length;
+        final int newLength = finalis.length;
+        
+        if (newLength > prevLength) {
+          final int added = newLength - prevLength;
+          counts.addAll(List.filled(added, 0));
+          controllers.addAll(List.generate(added, (_) => TextEditingController(text: '0')));
+          selectedVotes.addAll(List.filled(added, null));
+          selectedIndexes.addAll(List.filled(added, null));
+        }
       } else {
         finalis = newData;
         isFirstLoad = false;
+
+        counts = List.filled(finalis.length, 0);
+        controllers = List.generate(finalis.length, (_) => TextEditingController(text: '0'));
+        selectedVotes = List.filled(finalis.length, null);
+        selectedIndexes = List.filled(finalis.length, null);
       }
 
       showErrorBar = false;
@@ -708,8 +724,8 @@ class _FinalisPageState extends State<FinalisPage> {
 
                         AutoSizeText(
                           totalQty > 1
-                            ? "Qty $totalQty ${bahasa['text_votes']}  ${vote['multiplier'] > 1 ? ' x${vote['multiplier']}' : ''} "
-                            : "Qty $totalQty ${bahasa['text_vote']}  ${vote['multiplier'] > 1 ? ' x${vote['multiplier']}' : ''} ",
+                            ? "Qty $totalQty ${bahasa['text_votes']} ${vote['multiplier'] > 1 ? 'x${vote['multiplier']}' : ''} "
+                            : "Qty $totalQty ${bahasa['text_vote']} ${vote['multiplier'] > 1 ? 'x${vote['multiplier']}' : ''} ",
                           style: TextStyle(
                             fontSize: 12,
                           ),
@@ -761,27 +777,27 @@ class _FinalisPageState extends State<FinalisPage> {
                       isButtonClicked = true;
 
                       try{
-                        final storedToken = await StorageService.getToken() ?? '';
+                        
                         var getUser = await StorageService.getUser();
 
                         String? idUser = getUser['id'];
 
-                        await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+                        await refreshAfterVerification(_storedToken!, getUser['email'] ?? '', langCode!);
 
                         getUser = await StorageService.getUser();
 
-                        if (vote['flag_login'] == '1' && storedToken.isEmpty) {
+                        if (vote['flag_login'] == '1' && _storedToken!.isEmpty) {
                           await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
                           return;
                         }
 
-                        if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                        if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && _storedToken!.isEmpty) {
                           await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
                           return;
                         }
 
                         if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
-                          await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                          await EmailVerifModal.show(context, _storedToken!, langCode!, bahasa, getUser['email'] ?? '', color);
                           return;
                         }
 

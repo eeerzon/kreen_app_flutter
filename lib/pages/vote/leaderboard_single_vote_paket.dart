@@ -313,7 +313,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
     if (themeName == "Default Kreen") themeName = "Red";
     color = colorMap[themeName] ?? Colors.red;
 
-    final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard", xLanguage: langCode);
+    final resultLeaderboard = await ApiService.get("/vote/${tempFinalis['id_vote']}/leaderboard", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultLeaderboard == null || resultLeaderboard['rc'] != 200) {
       setState(() {
         showErrorBar = true;

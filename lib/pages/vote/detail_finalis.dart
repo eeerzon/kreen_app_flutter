@@ -1382,8 +1382,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
                         AutoSizeText(
                           counts > 1
-                            ? "Qty $counts ${bahasa['text_votes']}"
-                            : "Qty $counts ${bahasa['text_vote']}",
+                            ? "Qty $counts ${bahasa['text_votes']} ${detailvote['multiplier'] > 1 ? 'x${detailvote['multiplier']}' : ''}"
+                            : "Qty $counts ${bahasa['text_vote']} ${detailvote['multiplier'] > 1 ? 'x${detailvote['multiplier']}' : ''}",
                           style: TextStyle(
                             fontSize: 12,
                           ),

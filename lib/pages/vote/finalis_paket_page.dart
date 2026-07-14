@@ -128,7 +128,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   }
 
   // ignore: unused_field
-  String _storedToken = '';
+  String? _storedToken;
   Future<void> _loadToken() async {
     final token = await StorageService.getToken() ?? '';
     if (mounted) setState(() => _storedToken = token);
@@ -143,9 +143,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     if (widget.view_api == 3 || widget.view_api == 5) {
       persen = true;
     }
-
-    final storedToken = await StorageService.getToken();
-    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken);
+    
+    final resultVote = await ApiService.get("/vote/${widget.id_vote}", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
     if (resultVote == null || resultVote['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -439,7 +438,9 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
       "/vote/${widget.id_vote}/finalis?"
       "page_size=6"
       "&current_page=$currentPage", 
-      xLanguage: langCode);
+      xLanguage: langCode,
+      xCurrency: currencyCode,
+      token: _storedToken);
     
 
     List newData = [];
@@ -664,7 +665,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                       ),
                     ),
                     Text(
-                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']} ${vote['multiplier'] > 1 ? ' x${vote['multiplier']}' : ''} \n$countData ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
+                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']} ${vote['multiplier'] > 1 ? 'x${vote['multiplier']}' : ''} \n$countData ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
                       style: TextStyle(fontSize: 12),
                     ),
                   ],
@@ -698,27 +699,27 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                       isButtonClicked = true;
 
                       try {
-                        final storedToken = await StorageService.getToken() ?? '';
+                        
                         var getUser = await StorageService.getUser();
 
                         String? idUser = getUser['id'];
 
-                        await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+                        await refreshAfterVerification(_storedToken!, getUser['email'] ?? '', langCode!);
 
                         getUser = await StorageService.getUser();
 
-                        if (vote['flag_login'] == '1' && storedToken.isEmpty) {
+                        if (vote['flag_login'] == '1' && _storedToken!.isEmpty) {
                           await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
                           return;
                         }
 
-                        if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                        if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && _storedToken!.isEmpty) {
                           await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
                           return;
                         }
 
                         if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
-                          await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                          await EmailVerifModal.show(context, _storedToken!, langCode!, bahasa, getUser['email'] ?? '', color);
                           return;
                         }
 

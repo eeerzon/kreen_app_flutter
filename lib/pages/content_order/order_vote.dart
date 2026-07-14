@@ -23,7 +23,7 @@ class OrderVote extends StatefulWidget {
 }
 
 class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMixin{
-  String? langCode;
+  String? langCode, token;
   late TabController _tabController;
   bool isLoadingSukses = true;
   bool isLoadingPending = true;
@@ -67,6 +67,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
 
     setState(() {
@@ -121,7 +122,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
     var getUser = await StorageService.getUser();
     var email = getUser['email'];
 
-    var resultSuccess = await ApiService.get('/order/vote?email_voter=$email&status=success&sort_by=terbaru&type_data=new', xLanguage: langCode);
+    var resultSuccess = await ApiService.get('/order/vote?email_voter=$email&status=success&sort_by=terbaru&type_data=new', xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (resultSuccess == null || resultSuccess['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -138,7 +139,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
       final idOrder = ordersukses['id_order'];
       if (idOrder == null || idOrder.toString().isEmpty) continue;
 
-      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode, xCurrency: currencyCode, token: token);
       final data = resultOrder?['data'];
       final tempOrder = data is Map<String, dynamic> ? data : {};
       final tempVoteSukses = tempOrder['vote'] ?? {};
@@ -441,7 +442,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
   bool hasMore = true;
   int currentPage = 1;
 
-  String? langCode;
+  String? langCode, token;
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
@@ -471,6 +472,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
   Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -506,6 +508,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
       headers: {
         "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
     );
 
@@ -935,7 +938,7 @@ class _VotePendingState extends State<VotePending> {
   bool hasMore = true;
   int currentPage = 1;
 
-  String? langCode;
+  String? langCode, token;
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
@@ -965,6 +968,7 @@ class _VotePendingState extends State<VotePending> {
   Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -1004,6 +1008,7 @@ class _VotePendingState extends State<VotePending> {
       headers: {
         "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
     );
 
@@ -1435,7 +1440,7 @@ class _VoteFailState extends State<VoteFail> {
   bool hasMore = true;
   int currentPage = 1;
 
-  String? langCode;
+  String? langCode, token;
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
@@ -1464,6 +1469,7 @@ class _VoteFailState extends State<VoteFail> {
   Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -1499,6 +1505,7 @@ class _VoteFailState extends State<VoteFail> {
       headers: {
         "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
     );
 

@@ -123,8 +123,8 @@ class _HomeContentState extends State<HomeContent> {
     first_name = get_user['first_name'];
     
     final results = await Future.wait([
-      ApiService.get("/setting-banner/active", xLanguage: langCode),
-      ApiService.get("/vote/popular", xCurrency: currencyCode, xLanguage: langCode),
+      ApiService.get("/setting-banner/active", xLanguage: langCode, token: token),
+      ApiService.get("/vote/popular", xCurrency: currencyCode, xLanguage: langCode, token: token),
     ]);
 
     final resultBanner = results[0];
@@ -184,11 +184,11 @@ class _HomeContentState extends State<HomeContent> {
   
   Future<void> _loadBelowFold() async {
     final results = await Future.wait([
-      ApiService.get("/vote/juara", xLanguage: langCode),
-      ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode),
-      ApiService.get("/vote/latest", xCurrency: currencyCode, xLanguage: langCode),
-      ApiService.get("/event/recommended", xCurrency: currencyCode, xLanguage: langCode),
-      // ApiService.get("/articles?limit=8", xLanguage: langCode),
+      ApiService.get("/vote/juara", xLanguage: langCode, token: token),
+      ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode, token: token),
+      ApiService.get("/vote/latest", xCurrency: currencyCode, xLanguage: langCode, token: token),
+      ApiService.get("/event/recommended", xCurrency: currencyCode, xLanguage: langCode, token: token),
+      ApiService.get("/articles?limit=8", xLanguage: langCode),
     ]);
 
     if (!mounted) return;
@@ -206,7 +206,7 @@ class _HomeContentState extends State<HomeContent> {
     final resultHit = results[1];
     final resultLatest = results[2];
     final resultRecom = results[3];
-    // final resultArtikel = results[4];
+    final resultArtikel = results[4];
     
     List<dynamic> tempJuara = [];
     if (resultJuara != null && resultJuara['rc'] == 200) {
@@ -223,7 +223,7 @@ class _HomeContentState extends State<HomeContent> {
       hitsevent = (resultHit    != null && resultHit['rc']    == 200) ? resultHit['data']    ?? [] : hitsevent;
       latestvotes = (resultLatest != null && resultLatest['rc'] == 200) ? resultLatest['data']  ?? [] : latestvotes;
       recomenevent = (resultRecom  != null && resultRecom['rc']  == 200) ? resultRecom['data']   ?? [] : recomenevent;
-      // listArtikel = (resultArtikel != null && resultArtikel['rc'] == 200) ? resultArtikel['data'] ?? [] : listArtikel;
+      listArtikel = (resultArtikel != null && resultArtikel['rc'] == 200) ? resultArtikel['data'] ?? [] : listArtikel;
       isLoadingBelowFold = false;
     });
   }
@@ -791,7 +791,14 @@ class _HomeContentState extends State<HomeContent> {
                 children: [
                   _buildCardTitle(title),
                   const SizedBox(height: 4),
-                  Text(organizer, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    organizer,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12, color: Colors.grey
+                    )
+                  ),
                   const SizedBox(height: 4),
                   Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 4),
@@ -919,7 +926,14 @@ class _HomeContentState extends State<HomeContent> {
                 children: [
                   _buildCardTitle(title),
                   const SizedBox(height: 4),
-                  Text(organizer, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    organizer,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12, color: Colors.grey
+                    )
+                  ),
                   const SizedBox(height: 4),
                   Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   const SizedBox(height: 4),

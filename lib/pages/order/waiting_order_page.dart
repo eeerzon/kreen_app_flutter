@@ -9,6 +9,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
+import 'package:kreen_app_flutter/helper/download_qr.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
@@ -34,7 +35,7 @@ class WaitingOrderPage extends StatefulWidget {
 }
 
 class _WaitingOrderPageState extends State<WaitingOrderPage> {
-  String? langCode;
+  String? langCode, token;
   DateTime deadline = DateTime(2025, 10, 17, 13, 30, 00, 00, 00);
 
   final DateTime now = DateTime.now().toUtc();
@@ -80,6 +81,10 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   num displayUserCurrencyTotalPayment = 0;
   String formattedDate = '';
 
+  bool isGeneratingQr = true;
+  String? qrUrl, qrString, generatedUrl;
+  bool qrImageLoaded = false;
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +108,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   Map<String, dynamic> bahasa = {};
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
 
     setState(() {
@@ -117,6 +123,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       "/order/vote/${widget.id_order}",
       xLanguage: langCode,
       xCurrency: currencyCode,
+      token: token
     );
 
     if (resultOrder == null || resultOrder['rc'] != 200) {
@@ -159,6 +166,14 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       }
 
       deadline = DateHelper.parseWibToUtc(expiresAt);
+
+      qrUrl = paymentDetail['qr_url'];
+      qrString = paymentDetail['qr_string'];
+      generatedUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+
+      isGeneratingQr =
+        (qrUrl == null || qrUrl.toString().isEmpty) &&
+        (qrString == null || qrString.toString().isEmpty);
 
       _isLoading = false;
       showErrorBar = false;
@@ -272,7 +287,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       final result = await ApiService.get(
         "/order/vote/${widget.id_order}",
         xLanguage: langCode,
-        xCurrency: currencyCode
+        xCurrency: currencyCode,
+        token: token
       );
 
       if (result != null && result['rc'] == 200) {
@@ -565,44 +581,179 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                   child: Center(
                                     child: Builder(
                                       builder: (context) {
-                                        final qrUrl = paymentDetail['qr_url'];
-                                        final qrString = paymentDetail['qr_string'];
-                                        
+
+                                        if (isGeneratingQr) {
+                                          return SizedBox(
+                                            width: 220,
+                                            height: 260,
+                                            child: SizedBox(
+                                              width: 35,
+                                              height: 35,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.red,
+                                                strokeWidth: 3,
+                                              ),
+                                            ),
+                                          );
+                                        }
+
                                         if (qrUrl != null && qrUrl.toString().isNotEmpty) {
                                           return Image.network(
-                                            qrUrl,
-                                            height: 200,
-                                            width: 200,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'assets/images/img_broken.jpg',
-                                                height: 200,
-                                                width: 200,
-                                              );
-                                            },
+                                            qrUrl!,
+                                            width: 220,
+                                            height: 220,
                                           );
                                         }
                                         
                                         if (qrString != null && qrString.toString().isNotEmpty) {
-                                          final generatedUrl =
-                                            'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+                                          return Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              if (!qrImageLoaded)
+                                                const SizedBox(
+                                                  width: 200,
+                                                  height: 200,
+                                                  child: Center(
+                                                    child: CircularProgressIndicator(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                ),
 
-                                          return Image.network(
-                                            generatedUrl,
-                                            height: 200,
-                                            width: 200,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'assets/images/img_broken.jpg',
-                                                height: 200,
-                                                width: 200,
-                                              );
-                                            },
+                                              Opacity(
+                                                opacity: qrImageLoaded ? 1 : 0,
+                                                child: Image.network(
+                                                  generatedUrl!,
+                                                  width: 200,
+                                                  height: 200,
+                                                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                                                    if (wasSynchronouslyLoaded || frame != null) {
+                                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                        if (!qrImageLoaded && mounted) {
+                                                          setState(() {
+                                                            qrImageLoaded = true;
+                                                          });
+                                                        }
+                                                      });
+                                                    }
+                                                    return child;
+                                                  },
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'assets/images/img_broken.jpg',
+                                                      width: 200,
+                                                      height: 200,
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ],
                                           );
                                         }
                                         
+                                        // if (qrUrl != null && qrUrl.toString().isNotEmpty) {
+                                        //   return Image.network(
+                                        //     qrUrl,
+                                        //     height: 200,
+                                        //     width: 200,
+                                        //     loadingBuilder: (context, child, loadingProgress) {
+                                        //       if (loadingProgress == null) return child;
+
+                                        //       return SizedBox(
+                                        //         width: 200,
+                                        //         height: 200,
+                                        //         child: Center(
+                                        //           child: CircularProgressIndicator(
+                                        //             value: loadingProgress.expectedTotalBytes != null
+                                        //                 ? loadingProgress.cumulativeBytesLoaded /
+                                        //                     loadingProgress.expectedTotalBytes!
+                                        //                 : null,
+                                        //             color: Colors.red,
+                                        //           ),
+                                        //         ),
+                                        //       );
+                                        //     },
+                                        //     errorBuilder: (context, error, stackTrace) {
+                                        //       return Image.asset(
+                                        //         'assets/images/img_broken.jpg',
+                                        //         height: 200,
+                                        //         width: 200,
+                                        //       );
+                                        //     },
+                                        //   );
+                                        // }
+                                        
+                                        // if (qrString != null && qrString.toString().isNotEmpty) {
+                                        //   final generatedUrl =
+                                        //     'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+
+                                        //   return Image.network(
+                                        //     generatedUrl,
+                                        //     height: 200,
+                                        //     width: 200,
+                                        //     loadingBuilder: (context, child, loadingProgress) {
+                                        //       if (loadingProgress == null) return child;
+
+                                        //       return const SizedBox(
+                                        //         width: 200,
+                                        //         height: 200,
+                                        //         child: Center(
+                                        //           child: CircularProgressIndicator(color: Colors.red,),
+                                        //         ),
+                                        //       );
+                                        //     },
+                                        //     errorBuilder: (context, error, stackTrace) {
+                                        //       return Image.asset(
+                                        //         'assets/images/img_broken.jpg',
+                                        //         height: 200,
+                                        //         width: 200,
+                                        //       );
+                                        //     },
+                                        //   );
+                                        // }
+                                        
                                         return const SizedBox.shrink();
                                       },
+                                    ),
+                                  ),
+                                ),
+
+                                SizedBox(height: 16,),
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: qrImageLoaded 
+                                      ? () async {
+                                          await downloadQrImage(
+                                            context, 
+                                            qrString!,
+                                            bahasa['download_scan_gagal'],
+                                            bahasa['download_scan_berhasil'],
+                                            bahasa['kesalahan_simpan_scan'],
+                                          );
+                                        }
+                                      : null,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: qrImageLoaded ? Colors.red : Colors.grey,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            bahasa['unduh_qr'],
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.download, color: Colors.white, size: 15,
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1091,7 +1242,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  'Vote Bonus',
+                                                  '${bahasa['total_vote_akhir'] ?? 'Total Vote Akhir'}',
                                                   style: TextStyle(
                                                     color: Colors.green.shade700,
                                                     fontWeight: FontWeight.bold,
@@ -1251,6 +1402,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       "/order/vote/${widget.id_order}",
       xLanguage: langCode,
       xCurrency: currencyCode,
+      token: token
     );
 
     if (result != null && result['rc'] == 200) {
@@ -1327,6 +1479,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       "/order/vote/${widget.id_order}",
       xLanguage: langCode,
       xCurrency: currencyCode,
+      token: token
     );
 
     if (result == null || result['rc'] != 200) return;

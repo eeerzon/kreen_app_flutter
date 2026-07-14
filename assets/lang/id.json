@@ -188,9 +188,9 @@
     "kebijakan_privasi_6" : " yang berlaku.",
     "setuju_syarat" : "Saya menyetujui Syarat & Ketentuan Voting yang berlaku, termasuk kebijakan bahwa transaksi yang sudah dilakukan tidak dapat dibatalkan atau dikembalikan (non-refundable).",
     "checkbox_error" : "Bagian ini harus dipilih",
-    "kebijakan_privasi_7" : "Saya menyatakan bahwa jumlah vote yang saya masukkan, yaitu ",
-    "kebijakan_privasi_8" : " dengan total pembayaran sebesar ",
-    "kebijakan_privasi_9" : ", sudah benar, telah saya periksa, dan saya secara sadar menyetujui untuk melanjutkan transaksi sesuai jumlah tersebut.",
+    "kebijakan_privasi_7" : "Saya mengonfirmasi bahwa jumlah vote yang saya masukkan adalah sebagai berikut: ",
+    "kebijakan_privasi_8" : " dengan total pembayaran ",
+    "kebijakan_privasi_9" : ", saya telah memeriksanya dan menyetujui untuk melanjutkan transaksi berdasarkan jumlah yang telah dimasukkan.",
     "konfirmasi" : "Konfirmasi",
     "batal" : "Batal",
 
@@ -413,7 +413,7 @@
     "teater" : "Teater",
     "trade_show" : "Pameran Dagang",
     "workshop" : "Workshop",
-    "Other" : "Lainnya",
+    "other" : "Lainnya",
     "job_fair" : "Pameran Karir",
     "voting_ongoing" : "Voting Sedang Berlangsung",
     "artikel_seputar_voting" : "Artikel Seputar Voting",
@@ -444,6 +444,10 @@
     "free_vote_qty": "vote gratis harian",
     "free_vote_desc": "Hai, kamu memiliki {qty} yang dapat digunakan untuk mendukung finalis favoritmu. Silakan masuk untuk menggunakan vote gratis ini. Jangan lewatkan kesempatan ini untuk memberikan dukungan tanpa biaya!",
     "free_vote_desc_2": "Silakan masuk untuk menggunakan {qty} {votes} gratis.",
-    "free_vote_desc_3": "Hai, kamu memiliki {qty} {votes} gratis."
+    "free_vote_desc_3": "Hai, kamu memiliki {qty} {votes} gratis.",
+    "free_vote": "Vote Gratis",
+    "dengan" : "dengan",
+    "paket_vote" : "Paket Vote",
+    "total_vote_akhir" : "Total Vote Akhir"
   }
 }

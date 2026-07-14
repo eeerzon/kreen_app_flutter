@@ -29,6 +29,7 @@ class DetailOrderModal {
     bool isLoading = true;
 
     String? langCode;
+    String? token;
 
     Map<String, dynamic> bahasa = {};
 
@@ -37,6 +38,8 @@ class DetailOrderModal {
     String? currencyCode;
 
     Future <void> getBahasa() async {
+      token = await StorageService.getToken();
+
       langCode = await StorageService.getLanguage();
 
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
@@ -45,7 +48,7 @@ class DetailOrderModal {
     }
 
     Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode);
+      final resultOrder = await ApiService.get("/order/vote/$idOrder", xLanguage: langCode, xCurrency: currencyCode, token: token);
       final tempOrder = resultOrder?['data'] ?? {};
 
       final tempVoteOrder = tempOrder['vote_order'] ?? {};
@@ -104,7 +107,7 @@ class DetailOrderModal {
         displayTotalAmount = num.parse(totalPriceRegion.toStringAsFixed(2));
       }
 
-      final resultVote = await ApiService.get("/vote/${vote['id_vote']}", xLanguage: langCode, xCurrency: currencyCode);
+      final resultVote = await ApiService.get("/vote/${vote['id_vote']}", xLanguage: langCode, xCurrency: currencyCode, token: token);
       if (resultVote == null || resultVote['rc'] != 200) {
         return;
       } else {
@@ -772,9 +775,11 @@ class DetailOrderModal {
     num displayTotalAmount = 0;
 
     bool isGeneratingPdf = false;
-    String? currencyCode;
+    String? currencyCode, token;
 
     Future <void> getBahasa() async {
+      token = await StorageService.getToken();
+
       langCode = await StorageService.getLanguage();
 
       bahasa = await LangService.getJsonData(langCode!, "bahasa");
@@ -785,7 +790,7 @@ class DetailOrderModal {
     }
 
     Future<void> loadOrder() async {
-      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode);
+      final resultOrder = await ApiService.get("/order/event/$idOrder", xLanguage: langCode, xCurrency: currencyCode, token: token);
       final tempOrder = resultOrder?['data'] ?? {};
 
       final tempEventOrder = tempOrder['event_order'] ?? {};
@@ -803,7 +808,7 @@ class DetailOrderModal {
         "id_event": event['id_event'],
       };
 
-      final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode);
+      final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode, xCurrency: currencyCode, token: token);
       final Map<String, dynamic> tempEventDetail = resultEvent?['data'] ?? {};
       final tempEventTiket = tempEventDetail['event_ticket'] ?? [];
 

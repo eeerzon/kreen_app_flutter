@@ -264,7 +264,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       selectedGender = gender.toLowerCase() == 'male' ? bahasa['gender_1'] : bahasa['gender_2'];
     }
 
-    final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
+    final detailResp = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (detailResp == null || detailResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -273,7 +273,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       return;
     }
 
-    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods", xLanguage: langCode, xCurrency: currencyCode);
+    final paymentResp = await ApiService.get("/vote/$idVote/payment-methods", xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (paymentResp == null || paymentResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -438,21 +438,21 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       bool isGenderEmpty = selectedGender == null;
       bool isCheckboxUnchecked = !_isChecked3;
 
-      if (widget.totalHargaAsli != 0) {
+      // if (widget.totalHargaAsli != 0) {
         if (isNameEmpty || isGenderEmpty || isCheckboxUnchecked) {
           setState(() {
             _showError = true;
           });
           return;
         }
-      } else {
-        if (isNameEmpty || isGenderEmpty ) {
-          setState(() {
-            _showError = true;
-          });
-          return;
-        }
-      }
+      // } else {
+      //   if (isNameEmpty || isGenderEmpty ) {
+      //     setState(() {
+      //       _showError = true;
+      //     });
+      //     return;
+      //   }
+      // }
 
       if (typePayment == 'credit_card' && payment['Credit Card'][selectedIndex]['flag_client'] == "0") {
         if (card_number == null || card_number!.isEmpty) {
@@ -561,7 +561,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
         };
 
         var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode, token: token);
-
+        
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
             final tempOrder = resultVoteOrder['data'];
@@ -689,8 +689,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
           ),
         };
 
-        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode);
-        
+        var resultVoteOrder = await ApiService.post("/order/vote/checkout", body: body, xLanguage: langCode, token: token);
+
         if (resultVoteOrder != null) {
           if (resultVoteOrder['rc'] == 200) {
             final tempOrder = resultVoteOrder['data'];
@@ -1223,11 +1223,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                         isEmailField
                                           ? EmailInputFormatter()
                                           : FilteringTextInputFormatter.singleLineFormatter,
-                                        
 
-                                        FilteringTextInputFormatter.allow(
-                                          RegExp(r"[a-zA-Z0-9@._+\-]"),
-                                        ),
+                                        if (isPhoneField || isEmailField)
+                                          FilteringTextInputFormatter.allow(
+                                            RegExp(r"[a-zA-Z0-9@._+\-]"),
+                                          ),
                                       ],
                                     decoration: InputDecoration(
                                       hintText: isPhoneField
@@ -2623,6 +2623,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                 ],
                               ),
                                 
+                              const SizedBox(height: 4),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -2648,28 +2649,39 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                         text: TextSpan(
                                           style: TextStyle(
                                             color: Colors.black,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            fontSize: 14
                                           ),
                                           children: [
                                             TextSpan(text: bahasa['kebijakan_privasi_7']),
+                                            
                                             TextSpan(
-                                              text: widget.counts == 1 
-                                                ? "${widget.counts} ${bahasa['text_votes']}" 
-                                                : "${widget.counts} ${bahasa['text_vote']}", 
-                                              style: TextStyle(
-                                                color: Colors.black,
+                                              text: widget.nama_finalis,
+                                              style: const TextStyle(
                                                 fontWeight: FontWeight.w700,
+                                                fontSize: 14,
                                               ),
                                             ),
+                                            TextSpan(
+                                              text: " ${bahasa['dengan'] ?? 'dengan'} ",
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  "${widget.counts * (detailVote['multiplier'] as int)} ${widget.counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+
                                             TextSpan(text: bahasa['kebijakan_privasi_8']),
                                             TextSpan(
                                                 text: currencyCode == null
                                                   ? "$voteCurrency ${formatter.format(totalPayment)}"
                                                   : "$currencyCode ${formatter.format(totalPayment)}",
-                                                style: TextStyle(
-                                                  color: Colors.black,
+                                                style: const TextStyle(
                                                   fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
                                                 ),
                                             ),
                                             TextSpan(
@@ -2780,6 +2792,91 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                 ),
                               ],
                             ),
+
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Checkbox(
+                                  value: _isChecked3,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _isChecked3 = value ?? false;
+                                      if (_isChecked3) _showError = false;
+                                    });
+                                  },
+                                  activeColor: Colors.red,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _isChecked3 = !_isChecked3;
+                                      });
+                                    },
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.normal,
+                                        ),
+                                        children: [
+                                          TextSpan(text: bahasa['kebijakan_privasi_7']),
+                                          
+                                          TextSpan(
+                                            text: widget.nama_finalis,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: " ${bahasa['dengan'] ?? 'dengan'} ",
+                                          ),
+                                          TextSpan(
+                                            text:
+                                                "${widget.counts * (detailVote['multiplier'] as int)} ${widget.counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']}",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+
+                                          TextSpan(text: bahasa['kebijakan_privasi_8']),
+                                          TextSpan(
+                                              text: currencyCode == null
+                                                ? "$voteCurrency ${formatter.format(totalPayment)}"
+                                                : "$currencyCode ${formatter.format(totalPayment)}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
+                                              ),
+                                          ),
+                                          TextSpan(
+                                              text:
+                                                  bahasa['kebijakan_privasi_9']),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 4),
+                            if (_showError && !_isChecked3)
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(16, 4, 0, 0), 
+                                child: Text(
+                                  bahasa['checkbox_error'],
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ),
                           ],
             
                           const SizedBox(height: 4),
@@ -2989,7 +3086,8 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       }
     }
 
-    if (widget.totalHargaAsli != 0 && !_isChecked3) {
+    // if (widget.totalHargaAsli != 0 && !_isChecked3) {
+    if (!_isChecked3) {
       isValid = false;
       agreementError = true;
     }

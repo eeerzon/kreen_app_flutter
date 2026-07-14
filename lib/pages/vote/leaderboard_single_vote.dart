@@ -308,7 +308,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
       if (themeName == "Default Kreen") themeName = "Red";
       color = colorMap[themeName] ?? Colors.red;
 
-      final resultLeaderboard = await ApiService.get("/vote/$idVote/leaderboard", xLanguage: langCode);
+      final resultLeaderboard = await ApiService.get("/vote/$idVote/leaderboard", xLanguage: langCode, xCurrency: currencyCode, token: _storedToken);
       tempRanking = resultLeaderboard?['data'] ?? [];
     }
 

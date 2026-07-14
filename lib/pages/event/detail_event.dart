@@ -61,7 +61,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
   Timer? _timer;
   final GlobalKey _shareKey = GlobalKey();
-  String? currencyCode;
+  String? currencyCode, token;
 
   List<Map<String, dynamic>> get activeTickets {
     return (event['event_ticket'] as List<dynamic>? ?? [])
@@ -163,7 +163,7 @@ class _DetailEventPageState extends State<DetailEventPage> {
       "id_event": widget.id_event,
     };
 
-    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode, token: token);
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -194,6 +194,8 @@ class _DetailEventPageState extends State<DetailEventPage> {
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
+
     final code = await StorageService.getLanguage();
 
     setState(() {
@@ -931,28 +933,37 @@ class _DetailEventPageState extends State<DetailEventPage> {
 
                                 SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
-                                    if (detailEvent['link_ig'] != null)
+                                    if (detailEvent['link_ig'] != null) ...[
                                       _buildSocialButton(
                                         iconUrl: "$baseUrl/image/ig.svg",
                                         link: detailEvent['link_ig'],
                                         platform: "instagram",
                                       ),
 
-                                    if (detailEvent['link_fb'] != null)
+                                      SizedBox(width: 16),
+                                    ],
+
+                                    if (detailEvent['link_fb'] != null) ... [
                                       _buildSocialButton(
                                         iconUrl: "$baseUrl/image/fb.svg",
                                         link: detailEvent['link_fb'],
                                         platform: "facebook",
                                       ),
 
-                                    if (detailEvent['link_tiktok'] != null)
+                                      SizedBox(width: 16),
+                                    ],
+
+                                    if (detailEvent['link_tiktok'] != null) ... [
                                       _buildSocialButton(
                                         iconUrl: "$baseUrl/image/tiktok.svg",
                                         link: detailEvent['link_tiktok'],
                                         platform: "tiktok",
                                       ),
+
+                                      SizedBox(width: 18),
+                                    ],
 
                                     if (detailEvent['link_youtube'] != null)
                                       _buildSocialButton(

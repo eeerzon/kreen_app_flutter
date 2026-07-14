@@ -23,7 +23,7 @@ class OrderEvent extends StatefulWidget {
 }
 
 class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateMixin{
-  String? langCode;
+  String? langCode, token;
   late TabController _tabController;
   bool isLoadingSukses = true;
   bool isLoadingPending = true;
@@ -67,6 +67,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
   }
 
   Future<void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
 
     setState(() {
@@ -121,7 +122,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
     var getUser = await StorageService.getUser();
     var idUser = getUser['id'];
 
-    var resultSuccess = await ApiService.get('/order/event?id_user=$idUser&status=success&sort_by=terbaru', xLanguage: langCode);
+    var resultSuccess = await ApiService.get('/order/event?id_user=$idUser&status=success&sort_by=terbaru', xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (resultSuccess == null || resultSuccess['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -442,7 +443,7 @@ class _EventSuccessState extends State<EventSuccess> {
   bool hasMore = true;
   int currentPage = 1;
 
-  String? langCode;
+  String? langCode, token;
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
 
@@ -472,6 +473,7 @@ class _EventSuccessState extends State<EventSuccess> {
   Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -507,6 +509,7 @@ class _EventSuccessState extends State<EventSuccess> {
       headers: {
         "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
     );
 
@@ -935,7 +938,7 @@ class _EventPendingState extends State<EventPending> {
   bool hasMore = true;
   int currentPage = 1;
 
-  String? langCode;
+  String? langCode, token;
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
@@ -965,6 +968,7 @@ class _EventPendingState extends State<EventPending> {
   Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -1003,6 +1007,7 @@ class _EventPendingState extends State<EventPending> {
       headers: {
         "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
     );
 
@@ -1433,7 +1438,7 @@ class _EventFailState extends State<EventFail> {
   bool hasMore = true;
   int currentPage = 1;
 
-  String? langCode;
+  String? langCode, token;
 
   final formatterNUmber = NumberFormat.decimalPattern("en_US");
   String statusOrder = '';
@@ -1462,6 +1467,7 @@ class _EventFailState extends State<EventFail> {
   Map<String, dynamic> bahasa = {};
 
   Future <void> _getBahasa() async {
+    token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
     setState(() {
       langCode = code;
@@ -1497,6 +1503,7 @@ class _EventFailState extends State<EventFail> {
       headers: {
         "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
         "Accept": "application/json",
+        "Authorization": "Bearer $token",
       },
     );
 

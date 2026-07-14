@@ -149,23 +149,24 @@ Widget CommentCard({
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: namaList.map<Widget>((item) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                item.toString(),
-                style: const TextStyle(color: Colors.black),
-              ),
-            );
-          }).toList(),
-        ),
+        if (namaList.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: namaList.map<Widget>((item) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  item.toString(),
+                  style: const TextStyle(color: Colors.black),
+                ),
+              );
+            }).toList(),
+          ),
 
         const SizedBox(height: 12),
 

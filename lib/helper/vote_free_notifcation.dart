@@ -1,14 +1,18 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
 
 class FreeVoteFloatingNotif extends StatefulWidget {
   final Map<String, dynamic> bahasa;
   final int freeVote;
+  final int freeVoteRemain;
   final String? token;
 
   const FreeVoteFloatingNotif({
     super.key,
     required this.bahasa,
     required this.freeVote,
+    required this.freeVoteRemain,
     this.token,
   });
 
@@ -26,7 +30,7 @@ class _FreeVoteFloatingNotifState extends State<FreeVoteFloatingNotif> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.freeVote <= 0 || _closed) return const SizedBox.shrink();
+    // if (widget.freeVote <= 0 || _closed) return const SizedBox.shrink();
 
     return AnimatedOpacity(
       opacity: _visible ? 1 : 0,
@@ -70,7 +74,7 @@ class _FreeVoteFloatingNotifState extends State<FreeVoteFloatingNotif> {
                     Text(
                       (widget.bahasa['free_vote_desc_3'] ?? 'Hi, you have {qty} free {votes}.')
                         .toString()
-                        .replaceAll('{qty}', widget.freeVote.toString())
+                        .replaceAll('{qty}', widget.freeVoteRemain.toString())
                         .replaceAll(
                           '{votes}',
                           widget.freeVote > 1

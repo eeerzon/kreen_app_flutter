@@ -12,6 +12,7 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote_paket.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class DeepLinkHandler {
   static final DeepLinkHandler _instance = DeepLinkHandler._internal();
@@ -403,7 +404,8 @@ class DeepLinkHandler {
   }
 
   Future<void> getInfoVote(String idVote, String langCode, String currencyCode) async {
-    final result = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode);
+    String? token = await StorageService.getToken();
+    final result = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode, token: token);
     vote = result?['data'] ?? {};
   }
 

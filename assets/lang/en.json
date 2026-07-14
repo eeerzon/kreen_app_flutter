@@ -188,9 +188,9 @@
     "kebijakan_privasi_6": " that applies.",
     "setuju_syarat": "I agree to the applicable Voting Terms & Conditions, including the policy that completed transactions cannot be canceled or refunded (non-refundable).",
     "checkbox_error": "This field must be selected",
-    "kebijakan_privasi_7": "I confirm that the number of votes I entered, which is ",
+    "kebijakan_privasi_7": "I confirm that the number of votes I entered as is as follows ",
     "kebijakan_privasi_8": " with a total payment of ",
-    "kebijakan_privasi_9": ", is correct, has been reviewed by me, and I consciously agree to proceed with the transaction according to that amount.",
+    "kebijakan_privasi_9": ", I have checked it and I agree to proceed with the transaction based on the entered amount.",
     "konfirmasi": "Confirm",
     "batal": "Cancel",
 
@@ -413,7 +413,7 @@
     "teater" : "Theater",
     "trade_show" : "Trade Show",
     "workshop" : "Workshop",
-    "Other" : "Other",
+    "other" : "Other",
     "job_fair" : "Job Fair",
     "voting_ongoing" : "Voting In Ongoing",
     "artikel_seputar_voting" : "Articles About Voting",
@@ -444,6 +444,10 @@
     "free_vote_qty": "free daily votes",
     "free_vote_desc": "Hi, you have {qty} available to support your favorite finalist. Don't miss this opportunity to give support without any cost! Please log in to use your free votes.",
     "free_vote_desc_2": "Please log in to use your {qty} free {votes}.",
-    "free_vote_desc_3": "Hi, you have {qty} free {votes}."
+    "free_vote_desc_3": "Hi, you have {qty} free {votes}.",
+    "free_vote": "Free Vote",
+    "dengan" : "with",
+    "paket_vote" : "Vote Package",
+    "total_vote_akhir" : "Final Vote Count"
   }
 }

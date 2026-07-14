@@ -205,8 +205,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   List<Map<String, dynamic>> paketLainnya = [];
 
   Future<void> _loadFinalis() async {
+
+    final storedToken = await StorageService.getToken();
     
-    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode,);
+    final resultFinalis = await ApiService.get("/finalis/${widget.id_finalis}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken);
     if (resultFinalis == null || resultFinalis['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -216,8 +218,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     }
 
     final tempFinalis = resultFinalis['data'] ?? {};
-
-    final storedToken = await StorageService.getToken();
     final resultDetailVote = await ApiService.get("/vote/${tempFinalis['id_vote']}", xLanguage: langCode, xCurrency: currencyCode, token: storedToken);
     if (resultDetailVote == null || resultDetailVote['rc'] != 200) {
       setState(() {
@@ -1238,7 +1238,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                       ),
                     ),
                     Text(
-                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']} ${detailvote['multiplier'] > 1 ? ' x${detailvote['multiplier']}' : ''} \n1 ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
+                      "${bahasa['paket']} $counts ${counts > 1 ? bahasa['text_votes'] : bahasa['text_vote']} ${detailvote['multiplier'] > 1 ? 'x${detailvote['multiplier']}' : ''} \n1 ${bahasa['finalis']}${countData > 1 ? 's' : ''}",
                       style: TextStyle(fontSize: 12),
                     ),
                   ],

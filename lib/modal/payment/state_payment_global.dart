@@ -228,7 +228,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       "id_event": id_event,
     };
 
-    final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode, xCurrency: currencyCode);
+    final resultEvent = await ApiService.post('/event/detail', body: body, xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
@@ -237,7 +237,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
       return;
     }
 
-    final resultPayment = await ApiService.get("/event/$id_event/payment-methods", xLanguage: langCode, xCurrency: currencyCode);
+    final resultPayment = await ApiService.get("/event/$id_event/payment-methods", xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (resultPayment == null || resultPayment['rc'] != 200) {
       setState(() {
         showErrorBar = true;

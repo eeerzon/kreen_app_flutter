@@ -184,30 +184,41 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
               ),
             ),
 
-            if (widget.data['free_quota'] > 0) ...[
-              Positioned(
-                top: 60,
-                left: 4,
-                child: FreeVoteFloatingNotif(
-                  bahasa: lang,
-                  freeVote: widget.data['free_quota'],
-                  token: widget.token,
-                ),
+            Positioned(
+              top: 12,
+              left: 0,
+              right: 0,
+              child: Stack(
+                alignment: Alignment.topCenter,
+                children: [
+                  
+                  if (widget.dataNotif.isNotEmpty)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: VoteNotifStack(
+                          notifList: widget.dataNotif,
+                          color: color,
+                          bgColor: bgColor,
+                          themeName: themeName,
+                        ),
+                      ),
+                    ),
+                    
+                  if (widget.data['free_quota'] > 0)
+                    Padding(
+                      padding: widget.dataNotif.isNotEmpty ?  const EdgeInsets.only(top: 48) : const EdgeInsets.only(top: 12),
+                      child: FreeVoteFloatingNotif(
+                        bahasa: lang,
+                        freeVote: widget.data['free_quota'],
+                        freeVoteRemain: widget.data['free_vote_remaining_quota'],
+                        token: widget.token,
+                      ),
+                    ),
+                ],
               ),
-            ],
-
-            if (widget.dataNotif.isNotEmpty) ... [
-              Positioned(
-                top: 12,
-                right: 4,
-                child: VoteNotifStack(
-                  notifList: widget.dataNotif,
-                  color: color,
-                  bgColor: bgColor,
-                  themeName: themeName,
-                ),
-              ),
-            ]
+            ),
           ]
         ),
 
@@ -259,8 +270,16 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
                           ? box.localToGlobal(Offset.zero) & box.size
                           : Rect.fromLTWH(0, 0, 100, 100);
 
+                      String? editedUrl;
+                      if (baseUrl.contains('bc')) {
+                        editedUrl = "https://kreenconnect.com";
+                      } else {
+                        editedUrl = baseUrl;
+                      }
+
                       Share.share(
-                        "$baseUrl/voting/${widget.data['vote_slug']}",
+                        // "$baseUrl/voting/${widget.data['vote_slug']}",
+                        "$editedUrl/voting/${widget.data['vote_slug']}",
                         subject: widget.data['judul_vote'],
                         sharePositionOrigin: rect,
                       );
@@ -692,6 +711,7 @@ class _LeaderboardSectionState extends State<LeaderboardSection> {
                       context: context,
                       rank: item['rank'],
                       name: item['nama_finalis'],
+                      nameTambahan: item['nama_tambahan'],
                       votes: item['total_voters'] ?? 0,
                       progress: 0,
                       image: item['poster_finalis'] ?? "$baseUrl/noimage_finalis.png",
@@ -899,7 +919,7 @@ class InfoSection extends StatelessWidget {
           ) 
         ),
 
-        if (data['lokasi_alamat'] == null && data['lokasi_alamat'] == '') ...[
+        if (data['lokasi_alamat'] != null && data['lokasi_alamat'] != '' && data['lokasi_alamat'] != '-')...[
           const SizedBox(height: 15,),
           Text(
             lang['lokasi'],
@@ -954,7 +974,7 @@ class InfoSection extends StatelessWidget {
           ),
         ],
 
-        if (data['lokasi_nama_tempat'] != null && data['lokasi_nama_tempat'] != '') ...[
+        if (data['lokasi_nama_tempat'] != null && data['lokasi_nama_tempat'] != '' && data['lokasi_nama_tempat'] != '-') ...[
           const SizedBox(height: 15,),
           Text(
             "Venue",
@@ -1142,7 +1162,10 @@ class DukunganSection extends StatelessWidget {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 20), 
                       child: CommentCard(
-                        namaFinalis: item['nama_finalis'] ?? '-',
+                        namaFinalis: (item['nama_finalis'] != null &&
+                            item['nama_finalis'].toString().trim().isNotEmpty)
+                          ? item['nama_finalis']
+                          : [],
                         name: hideNama == '0' ? nama : 'Anonymous',
                         time: formattedDate,
                         message: item['dukungan']
@@ -1351,6 +1374,7 @@ Widget buildListCard({
   required BuildContext context,
   required int rank,
   required String name,
+  String? nameTambahan,
   required num votes,
   required num progress,
   required String image,
@@ -1434,7 +1458,11 @@ Widget buildListCard({
                   name,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
                 ),
-                const SizedBox(height: 4),
+
+                if (nameTambahan != null && nameTambahan.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(nameTambahan),
+                ]
               ],
             ),
           ),

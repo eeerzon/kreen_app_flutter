@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
+import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class ApiService {
   
@@ -16,6 +17,7 @@ class ApiService {
       String? token
     }
   ) async {
+    token = await StorageService.getToken();
     final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
 
     Map<String, String> headers = {
@@ -181,7 +183,14 @@ class ApiService {
       'Authorization': 'Bearer $token',
     };
 
-    Uri url = Uri.parse("$baseapiUrl$endpoint");
+    String? editedUrl;
+    if (endpoint.contains('support')) {
+      editedUrl = 'https://kreenconnect.com/kreenapi';
+    } else {
+      editedUrl = baseapiUrl;
+    }
+    // Uri url = Uri.parse("$baseapiUrl$endpoint");
+    Uri url = Uri.parse("$editedUrl$endpoint");
     
     if (params != null) {
       url = url.replace(queryParameters: params);
