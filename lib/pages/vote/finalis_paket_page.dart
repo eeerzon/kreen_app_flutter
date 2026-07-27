@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, use_build_context_synchronously, deprecated_member_use, unused_local_variable
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -47,7 +47,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
   String? findFinalistText;
   String? notLogin, notLoginDesc, searchHintText, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
-  String? endVote, voteOpen, voteOpenAgain;
+  String? endVote, voteOpen, voteOpenAgain, voteBelumOpen;
   String? countDownText, daysText, hoursText, minutesText, secondsText;
   String? buttonPilihPaketText;
   String? detailfinalisText, cariFinalisText;
@@ -258,7 +258,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
     
     if (isBeforeOpen) {
-      return '$voteOpen $formattedBukaVote';
+      // return '$voteOpen $formattedBukaVote';
+      return '$voteBelumOpen';
     }
     if (vote['close_payment'] == '1') {
       return '$voteOpenAgain $formattedDate';
@@ -289,6 +290,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
 
       endVote = tempbahasa['end_vote'];
       voteOpen = tempbahasa['vote_open'];
+      voteBelumOpen = tempbahasa['vote_belum_open'];
       voteOpenAgain = tempbahasa['vote_open_again'];
 
       countDownText = tempbahasa['countdown_vote'];
@@ -444,12 +446,13 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     
 
     List newData = [];
-    if (resultFinalis!['rc'] == 200) {
-      newData = List.from(resultFinalis['data'] ?? []);
+    bool fetchFailed = false;
+    if (resultFinalis?['rc'] == 200) {
+      newData = List.from(resultFinalis?['data'] ?? []);
       hasMore = newData.length >= 6;
     } else {
       hasMore = false;
-      showErrorBar = false;
+      fetchFailed = true;
     }
 
     if (!mounted) return;
@@ -462,7 +465,7 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
         isFirstLoad = false;
       }
 
-      showErrorBar = false;
+      showErrorBar = fetchFailed;
     });
   }
 
@@ -1022,11 +1025,25 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                     ),
 
                     const SizedBox(height: 10),
-                    Text(
-                      item['nama_finalis'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const namaFinalisStyle = TextStyle(fontWeight: FontWeight.bold);
+
+                        final textPainter = TextPainter(
+                          text: TextSpan(text: item['nama_finalis'], style: namaFinalisStyle),
+                          textDirection: Directionality.of(context),
+                        )..layout(maxWidth: constraints.maxWidth);
+
+                        final isMultiline = textPainter.computeLineMetrics().length > 1;
+
+                        return Text(
+                          item['nama_finalis'],
+                          textAlign: isMultiline ? TextAlign.center : TextAlign.start,
+                          style: namaFinalisStyle,
+                        );
+                      },
                     ),
-                    
+
                     if (item['nama_tambahan'] != null && item['nama_tambahan'] != "") ... [
                       SizedBox(height: 10),
                       Text(item['nama_tambahan'],
@@ -1070,41 +1087,43 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                             ),
                           ],
                         ),
-
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                SvgPicture.network(
-                                  "$baseUrl/image/icon-vote/$theme_name/chart.svg",
-                                  width: 25,
-                                  height: 25,
-                                  fit: BoxFit.contain,
-                                ),
-          
-                                SizedBox(width: 4),
-                                Text(
-                                  (persen
-                                    ? item['percent'] > 1
-                                    : item['total_voters'] > 1)
-                                      ? bahasa['text_votes']
-                                      : bahasa['text_vote'],
-                                ),
-                              ],
-                            ),
-          
-                            const SizedBox(height: 10,),
-                            Text(
-                              persen
-                                ? "${item['percent'] ?? 0}%"
-                                : formatter.format(item['total_voters'] ?? 0),
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            )
-                          ],
-                        ),
+                        
+                        if (vote['leaderboard_tipe'] != 'hidden') ...[
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  SvgPicture.network(
+                                    "$baseUrl/image/icon-vote/$theme_name/chart.svg",
+                                    width: 25,
+                                    height: 25,
+                                    fit: BoxFit.contain,
+                                  ),
+            
+                                  SizedBox(width: 4),
+                                  Text(
+                                    (persen
+                                      ? item['percent'] > 1
+                                      : item['total_voters'] > 1)
+                                        ? bahasa['text_votes']
+                                        : bahasa['text_vote'],
+                                  ),
+                                ],
+                              ),
+            
+                              const SizedBox(height: 10,),
+                              Text(
+                                persen
+                                  ? "${item['percent'] ?? 0}%"
+                                  : formatter.format(item['total_voters'] ?? 0),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
+                        ]
                       ],
                     ),
                     const SizedBox(height: 15),

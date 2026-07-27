@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
-import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class ApiService {
   
@@ -17,12 +16,11 @@ class ApiService {
       String? token
     }
   ) async {
-    token = await StorageService.getToken();
     final bahasa = await LangService.getJsonData(xLanguage!, 'bahasa');
 
     Map<String, String> headers = {
       'API-Secret-Key':
-          'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
+          apiSecretKey,
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
       'x-language': xLanguage,
@@ -76,7 +74,7 @@ class ApiService {
 
     var request = http.MultipartRequest("POST", url);
 
-    request.headers['API-Secret-Key'] = 'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=';
+    request.headers['API-Secret-Key'] = apiSecretKey;
 
     if (file != null) {
       request.files.add(
@@ -128,7 +126,7 @@ class ApiService {
 
     var headers = {
       'Authorization': 'Bearer $token',
-      'API-Secret-Key': 'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
+      'API-Secret-Key': apiSecretKey,
       'Content-Type': 'application/json'
     };
 
@@ -176,7 +174,7 @@ class ApiService {
 
     Map<String, String> headers = {
       'API-Secret-Key':
-          'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
+          apiSecretKey,
       'Content-Type': 'application/json',
       'x-language': xLanguage,
       'x-currency': ?xCurrency,
@@ -184,7 +182,7 @@ class ApiService {
     };
 
     String? editedUrl;
-    if (endpoint.contains('support')) {
+    if (baseapiUrl.contains('https://bc.kreenconnect.com')) {
       editedUrl = 'https://kreenconnect.com/kreenapi';
     } else {
       editedUrl = baseapiUrl;
@@ -240,7 +238,7 @@ class ApiService {
 
     var headers = {
       'Authorization': 'Bearer $token',
-      'API-Secret-Key': 'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
+      'API-Secret-Key': apiSecretKey,
       'Content-Type': 'application/json'
     };
 
@@ -288,8 +286,9 @@ class ApiService {
 
     Map<String, String> headers = {
       'API-Secret-Key':
-          'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=',
+          apiSecretKey,
       'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
       'x-language': xLanguage,
       'x-currency': ?xCurrency,
     };

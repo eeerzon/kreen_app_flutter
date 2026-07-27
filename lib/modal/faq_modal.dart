@@ -7,8 +7,24 @@ import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FaqModal {
-  static Future<void> show(BuildContext context, String faq) async {
+  static Future<void> show(BuildContext context, String faq, Map<String, dynamic> bahasa) async {
     var jsonFaq = jsonDecode(faq);
+    final List rawData = jsonFaq['data'] ?? [];
+
+    final List<Map<String, String>> faqData = rawData.isNotEmpty
+      ? List<Map<String, String>>.from(
+          rawData.map((e) => {
+                'pertanyaan': e['pertanyaan'].toString(),
+                'jawaban': e['jawaban'].toString(),
+              }),
+        )
+      : List.generate(6, (i) {
+          final idx = i + 1;
+          return {
+            'pertanyaan': bahasa['faq_default_q$idx'].toString(),
+            'jawaban': bahasa['faq_default_a$idx'].toString(),
+          };
+        });
 
     await showModalBottomSheet<void>(
       backgroundColor: Colors.white,
@@ -49,9 +65,9 @@ class FaqModal {
                     ListView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
-                      itemCount: jsonFaq['data'].length,
+                      itemCount: faqData.length,
                       itemBuilder: (context, index) {
-                        final item = jsonFaq['data'][index];
+                        final item = faqData[index];
                         return Column(
                           children: [
                             Row(
@@ -60,11 +76,9 @@ class FaqModal {
                               children: [
                                 Text(
                                   '${index + 1}.',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                                SizedBox(width: 4,),
+                                const SizedBox(width: 4),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,12 +107,8 @@ class FaqModal {
                                           );
                                         },
                                         style: {
-                                          "p": Style(
-                                            textAlign: TextAlign.justify
-                                          ),
-                                          "body": Style(
-                                            textAlign: TextAlign.justify
-                                          ),
+                                          "p": Style(textAlign: TextAlign.justify),
+                                          "body": Style(textAlign: TextAlign.justify),
                                         },
                                       )
                                     ],
@@ -108,7 +118,7 @@ class FaqModal {
                             )
                           ],
                         );
-                      }
+                      },
                     ),
                   ],
                 ),

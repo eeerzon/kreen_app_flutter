@@ -588,16 +588,58 @@ class _HomeContentState extends State<HomeContent> {
                         },
                         child: CircleAvatar(
                           child: ClipOval(
-                            child: photo_user != null
-                                ? isSvg
-                                    ? SvgPicture.network(
-                                        '$baseUrl/user/$photo_user',
-                                        width: 40, height: 40, fit: BoxFit.fill,
-                                      )
-                                    : isHttp
-                                        ? Image.network(photo_user!, width: 40, height: 40, fit: BoxFit.fill)
-                                        : Image.network('$baseUrl/user/$photo_user', width: 40, height: 40, fit: BoxFit.fill)
-                                : Image.network("$baseUrl/noimage_finalis.png", width: 40, height: 40, fit: BoxFit.fill),
+                            child: photo_user != null 
+                            ?
+                              isSvg
+                                ? SvgPicture.network(
+                                    '$baseUrl/user/$photo_user',
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.fill,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.network(
+                                        "$baseUrl/noimage_finalis.png",
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.fill,
+                                      );
+                                    },
+                                  )
+                                : isHttp
+                                  ? Image.network(
+                                      photo_user!,
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.fill,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.network(
+                                          "$baseUrl/noimage_finalis.png",
+                                          width: 40,
+                                          height: 40,
+                                          fit: BoxFit.fill,
+                                        );
+                                      },
+                                    )
+                                  : Image.network(
+                                      '$baseUrl/user/$photo_user',
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.fill,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.network(
+                                          "$baseUrl/noimage_finalis.png",
+                                          width: 40,
+                                          height: 40,
+                                          fit: BoxFit.fill,
+                                        );
+                                      },
+                                    )
+                            : Image.network(
+                                "$baseUrl/noimage_finalis.png",
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.fill,
+                              )
                           ),
                         ),
                       ),
@@ -686,8 +728,8 @@ class _HomeContentState extends State<HomeContent> {
     required VoidCallback onSeeMore,
     required _CardType type,
   }) {
-    bool isOpenedLink = false;
-    
+    final isOpenedLink = List<bool>.filled(items.length, false);
+
     return Container(
       color: Colors.white,
       child: Padding(
@@ -700,7 +742,9 @@ class _HomeContentState extends State<HomeContent> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: items.map((item) {
+                children: items.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
                   final title = item['title']?.toString() ?? 'Tanpa Judul';
                   final dateStr = item['date_event']?.toString();
                   final img = item['img']?.toString() ?? '';
@@ -719,16 +763,16 @@ class _HomeContentState extends State<HomeContent> {
                         }
 
                         if (url_partner != null && url_partner.isNotEmpty) {
-                          if (isOpenedLink) return;
-                                    
-                          isOpenedLink = true;
-                          
+                          if (isOpenedLink[index]) return;
+
+                          isOpenedLink[index] = true;
+
                           try {
                             await openDeepLink(
                               url_partner,
                             );
                           } finally {
-                            if (mounted) setState(() => isOpenedLink = false);
+                            if (mounted) setState(() => isOpenedLink[index] = false);
                           }
                         } else {
                           Navigator.push(

@@ -187,12 +187,37 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _cardNumberController.dispose();
+    _cvvController.dispose();
+    expDateController.dispose();
+    _phoneItemController.dispose();
+    _idCardItemController.dispose();
+    phoneEwalletController.dispose();
+
+    _cardNumberFocus.dispose();
+    _expiryDateFocus.dispose();
+    _cvvFocus.dispose();
+    _phoneItemFocus.dispose();
+    _idCardItemFocus.dispose();
+    _phoneEwalletFocus.dispose();
+
+    _cvvDebounce?.cancel();
+    _phoneDebounce?.cancel();
+    _idCardDebounce?.cancel();
+
+    super.dispose();
+  }
+
   Future<void> _getBahasa() async {
     final lang = await StorageService.getLanguage();
+    if (!mounted) return;
     setState(() => langCode = lang);
 
     final tempBahasa = await LangService.getJsonData(langCode!, "bahasa");
-
+    if (!mounted) return;
     setState(() {
       bahasa = tempBahasa;
       namaLengkapLabel = bahasa['nama_lengkap_label'];
@@ -209,6 +234,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
 
   Future<void> _getCurrency() async {
     final currency = await StorageService.getCurrency();
+    if (!mounted) return;
     setState(() => currencyCode = currency);
   }
 
@@ -231,7 +257,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultEvent?['message'];
+        errorMessage = resultEvent?['message'] ?? '';
       });
       return;
     }
@@ -240,7 +266,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
     if (resultPayment == null || resultPayment['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultPayment?['message'];
+        errorMessage = resultPayment?['message'] ?? '';
       });
       return;
     }
@@ -485,7 +511,7 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
       var resultEventOrder = await ApiService.post("/order/event/checkout", body: body, xLanguage: langCode, token: token);
       if (resultEventOrder != null) {
         if (resultEventOrder['rc'] == 200) {
-          final tempOrder = resultEventOrder['data'];
+          final tempOrder = resultEventOrder['data'] ?? {};
 
           var id_order = tempOrder['data']['id_order'];
           Navigator.pop(context);
@@ -1266,7 +1292,6 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                                 eWalletClicked = false;
                                 retailClicked = false;
                                 qrCodeClicked = false;
-                                qrCodeClicked = false;
                                 debitClicked = false;
 
                                 if (willOpen) {
@@ -1848,6 +1873,12 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
           }
         }
       }
+    }
+
+    if (!isValid) {
+      if (firstErrorFocus != null) {
+        _scrollToFocus(firstErrorFocus);
+      } 
     }
 
     return isValid;

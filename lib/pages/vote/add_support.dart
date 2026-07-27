@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
+import 'package:kreen_app_flutter/modal/detail_order_modal.dart';
 import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
 import 'package:kreen_app_flutter/services/lang_service.dart';
@@ -28,6 +29,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
   final formatter = NumberFormat.decimalPattern("en_US");
 
   bool isAnonymous = false;
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _supportController = TextEditingController();
 
   Map<String, dynamic> vote = {};
@@ -57,6 +59,16 @@ class _AddSupportPageState extends State<AddSupportPage> {
       await _getCurrency();
       await _loadkonten();
     });
+
+    _nameController.text = widget.nama;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _supportController.dispose();
+    _supportFocus.dispose();
+    super.dispose();
   }
 
   Future<void> _getBahasa() async {
@@ -241,6 +253,26 @@ class _AddSupportPageState extends State<AddSupportPage> {
       }
     }
 
+    final orderCreatedAtStr = voteOder['order_created_at']?.toString() ?? '';
+    String formattedOrderDate = '-';
+
+    if (orderCreatedAtStr.isNotEmpty) {
+      try {
+        final orderDate = parseWib(orderCreatedAtStr).toLocal();
+        if (langCode == 'id') {
+          final dateFormatter = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
+          final timeFormatter = DateFormat('HH:mm', 'id_ID');
+          formattedOrderDate = '${dateFormatter.format(orderDate)} • ${timeFormatter.format(orderDate)} WIB';
+        } else {
+          final dateFormatter = DateFormat('EEEE, MMMM d, yyyy', 'en_US');
+          final timeFormatter = DateFormat('h:mm a', 'en_US');
+          formattedOrderDate = '${dateFormatter.format(orderDate)} • ${timeFormatter.format(orderDate)}';
+        }
+      } catch (e) {
+        formattedOrderDate = '-';
+      }
+    }
+
     Future<void> doSubmitProcess() async {
       final dukungan = _supportController.text;
 
@@ -257,7 +289,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
       final body = {
         "id_vote": widget.id_vote,
         "id_order": widget.id_order,
-        "name": isAnonymous ? '' : widget.nama,
+        "name": isAnonymous ? '' : _nameController.text,
         "support_text": dukungan,
         "anonymous": isAnonymous.toString()
       };
@@ -269,6 +301,7 @@ class _AddSupportPageState extends State<AddSupportPage> {
 
           await Future.delayed(const Duration(milliseconds: 400));
 
+          if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -563,97 +596,349 @@ class _AddSupportPageState extends State<AddSupportPage> {
                       );
                     }),
                   ),
-                  
-                  SizedBox(height: 35),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            isAnonymous = !isAnonymous;
-                          });
-                        },
-                        child: Text(
-                          bahasa['anonim'] ?? 'Anonymous',
+
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bahasa['nama_lengkap_label'],
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      
-                      Checkbox(
-                        value: isAnonymous,
-                        activeColor: Colors.red,
-                        onChanged: (value) {
-                          setState(() {
-                            isAnonymous = value ?? false;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-              
-                  const SizedBox(height: 16),
-                  Text(
-                    bahasa['support'],
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-              
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _supportController,
-                    focusNode: _supportFocus,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: bahasa['support_hint'],
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onChanged: (val) {
-                      if (_showError && val.trim().isNotEmpty) {
-                        setState(() => _showError = false);
-                      } else if (!_showError && val.trim().isEmpty) {
-                        setState(() => _showError = true);
-                      }
-                    },
-                  ),
-                  if (_showError)
-                      Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
-                        child: Text(
-                          bahasa['support_answer_error'],
-                          style: TextStyle(color: Colors.red[900], fontSize: 12),
-                        ),
-                      ),
-                    ),
-              
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isSubmitting 
-                        ? null 
-                        : handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white),
-                            )
-                          : Text(
-                              bahasa['send_support'],
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _nameController,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            hintText: bahasa['nama_lengkap'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                          ),
+                          onChanged: (val) {
+                            if (_showError && val.trim().isNotEmpty) {
+                              setState(() {
+                                _showError = false;
+                                isAnonymous = false;
+                              });
+                            } else if (!_showError && val.trim().isEmpty) {
+                              setState(() {
+                                _showError = true;
+                                isAnonymous = true;
+                              });
+                            }
+                          },
+                        ),
+
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: isAnonymous,
+                              activeColor: Colors.red,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                              onChanged: (value) {
+                                setState(() {
+                                  isAnonymous = value ?? false;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  isAnonymous = !isAnonymous;
+                                });
+                              },
+                              child: Text(
+                                bahasa['hide_nama'] ?? 'Anonymous',
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+                        Text(
+                          bahasa['support'],
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                    
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _supportController,
+                          focusNode: _supportFocus,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: bahasa['support_hint'],
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onChanged: (val) {
+                            if (_showError && val.trim().isNotEmpty) {
+                              setState(() => _showError = false);
+                            } else if (!_showError && val.trim().isEmpty) {
+                              setState(() => _showError = true);
+                            }
+                          },
+                        ),
+                        if (_showError)
+                            Align(
+                            alignment: AlignmentGeometry.centerLeft,
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                              child: Text(
+                                bahasa['support_answer_error'],
+                                style: TextStyle(color: Colors.red[900], fontSize: 12),
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 42,
+                          child: ElevatedButton(
+                            onPressed: isSubmitting
+                              ? null
+                              : handleSubmit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: isSubmitting
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(color: Colors.white),
+                                  )
+                                : Text(
+                                    bahasa['send_support'],
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                          ),
+                        ),
+                      ]
+                    )
+                  ),
+
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bahasa['data_pesanan'] ?? 'Order Data',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.only(left: 8),
+                          child: Column(
+                            children: [
+                              buildOrderInfoRow(
+                                bahasa['kode_pesanan'] ?? 'Kode Pesanan',
+                                voteOder['invoice_number'] ?? '-',
+                              ),
+                              const SizedBox(height: 8),
+                              buildOrderInfoRow(
+                                bahasa['tanggal_pemesanan'] ?? 'Tanggal Pemesanan',
+                                formattedOrderDate,
+                              ),
+                              const SizedBox(height: 8),
+                              buildOrderInfoRow(
+                                bahasa['nama_pemesan'] ?? 'Nama Pemesan',
+                                maskMiddle(voteOder['voter_name']?.toString()),
+                              ),
+                              const SizedBox(height: 8),
+                              buildOrderInfoRow(
+                                bahasa['no_hp'] ?? 'No. HP',
+                                maskMiddle(voteOder['voter_phone']?.toString()),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300,),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bahasa['ringkasan_pembayaran'] ?? 'Ringkasan Pembayaran',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+
+                        SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.only(left: 8),
+                          child: Column(
+                            children: voteOrderDetail.isEmpty
+                              ? []
+                              : List.generate(voteOrderDetail.length * 2 - 1, (i) {
+                                  if (i.isOdd) return const SizedBox(height: 8);
+
+                                  final detail = voteOrderDetail[i ~/ 2];
+                                  final matchedFinalis = finalis.firstWhere(
+                                    (f) => f['id_finalis'] == detail['id_finalis'],
+                                    orElse: () => {'nama_finalis': '-'},
+                                  );
+                                  final qty = detail['qty'] ?? 0;
+                                  final qtyText = qty > 1
+                                    ? "$qty ${bahasa['text_votes'] ?? 'Votes'}"
+                                    : "$qty ${bahasa['text_vote'] ?? 'Vote'}";
+
+                                  return buildFinalisInfoRow(
+                                    matchedFinalis['nama_finalis'] ?? '-',
+                                    qtyText,
+                                  );
+                                }),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.only(left: 8),
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: Text(bahasa['harga'] ?? 'Harga')),
+                                  Expanded(
+                                    child: Text(
+                                      "$currencyCode ${formatter.format(voteOder['user_currency_amount'] ?? 0)}",
+                                      textAlign: TextAlign.end,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: Text(bahasa['biaya_layanan'] ?? 'Biaya Layanan')),
+                                  Expanded(
+                                    child: Text(
+                                      "$currencyCode ${formatter.format(voteOder['user_currency_fees'] ?? 0)}",
+                                      textAlign: TextAlign.end,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              buildFinalisInfoRow(
+                                bahasa['total_bayar'] ?? 'Total Bayar',
+                                "$currencyCode ${formatter.format(voteOder['user_currency_total_payment'] ?? 0)}",
+                              ),
+                            ],
+                          )
+                        ),
+
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => DetailVotePage(
+                                          id_event: widget.id_vote,
+                                          currencyCode: currencyCode,
+                                        ),
+                                      ),
+                                      (route) => route.isFirst,
+                                    );
+                                  },
+                                  child: Container(
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['selesai'],
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    await DetailOrderModal.show(context, voteOder['id_order'], bahasa['detail_pesanan']);
+                                  },
+                                  child: Container(
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      bahasa['detail_pesanan'],
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -662,6 +947,53 @@ class _AddSupportPageState extends State<AddSupportPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildOrderInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade700),
+            maxLines: 2,
+            softWrap: true,
+          ),
+        ),
+
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildFinalisInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 

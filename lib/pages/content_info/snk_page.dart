@@ -47,7 +47,7 @@ class _SnkPageState extends State<SnkPage> {
     if (resultInformasi == null || resultInformasi['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultInformasi?['message'];
+        errorMessage = resultInformasi?['message'] ?? '';
       });
       return;
     }
@@ -90,9 +90,11 @@ class _SnkPageState extends State<SnkPage> {
                   color: Colors.white,
                   padding: kGlobalPadding,
                   child: Html(
-                    data: langCode == 'en'
-                      ? infoKonten[0]['en_content']
-                      : infoKonten[0]['content'],
+                    data: infoKonten.isEmpty
+                      ? ''
+                      : langCode == 'en'
+                        ? infoKonten[0]['en_content']
+                        : infoKonten[0]['content'],
                   ),
                 ),
               ),

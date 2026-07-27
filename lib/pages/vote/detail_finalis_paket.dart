@@ -101,6 +101,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
   final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
   Timer? _timer;
+  Timer? _countdownTimer;
   bool isPaymentClosed = false;
   bool isBeforeOpen = false;
   final GlobalKey _shareKey = GlobalKey();
@@ -421,7 +422,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
 
   void _startCountdown() {
     _updateRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateRemaining();
     });
   }
@@ -447,7 +448,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     }
 
     if (difference.isNegative) {
-      _timer?.cancel();
+      _countdownTimer?.cancel();
     }
 
     setState(() {
@@ -790,11 +791,25 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              detailFinalis['nama_finalis'],
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                const namaFinalisStyle = TextStyle(fontWeight: FontWeight.bold);
+
+                                final textPainter = TextPainter(
+                                  text: TextSpan(text: detailFinalis['nama_finalis'], style: namaFinalisStyle),
+                                  textDirection: Directionality.of(context),
+                                )..layout(maxWidth: constraints.maxWidth);
+
+                                final isMultiline = textPainter.computeLineMetrics().length > 1;
+
+                                return Text(
+                                  detailFinalis['nama_finalis'],
+                                  textAlign: isMultiline ? TextAlign.center : TextAlign.start,
+                                  style: namaFinalisStyle,
+                                );
+                              },
                             ),
-                  
+
                             if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
                               SizedBox(height: 10,),
                               Text(detailFinalis['nama_tambahan'],
@@ -845,40 +860,42 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                   ],
                                 ),
 
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        SvgPicture.network(
-                                          "$baseUrl/image/icon-vote/$themeName/chart.svg",
-                                          width: 25,
-                                          height: 25,
-                                          fit: BoxFit.contain,
-                                        ),
-                  
-                                        SizedBox(width: 4),
-                                        Text(
-                                          (widget.persen
-                                            ? (detailFinalis['percent'] ?? 0) > 1
-                                            : (detailFinalis['total_voters'] ?? 0) > 1)
-                                              ? bahasa['text_votes']
-                                              : bahasa['text_vote'],
-                                        ),
-                                      ],
-                                    ),
-                  
-                                    const SizedBox(height: 10,),
-                                    Text(
-                                      widget.persen 
-                                        ? "${detailFinalis['percent'] ?? 0}%"
-                                        : formatter.format(detailFinalis['total_voters'] ?? 0),
-                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                    )
-                                  ],
-                                ),
+                                if (detailvote['leaderboard_tipe'] != 'hidden') ...[
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: <Widget>[
+                                          SvgPicture.network(
+                                            "$baseUrl/image/icon-vote/$themeName/chart.svg",
+                                            width: 25,
+                                            height: 25,
+                                            fit: BoxFit.contain,
+                                          ),
+                    
+                                          SizedBox(width: 4),
+                                          Text(
+                                            (widget.persen
+                                              ? (detailFinalis['percent'] ?? 0) > 1
+                                              : (detailFinalis['total_voters'] ?? 0) > 1)
+                                                ? bahasa['text_votes']
+                                                : bahasa['text_vote'],
+                                          ),
+                                        ],
+                                      ),
+                    
+                                      const SizedBox(height: 10,),
+                                      Text(
+                                        widget.persen 
+                                          ? "${detailFinalis['percent'] ?? 0}%"
+                                          : formatter.format(detailFinalis['total_voters'] ?? 0),
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      )
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                   
@@ -1346,6 +1363,8 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
+    _countdownTimer?.cancel();
+    controllers?.dispose();
     _ytTopController?.dispose();
     _ytBottomController?.dispose();
     super.dispose();
@@ -1365,8 +1384,6 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
           : () async {
               final Uri url = _buildSocialUri(platform, link);
               if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },

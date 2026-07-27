@@ -82,7 +82,7 @@ class _ExploreEventState extends State<ExploreEvent> {
     final responses = await ApiService.get(endpointEvent, xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
-        showErrorBar = false;
+        showErrorBar = true;
         errorMessage = responses?['message'];
         isFirstLoad = false;
       });

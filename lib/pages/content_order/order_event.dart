@@ -126,7 +126,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
     if (resultSuccess == null || resultSuccess['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultSuccess?['message'];
+        errorMessage = resultSuccess?['message'] ?? '';
       });
       return;
     }
@@ -188,7 +188,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
     if (resultPending == null || resultPending['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultPending?['message'];
+        errorMessage = resultPending?['message'] ?? '';
       });
       return;
     }
@@ -251,7 +251,7 @@ class _OrderEventState extends State<OrderEvent> with SingleTickerProviderStateM
     if (resultFail == null || resultFail['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultFail?['message'];
+        errorMessage = resultFail?['message'] ?? '';
       });
       return;
     }
@@ -507,7 +507,7 @@ class _EventSuccessState extends State<EventSuccess> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "Authorization": "Bearer $token",
       },
@@ -550,6 +550,8 @@ class _EventSuccessState extends State<EventSuccess> {
         hasMore = newData.isNotEmpty;
         isLoading = false;
       });
+    } else {
+      setState(() => isLoading = false);
     }
   }
 
@@ -1005,7 +1007,7 @@ class _EventPendingState extends State<EventPending> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "Authorization": "Bearer $token",
       },
@@ -1044,10 +1046,12 @@ class _EventPendingState extends State<EventPending> {
           orderPending = newData;
           events = newEvents;
         }
-        
+
         hasMore = newData.isNotEmpty;
         isLoading = false;
       });
+    } else {
+      setState(() => isLoading = false);
     }
   }
 
@@ -1501,7 +1505,7 @@ class _EventFailState extends State<EventFail> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "Authorization": "Bearer $token",
       },
@@ -1540,10 +1544,12 @@ class _EventFailState extends State<EventFail> {
           orderFail = newData;
           events = newEvents;
         }
-        
+
         hasMore = newData.isNotEmpty;
         isLoading = false;
       });
+    } else {
+      setState(() => isLoading = false);
     }
   }
 

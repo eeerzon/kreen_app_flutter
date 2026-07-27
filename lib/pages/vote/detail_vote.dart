@@ -82,6 +82,8 @@ class _DetailVotePageState extends State<DetailVotePage> {
   // bool _freeVotePopupShown = false;
   String? storedToken;
 
+  bool isTutup = false;
+
   @override
   void initState() {
     super.initState();
@@ -144,11 +146,21 @@ class _DetailVotePageState extends State<DetailVotePage> {
     final resultVote = results[0];
     final resultListOrderVote = results[1];
 
-    articleData = resultVote!['data']['article_data'] ?? {};
+    if (!mounted) return;
+    if (resultVote == null || resultVote['rc'] != 200) {
+      setState(() {
+        showErrorBar = true;
+        errorMessage = resultVote?['message'] ?? '';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    articleData = (resultVote['data'] ?? {})['article_data'] ?? {};
 
     _articlePopupShown = await StorageService.getArticlePopupShown(widget.id_event);
 
-    maplistOrderVote = resultListOrderVote!['data'];
+    maplistOrderVote = resultListOrderVote?['data'] ?? [];
 
     final Map<String, dynamic> tempVote = resultVote['data'] ?? {};
 
@@ -180,6 +192,20 @@ class _DetailVotePageState extends State<DetailVotePage> {
       });
     }
 
+    DateTime deadlineUtc = DateHelper.parseWibToUtc(vote['real_tanggal_tutup_vote']);
+    Duration remaining = Duration.zero;
+    final nowUtc = DateTime.now().toUtc();
+    final difference = deadlineUtc.difference(nowUtc);
+
+    remaining = difference.isNegative ? Duration.zero : difference;
+    
+    final bukaVoteUtc = DateHelper.parseWibToUtc(vote['real_tanggal_buka_vote']);
+    bool isBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
+
+    if (remaining.inSeconds == 0 || isBeforeOpen) {
+      isTutup = true;
+    }
+
     _loadDukungan();
   }
 
@@ -193,14 +219,14 @@ class _DetailVotePageState extends State<DetailVotePage> {
     final resultSupport = results[0];
     final resultLeaderboard = results[1];
 
-    final tempRanking = resultLeaderboard!['data'] ?? [];
+    final tempRanking = resultLeaderboard?['data'] ?? [];
 
     await _precacheRankingImages(context, tempRanking);
 
     if (!mounted) return;
     if (mounted) {
       setState(() {
-        support = resultSupport!['data'] ?? [];
+        support = resultSupport?['data'] ?? [];
         ranking = tempRanking;
         _isRankingLoading = false;
         _isSupportLoading = false;
@@ -372,7 +398,9 @@ class _DetailVotePageState extends State<DetailVotePage> {
         children: [
           _isLoading
             ? buildSkeletonHome()
-            : buildKontenVote(),
+            : isTutup && vote['flag_tutup_view'] == '1' 
+              ? VoteTutup()
+              : buildKontenVote(),
 
           GlobalErrorBar(
             visible: showErrorBar,

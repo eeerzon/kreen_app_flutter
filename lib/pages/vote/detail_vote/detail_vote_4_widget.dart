@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
@@ -154,6 +155,8 @@ class DeskripsiSection_4 extends StatefulWidget {
         textColor = Color(int.parse('FF$hex', radix: 16));
       } catch (_) {}
     }
+
+    final unescape = HtmlUnescape();
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +339,7 @@ class DeskripsiSection_4 extends StatefulWidget {
                   children: [
                     InkWell(
                       onTap: () async {
-                        await FaqModal.show(context, widget.data['faq']);
+                        await FaqModal.show(context, widget.data['faq'], lang);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -633,16 +636,21 @@ class DeskripsiSection_4 extends StatefulWidget {
                                             ),
                                           ),
                                           TextSpan(
+                                            // text: jamMulai != '-' && jamSelesai != '-' 
+                                            //   ? data['code_timezone'] == 'WIB'
+                                            //     ? " (GMT+7)"
+                                            //     : data['code_timezone'] == 'WITA'
+                                            //       ? " (GMT+8)"
+                                            //       : data['code_timezone'] == 'WIT'
+                                            //         ? " (GMT+9)"
+                                            //         : data['code_timezone'] != null
+                                            //           ? " (${data['code_timezone']})"
+                                            //           : ''
+                                            //   : '',
                                             text: jamMulai != '-' && jamSelesai != '-' 
-                                              ? widget.data['code_timezone'] == 'WIB'
-                                                ? " (GMT+7)"
-                                                : widget.data['code_timezone'] == 'WITA'
-                                                  ? " (GMT+8)"
-                                                  : widget.data['code_timezone'] == 'WIT'
-                                                    ? " (GMT+9)"
-                                                    : widget.data['code_timezone'] != null
-                                                      ? " (${widget.data['code_timezone']})"
-                                                      : ''
+                                              ? widget.data['code_timezone'] != null 
+                                                ? " (${widget.data['code_timezone']})" 
+                                                : '' 
                                               : '',
                                             style: TextStyle(
                                               color: color,
@@ -756,7 +764,7 @@ class DeskripsiSection_4 extends StatefulWidget {
                                         children: [
                                           Text(
                                             widget.data['lokasi_nama_tempat'] != null && widget.data['lokasi_nama_tempat'] != ''
-                                              ? widget.data['lokasi_nama_tempat']
+                                              ? unescape.convert(widget.data['lokasi_nama_tempat'].toString())
                                               : '-',
                                             style: TextStyle(
                                               color: Colors.black,
@@ -864,13 +872,16 @@ class _LeaderboardSection_4State extends State<LeaderboardSection_4> {
 
     final List<int> customOrder = [2, 1, 3];
 
+    final int limitTampil = (widget.data['leaderboard_limit_tampil'] ?? 0) as int;
+    final int effectiveLimit = limitTampil > 3 ? limitTampil : 10;
+
     final List<dynamic> topThree = widget.ranking
         .where((item) => customOrder.contains(item['rank']))
         .toList()
       ..sort((a, b) => customOrder.indexOf(a['rank']).compareTo(customOrder.indexOf(b['rank'])));
 
     final List<dynamic> others = widget.ranking
-        .where((item) => item['rank'] >= 4)
+        .where((item) => item['rank'] >= 4 && item['rank'] <= effectiveLimit)
         .toList()
       ..sort((a, b) => (a['rank'] as int).compareTo(b['rank'] as int));
         
@@ -1009,7 +1020,7 @@ class _LeaderboardSection_4State extends State<LeaderboardSection_4> {
             }).toList(),
           ),
 
-          if (widget.data['leaderboard_limit_tampil'] > 3) ... [
+          if (others.isNotEmpty) ...[
             const SizedBox(height: 20),
             Column(
               children: others.map((item) {
@@ -1079,7 +1090,7 @@ class DukunganSection_4 extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = DetailVoteLang.of(context).values;
 
-    String themeName = 'default';
+    String themeName = 'Red';
     if (data['theme_name'] != null) {
       themeName = data['theme_name'];
     }
@@ -1393,7 +1404,7 @@ Widget buildListCard({
   bool isButtonClicked = false;
 
   return InkWell(
-    onTap: (isTutup || isPaymentClosed)
+    onTap: (isTutup || isPaymentClosed || remaining.inSeconds == 0)
       ? null
       : () async {
         if (isButtonClicked) return;

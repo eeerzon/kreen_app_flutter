@@ -244,11 +244,11 @@ class _ScannerPageState extends State<ScannerPage>
     if (img == null) return;
 
     try {
-      
-      final result = null;
+      final decoder = QRCodeDartScanDecoder(formats: [BarcodeFormat.qrCode]);
+      final result = await decoder.decodeFile(img, scanInverted: true);
 
-      if (result != null && result.isNotEmpty) {
-        _onScanResult(result);
+      if (result != null && result.text.isNotEmpty) {
+        _onScanResult(result.text);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(bahasa['gagal_scan_1'])),

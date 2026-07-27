@@ -19,11 +19,12 @@ Future<void> downloadQrImage(
 ) async { 
   try { 
     final url = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrData'; 
-    final response = await http.get(Uri.parse(url)); 
-    if (response.statusCode != 200) { 
-      _showSnack(context, downloadScanGagal); 
-      return; 
-    } 
+    final response = await http.get(Uri.parse(url));
+    if (!context.mounted) return;
+    if (response.statusCode != 200) {
+      _showSnack(context, downloadScanGagal);
+      return;
+    }
 
     final borderedQr = await addBorderToQr(
       response.bodyBytes,
@@ -44,21 +45,21 @@ Future<void> downloadQrImage(
       final outFile = File('${dir.path}/${file.uri.pathSegments.last}');
       await outFile.writeAsBytes(borderedQr);
 
-      _showSnack( context, downloadScanBerhasil, ); 
+      if (!context.mounted) return;
+      _showSnack( context, downloadScanBerhasil, );
     } else {
-      dir = await getApplicationDocumentsDirectory(); 
+      dir = await getApplicationDocumentsDirectory();
 
       await file.writeAsBytes(borderedQr);
-      
+
       await _channel.invokeMethod('saveImageToGallery', {
         'path': file.path,
       });
 
-      _showSnack( context, downloadScanBerhasil, ); 
+      if (!context.mounted) return;
+      _showSnack( context, downloadScanBerhasil, );
     }
-
-    if (!context.mounted) return;
-  } catch (e) { 
+  } catch (e) {
     if (!context.mounted) return; 
     _showSnack(
       context, 

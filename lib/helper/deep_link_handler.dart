@@ -210,7 +210,9 @@ class DeepLinkHandler {
         }
         break;
       case 'event':
-        _navigateToEvent(parts[3], lang, currency.toUpperCase());
+        if (parts.length == 4) {
+          _navigateToEvent(parts[3], lang, currency.toUpperCase());
+        }
         break;
       default:
         _navigateToHome();
@@ -327,11 +329,8 @@ class DeepLinkHandler {
           ),
         );
       } else {
-        final idFinalis = vote['id_finalis']?.toString();
-        if (idFinalis == null) {
-          return;
-        }
-        
+        final idFinalis = finalisId;
+
         Navigator.push(
           ctx,
           MaterialPageRoute(

@@ -228,9 +228,9 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
         hideLoadingDialog(context);
         Navigator.pop(context);
       });
-    } else if (result!['rc'] == 422) {
+    } else if (result?['rc'] == 422) {
 
-      final data = result['data'];
+      final data = result?['data'];
       String desc = '';
       if (data is Map<String, dynamic>) {
         
@@ -256,7 +256,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
 
         desc = errorMessages.join('\n');
       }
-      errorCode = result['rc'] ?? 0;
+      errorCode = result?['rc'] ?? 0;
       errorMessage = data;
 
       AwesomeDialog(
@@ -276,7 +276,7 @@ class _LupaPasswordPageState extends State<LupaPasswordPage> {
       ).show().then((_) {
         hideLoadingDialog(context);
       });
-    } else if (result['rc'] == 500) {
+    } else if (result?['rc'] == 500) {
       setState(() => errorCode = 500);
       AwesomeDialog(
         context: context,

@@ -243,6 +243,46 @@ class _TiketEventPageState extends State<TiketEventPage> {
     _emailTouched = List.generate(totalQty, (_) => false);
   }
 
+  @override
+  void dispose() {
+    for (var c in emailControllers) {
+      c.dispose();
+    }
+    for (var c in nameControllers) {
+      c.dispose();
+    }
+    for (var c in phoneControllers) {
+      c.dispose();
+    }
+    for (var f in emailFocusNodes) {
+      f.dispose();
+    }
+    for (var f in nameFocusNodes) {
+      f.dispose();
+    }
+    for (var f in phoneFocusNodes) {
+      f.dispose();
+    }
+    for (var f in genderFocusNodes) {
+      f.dispose();
+    }
+
+    if (formTiket.isNotEmpty) {
+      for (var list in answerControllers) {
+        for (var c in list) {
+          c.dispose();
+        }
+      }
+      for (var list in indikatorFocus) {
+        for (var f in list) {
+          f.dispose();
+        }
+      }
+    }
+
+    super.dispose();
+  }
+
   Future<void> _getBahasa() async {
     token = await StorageService.getToken();
     final code = await StorageService.getLanguage();
@@ -281,14 +321,14 @@ class _TiketEventPageState extends State<TiketEventPage> {
 
     final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode, token: token);
 
-    final List<dynamic> tempTiket = resultTiket!['data'] ?? [];
+    final List<dynamic> tempTiket = resultTiket?['data'] ?? [];
 
 
     final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode, token: token);
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultEvent?['message'];
+        errorMessage = resultEvent?['message'] ?? '';
       });
       return;
     }

@@ -82,6 +82,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
   Timer? _timer;
+  Timer? _countdownTimer;
   bool isPaymentClosed = false;
   bool isBeforeOpen = false;
   final GlobalKey _shareKey = GlobalKey();
@@ -390,13 +391,15 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   }
 
   void _updateCountFromInput(String value, Map item, Map vote) {
-    final int batas = int.tryParse(
+    final int batasRaw = int.tryParse(
       vote['batas_qty']?.toString() ?? '0'
     ) ?? 0;
-    
+
+    final int batas = batasRaw > 0 ? batasRaw : 100000;
+
     int input = int.tryParse(value) ?? 0;
 
-    if (batas > 0 && input > batas) {
+    if (input > batas) {
       input = batas;
     }
 
@@ -439,7 +442,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
 
   void _startCountdown() {
     _updateRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateRemaining();
     });
   }
@@ -449,7 +452,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     final difference = deadlineUtc.difference(nowUtc);
 
     if (difference.isNegative) {
-      _timer?.cancel();
+      _countdownTimer?.cancel();
     }
     
     setState(() {
@@ -772,11 +775,25 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                           color: Colors.white,
                           child: Column(
                             children: [
-                              Text(
-                                detailFinalis['nama_finalis'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  const namaFinalisStyle = TextStyle(fontWeight: FontWeight.bold);
+
+                                  final textPainter = TextPainter(
+                                    text: TextSpan(text: detailFinalis['nama_finalis'], style: namaFinalisStyle),
+                                    textDirection: Directionality.of(context),
+                                  )..layout(maxWidth: constraints.maxWidth);
+
+                                  final isMultiline = textPainter.computeLineMetrics().length > 1;
+
+                                  return Text(
+                                    detailFinalis['nama_finalis'],
+                                    textAlign: isMultiline ? TextAlign.center : TextAlign.start,
+                                    style: namaFinalisStyle,
+                                  );
+                                },
                               ),
-                    
+
                               if (detailFinalis['nama_tambahan'] != null && detailFinalis['nama_tambahan'].toString().trim().isNotEmpty) ...[
                                 SizedBox(height: 10,),
                                 Text(detailFinalis['nama_tambahan'],
@@ -826,40 +843,42 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                     ],
                                   ),
 
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: <Widget>[
-                                          SvgPicture.network(
-                                            "$baseUrl/image/icon-vote/$themeName/chart.svg",
-                                            width: 25,
-                                            height: 25,
-                                            fit: BoxFit.contain,
-                                          ),
-                    
-                                          SizedBox(width: 4),
-                                          Text(
-                                            (widget.persen
-                                              ? (detailFinalis['percent'] ?? 0) > 1
-                                              : (detailFinalis['total_voters'] ?? 0) > 1)
-                                                ? bahasa['text_votes']
-                                                : bahasa['text_vote'],
-                                          ),
-                                        ],
-                                      ),
-                    
-                                      const SizedBox(height: 10,),
-                                      Text(
-                                        widget.persen 
-                                          ? "${detailFinalis['percent'] ?? 0}%"
-                                          : formatter.format(detailFinalis['total_voters'] ?? 0),
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      )
-                                    ],
-                                  ),
+                                  if (detailvote['leaderboard_tipe'] != 'hidden') ...[
+                                    Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: <Widget>[
+                                            SvgPicture.network(
+                                              "$baseUrl/image/icon-vote/$themeName/chart.svg",
+                                              width: 25,
+                                              height: 25,
+                                              fit: BoxFit.contain,
+                                            ),
+                      
+                                            SizedBox(width: 4),
+                                            Text(
+                                              (widget.persen
+                                                ? (detailFinalis['percent'] ?? 0) > 1
+                                                : (detailFinalis['total_voters'] ?? 0) > 1)
+                                                  ? bahasa['text_votes']
+                                                  : bahasa['text_vote'],
+                                            ),
+                                          ],
+                                        ),
+                      
+                                        const SizedBox(height: 10,),
+                                        Text(
+                                          widget.persen 
+                                            ? "${detailFinalis['percent'] ?? 0}%"
+                                            : formatter.format(detailFinalis['total_voters'] ?? 0),
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        )
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                     
@@ -884,13 +903,112 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                   ),
                                 ),
                               ]
+                              else if (detailvote['jenis_vote'] == 'free') ... [
+                                const SizedBox(height: 30,),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: (remaining.inSeconds == 0 || isPaymentClosed)
+                                        ? null
+                                        : () async {
+                                            if (isButtonClicked) return;
+                                            isButtonClicked = true;
+
+                                            try {
+                                              setState(() {
+                                                counts = 1;
+                                                controllers!.text = counts.toString();
+
+                                                final namaFinalis = detailFinalis['nama_finalis'];
+                                                final existingIndex = ids_finalis.indexOf(widget.id_finalis);
+
+                                                if (existingIndex == -1) {
+                                                  ids_finalis.add(widget.id_finalis);
+                                                  names_finalis.add(namaFinalis);
+                                                  counts_finalis.add(counts);
+                                                } else {
+                                                  counts_finalis[existingIndex] = counts;
+                                                  names_finalis[existingIndex] = namaFinalis;
+                                                }
+
+                                                totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                              });
+
+                                              final storedToken = await StorageService.getToken() ?? '';
+                                              var getUser = await StorageService.getUser();
+
+                                              String? idUser = getUser['id'];
+
+                                              await refreshAfterVerification(storedToken, getUser['email'] ?? '', langCode!);
+
+                                              getUser = await StorageService.getUser();
+
+                                              if (detailvote['flag_login'] == '1' && storedToken.isEmpty) {
+                                                await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                                                return;
+                                              }
+
+                                              if (detailvote['flag_login'] == '0' && detailvote['flag_verify_email'] == '1' && storedToken.isEmpty) {
+                                                await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                                                return;
+                                              }
+
+                                              if (detailvote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                                                await EmailVerifModal.show(context, storedToken, langCode!, bahasa, getUser['email'] ?? '', color);
+                                                return;
+                                              }
+
+                                              if (mounted) {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => StatePaymentManual(
+                                                      id_vote: idVote!,
+                                                      ids_finalis: ids_finalis,
+                                                      names_finalis: names_finalis,
+                                                      counts_finalis: counts_finalis,
+                                                      totalHarga: totalHarga,
+                                                      totalHargaAsli: totalHargaAsli,
+                                                      price: detailvote['harga_asli'],
+                                                      fromDetail: false,
+                                                      idUser: idUser,
+                                                      flag_login: detailvote['flag_login'],
+                                                      flag_verify_email: detailvote['flag_verify_email'],
+                                                      rateCurrency: detailvote['rate_currency_vote'],
+                                                      rateCurrencyUser: detailvote['rate_currency_user'],
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            } finally {
+                                              if (mounted) setState(() => isButtonClicked = false);
+                                            }
+                                          },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: (remaining.inSeconds == 0) || isPaymentClosed
+                                            ? Colors.grey
+                                            : color,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        "${bahasa['text_vote'] ?? 'Vote'} ${detailFinalis['nama_finalis'] ?? ''}",
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ]
                               else ... [
                                 const SizedBox(height: 30,),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    
+
                                     InkWell(
                                       onTap: (remaining.inSeconds == 0 || isPaymentClosed)
                                         ? null
@@ -966,7 +1084,12 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                         ? null
                                         : () {
                                             setState(() {
-                                              if (detailvote['batas_qty'] > 0 && counts >= detailvote['batas_qty']) {
+                                              final int batasRaw = int.tryParse(
+                                                detailvote['batas_qty']?.toString() ?? '0'
+                                              ) ?? 0;
+                                              final int batas = batasRaw > 0 ? batasRaw : 100000;
+
+                                              if (counts >= batas) {
                                                 return;
                                               }
                                               
@@ -1017,7 +1140,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 )
                               ],
                               
-                              if (counts >= 1) ...[
+                              if (counts >= 1 && detailvote['jenis_vote'] != 'free') ...[
                                 if (filteredOptions.isNotEmpty) ...[
                                   const SizedBox(height: 15,),
                                   Wrap(
@@ -1511,6 +1634,8 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
+    _countdownTimer?.cancel();
+    controllers?.dispose();
     _ytTopController?.dispose();
     _ytBottomController?.dispose();
     super.dispose();
@@ -1531,8 +1656,6 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
           : () async {
               final Uri url = _buildSocialUri(platform, link);
               if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },
@@ -1564,6 +1687,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   }
 
   Widget buildTopVideo() {
+    if (_ytTopController == null) return const SizedBox.shrink();
     return VideoSection(
       key: const ValueKey("top_video"),
       controller: _ytTopController!,
@@ -1571,6 +1695,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
   }
 
   Widget buildBottomVideo() {
+    if (_ytBottomController == null) return const SizedBox.shrink();
     return VideoSection(
       key: const ValueKey("bottom_video"),
       controller: _ytBottomController!,

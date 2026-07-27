@@ -206,10 +206,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
   Future<void> _getBahasa() async {
     final lang = await StorageService.getLanguage();
+    if (!mounted) return;
     setState(() => langCode = lang);
 
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
-
+    if (!mounted) return;
     setState(() {
       bahasa = tempbahasa;
       namaLengkapLabel = bahasa['nama_lengkap_label'];
@@ -224,6 +225,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
   Future<void> _getCurrency() async {
     final currency = await StorageService.getCurrency();
+    if (!mounted) return;
     setState(() => currencyCode = currency);
   }
 
@@ -268,7 +270,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     if (detailResp == null || detailResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = detailResp?['message'];
+        errorMessage = detailResp?['message'] ?? '';
       });
       return;
     }
@@ -277,7 +279,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     if (paymentResp == null || paymentResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = paymentResp?['message'];
+        errorMessage = paymentResp?['message'] ?? '';
       });
       return;
     }
@@ -667,7 +669,7 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
 
         final body = {
           "id_vote": widget.id_vote, //  free: 65aa23e7eea47 // paid: 65aa22cda9ec2
-          "id_user": widget.idUser,
+          "id_user": user_id ?? '',
           "id_paket": widget.id_paket,
           "nama_voter": _nameController.text.trim(),
           "email_voter": email ?? _emailController.text.trim(),
@@ -963,6 +965,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                             onChanged: (value) {
                               _nameController.text = value;
                               inputNama = value;
+                              if (value.length < 4) {
+                                _showError = true;
+                              } else {
+                                _showError = false;
+                              }
                               setState(() {});
                             },
                             autofocus: false,
@@ -989,6 +996,18 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                               ),
                             ),
 
+                          if (_showError && _nameController.text.trim().length < 4)
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                              child: Text(
+                                bahasa['nama_lengkap_min_4'],
+                                style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontSize: 12
+                                ),
+                              ),
+                            ),
+                            
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -2023,7 +2042,6 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
                                         eWalletClicked = false;
                                         retailClicked = false;
                                         qrCodeClicked = false;
-                                        qrCodeClicked = false;
                                         debitClicked = false;
 
                                         if (willOpen) {
@@ -2929,6 +2947,25 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
       c.dispose();
     }
 
+    _scrollController.dispose();
+    _cardNumberController.dispose();
+    _cvvController.dispose();
+    expDateController.dispose();
+    _phoneItemController.dispose();
+    _idCardItemController.dispose();
+    phoneEwalletController.dispose();
+
+    _cardNumberFocus.dispose();
+    _expiryDateFocus.dispose();
+    _cvvFocus.dispose();
+    _phoneItemFocus.dispose();
+    _idCardItemFocus.dispose();
+    _phoneEwalletFocus.dispose();
+
+    _cvvDebounce?.cancel();
+    _phoneDebounce?.cancel();
+    _idCardDebounce?.cancel();
+
     super.dispose();
   }
 
@@ -2940,6 +2977,11 @@ class _StatePaymentPaketState extends State<StatePaymentPaket> {
     bool paymentError = false;
     
     if (_nameController.text.trim().isEmpty) {
+      isValid = false;
+      firstErrorFocus ??= _nameFocus;
+    }
+
+    if (_nameController.text.trim().length < 4) {
       isValid = false;
       firstErrorFocus ??= _nameFocus;
     }

@@ -287,7 +287,7 @@ class _VoteLimitState extends State<VoteLimit> {
                         MaterialPageRoute(
                           builder: (context) => DetailVotePage(
                             id_event: widget.id_event,
-                            currencyCode: currencyCode!,
+                            currencyCode: currencyCode,
                           ),
                         ),
                       );
@@ -983,6 +983,112 @@ class _CountdownBoxState extends State<CountdownBox> {
               widget.bahasa['second'],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class VoteTutup extends StatefulWidget {
+  const VoteTutup({super.key});
+
+  @override
+  State<VoteTutup> createState() => _VoteTutupState();
+}
+
+class _VoteTutupState extends State<VoteTutup> {
+  Map<String, dynamic> bahasa = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _getBahasa();
+  }
+
+  Future<void> _getBahasa() async {
+    final langCode = await StorageService.getLanguage() ?? 'id';
+    final tempBahasa = await LangService.getJsonData(langCode, "bahasa");
+
+    if (!mounted) return;
+    setState(() {
+      bahasa = tempBahasa;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: kGlobalPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+
+              const Spacer(),
+              
+              // ColorFiltered(
+              //   colorFilter: const ColorFilter.matrix([
+              //     0.2126, 0.7152, 0.0722, 0, 0,
+              //     0.2126, 0.7152, 0.0722, 0, 0,
+              //     0.2126, 0.7152, 0.0722, 0, 0,
+              //     0,      0,      0,      1, 0,
+              //   ]),
+              //   child: Image.network(
+              //     '$baseUrl/image/payment-failed.png',
+              //     width: 200,
+              //     height: 200,
+              //   ),
+              // ),
+
+              Image.network(
+                '$baseUrl/image/payment-failed.png',
+                width: 200,
+                height: 200,
+              ),
+              
+              const SizedBox(height: 8),
+              Text(
+                bahasa['vote_tutup'] ?? 'Vote Closed',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                bahasa['vote_tutup_desc'] ?? 'Sampai jumpa di acara selanjutnya!',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+
+              const Spacer(),
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HomePage()),
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    bahasa['kembali_ke_home'] ?? 'Back',
+                    style: TextStyle( fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

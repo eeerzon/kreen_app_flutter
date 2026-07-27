@@ -28,6 +28,7 @@ Future<void> StripePay(
 
     await Stripe.instance.presentPaymentSheet();
 
+    if (!context.mounted) return;
     if (type == "vote") {
       Navigator.pushReplacement(
         context, 
@@ -84,6 +85,7 @@ Future<void> GooglePay(
 
     await Stripe.instance.presentPaymentSheet();
 
+    if (!context.mounted) return;
     if (type == "vote") {
       Navigator.pushReplacement(
         context, 

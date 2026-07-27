@@ -1099,8 +1099,9 @@ class _ProfileState extends State<Profile> {
       );
 
       await _checkToken();
+      if (!mounted) return;
       setState(() {
-        
+
       });
     }
   }

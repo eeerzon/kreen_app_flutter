@@ -126,7 +126,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
     if (resultSuccess == null || resultSuccess['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultSuccess?['message'];
+        errorMessage = resultSuccess?['message'] ?? '';
       });
       return;
     }
@@ -188,7 +188,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
     if (resultPending == null || resultPending['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultPending?['message'];
+        errorMessage = resultPending?['message'] ?? '';
       });
       return;
     }
@@ -251,7 +251,7 @@ class _OrderVoteState extends State<OrderVote> with SingleTickerProviderStateMix
     if (resultFail == null || resultFail['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultFail?['message'];
+        errorMessage = resultFail?['message'] ?? '';
       });
       return;
     }
@@ -506,7 +506,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "Authorization": "Bearer $token",
       },
@@ -549,6 +549,8 @@ class _VoteSuccessState extends State<VoteSuccess> {
         hasMore = newData.isNotEmpty;
         isLoading = false;
       });
+    } else {
+      setState(() => isLoading = false);
     }
   }
 
@@ -686,7 +688,7 @@ class _VoteSuccessState extends State<VoteSuccess> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    bahasa['tgl_order'],
+                                    bahasa['tgl_order'] ?? '',
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),
@@ -1006,7 +1008,7 @@ class _VotePendingState extends State<VotePending> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "Authorization": "Bearer $token",
       },
@@ -1045,10 +1047,12 @@ class _VotePendingState extends State<VotePending> {
           orderPending = newData;
           votes = newVotes;
         }
-        
+
         hasMore = newData.isNotEmpty;
         isLoading = false;
       });
+    } else {
+      setState(() => isLoading = false);
     }
   }
 
@@ -1186,7 +1190,7 @@ class _VotePendingState extends State<VotePending> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    bahasa['tgl_order'],
+                                    bahasa['tgl_order'] ?? '',
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),
@@ -1503,7 +1507,7 @@ class _VoteFailState extends State<VoteFail> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "Authorization": "Bearer $token",
       },
@@ -1542,10 +1546,12 @@ class _VoteFailState extends State<VoteFail> {
           orderFail = newData;
           votes = newVotes;
         }
-        
+
         hasMore = newData.isNotEmpty;
         isLoading = false;
       });
+    } else {
+      setState(() => isLoading = false);
     }
   }
 
@@ -1683,7 +1689,7 @@ class _VoteFailState extends State<VoteFail> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    bahasa['tgl_order'],
+                                    bahasa['tgl_order'] ?? '',
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),

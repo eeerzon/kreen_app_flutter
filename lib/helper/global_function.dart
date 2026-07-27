@@ -20,6 +20,10 @@ const String baseHost = "dev.kreenconnect.com"; //dev
 
 const String baseapiUrl = "$baseUrl/kreenapi";
 
+// diisi lewat --dart-define-from-file=env.json saat run/build (lihat env.json.example)
+// const String apiSecretKey = String.fromEnvironment('API_SECRET_KEY');
+const String apiSecretKey = 'eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=';
+
 // const String STRIPE_PUBLIC_KEY = "pk_test_51PqeNlL6LohooVUuQ3XETGCDPNsYsMG7CEt1wBLeUSslqxjKyTcTFxQ3Ue5ysqCfZLsiGnP2e6Q9Y8hsydwAoixS00m5Q7OvmP"; //dev
 const String STRIPE_PUBLIC_KEY = "pk_live_51PqeNlL6LohooVUu0QrXYjrfhmEDj7WZuzm4EF6FeTGUmErLKRXoGU2UUr0GvrYUFONNGm6jtRr0e0adYXL4guXX00A4ft7WN1"; //prod
 
@@ -67,6 +71,16 @@ String? userCurrency = 'IDR';
 String? lastCurrency;
 
 int isChoosed = 1; // 0 = belum pilih, 1 = sudah pilih
+
+String maskMiddle(String? value, {int prefixLength = 2, int suffixLength = 2}) {
+  if (value == null || value.trim().isEmpty) return '-';
+
+  final trimmed = value.trim();
+  if (trimmed.length <= prefixLength + suffixLength) return trimmed;
+
+  final masked = '*' * (trimmed.length - prefixLength - suffixLength);
+  return '${trimmed.substring(0, prefixLength)}$masked${trimmed.substring(trimmed.length - suffixLength)}';
+}
 
 DateTime parseWib(String value) {
   // Ubah ke ISO +07:00 agar Flutter tahu ini WIB

@@ -49,7 +49,7 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     if (resultInformasi == null || resultInformasi['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultInformasi?['message'];
+        errorMessage = resultInformasi?['message'] ?? '';
       });
       return;
     }
@@ -58,13 +58,15 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
     setState(() {
       infoKonten = resultInformasi['data'] ?? [];
 
-      if (langCode == 'en') {
+      if (infoKonten.isEmpty) {
+        rawContent = '';
+      } else if (langCode == 'en') {
         rawContent = infoKonten[0]['en_content'];
       } else {
         rawContent = infoKonten[0]['content'];
       }
 
-      cleanContent = rawContent!
+      cleanContent = (rawContent ?? '')
         .replaceAll(RegExp(r'[\r\n]+'), '')
         .trim();
 

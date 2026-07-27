@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
@@ -300,7 +301,7 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
                   children: [
                     InkWell(
                       onTap: () async {
-                        await FaqModal.show(context, widget.data['faq']);
+                        await FaqModal.show(context, widget.data['faq'], lang);
                       },
                       child: Container(
                         padding: EdgeInsets.all(8),
@@ -451,7 +452,7 @@ class _DeskripsiSectionState extends State<DeskripsiSection> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  widget.data['nama_penyelenggara'],
+                                  widget.data['nama_penyelenggara'] ?? '-',
                                   style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                   softWrap: true,
                                   overflow: TextOverflow.visible, 
@@ -553,13 +554,16 @@ class _LeaderboardSectionState extends State<LeaderboardSection> {
 
     final List<int> customOrder = [2, 1, 3];
 
+    final int limitTampil = (widget.data['leaderboard_limit_tampil'] ?? 0) as int;
+    final int effectiveLimit = limitTampil > 3 ? limitTampil : 10;
+
     final List<dynamic> topThree = widget.ranking
         .where((item) => customOrder.contains(item['rank']))
         .toList()
       ..sort((a, b) => customOrder.indexOf(a['rank']).compareTo(customOrder.indexOf(b['rank'])));
 
     final List<dynamic> others = widget.ranking
-        .where((item) => item['rank'] >= 4)
+        .where((item) => item['rank'] >= 4 && item['rank'] <= effectiveLimit)
         .toList()
       ..sort((a, b) => (a['rank'] as int).compareTo(b['rank'] as int));
         
@@ -700,7 +704,7 @@ class _LeaderboardSectionState extends State<LeaderboardSection> {
             }).toList(),
           ),
 
-          if (widget.data['leaderboard_limit_tampil'] > 3) ... [
+          if (others.isNotEmpty) ...[
             const SizedBox(height: 20),
             Column(
               children: others.map((item) {
@@ -806,6 +810,8 @@ class InfoSection extends StatelessWidget {
 
     String jamMulai = data['waktu_mulai'] != null ? "${mulai.hour.toString().padLeft(2, '0')}:${mulai.minute.toString().padLeft(2, '0')}" : '-';
     String jamSelesai = data['waktu_selesai'] != null ? "${selesai.hour.toString().padLeft(2, '0')}:${selesai.minute.toString().padLeft(2, '0')}" : '-';
+
+    final unescape = HtmlUnescape();
     
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -890,16 +896,21 @@ class InfoSection extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
+                              // text: jamMulai != '-' && jamSelesai != '-' 
+                              //   ? data['code_timezone'] == 'WIB'
+                              //     ? " (GMT+7)"
+                              //     : data['code_timezone'] == 'WITA'
+                              //       ? " (GMT+8)"
+                              //       : data['code_timezone'] == 'WIT'
+                              //         ? " (GMT+9)"
+                              //         : data['code_timezone'] != null
+                              //           ? " (${data['code_timezone']})"
+                              //           : ''
+                              //   : '',
                               text: jamMulai != '-' && jamSelesai != '-' 
-                                ? data['code_timezone'] == 'WIB'
-                                  ? " (GMT+7)"
-                                  : data['code_timezone'] == 'WITA'
-                                    ? " (GMT+8)"
-                                    : data['code_timezone'] == 'WIT'
-                                      ? " (GMT+9)"
-                                      : data['code_timezone'] != null
-                                        ? " (${data['code_timezone']})"
-                                        : ''
+                                ? data['code_timezone'] != null 
+                                  ? " (${data['code_timezone']})" 
+                                  : '' 
                                 : '',
                               style: TextStyle(
                                 color: color,
@@ -1013,7 +1024,7 @@ class InfoSection extends StatelessWidget {
                           children: [
                             Text(
                               data['lokasi_nama_tempat'] != null && data['lokasi_nama_tempat'] != ''
-                                ? data['lokasi_nama_tempat']
+                                ? unescape.convert(data['lokasi_nama_tempat'].toString())
                                 : '-',
                               style: TextStyle(
                                 color: Colors.black,
@@ -1394,7 +1405,7 @@ Widget buildListCard({
   bool isButtonClicked = false;
 
   return InkWell(
-    onTap: (remaining.inSeconds == 0)
+    onTap: (isTutup || isPaymentClosed || remaining.inSeconds == 0)
       ? null
       : () async {
         if (isButtonClicked) return;

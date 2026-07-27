@@ -12,13 +12,13 @@ Future<Position?> getCurrentLocationWithValidation(BuildContext context) async {
     LocationPermission permission;
 
     String? langCode = await StorageService.getLanguage();
-    Map<String, dynamic> bahasa = await LangService.getJsonData(langCode!, "bahasa");
+    Map<String, dynamic> bahasa = await LangService.getJsonData(langCode ?? 'id', "bahasa");
     
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       await Geolocator.openLocationSettings();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(bahasa['gps_aktif'])), //"Aktifkan GPS terlebih dahulu."
+        SnackBar(content: Text(bahasa['gps_aktif'] ?? '')), //"Aktifkan GPS terlebih dahulu."
       );
       return null;
     }
@@ -28,7 +28,7 @@ Future<Position?> getCurrentLocationWithValidation(BuildContext context) async {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(bahasa['izin_lokasi'])), //"Izin lokasi dibutuhkan untuk melanjutkan."
+          SnackBar(content: Text(bahasa['izin_lokasi'] ?? '')), //"Izin lokasi dibutuhkan untuk melanjutkan."
         );
         return null;
       }
@@ -36,7 +36,7 @@ Future<Position?> getCurrentLocationWithValidation(BuildContext context) async {
 
     if (permission == LocationPermission.deniedForever) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(bahasa['izin_lokasi_ditolak'])), //"Izin lokasi ditolak permanen. Buka setting untuk mengaktifkan."
+        SnackBar(content: Text(bahasa['izin_lokasi_ditolak'] ?? '')), //"Izin lokasi ditolak permanen. Buka setting untuk mengaktifkan."
       );
       await Geolocator.openAppSettings();
       return null;

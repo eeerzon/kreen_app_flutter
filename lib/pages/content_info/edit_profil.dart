@@ -110,6 +110,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    fullNameController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
+    emailController.dispose();
+    dobController.dispose();
+    phoneController.dispose();
+    companyController.dispose();
+    jobTitleController.dispose();
+    linkedinController.dispose();
+    igController.dispose();
+    twitterController.dispose();
+    firstNameFocusNode.dispose();
+    emailFocusNode.dispose();
+    dobFocusNode.dispose();
+    phoneFocusNode.dispose();
     super.dispose();
   }
 
@@ -463,7 +478,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         showErrorBar = false;
         errorCode = resultSimpan?['rc'] ?? 0;
         errorMessage = resultSimpan?['data'] ?? {};
-        errorMessageBar = resultSimpan?['message'];
+        errorMessageBar = resultSimpan?['message'] ?? '';
 
         isImage = false;
 
@@ -499,25 +514,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
         showCloseIcon: true,
       ).show();
 
-      if (resultSimpan?['data'].containsKey('first_name')) {
+      if (resultSimpan?['data']?.containsKey('first_name') ?? false) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           firstNameFocusNode.requestFocus();
         });
       }
 
-      if (resultSimpan?['data'].containsKey('date_of_birth')) {
+      if (resultSimpan?['data']?.containsKey('date_of_birth') ?? false) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           dobFocusNode.requestFocus();
         });
       }
 
-      if (resultSimpan?['data'].containsKey('email')) {
+      if (resultSimpan?['data']?.containsKey('email') ?? false) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           emailFocusNode.requestFocus();
         });
       }
 
-      if (resultSimpan?['data'].containsKey('phone')) {
+      if (resultSimpan?['data']?.containsKey('phone') ?? false) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           phoneFocusNode.requestFocus();
         });
@@ -526,7 +541,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         showErrorBar = true;
         errorCode = resultSimpan?['rc'] ?? 0;
-        errorMessageBar = resultSimpan?['message'];
+        errorMessageBar = resultSimpan?['message'] ?? '';
       });
 
       final loginMethod = await StorageService.getLoginMethod();
@@ -631,7 +646,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         showErrorBar = true;
         errorCode = resultSimpan?['rc'] ?? 0;
-        errorMessageBar = resultSimpan?['message'];
+        errorMessageBar = resultSimpan?['message'] ?? '';
 
         isImage = false;
       });
@@ -1543,33 +1558,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ? photo
             : '$baseUrl/user/$photo';
 
-    if (isSvg) {
-      return SvgPicture.network(
-        imageUrl,
-        width: 120,
-        height: 120,
-        fit: BoxFit.cover,
-      );
-    }
-
-    return Image.network(
-      imageUrl,
-      width: 120,
-      height: 120,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Image.asset(
-          'assets/images/img_broken.jpg',
-          fit: BoxFit.cover,
-          width: 120,
-          height: 120,
-        );
-      },
-    );
+    return isSvg
+        ? SvgPicture.network(
+            imageUrl,
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.network(
+                "$baseUrl/noimage_finalis.png",
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+              );
+            },
+          )
+        : Image.network(
+            imageUrl,
+            width: 120,
+            height: 120,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.network(
+                "$baseUrl/noimage_finalis.png",
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+              );
+            },
+          );
   }
-
-
-
+  
   final Map<String, String> errorTranslationMap = {
     'Email sudah terdaftar': 'Email is already registered',
 
@@ -1618,4 +1637,3 @@ class NameInputFormatter extends TextInputFormatter {
     );
   }
 }
-

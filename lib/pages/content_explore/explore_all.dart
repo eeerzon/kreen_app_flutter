@@ -119,7 +119,7 @@ class _ExploreAllState extends State<ExploreAll> {
     final responses = await ApiService.get(endpointAll, xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
-        showErrorBar = false;
+        showErrorBar = true;
         errorMessage = responses?['message'];
         isFirstLoad = false;
       });
@@ -201,7 +201,7 @@ class _ExploreAllState extends State<ExploreAll> {
     final response = await http.get(
       Uri.parse(url),
       headers: {
-        "API-Secret-Key": "eyJpdiI6ImZNOGFOVitXTlwvT0hEeUVBSzlDNXdRPT0iLCJ2YWx1ZSI6IldzVFhUUkJ4YWJxcEcxUWFLYk9kd1dJVTNwUTF3Q0tFQjhnVmVJWlprTHdvdVNJb3lJemRmOG9pOUVxRlwveENkcEtIWUlMeldNMlkyM0p4NWRxaGJZMWRzYzJjZm9vTEwzYTY1aHlvTzBCZz0iLCJtYWMiOiJkNTA2ZDE3YTgzYjE3ZjA5ZWNlOWZlZTY3NzhkZjBmNzI2MjExZTY2NTEyMzk4MTdkZThlZDE1ZmNlZDQ0NDA1In0=",
+        "API-Secret-Key": apiSecretKey,
         "Accept": "application/json",
         "x-language": langCode!,
         "x-currency": currencyCode!
@@ -213,16 +213,31 @@ class _ExploreAllState extends State<ExploreAll> {
       final data = json.decode(response.body);
       newData = List.from(data['data'] ?? []);
     } else if (response.statusCode == 408) {
-      showErrorBar = false;
-      errorMessage = bahasa['timeout'];
+      if (mounted) {
+        setState(() {
+          showErrorBar = true;
+          errorMessage = bahasa['timeout'];
+          isLoadingMore = false;
+        });
+      }
       return;
     } else if (response.statusCode == 503) {
-      showErrorBar = false;
-      errorMessage = bahasa['no_internet'];
+      if (mounted) {
+        setState(() {
+          showErrorBar = true;
+          errorMessage = bahasa['no_internet'];
+          isLoadingMore = false;
+        });
+      }
       return;
     } else if (response.statusCode == 500) {
-      showErrorBar = false;
-      errorMessage = bahasa['error'];
+      if (mounted) {
+        setState(() {
+          showErrorBar = true;
+          errorMessage = bahasa['error'];
+          isLoadingMore = false;
+        });
+      }
       return;
     }
 

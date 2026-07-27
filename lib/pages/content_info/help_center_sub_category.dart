@@ -54,7 +54,7 @@ class _HelpCenterSubCategoryPageState extends State<HelpCenterSubCategoryPage> {
     if (resultSubKategori == null || resultSubKategori['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultSubKategori?['message'];
+        errorMessage = resultSubKategori?['message'] ?? '';
       });
       return;
     }

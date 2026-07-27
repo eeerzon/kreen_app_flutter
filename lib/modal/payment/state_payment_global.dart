@@ -188,12 +188,37 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _cardNumberController.dispose();
+    _cvvController.dispose();
+    expDateController.dispose();
+    _phoneItemController.dispose();
+    _idCardItemController.dispose();
+    phoneEwalletController.dispose();
+
+    _cardNumberFocus.dispose();
+    _expiryDateFocus.dispose();
+    _cvvFocus.dispose();
+    _phoneItemFocus.dispose();
+    _idCardItemFocus.dispose();
+    _phoneEwalletFocus.dispose();
+
+    _cvvDebounce?.cancel();
+    _phoneDebounce?.cancel();
+    _idCardDebounce?.cancel();
+
+    super.dispose();
+  }
+
   Future<void> _getBahasa() async {
     final lang = await StorageService.getLanguage();
+    if (!mounted) return;
     setState(() => langCode = lang);
 
     final tempBahasa = await LangService.getJsonData(langCode!, "bahasa");
-
+    if (!mounted) return;
     setState(() {
       bahasa = tempBahasa;
       namaLengkapLabel = bahasa['nama_lengkap_label'];
@@ -210,6 +235,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
 
   Future<void> _getCurrency() async {
     final currency = await StorageService.getCurrency();
+    if (!mounted) return;
     setState(() => currencyCode = currency);
   }
 
@@ -232,7 +258,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultEvent?['message'];
+        errorMessage = resultEvent?['message'] ?? '';
       });
       return;
     }
@@ -241,7 +267,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
     if (resultPayment == null || resultPayment['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultPayment?['message'];
+        errorMessage = resultPayment?['message'] ?? '';
       });
       return;
     }
@@ -1257,7 +1283,6 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                                 eWalletClicked = false;
                                 retailClicked = false;
                                 qrCodeClicked = false;
-                                qrCodeClicked = false;
                                 debitClicked = false;
 
                                 if (willOpen) {
@@ -1839,6 +1864,12 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
           }
         }
       }
+    }
+
+    if (!isValid) {
+      if (firstErrorFocus != null) {
+        _scrollToFocus(firstErrorFocus);
+      } 
     }
 
     return isValid;

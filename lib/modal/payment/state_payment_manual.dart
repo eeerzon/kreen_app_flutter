@@ -207,10 +207,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   Future<void> _getBahasa() async {
     final lang = await StorageService.getLanguage();
+    if (!mounted) return;
     setState(() => langCode = lang);
 
     final tempbahasa = await LangService.getJsonData(langCode!, "bahasa");
-
+    if (!mounted) return;
     setState(() {
       bahasa = tempbahasa;
       namaLengkapLabel = bahasa['nama_lengkap_label'];
@@ -225,6 +226,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
 
   Future<void> _getCurrency() async {
     final currency = await StorageService.getCurrency();
+    if (!mounted) return;
     setState(() => currencyCode = currency);
   }
 
@@ -259,7 +261,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     if (detailResp == null || detailResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = detailResp?['message'];
+        errorMessage = detailResp?['message'] ?? '';
       });
       return;
     }
@@ -268,7 +270,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     if (paymentResp == null || paymentResp['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = paymentResp?['message'];
+        errorMessage = paymentResp?['message'] ?? '';
       });
       return;
     }
@@ -949,6 +951,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             onChanged: (value) {
                               _nameController.text = value;
                               inputNama = value;
+                              if (value.length < 4) {
+                                _showError = true;
+                              } else {
+                                _showError = false;
+                              }
                               setState(() {});
                             },
                             autofocus: false,
@@ -968,6 +975,18 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
                                 bahasa['nama_lengkap_error'],
+                                style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontSize: 12
+                                ),
+                              ),
+                            ),
+
+                          if (_showError && _nameController.text.trim().length < 4)
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
+                              child: Text(
+                                bahasa['nama_lengkap_min_4'],
                                 style: TextStyle(
                                   color: Colors.red[900],
                                   fontSize: 12
@@ -2027,7 +2046,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         eWalletClicked = false;
                                         retailClicked = false;
                                         qrCodeClicked = false;
-                                        qrCodeClicked = false;
                                         debitClicked = false;
 
                                         if (willOpen) {
@@ -2964,7 +2982,6 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             final isLast = i == widget.names_finalis.length - 1;
                                             int multiplier = detailVote['multiplier'] ?? 1;
                                             int boostVote = qty * multiplier;
-                                            totalPayment = 0;
 
                                             return TextSpan(
                                               children: [
@@ -3077,6 +3094,25 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
       c.dispose();
     }
 
+    _scrollController.dispose();
+    _cardNumberController.dispose();
+    _cvvController.dispose();
+    expDateController.dispose();
+    _phoneItemController.dispose();
+    _idCardItemController.dispose();
+    phoneEwalletController.dispose();
+
+    _cardNumberFocus.dispose();
+    _expiryDateFocus.dispose();
+    _cvvFocus.dispose();
+    _phoneItemFocus.dispose();
+    _idCardItemFocus.dispose();
+    _phoneEwalletFocus.dispose();
+
+    _cvvDebounce?.cancel();
+    _phoneDebounce?.cancel();
+    _idCardDebounce?.cancel();
+
     super.dispose();
   }
 
@@ -3088,6 +3124,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
     bool paymentError = false;
     
     if (_nameController.text.trim().isEmpty) {
+      isValid = false;
+      firstErrorFocus ??= _nameFocus;
+    }
+
+    if (_nameController.text.trim().length < 4) {
       isValid = false;
       firstErrorFocus ??= _nameFocus;
     }

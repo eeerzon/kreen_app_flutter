@@ -278,13 +278,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
     final resultTiket = await ApiService.post('/event/listQuestionOrderForm', body: body, xLanguage: langCode, token: token);
     
-    final List<dynamic> tempTiket = resultTiket!['data'] ?? [];
+    final List<dynamic> tempTiket = resultTiket?['data'] ?? [];
 
     final resultEvent = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode, token: token);
     if (resultEvent == null || resultEvent['rc'] != 200) {
       setState(() {
         showErrorBar = true;
-        errorMessage = resultEvent?['message'];
+        errorMessage = resultEvent?['message'] ?? '';
       });
       return;
     }
@@ -1918,6 +1918,37 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     for (final f in genderFocusNodes) {
       f.dispose();
     }
+    for (var c in emailControllers) {
+      c.dispose();
+    }
+    for (var c in nameControllers) {
+      c.dispose();
+    }
+    for (var c in phoneControllers) {
+      c.dispose();
+    }
+    for (var f in emailFocusNodes) {
+      f.dispose();
+    }
+    for (var f in nameFocusNodes) {
+      f.dispose();
+    }
+    for (var f in phoneFocusNodes) {
+      f.dispose();
+    }
+
+    if (formTiket.isNotEmpty) {
+      for (var c in questionControllers) {
+        c.dispose();
+      }
+      for (var c in answerControllers) {
+        c.dispose();
+      }
+      for (var f in indikatorFocus) {
+        f.dispose();
+      }
+    }
+
     super.dispose();
   }
 

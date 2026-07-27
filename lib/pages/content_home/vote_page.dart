@@ -155,7 +155,7 @@ class _VotePageState extends State<VotePage> {
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   child: Image.network(
-                    item['img'],
+                    item['img'] ?? "",
                     width: double.infinity,
                     height: 120,
                     fit: BoxFit.cover,

@@ -830,7 +830,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                         GooglePay(
                                           context,
                                           paymentDetail['client_secret']!,
-                                          "vote",
+                                          "event",
                                           null,
                                           null,
                                           event,
@@ -1103,7 +1103,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       "/order/set-expired",
       body: {
         "id_order": widget.id_order,
-        "type": "vote"
+        "type": "event"
       },
       xLanguage: langCode
     );
@@ -1125,14 +1125,14 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     });
     
     final result = await ApiService.get(
-      "/order/vote/${widget.id_order}",
+      "/order/event/${widget.id_order}",
       xLanguage: langCode,
       xCurrency: currencyCode,
       token: token
     );
 
     if (result != null && result['rc'] == 200) {
-      final order = result['data']['vote_order'] ?? {};
+      final order = result['data']['event_order'] ?? {};
       
       if (order['order_status'] == '1') {
         await _handleSuccessRedirect();

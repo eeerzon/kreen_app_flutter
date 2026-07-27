@@ -108,6 +108,8 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   final ValueNotifier<int> _pageIndex = ValueNotifier<int>(0);
 
   Timer? _timer;
+  Timer? _countdownTimer;
+  Timer? _boostTimer;
   bool isPaymentClosed = false;
   bool isBeforeOpen = false;
   final GlobalKey _shareKey = GlobalKey();
@@ -516,7 +518,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   void _startCountdown() {
     _updateRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateRemaining();
     });
   }
@@ -529,9 +531,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     final newIsBeforeOpen = nowUtc.isBefore(bukaVoteUtc);
 
     if (difference.isNegative) {
-      _timer?.cancel();
+      _countdownTimer?.cancel();
     }
-    
+
     if (!mounted) return;
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
@@ -543,7 +545,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
   void _startCountdownBoost(DateTime deadlineUtc) {
     _updateRemainingBoost(deadlineUtc);
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateRemainingBoost(deadlineUtc);
     });
   }
@@ -553,9 +555,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     final difference = deadlineUtc.difference(nowUtc);
 
     if (difference.isNegative) {
-      _timer?.cancel();
+      _boostTimer?.cancel();
     }
-    
+
     setState(() {
       remaining = difference.isNegative ? Duration.zero : difference;
     });
@@ -755,6 +757,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     final freeRemainingQuota = detailvote['free_vote_remaining_quota'] ?? 0;
     final coveredByFreeQuota = isFreeVoteAvailable && counts > 0 && counts <= freeRemainingQuota;
     final hargaBermasalah = detailvote['harga'] != 0 && totalHarga == 0 && !coveredByFreeQuota;
+
 
     return Scaffold(
       backgroundColor: Colors.grey[200],
@@ -979,40 +982,42 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                     ],
                                   ),
 
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: <Widget>[
-                                          SvgPicture.network(
-                                            "$baseUrl/image/icon-vote/$themeName/chart.svg",
-                                            width: 25,
-                                            height: 25,
-                                            fit: BoxFit.contain,
-                                          ),
-                    
-                                          SizedBox(width: 4),
-                                          Text(
-                                            (persen
-                                              ? detailFinalis['percent'] > 1
-                                              : detailFinalis['total_voters'] > 1)
-                                                ? bahasa!['text_votes']
-                                                : bahasa!['text_vote'],
-                                          ),
-                                        ],
-                                      ),
-                    
-                                      const SizedBox(height: 10,),
-                                      Text(
-                                        persen
-                                          ? "${detailFinalis['percent']}%"
-                                          : formatter.format(detailFinalis['total_voters'] ?? 0),
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      )
-                                    ],
-                                  ),
+                                  if (detailvote['leaderboard_tipe'] != 'hidden') ...[
+                                    Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: <Widget>[
+                                            SvgPicture.network(
+                                              "$baseUrl/image/icon-vote/$themeName/chart.svg",
+                                              width: 25,
+                                              height: 25,
+                                              fit: BoxFit.contain,
+                                            ),
+                      
+                                            SizedBox(width: 4),
+                                            Text(
+                                              (persen
+                                                ? detailFinalis['percent'] > 1
+                                                : detailFinalis['total_voters'] > 1)
+                                                  ? bahasa!['text_votes']
+                                                  : bahasa!['text_vote'],
+                                            ),
+                                          ],
+                                        ),
+                      
+                                        const SizedBox(height: 10,),
+                                        Text(
+                                          persen
+                                            ? "${detailFinalis['percent']}%"
+                                            : formatter.format(detailFinalis['total_voters'] ?? 0),
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        )
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                     
@@ -1245,9 +1250,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                           ),
                         ),
 
-                        if (detailFinalis['usia'] != 0 ||
-                            (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
-                            (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
+                        if ((detailFinalis['usia'] != null && detailFinalis['usia'] != 0) ||
+                          (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ||
+                          (!isHtmlEmpty(detailFinalis['deskripsi']))) ... [
                           const SizedBox(height: 12,),
                           Container(
                             width: double.infinity,
@@ -1278,7 +1283,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                       ),
                                   ],
                       
-                                  if (detailFinalis['profesi'].toString().isNotEmpty) ... [
+                                  if (detailFinalis['profesi'] != null && detailFinalis['profesi'] != '') ... [
                                     SizedBox(height: 12,),
                                     Text(
                                       activityText!,
@@ -1764,7 +1769,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
 
                         Text(
                           countData > 1
-                            ? "$countData ${bahasa?['finalises']}s"
+                            ? "$countData ${bahasa?['finalis']}s"
                             : "$countData ${bahasa?['finalis']}",
                           style: const TextStyle(fontSize: 12),
                           maxLines: 1,
@@ -1880,6 +1885,9 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
     _pageController.dispose();
     _pageIndex.dispose();
     _timer?.cancel();
+    _countdownTimer?.cancel();
+    _boostTimer?.cancel();
+    controllers?.dispose();
     _ytTopController?.dispose();
     _ytBottomController?.dispose();
     super.dispose();
@@ -1917,8 +1925,6 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
               final Uri url = _buildSocialUri(platform, link);
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
-              } else {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },
       child: AnimatedContainer(
@@ -1949,6 +1955,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   }
 
   Widget buildTopVideo() {
+    if (_ytTopController == null) return const SizedBox.shrink();
     return VideoSection(
       key: const ValueKey("top_video"),
       controller: _ytTopController!,
@@ -1956,6 +1963,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
   }
 
   Widget buildBottomVideo() {
+    if (_ytBottomController == null) return const SizedBox.shrink();
     return VideoSection(
       key: const ValueKey("bottom_video"),
       controller: _ytBottomController!,

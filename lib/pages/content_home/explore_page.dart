@@ -51,6 +51,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }

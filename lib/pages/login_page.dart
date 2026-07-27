@@ -118,8 +118,8 @@ class _LoginPageState extends State<LoginPage> {
           (route) => false,
         );
       }
-    } else if (result!['rc'] == 422) {
-      final data = result['data'];
+    } else if (result?['rc'] == 422) {
+      final data = result?['data'];
       String desc = '';
 
       if (data is Map<String, dynamic>) {
@@ -150,8 +150,8 @@ class _LoginPageState extends State<LoginPage> {
           }
         }
       }
-      errorCode = result['rc'] ?? 0;
-      errorCodeEmail = result['rc'] ?? 0;
+      errorCode = result?['rc'] ?? 0;
+      errorCodeEmail = result?['rc'] ?? 0;
       errorMessage = data;
 
       AwesomeDialog(
@@ -169,8 +169,8 @@ class _LoginPageState extends State<LoginPage> {
         dismissOnTouchOutside: true,
         showCloseIcon: true,
       ).show();
-    } else if (result['rc'] == 401 && !isValidEmail(_emailController.text.trim())) {
-      errorCode = result['rc'] ?? 0;
+    } else if (result?['rc'] == 401 && !isValidEmail(_emailController.text.trim())) {
+      errorCode = result?['rc'] ?? 0;
 
       AwesomeDialog(
         context: context,
@@ -187,8 +187,8 @@ class _LoginPageState extends State<LoginPage> {
         dismissOnTouchOutside: true,
         showCloseIcon: true,
       ).show();
-    } else if (result['rc'] == 401) {
-      errorCode = result['rc'] ?? 0;
+    } else if (result?['rc'] == 401) {
+      errorCode = result?['rc'] ?? 0;
 
       AwesomeDialog(
         context: context,
@@ -331,11 +331,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: isLoading 
-        ? Center(child: CircularProgressIndicator(color: Colors.red,),) 
+      body: isLoading
+        ? Center(child: CircularProgressIndicator(color: Colors.red,),)
         : buildKonten(),
     );
   }
@@ -452,7 +459,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    enabledBorder: _border(_emailController.text.isNotEmpty),
+                    enabledBorder: _border(_passwordController.text.isNotEmpty),
                     focusedBorder: _border(true),
                     suffixIcon: InkWell(
                       onTap: () async {

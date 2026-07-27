@@ -84,7 +84,7 @@ class _ExploreVoteState extends State<ExploreVote> {
     final responses = await ApiService.get(endpointVote, xLanguage: langCode, xCurrency: currencyCode, token: token);
     if (responses == null || responses['rc'] != 200) {
       setState(() {
-        showErrorBar = false;
+        showErrorBar = true;
         errorMessage = responses?['message'];
         isFirstLoad = false;
       });
@@ -355,7 +355,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                     final item = pageVotes[index];
                     final title = item['title']?.toString() ?? 'Tanpa Judul';
                     final dateStr = item['start_date']?.toString() ?? '-';
-                    final img = item['banner'].toString();
+                    final img = item['banner']?.toString() ?? '';
                     final urlPartner = item['url_partner'];
 
                     String formattedDate = '-';

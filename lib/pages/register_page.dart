@@ -83,7 +83,7 @@ class _RegisPageState extends State<RegisPage> {
     };
     
     final result = await ApiService.post("/register", body: body, xLanguage: langCode);
-    if (result!['rc'] == 200) {
+    if (result?['rc'] == 200) {
       AwesomeDialog(
         context: context,
         dialogType: DialogType.noHeader,
@@ -95,9 +95,9 @@ class _RegisPageState extends State<RegisPage> {
         hideLoadingDialog(context);
         Navigator.pop(context);
       });
-    } else if (result['rc'] == 422) {
+    } else if (result?['rc'] == 422) {
 
-      final data = result['data'];
+      final data = result?['data'];
       String desc = '';
       if (data is Map<String, dynamic>) {
 
@@ -160,8 +160,8 @@ class _RegisPageState extends State<RegisPage> {
 
         desc = errorMessages.join('\n');
       }
-      errorCode = result['rc'] ?? 0;
-      errorCodeEmail = result['rc'] ?? 0;
+      errorCode = result?['rc'] ?? 0;
+      errorCodeEmail = result?['rc'] ?? 0;
       errorMessage = data;
 
       AwesomeDialog(
@@ -330,10 +330,22 @@ class _RegisPageState extends State<RegisPage> {
   }
 
   @override
+  void dispose() {
+    _firstNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmpasswordController.dispose();
+    _passwordFocus.dispose();
+    _confirmpasswordFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: isLoading 
+      body: isLoading
         ? Center(child: CircularProgressIndicator(color: Colors.red,))
         : buildKonten()
     );

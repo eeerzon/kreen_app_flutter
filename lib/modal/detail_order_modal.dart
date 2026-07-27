@@ -578,6 +578,11 @@ class DetailOrderModal {
                           viewApi = 6;
                         }
 
+                        final num rawQty = voteOrderDetail[index]['qty'] ?? 0;
+                        final num multiplier = detailVote['multiplier'] ?? 1;
+                        final bool isBoosted = multiplier > 1;
+                        final num realQty = isBoosted ? rawQty / multiplier : rawQty;
+
                         return Padding(
                           padding: EdgeInsets.only(bottom: index == finalis.length - 1 ? 0 : 16),
                           child: InkWell(
@@ -626,7 +631,7 @@ class DetailOrderModal {
                                 border: Border.all(color: Colors.grey.shade300),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(
                                     width: 70,
@@ -660,19 +665,93 @@ class DetailOrderModal {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          voteOrderDetail[index]['qty'] > 1
-                                            ? "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_votes']}"
-                                            : "${formatter.format(voteOrderDetail[index]['qty'])} ${bahasa['text_vote']}",
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red,
+
+                                        if (item['nomor_urut'] != null) ...[
+                                          const SizedBox(height: 14),
+                                          Text.rich(
+                                            TextSpan(
+                                              children: [
+                                                TextSpan(
+                                                  text: "${bahasa['no_urut'] ?? 'No Urut'}: ",
+                                                  style: TextStyle(color: Colors.grey),
+                                                ),
+                                                TextSpan(
+                                                  text: item['nomor_urut'].toString(),
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                       ],
                                     ),
+                                  ),
+
+                                  const SizedBox(width: 8),
+
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      if (isBoosted) ...[
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [Colors.orange.shade400, Colors.deepOrange.shade400],
+                                            ),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.bolt, color: Colors.white, size: 14),
+                                              const SizedBox(width: 2),
+                                              Text(
+                                                "${multiplier.toStringAsFixed(0)}x ${bahasa['boost'] ?? 'Boost'}",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                      ],
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
+                                        children: [
+                                          if (isBoosted) ...[
+                                            Text(
+                                              formatter.format(realQty),
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                decoration: TextDecoration.lineThrough,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                          ],
+                                          Text(
+                                            formatter.format(rawQty),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        rawQty > 1 ? bahasa['text_votes'] ?? '' : bahasa['text_vote'] ?? '',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -704,16 +783,40 @@ class DetailOrderModal {
                           },
                           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                           children: [
+                            token != null
+                              ? TableRow(children: [
+                                  Text(
+                                    bahasa['id_order'] ?? "Order ID",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                  const Text(' :  '),
+                                  Text(
+                                    voteOder['id_order'] ?? '-',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ])
+                              : TableRow(children: [
+                                  Text(
+                                    bahasa['kode_pesanan'] ?? "Kode Pesanan",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                  const Text(' :  '),
+                                  Text(
+                                    voteOder['invoice_number'] ?? '-',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ]),
+                            const TableRow(children: [
+                              SizedBox(height: 8),
+                              SizedBox(height: 8),
+                              SizedBox(height: 8),
+                            ]),
                             TableRow(children: [
-                              Text(
-                                bahasa['id_order'] ?? "Order ID",
-                                style: TextStyle(color: Colors.grey),
-                              ),
+                              Text(bahasa['nama_voter'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
-                                voteOder['id_order'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                                voteOder['voter_name'] ?? '-',
+                                style: TextStyle(fontWeight: FontWeight.bold),),
                             ]),
                             const TableRow(children: [
                               SizedBox(height: 8),
@@ -733,11 +836,20 @@ class DetailOrderModal {
                               SizedBox(height: 8),
                             ]),
                             TableRow(children: [
-                              Text(bahasa['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
-                              const Text(' :  '),
-                              Text(
-                                voteOder['payment_method_name'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              TableCell(
+                                verticalAlignment: TableCellVerticalAlignment.top,
+                                child: Text(bahasa['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
+                              ),
+                              TableCell(
+                                verticalAlignment: TableCellVerticalAlignment.top,
+                                child: const Text(' :  '),
+                              ),
+                              TableCell(
+                                verticalAlignment: TableCellVerticalAlignment.top,
+                                child: Text(
+                                  voteOder['payment_method_name'] ?? '-',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ]),
                           ],
@@ -1196,7 +1308,9 @@ class DetailOrderModal {
                             builder: (context) =>
                               DetailEventPage(
                                 id_event: detailEvent['id'].toString(), 
-                                price: dataEvents['event_ticket'][0]['price'] ?? 0,
+                                price: (dataEvents['event_ticket'] is List && (dataEvents['event_ticket'] as List).isNotEmpty)
+                                  ? (dataEvents['event_ticket'][0]['price'] ?? 0)
+                                  : 0,
                                 currencyCode: currencyCode
                               ),
                           ),
@@ -1336,8 +1450,13 @@ class DetailOrderModal {
                                                       return const Text("-");
                                                     }
                                                     
+                                                    final eventDatetimeList = dataEvents['event_datetime'];
+                                                    if (eventDatetimeList is! List || eventDatetimeList.isEmpty) {
+                                                      return const Text("-");
+                                                    }
+
                                                     final end =
-                                                        DateTime.parse(dataEvents['event_datetime'][0]['datetime_end_plus_diff']);
+                                                        DateTime.parse(eventDatetimeList[0]['datetime_end_plus_diff']);
 
                                                     String formatDate(DateTime date) {
                                                       if (langCode == 'id') {
@@ -1562,7 +1681,7 @@ class DetailOrderModal {
                               ),
                               const Text(' :  '),
                               Text(
-                                eventOder['id_order'],
+                                eventOder['id_order'] ?? '-',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ]),
@@ -1587,7 +1706,7 @@ class DetailOrderModal {
                               Text(bahasa['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
                               const Text(' :  '),
                               Text(
-                                eventOder['payment_method_name'],
+                                eventOder['payment_method_name'] ?? '-',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ]),

@@ -118,7 +118,7 @@ class _PaymentItemState extends State<PaymentItem> {
 
     final payment_name = widget.item['payment_name'];
     final id_pg_type = widget.item['id_pg_type'];
-    final isSvg = widget.item['img_web'].toLowerCase().endsWith('.svg');
+    final isSvg = widget.item['img_web'] != null ? widget.item['img_web'].toLowerCase().endsWith('.svg') : false;
     final isAMEX = widget.item['note'] != null ? widget.item['note'].toLowerCase().contains('amex') : false;
 
     final rawAttribute = widget.item['attribute'];

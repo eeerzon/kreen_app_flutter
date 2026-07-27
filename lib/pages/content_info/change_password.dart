@@ -73,6 +73,17 @@ class _ChangePasswordState extends State<ChangePassword> {
     });
   }
 
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    _currentPasswordFocus.dispose();
+    _newPasswordFocus.dispose();
+    _confirmPasswordFocus.dispose();
+    super.dispose();
+  }
+
   Future<void> _getBahasa() async {
     final code = await StorageService.getLanguage();
     setState(() => langCode = code);
@@ -441,6 +452,7 @@ class _ChangePasswordState extends State<ChangePassword> {
         showErrorBar = true;
         errorCode = response['rc'] ?? 0;
         errorMessageBar = response['message'];
+        errorMessage500 = response['message'] ?? '';
       });
 
       final loginMethod = await StorageService.getLoginMethod();

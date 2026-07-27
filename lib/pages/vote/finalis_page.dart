@@ -1,4 +1,4 @@
-// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: non_constant_identifier_names, use_build_context_synchronously, deprecated_member_use, unused_local_variable
 
 import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -52,7 +52,7 @@ class _FinalisPageState extends State<FinalisPage> {
   String? findFinalistText;
   String? notLogin, notLoginDesc, searchHintText, loginText;
   String? totalHargaText, hargaText, hargaDetail, bayarText;
-  String? endVote, voteOpen, voteOpenAgain;
+  String? endVote, voteOpen, voteOpenAgain, voteBelumOpen;
   String? countDownText, daysText, hoursText, minutesText, secondsText;
   String? detailfinalisText, cariFinalisText;
   String? noDataText;
@@ -180,6 +180,7 @@ class _FinalisPageState extends State<FinalisPage> {
         deadlineUtc = DateHelper.parseWibToUtc(vote['real_tanggal_tutup_vote'],);
         
         counts = List<int>.filled(finalis.length, 0, growable: true,);
+        for (var c in controllers) { c.dispose(); }
         controllers = List.generate(finalis.length, (_) => TextEditingController(text: '0'));
         selectedVotes = List.filled(finalis.length, 0, growable: true);
         selectedIndexes = List.filled(finalis.length, 0, growable: true);
@@ -217,7 +218,8 @@ class _FinalisPageState extends State<FinalisPage> {
         String formattedBukaVote = DateFormat("$formatDateId HH:mm").format(bukaVote);
         
         if (isBeforeOpen) {
-          buttonText = '$voteOpen $formattedBukaVote';
+          // buttonText = '$voteOpen $formattedBukaVote';
+          buttonText = '$voteBelumOpen';
         } else if (vote['close_payment'] == '1') {
           buttonText = '$voteOpenAgain $formattedDate';
         }
@@ -252,6 +254,7 @@ class _FinalisPageState extends State<FinalisPage> {
 
       endVote = bahasa['end_vote'];
       voteOpen = bahasa['vote_open'];
+      voteBelumOpen = bahasa['vote_belum_open'];
       voteOpenAgain = bahasa['vote_open_again'];
 
       countDownText = bahasa['countdown_vote'];
@@ -337,13 +340,15 @@ class _FinalisPageState extends State<FinalisPage> {
   }
 
   void _updateCountFromInput(int index, String value, Map item, Map vote) {
-    final int batas = int.tryParse(
+    final int batasRaw = int.tryParse(
       vote['batas_qty']?.toString() ?? '0'
     ) ?? 0;
-    
+
+    final int batas = batasRaw > 0 ? batasRaw : 100000;
+
     int input = int.tryParse(value) ?? 0;
 
-    if (batas > 0 && input > batas) {
+    if (input > batas) {
       input = batas;
     }
 
@@ -450,6 +455,12 @@ class _FinalisPageState extends State<FinalisPage> {
       setState(() {
         finalis = result?['data'] ?? [];
         showErrorBar = false;
+
+        counts = List.filled(finalis.length, 0);
+        for (var c in controllers) { c.dispose(); }
+        controllers = List.generate(finalis.length, (_) => TextEditingController(text: '0'));
+        selectedVotes = List.filled(finalis.length, null);
+        selectedIndexes = List.filled(finalis.length, null);
       });
     }
   }
@@ -484,12 +495,13 @@ class _FinalisPageState extends State<FinalisPage> {
       token: _storedToken);
 
     List newData = [];
-    if (resultFinalis!['rc'] == 200) {
-      newData = List.from(resultFinalis['data'] ?? []);
+    bool fetchFailed = false;
+    if (resultFinalis?['rc'] == 200) {
+      newData = List.from(resultFinalis?['data'] ?? []);
       hasMore = newData.length >= 6;
     } else {
       hasMore = false;
-      showErrorBar = false;
+      fetchFailed = true;
     }
 
     if (!mounted) return;
@@ -500,7 +512,7 @@ class _FinalisPageState extends State<FinalisPage> {
 
         final int prevLength = counts.length;
         final int newLength = finalis.length;
-        
+
         if (newLength > prevLength) {
           final int added = newLength - prevLength;
           counts.addAll(List.filled(added, 0));
@@ -513,12 +525,13 @@ class _FinalisPageState extends State<FinalisPage> {
         isFirstLoad = false;
 
         counts = List.filled(finalis.length, 0);
+        for (var c in controllers) { c.dispose(); }
         controllers = List.generate(finalis.length, (_) => TextEditingController(text: '0'));
         selectedVotes = List.filled(finalis.length, null);
         selectedIndexes = List.filled(finalis.length, null);
       }
 
-      showErrorBar = false;
+      showErrorBar = fetchFailed;
     });
   }
 
@@ -1153,15 +1166,36 @@ class _FinalisPageState extends State<FinalisPage> {
                       ),
 
                       const SizedBox(height: 10),
-                      Text(
-                        item['nama_finalis'],
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          const namaFinalisStyle = TextStyle(fontWeight: FontWeight.bold);
+
+                          final textPainter = TextPainter(
+                            text: TextSpan(text: item['nama_finalis'], style: namaFinalisStyle),
+                            textDirection: Directionality.of(context),
+                          )..layout(maxWidth: constraints.maxWidth);
+
+                          final isMultiline = textPainter.computeLineMetrics().length > 1;
+
+                          return Text(
+                            item['nama_finalis'],
+                            textAlign: isMultiline ? TextAlign.center : TextAlign.start,
+                            style: namaFinalisStyle,
+                          );
+                        },
                       ),
 
                       if (item['nama_tambahan'] != null && item['nama_tambahan'].toString().trim().isNotEmpty) ...[
                         SizedBox(height: 10,),
                         Text(item['nama_tambahan'],
                           style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+
+                      if (vote['flag_hide_nomor_urut'] == "0") ... [
+                        const SizedBox(height: 10,),
+                        Text(
+                          item['nomor_urut'].toString(),
                         ),
                       ],
 
@@ -1197,40 +1231,42 @@ class _FinalisPageState extends State<FinalisPage> {
                             ],
                           ),
 
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  SvgPicture.network(
-                                    "$baseUrl/image/icon-vote/$theme_name/chart.svg",
-                                    width: 25,
-                                    height: 25,
-                                    fit: BoxFit.contain,
-                                  ),
-            
-                                  SizedBox(width: 4),
-                                  Text(
-                                    (persen
-                                      ? (item['percent'] ?? 0) > 1
-                                      : (item['total_voters'] ?? 0) > 1)
-                                        ? bahasa['text_votes']
-                                        : bahasa['text_vote'],
-                                  ),
-                                ],
-                              ),
-            
-                              const SizedBox(height: 10,),
-                              Text(
-                                persen 
-                                  ? "${item['percent'] ?? 0}%"
-                                  : formatter.format(item['total_voters'] ?? 0),
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              )
-                            ],
-                          ),
+                          if (vote['leaderboard_tipe'] != 'hidden') ...[
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    SvgPicture.network(
+                                      "$baseUrl/image/icon-vote/$theme_name/chart.svg",
+                                      width: 25,
+                                      height: 25,
+                                      fit: BoxFit.contain,
+                                    ),
+              
+                                    SizedBox(width: 4),
+                                    Text(
+                                      (persen
+                                        ? (item['percent'] ?? 0) > 1
+                                        : (item['total_voters'] ?? 0) > 1)
+                                          ? bahasa['text_votes']
+                                          : bahasa['text_vote'],
+                                    ),
+                                  ],
+                                ),
+              
+                                const SizedBox(height: 10,),
+                                Text(
+                                  persen 
+                                    ? "${item['percent'] ?? 0}%"
+                                    : formatter.format(item['total_voters'] ?? 0),
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                )
+                              ],
+                            ),
+                          ]
                         ],
                       ),
                       const SizedBox(height: 15),
@@ -1288,6 +1324,126 @@ class _FinalisPageState extends State<FinalisPage> {
                                 softWrap: true,
                               ),
                             ],
+                          ),
+                        ),
+                      ]
+                      else if (vote['jenis_vote'] == 'free') ... [
+                        const SizedBox(height: 15),
+                        SizedBox(
+                          width: double.infinity,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: (remaining.inSeconds == 0 || isPaymentClosed)
+                                ? null
+                                : () async {
+                                    if (isButtonClicked) return;
+                                    isButtonClicked = true;
+
+                                    try {
+                                      setState(() {
+                                        for (int i = 0; i < counts.length; i++) {
+                                          if (i == index || counts[i] == 0) continue;
+
+                                          counts[i] = 0;
+                                          controllers[i].text = '0';
+                                          selectedVotes[i] = null;
+
+                                          final otherId = listFinalis[i]['id_finalis'];
+                                          final otherExistingIndex = ids_finalis.indexOf(otherId);
+                                          if (otherExistingIndex != -1) {
+                                            ids_finalis.removeAt(otherExistingIndex);
+                                            names_finalis.removeAt(otherExistingIndex);
+                                            counts_finalis.removeAt(otherExistingIndex);
+                                          }
+                                        }
+
+                                        counts[index] = 1;
+                                        controllers[index].text = counts[index].toString();
+
+                                        totalCount = counts.reduce((a, b) => a + b);
+
+                                        final idFinalis = item['id_finalis'];
+                                        final namaFinalis = item['nama_finalis'];
+
+                                        final existingIndex = ids_finalis.indexOf(idFinalis);
+
+                                        if (existingIndex == -1) {
+                                          ids_finalis.add(idFinalis);
+                                          names_finalis.add(namaFinalis);
+                                          counts_finalis.add(counts[index]);
+                                        } else {
+                                          counts_finalis[existingIndex] = counts[index];
+                                          names_finalis[existingIndex] = namaFinalis;
+                                        }
+
+                                        slctedIdVote = item['id_vote'];
+
+                                        totalQty = counts_finalis.fold<int>(0, (sum, item) => sum + item);
+                                        countData = counts_finalis.length;
+                                      });
+
+                                      var getUser = await StorageService.getUser();
+                                      String? idUser = getUser['id'];
+
+                                      await refreshAfterVerification(_storedToken!, getUser['email'] ?? '', langCode!);
+
+                                      getUser = await StorageService.getUser();
+
+                                      if (vote['flag_login'] == '1' && _storedToken!.isEmpty) {
+                                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                                        return;
+                                      }
+
+                                      if (vote['flag_login'] == '0' && vote['flag_verify_email'] == '1' && _storedToken!.isEmpty) {
+                                        await EmailVerifModal.showLogin(context, bahasa, color, onLoginSuccess: _onAfterLogin);
+                                        return;
+                                      }
+
+                                      if (vote['flag_verify_email'] == '1' && getUser['verifEmail'] == '0') {
+                                        await EmailVerifModal.show(context, _storedToken!, langCode!, bahasa, getUser['email'] ?? '', color);
+                                        return;
+                                      }
+
+                                      if (mounted) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => StatePaymentManual(
+                                              id_vote: slctedIdVote!,
+                                              ids_finalis: ids_finalis,
+                                              names_finalis: names_finalis,
+                                              counts_finalis: counts_finalis,
+                                              totalHarga: totalHarga,
+                                              totalHargaAsli: totalHargaAsli,
+                                              price: vote['harga_asli'],
+                                              fromDetail: false,
+                                              idUser: idUser,
+                                              flag_login: vote['flag_login'],
+                                              flag_verify_email: vote['flag_verify_email'],
+                                              rateCurrency: vote['rate_currency_vote'],
+                                              rateCurrencyUser: vote['rate_currency_user'],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } finally {
+                                      if (mounted) setState(() => isButtonClicked = false);
+                                    }
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: (remaining.inSeconds == 0) || isPaymentClosed
+                                    ? Colors.grey
+                                    : color,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "${bahasa['text_vote'] ?? 'Vote'} ${item['nama_finalis'] ?? ''}",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                         ),
                       ]
@@ -1386,8 +1542,12 @@ class _FinalisPageState extends State<FinalisPage> {
                                   ? null
                                   : () {
                                       setState(() {
-                                        
-                                        if (vote['batas_qty'] > 0 && counts[index] >= vote['batas_qty']) {
+                                        final int batasRaw = int.tryParse(
+                                          vote['batas_qty']?.toString() ?? '0'
+                                        ) ?? 0;
+                                        final int batas = batasRaw > 0 ? batasRaw : 100000;
+
+                                        if (counts[index] >= batas) {
                                           return;
                                         }
 
@@ -1451,7 +1611,7 @@ class _FinalisPageState extends State<FinalisPage> {
                         )
                       ],
                       
-                      if (counts[index] >= 1) ... [
+                      if (counts[index] >= 1 && vote['jenis_vote'] != 'free') ... [
                         if (filteredOptions.isNotEmpty) ...[
                           const SizedBox(height: 15,),
                           Wrap(

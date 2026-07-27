@@ -26,6 +26,7 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
 
   Future<void> _loadVersion() async {
     final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
     setState(() {
       appVersion = "v${info.version}";
     });
@@ -34,6 +35,7 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
   Future<void> _checkOnboarding() async {
     await Future.delayed(const Duration(seconds: 2));
     final seen = await StorageService.getOnboardingDone();
+    if (!mounted) return;
     if (seen) {
       Navigator.pushAndRemoveUntil(
         context,
@@ -58,7 +60,7 @@ class _SplashLogoPageState extends State<SplashLogoPage> {
           
           Center(
             child: Image.asset(
-              'assets/images/img_logo.png',
+              'assets/images/KreenOriginal.png',
               width: 200,
               height: 200,
               fit: BoxFit.contain,

@@ -5,25 +5,25 @@
     "version": "0.2.0",
     "configurations": [
         {
-        "name": "dev",
-        "request": "launch",
-        "type": "dart",
-        "flutterMode": "debug",
-        "args": ["--flavor", "dev"]
+            "name": "dev",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "args": ["--flavor", "dev", "--dart-define-from-file", "env.json"]
         },
         {
-        "name": "live",
-        "request": "launch",
-        "type": "dart",
-        "flutterMode": "debug",
-        "args": ["--flavor", "live"]
+            "name": "live",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "args": ["--flavor", "live", "--dart-define-from-file", "env.json"]
         },
         {
-        "name": "semilive",
-        "request": "launch",
-        "type": "dart",
-        "flutterMode": "debug",
-        "args": ["--flavor", "semilive"]
+            "name": "semilive",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "args": ["--flavor", "semilive", "--dart-define-from-file", "env.json"]
         }
     ]
 }
