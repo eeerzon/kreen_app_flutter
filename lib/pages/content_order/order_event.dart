@@ -691,7 +691,7 @@ class _EventSuccessState extends State<EventSuccess> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    bahasa['tgl_order'],
+                                    bahasa['tgl_order'] ?? '',
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),
@@ -1189,7 +1189,7 @@ class _EventPendingState extends State<EventPending> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    bahasa['tgl_order'],
+                                    bahasa['tgl_order'] ?? '',
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),
@@ -1689,7 +1689,7 @@ class _EventFailState extends State<EventFail> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    bahasa['tgl_order'],
+                                    bahasa['tgl_order'] ?? '',
                                     style: TextStyle(
                                       fontSize: 10,
                                     ),

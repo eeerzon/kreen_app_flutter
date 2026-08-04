@@ -9,6 +9,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/date_helper.dart';
+import 'package:kreen_app_flutter/helper/download_qr.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/helper/global_error_bar.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
@@ -59,6 +60,14 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   String errorMessage = '';
 
   late List<bool> openStates;
+
+  Timer? _paymentTimer;
+
+  late final formatter = NumberFormat.currency(
+    locale: "en_US",
+    symbol: "",
+    decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
+  );
   String? currencyCode;
 
   bool isCheckingPayment = false;
@@ -70,6 +79,10 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   num displayFee = 0;
   num displayUserCurrencyTotalPayment = 0;
   String formattedDate = '';
+
+  bool isGeneratingQr = false;
+  String? qrUrl, qrString, generatedUrl;
+  bool qrImageLoaded = false;
 
   @override
   void initState() {
@@ -151,6 +164,20 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       }
 
       deadline = DateHelper.parseWibToUtc(expiresAt);
+      if (deadline.isBefore(DateTime.now().toUtc())) {
+        isExpired = true;
+      }
+
+      qrUrl = paymentDetail['qr_url'];
+      qrString = paymentDetail['qr_string'];
+      if (qrString != null && qrString.toString().isNotEmpty) {
+        generatedUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+      }
+      
+      final hasQrUrl = qrUrl?.toString().trim().isNotEmpty ?? false;
+      final hasQrString = qrString?.toString().trim().isNotEmpty ?? false;
+
+      isGeneratingQr = !hasQrUrl && !hasQrString;
 
       _isLoading = false;
       showErrorBar = false;
@@ -184,7 +211,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
   }
 
   void _calculateDisplayAmounts() {
-    num sumAmount = eventOder['total_amount'] * eventOder['currency_value_region'];
+    num sumAmount = (eventOder['amount'] + eventOder['fees']) * eventOder['currency_value_region'];
     num totalAmountPg = num.parse(sumAmount.toStringAsFixed(5));
 
     if (currencyRegion == "IDR") {
@@ -236,14 +263,42 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     if (mounted) setState(() {});
   }
 
-  late final formatter = NumberFormat.currency(
-    locale: "en_US",
-    symbol: "",
-    decimalDigits: widget.currency_session == "IDR" ? 0 : 2,
-  );
+  void startPaymentStatusListener() {
+    _paymentTimer?.cancel();
+
+    _paymentTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      final result = await ApiService.get(
+        "/order/event/${widget.id_order}",
+        xLanguage: langCode,
+        xCurrency: currencyCode,
+        token: token
+      );
+
+      if (result != null && result['rc'] == 200) {
+        final order = result['data']['event_order'];
+
+        if (order['order_status'] == '1') {
+          _paymentTimer?.cancel();
+
+          if (!mounted) return;
+
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (_) => OrderEventPaid(idOrder: widget.id_order, isSukses: true,)),
+          );
+        } else if (order['order_status'] == '2' || order['order_status'] == '20') {
+          _paymentTimer?.cancel();
+          setState(() {
+            isExpired = true;
+          });
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _paymentTimer?.cancel();
     super.dispose();
   }
   
@@ -472,6 +527,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                         deadlineUtc: deadline,
                         bahasa: bahasa,
                         onExpired: () async {
+                          setState(() => isExpired = true);
                           await _handleExpiredFlow();
                         },
                       ),
@@ -525,51 +581,165 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                 color: Color.fromARGB(255, 224, 224, 224),
                               ),
 
-                              if (paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null) ...[
+                              if ((paymentDetail['qr_url'] != null && paymentDetail['qr_url'].toString().isNotEmpty) ||
+                                  (paymentDetail['qr_string'] != null && paymentDetail['qr_string'].toString().isNotEmpty)) ...[
                                 SizedBox(height: 16,),
                                 SizedBox(
                                   width: double.infinity,
                                   child: Center(
                                     child: Builder(
                                       builder: (context) {
-                                        final qrUrl = paymentDetail['qr_url'];
-                                        final qrString = paymentDetail['qr_string'];
-                                        
+
+                                        if (isGeneratingQr) {
+                                          return SizedBox(
+                                            width: 220,
+                                            height: 260,
+                                            child: SizedBox(
+                                              width: 35,
+                                              height: 35,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.red,
+                                                strokeWidth: 3,
+                                              ),
+                                            ),
+                                          );
+                                        }
+
                                         if (qrUrl != null && qrUrl.toString().isNotEmpty) {
                                           return Image.network(
-                                            qrUrl,
-                                            height: 200,
-                                            width: 200,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'assets/images/img_broken.jpg',
-                                                height: 200,
-                                                width: 200,
-                                              );
-                                            },
+                                            qrUrl!,
+                                            width: 220,
+                                            height: 220,
                                           );
                                         }
                                         
                                         if (qrString != null && qrString.toString().isNotEmpty) {
-                                          final generatedUrl =
-                                            'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+                                          return Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              if (!qrImageLoaded)
+                                                const SizedBox(
+                                                  width: 220,
+                                                  height: 260,
+                                                  child: SizedBox(
+                                                    width: 35,
+                                                    height: 35,
+                                                    child: CircularProgressIndicator(
+                                                      color: Colors.red,
+                                                      strokeWidth: 3,
+                                                    ),
+                                                  ),
+                                                ),
 
-                                          return Image.network(
-                                            generatedUrl,
-                                            height: 200,
-                                            width: 200,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                'assets/images/img_broken.jpg',
-                                                height: 200,
-                                                width: 200,
-                                              );
-                                            },
+                                              Opacity(
+                                                opacity: qrImageLoaded ? 1 : 0,
+                                                child: Image.network(
+                                                  generatedUrl!,
+                                                  width: 200,
+                                                  height: 200,
+                                                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                                                    if (wasSynchronouslyLoaded || frame != null) {
+                                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                        if (!qrImageLoaded && mounted) {
+                                                          setState(() {
+                                                            qrImageLoaded = true;
+                                                          });
+                                                        }
+                                                      });
+                                                    }
+                                                    return child;
+                                                  },
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'assets/images/img_broken.jpg',
+                                                      width: 200,
+                                                      height: 200,
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ],
                                           );
                                         }
+
+                                        // final qrUrl = paymentDetail['qr_url'];
+                                        // final qrString = paymentDetail['qr_string'];
+                                        
+                                        // if (qrUrl != null && qrUrl.toString().isNotEmpty) {
+                                        //   return Image.network(
+                                        //     qrUrl,
+                                        //     height: 200,
+                                        //     width: 200,
+                                        //     errorBuilder: (context, error, stackTrace) {
+                                        //       return Image.asset(
+                                        //         'assets/images/img_broken.jpg',
+                                        //         height: 200,
+                                        //         width: 200,
+                                        //       );
+                                        //     },
+                                        //   );
+                                        // }
+                                        
+                                        // if (qrString != null && qrString.toString().isNotEmpty) {
+                                        //   final generatedUrl =
+                                        //     'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+
+                                        //   return Image.network(
+                                        //     generatedUrl,
+                                        //     height: 200,
+                                        //     width: 200,
+                                        //     errorBuilder: (context, error, stackTrace) {
+                                        //       return Image.asset(
+                                        //         'assets/images/img_broken.jpg',
+                                        //         height: 200,
+                                        //         width: 200,
+                                        //       );
+                                        //     },
+                                        //   );
+                                        // }
                                         
                                         return const SizedBox.shrink();
                                       },
+                                    ),
+                                  ),
+                                ),
+
+                                SizedBox(height: 16,),
+                                Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: qrImageLoaded 
+                                      ? () async {
+                                          await downloadQrImage(
+                                            context, 
+                                            qrString!,
+                                            bahasa['download_scan_gagal'],
+                                            bahasa['download_scan_berhasil'],
+                                            bahasa['kesalahan_simpan_scan'],
+                                          );
+                                        }
+                                      : null,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: qrImageLoaded ? Colors.red : Colors.grey,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            bahasa['unduh_qr'],
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          SizedBox(width: 10,),
+                                          Icon(
+                                            Icons.download, color: Colors.white, size: 15,
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -740,7 +910,7 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
                                     isCheckingPayment = true;
                                     
                                     try {
-                                      final didRedirect = await CheckPaymentModal.show(
+                                      final didRedirect = await CheckPaymentModal.showEvent(
                                         context,
                                         widget.id_order,
                                       );
@@ -1120,9 +1290,6 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
     if (_didMarkExpired) return;
     
     if (!mounted) return;
-    setState(() {
-      isExpired = true;
-    });
     
     final result = await ApiService.get(
       "/order/event/${widget.id_order}",
@@ -1136,6 +1303,9 @@ class _WaitingOrderEventState extends State<WaitingOrderEvent> {
       
       if (order['order_status'] == '1') {
         await _handleSuccessRedirect();
+        return;
+      } else if (order['order_status'] == '2' || order['order_status'] == '20') {
+        isExpired = true;
         return;
       }
     }

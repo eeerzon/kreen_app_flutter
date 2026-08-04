@@ -107,6 +107,7 @@ class CheckingUserModal {
                           SessionManager.checkingUserModalShown = true;
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
                         } else {
+                          SessionManager.isGuest = true;
                           Navigator.pop(context);
                         }
                       },

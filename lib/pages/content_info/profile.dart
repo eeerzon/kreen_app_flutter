@@ -59,6 +59,7 @@ class _ProfileState extends State<Profile> {
     WidgetsBinding.instance.addPostFrameCallback((_) async{
       await _getBahasa();
       await _checkToken();
+      await _refreshAfterVerification();
     });
   }
 
@@ -370,7 +371,10 @@ class _ProfileState extends State<Profile> {
       ),
 
       body: RefreshIndicator(
-        onRefresh: _refreshAfterVerification,
+        onRefresh: () async {
+          await _refreshAfterVerification();
+          setState(() => isEdit = true);
+        },
         child: Padding(
           padding: kGlobalPadding,
           child: SingleChildScrollView(

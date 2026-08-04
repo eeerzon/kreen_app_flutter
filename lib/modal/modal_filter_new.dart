@@ -34,7 +34,7 @@ class ModalFilterNew {
     };
 
     final Map<String, String> priceLabels = {
-      'free': bahasa['harga_detail'],
+      'free': bahasa['harga_detail'], //"Gratis"
       'paid': bahasa['berbayar'],
     };
 

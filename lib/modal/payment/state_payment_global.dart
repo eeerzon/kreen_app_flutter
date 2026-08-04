@@ -519,7 +519,7 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
             dialogType: DialogType.noHeader,
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
-            desc: "${bahasa['error']}\n${bahasa['error_payment']}", //error message dari api
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
             btnOkOnPress: () {},
             btnOkColor: Colors.red,
             buttonsTextStyle: TextStyle(color: Colors.white),
@@ -1711,7 +1711,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(bahasa['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(bahasa['total_bayar'] ?? "Total Bayar", 
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               Text(
                                 currencyCode == null
                                   ? "$eventCurrency ${formatter.format(totalPayment)}"
@@ -1726,7 +1728,9 @@ class _StatePaymentGlobalState extends State<StatePaymentGlobal> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(bahasa['payment_metode'], style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(bahasa['payment_metode'] ?? "Metode Pembayaran", 
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               Text(
                                 selectedPaymentItem != null ? "${selectedPaymentItem?['category_name']}\n${selectedPaymentItem?['payment_name']}" : "-", 
                                 style: TextStyle(fontWeight: FontWeight.bold),

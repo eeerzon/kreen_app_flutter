@@ -76,10 +76,27 @@ String maskMiddle(String? value, {int prefixLength = 2, int suffixLength = 2}) {
   if (value == null || value.trim().isEmpty) return '-';
 
   final trimmed = value.trim();
-  if (trimmed.length <= prefixLength + suffixLength) return trimmed;
+  final length = trimmed.length;
 
-  final masked = '*' * (trimmed.length - prefixLength - suffixLength);
-  return '${trimmed.substring(0, prefixLength)}$masked${trimmed.substring(trimmed.length - suffixLength)}';
+  int prefix = prefixLength;
+  int suffix = suffixLength;
+
+  // Adaptif: pastikan tetap ada karakter yang di-mask meski string pendek
+  if (length <= prefix + suffix) {
+    if (length <= 2) {
+      prefix = length > 1 ? 1 : 0;
+      suffix = 0;
+    } else {
+      prefix = 1;
+      suffix = 1;
+    }
+  }
+
+  final maskedLength = length - prefix - suffix;
+  if (maskedLength <= 0) return trimmed;
+
+  final masked = '*' * maskedLength;
+  return '${trimmed.substring(0, prefix)}$masked${trimmed.substring(length - suffix)}';
 }
 
 DateTime parseWib(String value) {
@@ -336,8 +353,12 @@ Future<void> openEwalletPay(String url) async {
 }
 
 Future<void> openDeepLink(String url) async {
-  final uri = Uri.parse(url);
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://$url';
+  }
 
+  final uri = Uri.parse(url);
+  
   if (await canLaunchUrl(uri)) {
     await launchUrl(
       uri,

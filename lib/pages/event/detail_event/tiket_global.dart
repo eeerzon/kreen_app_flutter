@@ -164,15 +164,7 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
     final phoneMatch = phoneControllers[index].text == phoneControllers[0].text;
     final genderMatch = selectedGenders[index] == selectedGenders[0];
 
-    bool formMatch = true;
-    for (int i = 0; i < formTiket.length; i++) {
-      if (answers[index][i] != answers[0][i]) {
-        formMatch = false;
-        break;
-      }
-    }
-
-    final allMatch = nameMatch && emailMatch && phoneMatch && genderMatch && formMatch;
+    final allMatch = nameMatch && emailMatch && phoneMatch && genderMatch;
 
     if (_isCheckedList[index] != allMatch) {
       setState(() => _isCheckedList[index] = allMatch);
@@ -310,6 +302,13 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
           answers = List.generate(formTiket.length, (_) => '');
 
           indikatorFocus = List.generate(formTiket.length, (_) => FocusNode());
+        } else {
+          questionControllers = [];
+          answerControllers = [];
+          ids_order_form_detail = [];
+          ids_order_form_master = [];
+          answers = [];
+          indikatorFocus = [];
         }
 
         _isLoading = false;
@@ -1176,40 +1175,40 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                   controller: answerControllers[idx],
                                   onChanged: (value) {
                                     setState(() {
-                                      if (widget.flag_samakan_input_tiket_pertama == '0') {
-                                        answerControllers[idx].text = value;
-                                        answers[idx] = value;
+                                      // if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                      //   answerControllers[idx].text = value;
+                                      //   answers[idx] = value;
 
-                                        answerControllers[idx].selection = TextSelection.fromPosition(
-                                          TextPosition(offset: value.length)
-                                        );
-                                      } else {
-                                        if (idx == 0) {
-                                          answerControllers[0].text = value;
-                                          answers[0] = value;
+                                      //   answerControllers[idx].selection = TextSelection.fromPosition(
+                                      //     TextPosition(offset: value.length)
+                                      //   );
+                                      // } else {
+                                        // if (idx == 0) {
+                                        //   answerControllers[0].text = value;
+                                        //   answers[0] = value;
 
-                                          answerControllers[0].selection = TextSelection.fromPosition(
-                                            TextPosition(offset: value.length)
-                                          );
+                                        //   answerControllers[0].selection = TextSelection.fromPosition(
+                                        //     TextPosition(offset: value.length)
+                                        //   );
 
-                                          for (int i = 1; i < formTiket.length; i++) {
-                                            if (_isCheckedList[i]) {
-                                              answerControllers[i].text = value;
-                                              answers[i] = value;
-                                            }
-                                          }
-                                        } else {
+                                        //   for (int i = 1; i < formTiket.length; i++) {
+                                        //     if (_isCheckedList[i]) {
+                                        //       answerControllers[i].text = value;
+                                        //       answers[i] = value;
+                                        //     }
+                                        //   }
+                                        // } else {
                                           answerControllers[idx].text = value;
                                           answers[idx] = value;
 
                                           answerControllers[idx].selection = TextSelection.fromPosition(
                                             TextPosition(offset: value.length),
                                           );
-                                        }
-                                      }
+                                        // }
+                                      // }
                                     });
                                         
-                                    _autoCheckIfMatchFirst(idx);
+                                    // _autoCheckIfMatchFirst(idx);
                                   },
                                   autofocus: false,
                                   decoration: InputDecoration(
@@ -1344,32 +1343,32 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                           child: GestureDetector(
                                             onTap: () {
                                               setState(() {
-                                                if (widget.flag_samakan_input_tiket_pertama == '0') {
-                                                    selected = item['label'];
+                                                // if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                                //     selected = item['label'];
+                                                //     answerControllers[idx].text = item['label'];
+
+                                                //     answers[idx] = item['label'];
+                                                // } else {
+                                                //   if (idx == 0) {
+                                                //     selected = item['label'];
+                                                //     answerControllers[0].text = item['label'];
+
+                                                //     answers[0] = item['label'];
+
+                                                //     for (int i = 1; i < answers.length; i++) {
+                                                //       if (_isCheckedList[i]) {
+                                                //         answers[i] = item['label'];
+                                                //         answerControllers[i].text = item['label'];
+                                                //       }
+                                                //     }
+                                                //   } else {
                                                     answerControllers[idx].text = item['label'];
-
                                                     answers[idx] = item['label'];
-                                                } else {
-                                                  if (idx == 0) {
-                                                    selected = item['label'];
-                                                    answerControllers[0].text = item['label'];
-
-                                                    answers[0] = item['label'];
-
-                                                    for (int i = 1; i < answers.length; i++) {
-                                                      if (_isCheckedList[i]) {
-                                                        answers[i] = item['label'];
-                                                        answerControllers[i].text = item['label'];
-                                                      }
-                                                    }
-                                                  } else {
-                                                    answerControllers[idx].text = item['label'];
-                                                    answers[idx] = item['label'];
-                                                  }
-                                                }
+                                                //   }
+                                                // }
                                               });
 
-                                              _autoCheckIfMatchFirst(idx);
+                                              // _autoCheckIfMatchFirst(idx);
                                             },
                                             child: Container(
                                               height: 120,
@@ -1439,28 +1438,28 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                             groupValue: answerControllers[idx].text,
                                             onChanged: (val) {
                                               setState(() {
-                                                if (widget.flag_samakan_input_tiket_pertama == '0') {
-                                                  answerControllers[idx].text = value;
-                                                  answers[idx] = value;
-                                                } else {
-                                                  if (idx == 0) {
-                                                    answerControllers[0].text = value;
-                                                    answers[0]= value;
+                                                // if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                                //   answerControllers[idx].text = value;
+                                                //   answers[idx] = value;
+                                                // } else {
+                                                //   if (idx == 0) {
+                                                //     answerControllers[0].text = value;
+                                                //     answers[0]= value;
 
-                                                    for (int i = 1; i < answers.length; i++) {
-                                                      if (_isCheckedList[i]) {
-                                                        answers[i] = value;
-                                                        answerControllers[i].text = value;
-                                                      }
-                                                    }
-                                                  } else {
+                                                //     for (int i = 1; i < answers.length; i++) {
+                                                //       if (_isCheckedList[i]) {
+                                                //         answers[i] = value;
+                                                //         answerControllers[i].text = value;
+                                                //       }
+                                                //     }
+                                                //   } else {
                                                     answerControllers[idx].text = value;
                                                     answers[idx] = value;
-                                                  }
-                                                }
+                                                //   }
+                                                // }
                                               });
 
-                                              _autoCheckIfMatchFirst(idx);
+                                              // _autoCheckIfMatchFirst(idx);
                                             },
                                             contentPadding: EdgeInsets.zero,
                                             dense: true,
@@ -1506,28 +1505,28 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                         .toList(),
                                         onChanged: (value) {
                                           setState(() {
-                                            if (widget.flag_samakan_input_tiket_pertama == '0') {
-                                              answerControllers[idx].text = value ?? '';
-                                              answers[idx] = value ?? '';
-                                            } else {
-                                              if (idx == 0) {
-                                                answerControllers[0].text = value ?? '';
-                                                answers[0] = value ?? '';
+                                            // if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                            //   answerControllers[idx].text = value ?? '';
+                                            //   answers[idx] = value ?? '';
+                                            // } else {
+                                            //   if (idx == 0) {
+                                            //     answerControllers[0].text = value ?? '';
+                                            //     answers[0] = value ?? '';
 
-                                                for (int i = 1; i < answers.length; i++) {
-                                                  if (_isCheckedList[i]) {
-                                                    answers[i] = value ?? '';
-                                                    answerControllers[i].text = value ?? '';
-                                                  }
-                                                }
-                                              } else {
+                                            //     for (int i = 1; i < answers.length; i++) {
+                                            //       if (_isCheckedList[i]) {
+                                            //         answers[i] = value ?? '';
+                                            //         answerControllers[i].text = value ?? '';
+                                            //       }
+                                            //     }
+                                            //   } else {
                                                 answerControllers[idx].text = value ?? '';
                                                 answers[idx] = value ?? '';
-                                              }
-                                            }
+                                            //   }
+                                            // }
                                           });
                                           
-                                          _autoCheckIfMatchFirst(idx);
+                                          // _autoCheckIfMatchFirst(idx);
                                         },
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(
@@ -1599,31 +1598,31 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
                                                   selectedValues.remove(value);
                                                 }
 
-                                                if (widget.flag_samakan_input_tiket_pertama == '0') {
-                                                  answerControllers[idx].text =
-                                                      selectedValues.join(',');
+                                                // if (widget.flag_samakan_input_tiket_pertama == '0') {
+                                                //   answerControllers[idx].text =
+                                                //       selectedValues.join(',');
 
-                                                  answers[idx] = answerControllers[idx].text;
-                                                } else {
-                                                  if (idx == 0) {
-                                                    answerControllers[0].text =
-                                                        selectedValues.join(',');
+                                                //   answers[idx] = answerControllers[idx].text;
+                                                // } else {
+                                                //   if (idx == 0) {
+                                                //     answerControllers[0].text =
+                                                //         selectedValues.join(',');
 
-                                                    answers[0] = answerControllers[0].text;
+                                                //     answers[0] = answerControllers[0].text;
 
-                                                    for (int i = 1; i < answers.length; i++) {
-                                                      if (_isCheckedList[i]) {
-                                                        answers[i] = answerControllers[0].text;
-                                                        answerControllers[i].text = answerControllers[0].text;
-                                                      }
-                                                    }
-                                                  } else {
-                                                    answerControllers[idx].text = value;
-                                                    answers[idx] = value;
-                                                  }
-                                                }
+                                                //     for (int i = 1; i < answers.length; i++) {
+                                                //       if (_isCheckedList[i]) {
+                                                //         answers[i] = answerControllers[0].text;
+                                                //         answerControllers[i].text = answerControllers[0].text;
+                                                //       }
+                                                //     }
+                                                //   } else {
+                                                    answerControllers[idx].text = selectedValues.join(',');
+                                                    answers[idx] = answerControllers[idx].text;
+                                                //   }
+                                                // }
                                               });
-                                              _autoCheckIfMatchFirst(idx);
+                                              // _autoCheckIfMatchFirst(idx);
                                             },
                                           );
                                         }).toList();
@@ -2002,11 +2001,12 @@ class _TiketGlobalPageState extends State<TiketGlobalPage> {
 
         if (field['required'] != 1) continue;
 
-        final value = answers[j];
-
+        final value = answers.length > j ? answers[j] : '';
         if (value.toString().trim().isEmpty) {
           isValid = false;
-          firstErrorFocus ??= indikatorFocus[j];
+          if (firstErrorFocus == null && indikatorFocus.length > j) {
+            firstErrorFocus = indikatorFocus[j];
+          }
         }
       }
     }

@@ -466,8 +466,8 @@ class _PaymentItemState extends State<PaymentItem> {
                                         child: Text(
                                           isphone
                                             ? (value != null && value.isNotEmpty && !isValidPhone(value)
-                                                ? widget.bahasa['nomor_hp_error']
-                                                : widget.bahasa['nomor_hp'])
+                                              ? widget.bahasa['nomor_hp_error']
+                                              : widget.bahasa['nomor_hp'])
                                             : widget.bahasa['id_card'],
                                           style: TextStyle(color: Colors.red[900], fontSize: 12),
                                         ),
@@ -542,8 +542,8 @@ class _PaymentItemState extends State<PaymentItem> {
                                       autofocus: false,
                                       onChanged: widget.onPhoneChanged,
                                       keyboardType: isPhone
-                                          ? TextInputType.number
-                                          : TextInputType.text,
+                                        ? TextInputType.number
+                                        : TextInputType.text,
                                       decoration: InputDecoration(
                                         hintText: attr['name'] ?? '',
                                         filled: true,

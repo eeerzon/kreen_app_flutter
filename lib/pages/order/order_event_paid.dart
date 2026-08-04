@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable, non_constant_identifier_names, prefer_typing_uninitialized_variables, deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
@@ -30,6 +31,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
   Map<String, dynamic> eventOder = {};
   List<dynamic> eventOrderDetail = [];
   List<dynamic> eventTiket = [];
+  List<dynamic> eventTiketOrder = [];
   Map<String, dynamic> paymentDetail = {};
   List<dynamic> instruction = [];
   Map<String, dynamic> event = {};
@@ -84,6 +86,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
         eventOder = temp_event_order;
         eventOrderDetail = temp_event_order_detail;
         eventTiket = temp_event_tiket;
+        eventTiketOrder = tempOrder['event_ticket'];
 
         paymentDetail = temp_payment_detail;
         instruction = temp_instruction;
@@ -114,21 +117,13 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
           }
         }
         
-        if (eventOder['order_status'] == '0'){
-          statusOrder = 'gagal';
-        } else if (eventOder['order_status'] == '1'){
-          statusOrder = 'selesai';
-        } else if (eventOder['order_status'] == '2'){
-          statusOrder = 'batal';
-        } else if (eventOder['order_status'] == '3'){
-          statusOrder = 'menunggu';
-        } else if (eventOder['order_status'] == '4'){
-          statusOrder = 'refund';
-        } else if (eventOder['order_status'] == '20'){
-          statusOrder = 'expired';
-        } else if (eventOder['order_status'] == '404'){
-          statusOrder = 'hidden';
-        }
+        if (eventOder['order_status'] == '0') {statusOrder = 'gagal';} 
+        else if (eventOder['order_status'] == '1') {statusOrder = 'selesai';} 
+        else if (eventOder['order_status'] == '2') {statusOrder = 'batal';} 
+        else if (eventOder['order_status'] == '3') {statusOrder = 'menunggu';} 
+        else if (eventOder['order_status'] == '4') {statusOrder = 'refund';} 
+        else if (eventOder['order_status'] == '20') {statusOrder = 'expired';} 
+        else if (eventOder['order_status'] == '404') {statusOrder = 'hidden';}
 
         _isLoading = false;
         showErrorBar = false;
@@ -690,7 +685,7 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                     Padding(
                                       padding: const EdgeInsets.only(left: 8),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           Image.network(
                                             'https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${eventOrderDetail[index]['id_order_detail']}',
@@ -711,6 +706,79 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                                             eventOrderDetail[index]['id_order_detail'],
                                             style: const TextStyle(fontWeight: FontWeight.bold),
                                           ),
+
+                                          if (detailEvent['type_event'] == 'online') ...[
+                                            const SizedBox(height: 16),
+                                            IntrinsicWidth(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 48,
+                                                    child: ElevatedButton.icon(
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.white,
+                                                        side: const BorderSide(color: Colors.red),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                      ),
+                                                      onPressed: () async {
+                                                        await Clipboard.setData(ClipboardData(text: eventTiketOrder[index]['link_streaming']));
+
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(bahasa['copy_link_text'] ?? 'Link berhasil disalin'),
+                                                            backgroundColor: Colors.green,
+                                                            duration: const Duration(seconds: 2),
+                                                            behavior: SnackBarBehavior.floating,
+                                                            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius: BorderRadius.circular(8),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      label: Text(
+                                                          bahasa['copy_link'] ?? 'Salin Link',
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  const SizedBox(height: 12),
+                                                  SizedBox(
+                                                    height: 48,
+                                                    child: ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.red,
+                                                        side: const BorderSide(color: Colors.red),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                      ),
+                                                      onPressed: () async {
+                                                        final partnerUrl = normalizePartnerUrl(eventTiketOrder[index]['link_streaming'].toString());
+
+                                                        await openDeepLink(partnerUrl);
+                                                        return;
+                                                      },
+                                                      child: Text(
+                                                        bahasa['gabung_event'] ?? "Gabung Event",
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ]
                                         ],
                                       ),
                                     ),
@@ -791,12 +859,12 @@ class _OrderEventPaidState extends State<OrderEventPaid> {
                             );
                           },
                           child: Text(
-                          bahasa['selesai'], //"Selesai",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            bahasa['selesai'], //"Selesai",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
                         ),
                       ),
                     ],

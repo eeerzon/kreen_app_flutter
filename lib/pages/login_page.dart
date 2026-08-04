@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
         link_twitter: user['link_twitter'],
       );
 
-      SessionManager.isGuest = true;
+      SessionManager.isGuest = false;
       SessionManager.checkingUserModalShown = true;
 
       if (widget.notLog) {

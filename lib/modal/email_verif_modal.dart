@@ -40,7 +40,7 @@ class EmailVerifModal {
                 const SizedBox(height: 16),
 
                 Text(
-                  bahasa['modal_verif_email_title'],
+                  bahasa['modal_verif_email_title'], //"Ayo Verifikasi Emailmu Sekarang!",
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 16,
@@ -51,7 +51,7 @@ class EmailVerifModal {
                 const SizedBox(height: 8),
 
                 Text(
-                  bahasa['modal_verif_email_desc'],
+                  bahasa['modal_verif_email_desc'], //"Klik tombol di bawah untuk mengirim link verifikasi ke emailmu",
                   textAlign: TextAlign.center,
                 ),
 
@@ -65,7 +65,7 @@ class EmailVerifModal {
                     ),
                   ),
                   child: Text(
-                    bahasa['modal_verif_email_button'],
+                    bahasa['modal_verif_email_button'], //"Verifikasi Sekarang",
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -80,9 +80,9 @@ class EmailVerifModal {
                         dialogType: DialogType.success,
                         title: bahasa['sukses'], //"Berhasil",
                         desc:
-                          "${bahasa['desc_email_1']}\n"
-                          "${bahasa['desc_email_2']} $email\n"
-                          "${bahasa['desc_email_3']}",
+                          "${bahasa['desc_email_1']}\n" //"Email verifikasi telah dikirim",
+                          "${bahasa['desc_email_2']} $email\n" //"Kami telah mengirim email verifikasi ke ",
+                          "${bahasa['desc_email_3']}", //"Silakan buka email tersebut dan klik link verifikasi untuk mengaktifkan akun Anda.",
                         transitionAnimationDuration: const Duration(milliseconds: 1000),
                         btnOkText: "OK",
                         btnOkColor: Colors.red,
@@ -144,7 +144,7 @@ class EmailVerifModal {
 
                 const SizedBox(height: 24),
                 Text(
-                  bahasa['notLogin'],
+                  bahasa['notLogin'], //"Ayo... Login terlebih Dahulu",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -155,7 +155,7 @@ class EmailVerifModal {
 
                 const SizedBox(height: 12),
                 Text(
-                  bahasa['notLoginDesc'],
+                  bahasa['notLoginDesc'], //"Klik tombol dibawah ini untuk melanjutkan",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.black54, fontSize: 14),
                 ),

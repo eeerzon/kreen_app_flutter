@@ -127,7 +127,7 @@ class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
           dialogType: DialogType.noHeader,
           animType: AnimType.topSlide,
           title: widget.bahasa['maaf'],
-          desc: widget.bahasa['error'],
+          desc: widget.bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi nanti.",
           btnOkOnPress: () {},
           btnOkColor: Colors.red,
           buttonsTextStyle: const TextStyle(color: Colors.white),
@@ -141,13 +141,13 @@ class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
 
   void _setStatusOrder() {
     statusOrder = {
-      '0': widget.bahasa['status_order_0'],
-      '1': widget.bahasa['status_order_1'],
-      '2': widget.bahasa['status_order_2'],
-      '3': widget.bahasa['status_order_3'],
-      '4': widget.bahasa['status_order_4'],
-      '20': widget.bahasa['status_order_20'],
-      '404': widget.bahasa['status_order_404'],
+      '0': widget.bahasa['status_order_0'], //"Gagal",
+      '1': widget.bahasa['status_order_1'], //"Selesai",
+      '2': widget.bahasa['status_order_2'], //"Batal",
+      '3': widget.bahasa['status_order_3'], //"Menunggu",
+      '4': widget.bahasa['status_order_4'], //"Refund",
+      '20': widget.bahasa['status_order_20'], //"Expired",
+      '404': widget.bahasa['status_order_404'], //"Hidden",
     }[voteOrder['order_status']];
   }
 
@@ -297,7 +297,7 @@ class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.bahasa['info_pesanan'],
+                  widget.bahasa['info_pesanan'], //"Informasi Pesanan",
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
@@ -351,7 +351,7 @@ class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
                       children: voteOrderDetail.map((detail) {
                         final finalis = voteFinalis.firstWhere(
                           (f) => f['id_finalis'] == detail['id_finalis'],
-                          orElse: () => {'nama_finalis': widget.bahasa['no_data']},
+                          orElse: () => {'nama_finalis': widget.bahasa['no_data']}, //"Data tidak ditemukan",
                         );
                         return Text(
                           detail['qty'] > 1
@@ -403,8 +403,8 @@ class _VotePaymentModalContentState extends State<_VotePaymentModalContent> {
                     isRedirecting
                       ? widget.bahasa['redirecting']
                       : isCheckingPayment
-                        ? widget.bahasa['loading']
-                        : widget.bahasa['check_status'],
+                        ? widget.bahasa['loading'] //"Memuat data...",
+                        : widget.bahasa['check_status'], //"Cek Status Pesanan",
                     style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -495,19 +495,37 @@ class _EventPaymentModalContentState extends State<_EventPaymentModalContent> {
       token: token,
     );
 
-    final tempOrder = resultOrder?['data'] ?? {};
-    eventOrder = tempOrder['event_order'] ?? {};
-    eventOrderDetail = tempOrder['event_order_detail'] ?? [];
-    eventTiket = tempOrder['event_ticket'] ?? [];
-    event = tempOrder['event'] ?? {};
+    if (resultOrder != null && resultOrder['rc'] == 200) {
+      final tempOrder = resultOrder['data'] ?? {};
+      eventOrder = tempOrder['event_order'] ?? {};
+      eventOrderDetail = tempOrder['event_order_detail'] ?? [];
+      eventTiket = tempOrder['event_ticket'] ?? [];
+      event = tempOrder['event'] ?? {};
 
-    _setStatusOrder();
-    _setCurrency();
-    _calcTotal();
-    _groupTickets();
+      _setStatusOrder();
+      _setCurrency();
+      _calcTotal();
+      _groupTickets();
 
-    if (eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') {
-      isExpired = true;
+      if (eventOrder['order_status'] == '20' || eventOrder['order_status'] == '2') {
+        isExpired = true;
+      }
+    } else {
+      if (mounted) {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.noHeader,
+          animType: AnimType.topSlide,
+          title: widget.bahasa['maaf'],
+          desc: widget.bahasa['error'],
+          btnOkOnPress: () {},
+          btnOkColor: Colors.red,
+          buttonsTextStyle: const TextStyle(color: Colors.white),
+          headerAnimationLoop: false,
+          dismissOnTouchOutside: true,
+          showCloseIcon: true,
+        ).show();
+      }
     }
   }
 

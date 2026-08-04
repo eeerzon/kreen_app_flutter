@@ -186,14 +186,14 @@ class _InfoPageState extends State<InfoPage> {
 
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (_) => const HomePage()),
+                          MaterialPageRoute(builder: (_) => const HomePage(initialIndex: 3)),
                           (route) => false,
                         );
                       },
                       title: Row(
                         children: [
                           Image.asset(
-                            "assets/currencies/${entry.key.toString().toLowerCase()}.png", 
+                            "assets/currencies/${entry.key.toString().toLowerCase()}.png",
                             width: 28,
                             height: 28,
                           ),

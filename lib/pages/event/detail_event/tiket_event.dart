@@ -1657,8 +1657,8 @@ class _TiketEventPageState extends State<TiketEventPage> {
                                                           }
                                                         }
                                                       } else {
-                                                        answerControllers[index][idx].text = value;
-                                                        answers[index][idx] = value;
+                                                        answerControllers[index][idx].text = selectedValues.join(',');
+                                                        answers[index][idx] = answerControllers[index][idx].text;
                                                       }
                                                     }
                                                   });

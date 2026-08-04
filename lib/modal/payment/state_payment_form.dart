@@ -1720,7 +1720,9 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(bahasa['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(bahasa['total_bayar'] ?? "Total Bayar", 
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               Text(
                                 currencyCode == null
                                   ? "$eventCurrency ${formatter.format(totalPayment)}"
@@ -1735,7 +1737,9 @@ class _StatePaymentFormState extends State<StatePaymentForm> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(bahasa['payment_metode'], style: TextStyle(fontWeight: FontWeight.bold),),
+                              Text(bahasa['payment_metode'], // "Metode Pembayaran"
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               Text(
                                 selectedPaymentItem != null ? "${selectedPaymentItem?['category_name']}\n${selectedPaymentItem?['payment_name']}" : "-", 
                                 style: TextStyle(fontWeight: FontWeight.bold),
