@@ -371,6 +371,7 @@
     "no_internet" : "No internet connection. Please try again later.",
     "error" : "An error occurred. Please try again later.",
     "error_payment" : "Or use another payment method.",
+    "data_tidak_ditemukan" : "Data not found or no longer available.",
 
     "upcoming" : "Upcoming feature — available in the next update.",
     "maaf" : "Sorry...",
@@ -475,6 +476,9 @@
     "faq_default_a6": "Voting results are announced according to the event schedule on the KREEN Connect platform.",
 
     "nama_voter": "Voter Name",
-    "hide_nama": "Hide Your Name"
+    "hide_nama": "Hide Your Name",
+    "copy_link": "Copy Link",
+    "copy_link_text": "Link copied",
+    "gabung_event": "Join Event"
   }
 }

@@ -1627,6 +1627,7 @@ class _LeaderboardSingleVotePaketState extends State<LeaderboardSingleVotePaket>
                             flag_login: detailvote['flag_login'],
                             rateCurrency: detailvote['rate_currency_vote'],
                             rateCurrencyUser: detailvote['rate_currency_user'],
+                            color: color,
                           ),
                         ),
                       );

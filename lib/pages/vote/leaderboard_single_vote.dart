@@ -1851,6 +1851,7 @@ class _LeaderboardSingleVoteState extends State<LeaderboardSingleVote> {
                                 flag_verify_email: detailvote['flag_verify_email'],
                                 rateCurrency: detailvote['rate_currency_vote'],
                                 rateCurrencyUser: detailvote['rate_currency_user'],
+                                color: color,
                               ),
                             ),
                           );

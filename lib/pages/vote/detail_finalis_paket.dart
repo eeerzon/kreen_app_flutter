@@ -1176,8 +1176,10 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                     ),
                                   ),
                                   SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 20, // jarak horizontal antar ikon, atur sesuai selera
+                                    runSpacing: 12,
                                     children: [
                                       if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
                                         _buildSocialButton(
@@ -1211,7 +1213,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                                           platform: "instagram",
                                         ),
                                     ],
-                                  ),
+                                  )
                                 ],
                               ),
                             ),
@@ -1329,6 +1331,7 @@ class _DetailFinalisPaketPageState extends State<DetailFinalisPaketPage> {
                             flag_login: detailvote['flag_login'],
                             rateCurrency: detailvote['rate_currency_vote'],
                             rateCurrencyUser: detailvote['rate_currency_user'],
+                            color: color,
                           ),
                         ),
                       );

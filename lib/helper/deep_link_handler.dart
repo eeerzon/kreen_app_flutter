@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
 import 'package:kreen_app_flutter/pages/event/detail_event.dart';
@@ -12,6 +13,7 @@ import 'package:kreen_app_flutter/pages/vote/detail_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote.dart';
 import 'package:kreen_app_flutter/pages/vote/leaderboard_single_vote_paket.dart';
 import 'package:kreen_app_flutter/services/api_services.dart';
+import 'package:kreen_app_flutter/services/lang_service.dart';
 import 'package:kreen_app_flutter/services/storage_services.dart';
 
 class DeepLinkHandler {
@@ -58,7 +60,7 @@ class DeepLinkHandler {
         _pendingUri = Uri.tryParse(pendingUrl);
       }
     } catch (e) {
-      // debugPrint('Error ambil pending link: $e');
+      debugPrint('Error ambil pending link: $e');
     }
     
     _subscribeLinkStream();
@@ -108,7 +110,7 @@ class DeepLinkHandler {
           }
         }
       } catch (e) {
-        // debugPrint('getLatestLink error: $e');
+        debugPrint('getLatestLink error: $e');
       }
 
       if (_pendingUri != null) {
@@ -296,6 +298,7 @@ class DeepLinkHandler {
       await getInfoVote(voteId, lang, currency);
 
       if (vote.isEmpty) {
+        await _showNotFoundToast(lang);
         return;
       }
       
@@ -359,11 +362,13 @@ class DeepLinkHandler {
       await getInfoEvent(eventId, lang, currency);
 
       if (event.isEmpty) {
+        await _showNotFoundToast(lang);
         return;
       }
 
       final tickets = event['event_ticket'];
       if (tickets == null || tickets.isEmpty) {
+        await _showNotFoundToast(lang);
         return;
       }
       
@@ -405,13 +410,22 @@ class DeepLinkHandler {
   Future<void> getInfoVote(String idVote, String langCode, String currencyCode) async {
     String? token = await StorageService.getToken();
     final result = await ApiService.get("/vote/$idVote", xLanguage: langCode, xCurrency: currencyCode, token: token);
-    vote = result?['data'] ?? {};
+    final data = result?['data'];
+    vote = data is Map<String, dynamic> ? data : {};
   }
 
   Future<void> getInfoEvent(String idEvent, String langCode, String currencyCode) async {
     final body = {"id_event": idEvent};
     final result = await ApiService.post('/event/detail', body: body, xCurrency: currencyCode, xLanguage: langCode);
-    event = result?['data'] ?? {};
+    final data = result?['data'];
+    event = data is Map<String, dynamic> ? data : {};
+  }
+
+  Future<void> _showNotFoundToast(String lang) async {
+    final bahasa = await LangService.getJsonData(lang, "bahasa");
+    Fluttertoast.showToast(
+      msg: bahasa['data_tidak_ditemukan'] ?? 'Data tidak ditemukan atau sudah tidak tersedia.',
+    );
   }
 
   String _formatDate(String langCode, String? dateStr, {bool includeTime = false}) {

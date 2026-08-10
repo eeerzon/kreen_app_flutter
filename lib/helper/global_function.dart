@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html_parser;
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -532,3 +534,102 @@ Widget buildSkeletonDukungan() {
     ),
   );
 }
+
+String simplifyKontenHtml(String rawHtml) {
+  final document = html_parser.parse(rawHtml);
+  final buffer = StringBuffer();
+
+  void processNode(dom.Node node) {
+    if (node is dom.Text) {
+      final text = node.text.trim();
+      if (text.isNotEmpty) {
+        buffer.writeln('<p>${_escapeButKeepEntities(text)}</p>');
+      }
+      return;
+    }
+
+    if (node is! dom.Element) return;
+    final el = node;
+    final classes = el.classes;
+    final tag = el.localName;
+
+    // Pola utama: <div class="row ..."> berisi col-auto (nomor) + col (judul & isi)
+    if (tag == 'div' && classes.contains('row')) {
+      final directDivCols = el.children.where((c) => c.localName == 'div').toList();
+
+      if (directDivCols.length >= 2 && directDivCols[0].classes.contains('col-auto')) {
+        final nomorEl = directDivCols[0];
+        final contentCol = directDivCols[1];
+
+        final nomor = nomorEl.text.trim();
+        final headingEl = contentCol.children.firstWhere(
+          (c) => c.localName == 'h5' || c.localName == 'h6',
+          orElse: () => dom.Element.tag('_none'),
+        );
+
+        if (headingEl.localName != '_none') {
+          final headingTag = headingEl.localName;
+          final judul = headingEl.text.trim();
+          // GABUNG nomor + judul jadi SATU baris teks di dalam SATU tag heading
+          buffer.writeln('<$headingTag><b>$nomor</b> $judul</$headingTag>');
+
+          for (final child in contentCol.children) {
+            if (child != headingEl) processNode(child);
+          }
+        } else {
+          // gak ada heading: nomor + isi jadi satu paragraf, isi diproses sbg TEXT saja (bukan innerHtml mentah)
+          buffer.writeln('<p><b>$nomor</b> ${contentCol.text.trim()}</p>');
+          for (final child in contentCol.children) {
+            // tetap proses nested list/div lain di dalamnya kalau ada
+            if (child.localName == 'ul' || child.localName == 'ol') {
+              processNode(child);
+            }
+          }
+        }
+        return;
+      }
+
+      // row tanpa pola col-auto+col (misal cuma <div class="row"><div class="col">isi</div></div>)
+      for (final child in el.children) {
+        processNode(child);
+      }
+      return;
+    }
+
+    if (tag == 'ol' || tag == 'ul') {
+      buffer.writeln(el.outerHtml);
+      return;
+    }
+
+    if (tag == 'h5' || tag == 'h6') {
+      buffer.writeln(el.outerHtml);
+      return;
+    }
+
+    if (tag == 'p' || tag == 'br') {
+      buffer.writeln(el.outerHtml);
+      return;
+    }
+
+    // div generik (container, col tanpa row, dll): proses isinya aja
+    if (tag == 'div') {
+      for (final child in el.nodes) {
+        processNode(child);
+      }
+      return;
+    }
+
+    // fallback
+    for (final child in el.nodes) {
+      processNode(child);
+    }
+  }
+
+  for (final child in document.body?.nodes ?? []) {
+    processNode(child);
+  }
+
+  return buffer.toString();
+}
+
+String _escapeButKeepEntities(String text) => text;

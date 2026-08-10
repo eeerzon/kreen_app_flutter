@@ -45,7 +45,7 @@ class ExploreFilterNew extends StatelessWidget {
   String mapPrice(String key) {
     switch (key) {
       case 'free':
-        return bahasa['harga_detail'];
+        return bahasa['harga_detail']; //"Gratis"
       case 'paid':
         return bahasa['berbayar'];
       default:

@@ -499,6 +499,11 @@ class _FinalisPageState extends State<FinalisPage> {
     if (resultFinalis?['rc'] == 200) {
       newData = List.from(resultFinalis?['data'] ?? []);
       hasMore = newData.length >= 6;
+      fetchFailed = false;
+    } else if (resultFinalis?['rc'] == 404) {
+      // anggap ini "data habis", bukan error
+      hasMore = false;
+      fetchFailed = false;
     } else {
       hasMore = false;
       fetchFailed = true;
@@ -748,7 +753,7 @@ class _FinalisPageState extends State<FinalisPage> {
                         ),
                         
                         Text(
-                          countData > 1
+                          countData > 1 && langCode == 'en'
                             ? "$countData ${bahasa['finalis']}s"
                             : "$countData ${bahasa['finalis']}",
                           style: TextStyle(fontSize: 12,),
@@ -832,6 +837,7 @@ class _FinalisPageState extends State<FinalisPage> {
                                 flag_verify_email: vote['flag_verify_email'],
                                 rateCurrency: vote['rate_currency_vote'],
                                 rateCurrencyUser: vote['rate_currency_user'],
+                                color: color,
                               ),
                             ),
                           );
@@ -1422,6 +1428,7 @@ class _FinalisPageState extends State<FinalisPage> {
                                               flag_verify_email: vote['flag_verify_email'],
                                               rateCurrency: vote['rate_currency_vote'],
                                               rateCurrencyUser: vote['rate_currency_user'],
+                                              color: color,
                                             ),
                                           ),
                                         );

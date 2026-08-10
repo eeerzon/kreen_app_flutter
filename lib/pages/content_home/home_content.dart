@@ -52,8 +52,8 @@ class _HomeContentState extends State<HomeContent> {
   String? leaderboard_title;
   String? seeMore;
   
-  bool isLoadingAboveFold = true;
-  bool isLoadingBelowFold = true;
+  bool isLoadingDataAtas = true;
+  bool isLoadingDataBawah = true;
 
   bool showErrorBar = false;
   String errorMessage = '';
@@ -66,7 +66,7 @@ class _HomeContentState extends State<HomeContent> {
       
       await _getBahasa();
       await _getCurrency();
-      await _loadAboveFold();
+      await _loadDataAtas();
     });
   }
   
@@ -108,15 +108,15 @@ class _HomeContentState extends State<HomeContent> {
   
   List<dynamic> activeBanners = [];
   List<double?> aspectRatios = [];
-  List<dynamic> votes        = [];
+  List<dynamic> votes = [];
   
-  List<dynamic> juara       = [];
-  List<dynamic> hitsevent   = [];
+  List<dynamic> juara = [];
+  List<dynamic> hitsevent = [];
   List<dynamic> latestvotes = [];
   List<dynamic> recomenevent = [];
-  List<dynamic> listArtikel  = [];
+  List<dynamic> listArtikel = [];
   
-  Future<void> _loadAboveFold() async {
+  Future<void> _loadDataAtas() async {
     await _checkToken();
 
     final get_user = await StorageService.getUser();
@@ -136,7 +136,7 @@ class _HomeContentState extends State<HomeContent> {
       setState(() {
         showErrorBar = true;
         errorMessage = resultBanner?['message'] ?? 'Error loading banner';
-        isLoadingAboveFold = false;
+        isLoadingDataAtas = false;
       });
       return;
     }
@@ -145,7 +145,7 @@ class _HomeContentState extends State<HomeContent> {
       setState(() {
         showErrorBar = true;
         errorMessage = resultVote?['message'] ?? 'Error loading votes';
-        isLoadingAboveFold = false;
+        isLoadingDataAtas = false;
       });
       return;
     }
@@ -174,15 +174,15 @@ class _HomeContentState extends State<HomeContent> {
       activeBanners = tempBanners;
       votes = tempVotes;
       isChoosed = tempChoosed ?? 0;
-      isLoadingAboveFold = false;
+      isLoadingDataAtas = false;
       showErrorBar = false;
     });
     
     preloadImageSizes();
-    _loadBelowFold();
+    _loadDataBawah();
   }
   
-  Future<void> _loadBelowFold() async {
+  Future<void> _loadDataBawah() async {
     final results = await Future.wait([
       ApiService.get("/vote/juara", xLanguage: langCode, token: token),
       ApiService.get("/event/hits", xCurrency: currencyCode, xLanguage: langCode, token: token),
@@ -224,16 +224,16 @@ class _HomeContentState extends State<HomeContent> {
       latestvotes = (resultLatest != null && resultLatest['rc'] == 200) ? resultLatest['data']  ?? [] : latestvotes;
       recomenevent = (resultRecom  != null && resultRecom['rc']  == 200) ? resultRecom['data']   ?? [] : recomenevent;
       listArtikel = (resultArtikel != null && resultArtikel['rc'] == 200) ? resultArtikel['data'] ?? [] : listArtikel;
-      isLoadingBelowFold = false;
+      isLoadingDataBawah = false;
     });
   }
   
   Future<void> _loadContent() async {
     setState(() {
-      isLoadingAboveFold = true;
-      isLoadingBelowFold = true;
+      isLoadingDataAtas = true;
+      isLoadingDataBawah = true;
     });
-    await _loadAboveFold();
+    await _loadDataAtas();
   }
   
   Future<void> _precacheAllImages(
@@ -291,7 +291,7 @@ class _HomeContentState extends State<HomeContent> {
     return Scaffold(
       body: Stack(
         children: [
-          isLoadingAboveFold
+          isLoadingDataAtas
               ? buildSkeletonHome()
               : buildKontenHome(),
           GlobalErrorBar(
@@ -477,7 +477,7 @@ class _HomeContentState extends State<HomeContent> {
               ),
               
               const SizedBox(height: 20),
-              isLoadingBelowFold
+              isLoadingDataBawah
                   ? Column(children: [
                       Container(color: Colors.red, child: _buildSkeletonSection()),
                       const SizedBox(height: 20),
@@ -1273,7 +1273,7 @@ class _HomeContentState extends State<HomeContent> {
   Future<void> _handleBackFromDetail() async {
     if (isChoosed == 0) {
       currencyCode = lastCurrency;
-      setState(() => isLoadingAboveFold = true);
+      setState(() => isLoadingDataAtas = true);
       await _loadContent();
     }
   }

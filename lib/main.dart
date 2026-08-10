@@ -31,6 +31,7 @@ void main() async {
   await deepLinkHandler.init();
 
   runApp(const MyApp());
+  deepLinkHandler.processPendingLink();
 }
 
 

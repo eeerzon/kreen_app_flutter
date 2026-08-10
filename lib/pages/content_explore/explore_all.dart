@@ -216,7 +216,7 @@ class _ExploreAllState extends State<ExploreAll> {
       if (mounted) {
         setState(() {
           showErrorBar = true;
-          errorMessage = bahasa['timeout'];
+          errorMessage = bahasa['timeout']; //"Koneksi terputus. Silakan coba lagi nanti.",
           isLoadingMore = false;
         });
       }
@@ -225,7 +225,7 @@ class _ExploreAllState extends State<ExploreAll> {
       if (mounted) {
         setState(() {
           showErrorBar = true;
-          errorMessage = bahasa['no_internet'];
+          errorMessage = bahasa['no_internet']; //"Tidak ada koneksi internet. Silakan coba lagi nanti.",
           isLoadingMore = false;
         });
       }
@@ -234,7 +234,7 @@ class _ExploreAllState extends State<ExploreAll> {
       if (mounted) {
         setState(() {
           showErrorBar = true;
-          errorMessage = bahasa['error'];
+          errorMessage = bahasa['error']; //"Terjadi kesalahan. Silakan coba lagi nanti.",
           isLoadingMore = false;
         });
       }
@@ -721,7 +721,7 @@ class _ExploreAllState extends State<ExploreAll> {
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Center(
                         child: Text(
-                          bahasa['no_more'] ?? "",
+                          bahasa['no_more'] ?? "Tidak ada data lagi", //"Tidak ada data lagi",
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ),

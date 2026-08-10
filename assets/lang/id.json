@@ -371,6 +371,7 @@
     "no_internet" : "Tidak ada koneksi internet. Silakan coba lagi nanti.",
     "error" : "Terjadi kesalahan. Silakan coba lagi nanti.",
     "error_payment" : "Atau gunakan metode pembayaran lain.",
+    "data_tidak_ditemukan" : "Data tidak ditemukan atau sudah tidak tersedia.",
 
     "upcoming" : "Fitur ini segera hadir di update berikutnya.",
     "maaf" : "Maaf...",
@@ -475,6 +476,9 @@
     "faq_default_a6": "Hasil voting diumumkan sesuai jadwal event di platform KREEN Connect.",
 
     "nama_voter": "Nama Voter",
-    "hide_nama": "Sembunyikan Namamu"
+    "hide_nama": "Sembunyikan Namamu",
+    "copy_link": "Salin Link",
+    "copy_link_text": "Link berhasil disalin",
+    "gabung_event": "Gabung Event"
   }
 }

@@ -767,20 +767,38 @@ class _AddSupportPageState extends State<AddSupportPage> {
                                 bahasa['kode_pesanan'] ?? 'Kode Pesanan',
                                 voteOder['invoice_number'] ?? '-',
                               ),
+
                               const SizedBox(height: 8),
                               buildOrderInfoRow(
                                 bahasa['tanggal_pemesanan'] ?? 'Tanggal Pemesanan',
                                 formattedOrderDate,
                               ),
+
                               const SizedBox(height: 8),
                               buildOrderInfoRow(
                                 bahasa['nama_pemesan'] ?? 'Nama Pemesan',
                                 maskMiddle(voteOder['voter_name']?.toString()),
                               ),
+
                               const SizedBox(height: 8),
-                              buildOrderInfoRow(
-                                bahasa['no_hp'] ?? 'No. HP',
-                                maskMiddle(voteOder['voter_phone']?.toString()),
+                              ...List.generate(
+                                (detailOrder['indikator_answer'] as List?)?.length ?? 0,
+                                (index) {
+                                  final list = detailOrder['indikator_answer'] as List;
+                                  final item = list[index];
+                                  final isLast = index == list.length - 1;
+
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      buildOrderInfoRow(
+                                        item['question']?.toString() ?? '-',
+                                        maskMiddle(item['answer']?.toString()),
+                                      ),
+                                      if (!isLast) SizedBox(height: 8),
+                                    ],
+                                  );
+                                },
                               ),
                             ],
                           ),

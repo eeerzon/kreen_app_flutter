@@ -15,7 +15,6 @@ import 'package:kreen_app_flutter/helper/get_login_user.dart';
 import 'package:kreen_app_flutter/helper/global_widget.dart';
 import 'package:kreen_app_flutter/helper/payment/payment_item.dart';
 import 'package:kreen_app_flutter/modal/payment/payment_list.dart';
-import 'package:kreen_app_flutter/pages/content_info/help_center.dart';
 import 'package:kreen_app_flutter/pages/content_info/privacy_policy.dart';
 import 'package:kreen_app_flutter/pages/content_info/snk_page.dart';
 import 'package:kreen_app_flutter/pages/vote/add_support.dart';
@@ -39,6 +38,7 @@ class StatePaymentManual extends StatefulWidget {
   final String flag_verify_email;
   final num rateCurrency;
   final num rateCurrencyUser;
+  final Color color;
 
   const StatePaymentManual({
     super.key,
@@ -54,7 +54,8 @@ class StatePaymentManual extends StatefulWidget {
     required this.flag_login,
     required this.flag_verify_email,
     required this.rateCurrency,
-    required this.rateCurrencyUser
+    required this.rateCurrencyUser,
+    required this.color,
   });
 
   @override
@@ -77,7 +78,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
   Map<String, dynamic> payment = {};
   List<dynamic> indikator = [];
   String? voteCurrency, eventCurrency;
-  var totalPayment, feeLayanan, totalVotes;
+  num totalPayment = 0, feeLayanan = 0, totalVotes = 0;
 
   String? id_payment_method, mobile_number, id_card_number, card_number, expiry_month, expiry_year, cvv;
 
@@ -522,7 +523,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           "platform": platform,
           "id_paket": null,
           "nama_voter": _nameController.text.trim(),
-          "email_voter": email ?? _emailController.text.trim(),
+          // "email_voter": email ?? _emailController.text.trim(),
+          "email_voter": _emailController.text.trim(),
           "gender": genderValue,
           "latitude": latitude,
           "longitude": longitude,
@@ -585,9 +587,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: bahasa['lewat_batas_voting'],
+                desc: bahasa['lewat_batas_voting'], // "Kamu sudah melewati batas waktu voting"
                 btnOkOnPress: () {},
-                btnOkColor: Colors.red,
+                btnOkColor: widget.color,
                 buttonsTextStyle: TextStyle(color: Colors.white),
                 headerAnimationLoop: false,
                 dismissOnTouchOutside: true,
@@ -599,9 +601,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: "${bahasa['error']}\n${bahasa['error_payment']}",
+                desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
                 btnOkOnPress: () {},
-                btnOkColor: Colors.red,
+                btnOkColor: widget.color,
                 buttonsTextStyle: TextStyle(color: Colors.white),
                 headerAnimationLoop: false,
                 dismissOnTouchOutside: true,
@@ -614,9 +616,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               dialogType: DialogType.noHeader,
               animType: AnimType.topSlide,
               title: bahasa['maaf'],
-              desc: "${bahasa['error']}\n${bahasa['error_payment']}",
+              desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
               btnOkOnPress: () {},
-              btnOkColor: Colors.red,
+              btnOkColor: widget.color,
               buttonsTextStyle: TextStyle(color: Colors.white),
               headerAnimationLoop: false,
               dismissOnTouchOutside: true,
@@ -630,9 +632,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
             // desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-            desc: "${bahasa['error']}\n${bahasa['error_payment']}",
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
             btnOkOnPress: () {},
-            btnOkColor: Colors.red,
+            btnOkColor: widget.color,
             buttonsTextStyle: TextStyle(color: Colors.white),
             headerAnimationLoop: false,
             dismissOnTouchOutside: true,
@@ -657,7 +659,8 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
           "id_user": user_id ?? '',
           "id_paket": '',
           "nama_voter": _nameController.text.trim(),
-          "email_voter": email ?? _emailController.text.trim(),
+          // "email_voter": email ?? _emailController.text.trim(),
+          "email_voter": _emailController.text.trim(),
           "gender": genderValue,
           "latitude": latitude,
           "longitude": longitude,
@@ -712,9 +715,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: bahasa['lewat_batas_voting'],
+                desc: bahasa['lewat_batas_voting'], // "Kamu sudah melewati batas waktu voting"
                 btnOkOnPress: () {},
-                btnOkColor: Colors.red,
+                btnOkColor: widget.color,
                 buttonsTextStyle: TextStyle(color: Colors.white),
                 headerAnimationLoop: false,
                 dismissOnTouchOutside: true,
@@ -726,9 +729,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                 dialogType: DialogType.noHeader,
                 animType: AnimType.topSlide,
                 title: bahasa['maaf'],
-                desc: "${bahasa['error']}\n${bahasa['error_payment']}",
+                desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
                 btnOkOnPress: () {},
-                btnOkColor: Colors.red,
+                btnOkColor: widget.color,
                 buttonsTextStyle: TextStyle(color: Colors.white),
                 headerAnimationLoop: false,
                 dismissOnTouchOutside: true,
@@ -743,9 +746,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
               animType: AnimType.topSlide,
               title: bahasa['maaf'],
               // desc: bahasa['error'],
-              desc: "${bahasa['error']}\n${bahasa['error_payment']}",
+              desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
               btnOkOnPress: () {},
-              btnOkColor: Colors.red,
+              btnOkColor: widget.color,
               buttonsTextStyle: TextStyle(color: Colors.white),
               headerAnimationLoop: false,
               dismissOnTouchOutside: true,
@@ -759,9 +762,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             animType: AnimType.topSlide,
             title: bahasa['maaf'],
             // desc: bahasa['error'], //"Terjadi kesalahan. Silakan coba lagi.",
-            desc: "${bahasa['error']}\n${bahasa['error_payment']}",
+            desc: "${bahasa['error']}\n${bahasa['error_payment']}", // "Atau gunakan metode pembayaran lain."
             btnOkOnPress: () {},
-            btnOkColor: Colors.red,
+            btnOkColor: widget.color,
             buttonsTextStyle: TextStyle(color: Colors.white),
             headerAnimationLoop: false,
             dismissOnTouchOutside: true,
@@ -830,13 +833,14 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       height: 48,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         bahasa['batal'],
-                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -853,7 +857,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                       decoration: BoxDecoration(
                         color: isConfirmLoading 
                             ? Colors.grey.shade400 
-                            : Colors.red,
+                            : widget.color,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
@@ -903,7 +907,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        bahasa['selesaikan_vote_kamu'],
+                        bahasa['selesaikan_vote_kamu'] ?? "Selesaikan Vote Kamu",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
@@ -927,11 +931,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             
                           const SizedBox(height: 4),
                           Text(
-                            bahasa['sub_titel_1'],
+                            bahasa['sub_titel_1'], //"Yuk Isi Data Diri Dulu...."
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            bahasa['sub_titel_2'],
+                            bahasa['sub_titel_2'], //"Lengkapi data untuk melanjutkan"
                           ),
             
                           const SizedBox(height: 12),
@@ -974,7 +978,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Padding(
                               padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
-                                bahasa['nama_lengkap_error'],
+                                bahasa['nama_lengkap_error'], //"Nama lengkap harus diisi"
                                 style: TextStyle(
                                   color: Colors.red[900],
                                   fontSize: 12
@@ -986,7 +990,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Padding(
                               padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
-                                bahasa['nama_lengkap_min_4'],
+                                bahasa['nama_lengkap_min_4'], //"Minimal 4 karakter"
                                 style: TextStyle(
                                   color: Colors.red[900],
                                   fontSize: 12
@@ -1073,7 +1077,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Padding(
                               padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
-                                bahasa['gender_error'],
+                                bahasa['gender_error'], //"Jenis kelamin harus dipilih"
                                 style: TextStyle(
                                   color: Colors.red[900],
                                   fontSize: 12
@@ -1128,7 +1132,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Padding(
                               padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
-                                bahasa['error_email_1'],
+                                bahasa['error_email_1'], //"Format email tidak valid"
                                 style: TextStyle(
                                   color: Colors.red[900],
                                   fontSize: 12
@@ -1140,7 +1144,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             Padding(
                               padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                               child: Text(
-                                bahasa['error_email_3'],
+                                bahasa['error_email_3'], //"Email wajib diisi",
                                 style: TextStyle(
                                   color: Colors.red[900],
                                   fontSize: 12
@@ -1273,7 +1277,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           Padding(
                                             padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                             child: Text(
-                                              bahasa['nomor_hp_error_idr'],
+                                              bahasa['nomor_hp_error_idr'], //"Nomor handphone harus 9-15 digit dan diawali dengan angka 08",
                                               style: TextStyle(
                                                 color: Colors.red[900],
                                                 fontSize: 12
@@ -1287,7 +1291,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                           Padding(
                                             padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                             child: Text(
-                                              bahasa['nomor_hp_error'],
+                                              bahasa['nomor_hp_error'], //"Nomor handphone harus 7-15 digit",
                                               style: TextStyle(
                                                 color: Colors.red[900],
                                                 fontSize: 12
@@ -1301,7 +1305,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         Padding(
                                           padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
-                                            bahasa['error_indikator_phone'],
+                                            bahasa['error_indikator_phone'], //"Nomor handphone harus diisi",
                                             style: TextStyle(
                                               color: Colors.red[900],
                                               fontSize: 12
@@ -1315,7 +1319,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         children: [
                                           Icon(Icons.info_outline, color: Colors.blue, size: 16,),
                                           Text(
-                                            bahasa['warning_indikator_phone'],
+                                            bahasa['warning_indikator_phone'], //"Pastikan kamu menggunakan nomor aktif",
                                             style: TextStyle(color: Colors.blue),
                                           )
                                         ],
@@ -1326,7 +1330,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         Padding(
                                           padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
-                                            bahasa['error_email_1'],
+                                            bahasa['error_email_1'], //"Format email tidak valid",
                                             style: TextStyle(
                                               color: Colors.red[900],
                                               fontSize: 12
@@ -1337,7 +1341,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         Padding(
                                           padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
-                                            bahasa['error_email_3'],
+                                            bahasa['error_email_3'], //"Email wajib diisi",
                                             style: TextStyle(
                                               color: Colors.red[900],
                                               fontSize: 12
@@ -1349,7 +1353,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         Padding(
                                           padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                           child: Text(
-                                            bahasa['tiket_template_answer_error'],
+                                            bahasa['tiket_template_answer_error'], //"Jawaban wajib diisi",
                                             style: TextStyle(
                                               color: Colors.red[900],
                                               fontSize: 12
@@ -1385,11 +1389,11 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
             
                             const SizedBox(height: 12),
                             Text(
-                              bahasa['pilih_payment'],
+                              bahasa['pilih_payment'], //"Pilih Metode Pembayaran",
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              bahasa['sub_pilih_payment'],
+                              bahasa['sub_pilih_payment'], //"Yuk pilih metode pembayaranmu...",
                             ),
             
                             const SizedBox(height: 12,),
@@ -2428,7 +2432,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                             if (selectedIndex != null) ...[
                               const SizedBox(height: 25),
                               Text(
-                                bahasa['detail_harga'],
+                                bahasa['detail_harga'], //"Detail Harga",
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
             
@@ -2564,7 +2568,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(bahasa['biaya_layanan']),
+                                  Text(bahasa['biaya_layanan']), //"Biaya Layanan",
                                   Text(
                                     currencyCode == null
                                     ? '$voteCurrency ${formatter.format(feeLayanan)}'
@@ -2583,7 +2587,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(bahasa['total_bayar'], style: TextStyle(fontWeight: FontWeight.bold),),
+                                  Text(bahasa['total_bayar'], //"Total Bayar",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
                                   Text(
                                     currencyCode == null
                                     ? "$voteCurrency ${formatter.format(totalPayment)}"
@@ -2598,7 +2604,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(bahasa['payment_metode'], style: TextStyle(fontWeight: FontWeight.bold),),
+                                  Text(bahasa['payment_metode'], //"Metode Pembayaran",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
                                   Text(
                                     selectedPaymentItem != null ? "${selectedPaymentItem?['category_name']}\n${selectedPaymentItem?['payment_name']}" : "-", 
                                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -2624,23 +2632,25 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     Expanded(
                                       child: RichText(
                                         text: TextSpan(
-                                          text: bahasa['masalah'],
+                                          text: bahasa['masalah'], //"Apakah kamu memiliki masalah dengan transaksi ini? ",
                                           style: TextStyle(color: Colors.black),
                                           children: [
                                             TextSpan(
-                                              text: bahasa['bantuan'],
+                                              text: bahasa['bantuan'], //"Dapatkan Bantuan",
                                               style: TextStyle(
                                                 color: Colors.blue,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                               recognizer: TapGestureRecognizer()
-                                                ..onTap = () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) => HelpCenterPage(),
-                                                    ),
-                                                  );
+                                                ..onTap = () async {
+                                                  // Navigator.push(
+                                                  //   context,
+                                                  //   MaterialPageRoute(
+                                                  //     builder: (context) => HelpCenterPage(),
+                                                  //   ),
+                                                  // );
+
+                                                  await openDeepLink("https://wa.me/6285232304965");
                                                 },
                                             ),
                                           ],
@@ -2667,7 +2677,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        bahasa['vote_final'],
+                                        bahasa['vote_final'], //"Vote yang telah diberikan bersifat final dan tidak dapat dikembalikan.",
                                         style: TextStyle(
                                           color: Colors.red.shade800,
                                           fontWeight: FontWeight.w500,
@@ -2693,14 +2703,14 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                       text: TextSpan(
                                         style: TextStyle(color: Colors.black),
                                         children: [
-                                          TextSpan(text: bahasa['kebijakan_privasi_1']),
+                                          TextSpan(text: bahasa['kebijakan_privasi_1']), //"Saya menyetujui bahwa ",
                                           TextSpan(
                                               text: "KREEN ",),
                                           TextSpan(
                                               text:
-                                                  bahasa['kebijakan_privasi_2']),
+                                                  bahasa['kebijakan_privasi_2']), //"dapat membagikan informasi saya kepada pihak penyelenggara acara, telah membaca ",
                                           TextSpan(
-                                              text: bahasa['kebijakan_privasi_3'],
+                                              text: bahasa['kebijakan_privasi_3'], //"Ketentuan Layanan",
                                               style: TextStyle(color: Colors.red),
                                               recognizer: TapGestureRecognizer()
                                                 ..onTap = () {
@@ -2712,9 +2722,9 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   );
                                                 },
                                           ),
-                                          TextSpan(text: bahasa['kebijakan_privasi_4']),
+                                          TextSpan(text: bahasa['kebijakan_privasi_4']), //", dan menyetujui ",
                                           TextSpan(
-                                              text: bahasa['kebijakan_privasi_5'],
+                                              text: bahasa['kebijakan_privasi_5'], //"Kebijakan Privasi",
                                               style: TextStyle(color: Colors.red),
                                               recognizer: TapGestureRecognizer()
                                                 ..onTap = () {
@@ -2726,7 +2736,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                                   );
                                                 },
                                           ),
-                                          TextSpan(text: bahasa['kebijakan_privasi_6']),
+                                          TextSpan(text: bahasa['kebijakan_privasi_6']), //" yang berlaku.",
                                         ],
                                       ),
                                     ),
@@ -2751,7 +2761,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                         style: TextStyle(color: Colors.black),
                                         children: [
                                           TextSpan(
-                                            text: bahasa['setuju_syarat'],
+                                            text: bahasa['setuju_syarat'], //"Saya menyetujui Syarat & Ketentuan Voting yang berlaku, termasuk kebijakan bahwa transaksi yang sudah dilakukan tidak dapat dibatalkan atau dikembalikan (non-refundable).",
                                           )
                                         ]
                                       )
@@ -2790,7 +2800,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             fontWeight: FontWeight.normal,
                                           ),
                                           children: [
-                                            TextSpan(text: bahasa['kebijakan_privasi_7']),
+                                            TextSpan(text: bahasa['kebijakan_privasi_7']), //"Saya mengonfirmasi bahwa jumlah vote yang saya masukkan adalah sebagai berikut: ",
 
                                             ...List.generate(widget.names_finalis.length, (i) {
                                               final name = widget.names_finalis[i];
@@ -2825,7 +2835,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                               );
                                             }),
 
-                                            TextSpan(text: bahasa['kebijakan_privasi_8']),
+                                            TextSpan(text: bahasa['kebijakan_privasi_8']), //" dengan total pembayaran ",
                                             TextSpan(
                                               text: currencyCode == null
                                                 ? "$voteCurrency ${formatter.format(totalPayment)}"
@@ -2837,7 +2847,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                             ),
                                             TextSpan(
                                                 text:
-                                                    bahasa['kebijakan_privasi_9']),
+                                                    bahasa['kebijakan_privasi_9']), //", saya telah memeriksanya dan menyetujui untuk melanjutkan transaksi berdasarkan jumlah yang telah dimasukkan.",
                                           ],
                                         ),
                                       ),
@@ -2851,7 +2861,7 @@ class _StatePaymentManualState extends State<StatePaymentManual> {
                                 Padding(
                                   padding: EdgeInsets.fromLTRB(16, 4, 0, 0),
                                   child: Text(
-                                    bahasa['checkbox_error'],
+                                    bahasa['checkbox_error'], //"Bagian ini harus dipilih",
                                     style: TextStyle(
                                       color: Colors.red[900],
                                       fontSize: 12

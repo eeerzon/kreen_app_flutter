@@ -47,7 +47,7 @@ class _FreeVoteFloatingNotifState extends State<FreeVoteFloatingNotif> {
           alignment: Alignment.centerRight,
           children: [
             Container(
-              constraints: const BoxConstraints(maxWidth: 230),
+              constraints: const BoxConstraints(maxWidth: 280),
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
               decoration: BoxDecoration(
                 color: Colors.white,

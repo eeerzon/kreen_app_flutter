@@ -561,7 +561,7 @@ class _ExploreVoteState extends State<ExploreVote> {
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
                     child: Text(
-                      bahasa['no_more'] ?? "",
+                      bahasa['no_more'] ?? "Tidak ada data lagi", //"Tidak ada data lagi",
                       style: const TextStyle(color: Colors.grey),
                     ),
                   ),

@@ -37,7 +37,7 @@ class LoginPrompt extends StatelessWidget {
 
           const SizedBox(height: 24),
           Text(
-            bahasa['notLogin'],
+            bahasa['notLogin'], // "Ayo... Login terlebih Dahulu"
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 18,
@@ -48,7 +48,7 @@ class LoginPrompt extends StatelessWidget {
 
           const SizedBox(height: 12),
           Text(
-            bahasa['notLoginDesc'],
+            bahasa['notLoginDesc'], // "Klik tombol dibawah ini untuk melanjutkan"
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.black54,

@@ -66,9 +66,11 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
         rawContent = infoKonten[0]['content'];
       }
 
-      cleanContent = (rawContent ?? '')
-        .replaceAll(RegExp(r'[\r\n]+'), '')
-        .trim();
+      // cleanContent = (rawContent ?? '')
+      //   .replaceAll(RegExp(r'[\r\n]+'), '')
+      //   .trim();
+
+      cleanContent = simplifyKontenHtml(rawContent ?? '');
 
       isLoading = false;
       showErrorBar = false;
@@ -104,7 +106,30 @@ class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
                   padding: kGlobalPadding,
                   child: Html(
                     data: cleanContent,
-                  ),
+                    style: {
+                      "body": Style(
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        fontSize: FontSize(14),
+                        lineHeight: LineHeight.number(1.5),
+                        color: Colors.black87,
+                      ),
+                      "h5": Style(
+                        fontSize: FontSize(16),
+                        fontWeight: FontWeight.bold,
+                        margin: Margins.only(top: 16, bottom: 6),
+                      ),
+                      "h6": Style(
+                        fontSize: FontSize(14),
+                        fontWeight: FontWeight.bold,
+                        margin: Margins.only(top: 10, bottom: 4),
+                      ),
+                      "ol": Style(padding: HtmlPaddings.only(left: 20), margin: Margins.only(bottom: 10)),
+                      "ul": Style(padding: HtmlPaddings.only(left: 20), margin: Margins.only(bottom: 10)),
+                      "li": Style(margin: Margins.only(bottom: 8), lineHeight: LineHeight.number(1.5)),
+                      "p": Style(margin: Margins.only(bottom: 10), lineHeight: LineHeight.number(1.5)),
+                    },
+                  )
                 ),
               ),
 

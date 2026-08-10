@@ -38,7 +38,7 @@ Future<Map<String, dynamic>?> getFeeNew(
 
   num amountInSessionCurrency = convertSessionCurrency['amount'];
   num feeInSessionCurrency = convertSessionCurrency['fee'];
-  num totalAmountInSessionCurrency = convertSessionCurrency['total_amount']; // plus_first yang sama dengan pgpp
+  num totalAmountInSessionCurrency = convertSessionCurrency['total_amount'];
 
   if (countsFinalis != null && countsFinalis.isNotEmpty) {
       int total = countsFinalis.reduce((a, b) => a + b);

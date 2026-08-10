@@ -81,7 +81,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
   num displayUserCurrencyTotalPayment = 0;
   String formattedDate = '';
 
-  bool isGeneratingQr = true;
+  bool isGeneratingQr = false;
   String? qrUrl, qrString, generatedUrl;
   bool qrImageLoaded = false;
 
@@ -166,14 +166,20 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       }
 
       deadline = DateHelper.parseWibToUtc(expiresAt);
+      if (deadline.isBefore(DateTime.now().toUtc())) {
+        isExpired = true;
+      }
 
       qrUrl = paymentDetail['qr_url'];
       qrString = paymentDetail['qr_string'];
-      generatedUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+      if (qrString != null && qrString.toString().isNotEmpty) {
+        generatedUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=$qrString';
+      }
+      
+      final hasQrUrl = qrUrl?.toString().trim().isNotEmpty ?? false;
+      final hasQrString = qrString?.toString().trim().isNotEmpty ?? false;
 
-      isGeneratingQr =
-        (qrUrl == null || qrUrl.toString().isEmpty) &&
-        (qrString == null || qrString.toString().isEmpty);
+      isGeneratingQr = !hasQrUrl && !hasQrString;
 
       _isLoading = false;
       showErrorBar = false;
@@ -309,6 +315,11 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
               ),
             ),
           );
+        } else if (order['order_status'] == '2' || order['order_status'] == '20') {
+          _paymentTimer?.cancel();
+          setState(() {
+            isExpired = true;
+          });
         }
       }
     });
@@ -520,6 +531,7 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                         deadlineUtc: deadline,
                         bahasa: bahasa,
                         onExpired: () async {
+                          setState(() => isExpired = true);
                           await _handleExpiredFlow();
                         },
                       ),
@@ -574,7 +586,8 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                 color: Color.fromARGB(255, 224, 224, 224),
                               ),
 
-                              if (paymentDetail['qr_url'] != null || paymentDetail['qr_string'] != null) ...[
+                              if ((paymentDetail['qr_url'] != null && paymentDetail['qr_url'].toString().isNotEmpty) ||
+                                  (paymentDetail['qr_string'] != null && paymentDetail['qr_string'].toString().isNotEmpty)) ...[
                                 SizedBox(height: 16,),
                                 SizedBox(
                                   width: double.infinity,
@@ -611,11 +624,14 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
                                             children: [
                                               if (!qrImageLoaded)
                                                 const SizedBox(
-                                                  width: 200,
-                                                  height: 200,
-                                                  child: Center(
+                                                  width: 220,
+                                                  height: 260,
+                                                  child: SizedBox(
+                                                    width: 35,
+                                                    height: 35,
                                                     child: CircularProgressIndicator(
                                                       color: Colors.red,
+                                                      strokeWidth: 3,
                                                     ),
                                                   ),
                                                 ),
@@ -1394,9 +1410,6 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
     if (_didMarkExpired) return;
     
     if (!mounted) return;
-    setState(() {
-      isExpired = true;
-    });
     
     final result = await ApiService.get(
       "/order/vote/${widget.id_order}",
@@ -1410,6 +1423,9 @@ class _WaitingOrderPageState extends State<WaitingOrderPage> {
       
       if (order['order_status'] == '1') {
         await _handleSuccessRedirect();
+        return;
+      } else if (order['order_status'] == '2' || order['order_status'] == '20') {
+        isExpired = true;
         return;
       }
     }

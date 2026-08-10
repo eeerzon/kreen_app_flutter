@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
 import 'package:kreen_app_flutter/helper/global_function.dart';
@@ -447,7 +448,7 @@ class DetailOrderModal {
                           );
                         } else {
                           ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "")));
+                            .showSnackBar(SnackBar(content: Text(bahasa['no_data'] ?? "Data tidak ditemukan")));
                         }
                       },
                       child: Container(
@@ -459,34 +460,34 @@ class DetailOrderModal {
                         child: Column(
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              padding: EdgeInsets.all(12),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   SizedBox(
-                                    width: 70,
-                                    height: 70,
+                                    width: 75,
+                                    height: 75,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
                                       child: hasValidUrl
                                         ? Image.network(
                                             url,
-                                            height: 70,
-                                            width: 70,
+                                            height: 75,
+                                            width: 75,
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) {
                                               return Image.asset(
                                                 'assets/images/img_broken.jpg',
-                                                height: 70,
-                                                width: 70,
+                                                height: 75,
+                                                width: 75,
                                                 fit: BoxFit.cover,
                                               );
                                             },
                                           )
                                         : Image.asset(
                                             'assets/images/img_broken.jpg',
-                                            height: 70,
-                                            width: 70,
+                                            height: 75,
+                                            width: 75,
                                             fit: BoxFit.cover,
                                           )
                                     ),
@@ -529,7 +530,7 @@ class DetailOrderModal {
 
                     const SizedBox(height: 16),
                     Text(
-                      bahasa['finalis'] ?? "",
+                      bahasa['finalis'] ?? "Finalis",
                     ),
 
                     SizedBox(height: 8,),
@@ -624,7 +625,7 @@ class DetailOrderModal {
                               }
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              padding: EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
@@ -634,20 +635,20 @@ class DetailOrderModal {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(
-                                    width: 70,
-                                    height: 70,
+                                    width: 75,
+                                    height: 75,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
                                       child: item['poster_finalis'] != null
                                       ? Image.network(
                                           item['poster_finalis'],
-                                          height: 70,
-                                          width: 70,
+                                          height: 75,
+                                          width: 75,
                                         )
                                       : Image.asset(
                                           'assets/images/img_broken.jpg',
-                                          height: 70,
-                                          width: 70,
+                                          height: 75,
+                                          width: 75,
                                           fit: BoxFit.cover,
                                         ),
                                     ),
@@ -666,22 +667,24 @@ class DetailOrderModal {
                                           overflow: TextOverflow.ellipsis,
                                         ),
 
-                                        if (item['nomor_urut'] != null) ...[
-                                          const SizedBox(height: 14),
-                                          Text.rich(
-                                            TextSpan(
-                                              children: [
-                                                TextSpan(
-                                                  text: "${bahasa['no_urut'] ?? 'No Urut'}: ",
-                                                  style: TextStyle(color: Colors.grey),
-                                                ),
-                                                TextSpan(
-                                                  text: item['nomor_urut'].toString(),
-                                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-                                                ),
-                                              ],
+                                        if (detailVote['flag_hide_nomor_urut'] == '0') ...[
+                                          if (item['nomor_urut'] != null) ...[
+                                            const SizedBox(height: 14),
+                                            Text.rich(
+                                              TextSpan(
+                                                children: [
+                                                  TextSpan(
+                                                    text: "${bahasa['no_urut'] ?? 'No Urut'}: ",
+                                                    style: TextStyle(color: Colors.grey),
+                                                  ),
+                                                  TextSpan(
+                                                    text: item['nomor_urut'].toString(),
+                                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
+                                          ],
                                         ],
                                       ],
                                     ),
@@ -838,7 +841,7 @@ class DetailOrderModal {
                             TableRow(children: [
                               TableCell(
                                 verticalAlignment: TableCellVerticalAlignment.top,
-                                child: Text(bahasa['metode_pembayaran'] ?? "", style: TextStyle(color: Colors.grey),),
+                                child: Text(bahasa['metode_pembayaran'] ?? "Metode\nPembayaran", style: TextStyle(color: Colors.grey),),
                               ),
                               TableCell(
                                 verticalAlignment: TableCellVerticalAlignment.top,
@@ -873,6 +876,7 @@ class DetailOrderModal {
     Map<String, dynamic> eventOder = {};
     List<dynamic> eventOrderDetail = [];
     List<dynamic> eventTiket = [];
+    List<dynamic> eventTiketOrder = [];
     Map<String, dynamic> event = {};
     Map<String, dynamic> dataEvents = {};
     Map<String, dynamic> detailEvent = {};
@@ -927,6 +931,7 @@ class DetailOrderModal {
       dataEvents = tempEventDetail;
       detailEvent = tempEventDetail['event'] ?? {};
       eventTiket = tempEventTiket;
+      eventTiketOrder = tempOrder['event_ticket'];
       
       if (eventOder['order_status'] == '0'){
         statusOrder = bahasa['status_order_0'] ?? ""; // 'gagal';
@@ -1509,7 +1514,7 @@ class DetailOrderModal {
                                       Padding(
                                         padding: const EdgeInsets.only(left: 8),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
                                           children: [
                                             InkWell(
                                               onTap: () {
@@ -1539,6 +1544,79 @@ class DetailOrderModal {
                                               eventOrderDetail[index]['id_order_detail'],
                                               style: const TextStyle(fontWeight: FontWeight.bold),
                                             ),
+
+                                            if (detailEvent['type_event'] == 'online') ...[
+                                              const SizedBox(height: 16),
+                                              IntrinsicWidth(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                  children: [
+                                                    SizedBox(
+                                                      height: 48,
+                                                      child: ElevatedButton.icon(
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor: Colors.white,
+                                                          side: const BorderSide(color: Colors.red),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                        ),
+                                                        onPressed: () async {
+                                                          await Clipboard.setData(ClipboardData(text: eventTiketOrder[index]['link_streaming']));
+
+                                                          ScaffoldMessenger.of(context).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(bahasa['copy_link_text'] ?? 'Link berhasil disalin'),
+                                                              backgroundColor: Colors.green,
+                                                              duration: const Duration(seconds: 2),
+                                                              behavior: SnackBarBehavior.floating,
+                                                              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius.circular(8),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                        label: Text(
+                                                            bahasa['copy_link'] ?? 'Salin Link',
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.red,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+
+                                                    const SizedBox(height: 12),
+                                                    SizedBox(
+                                                      height: 48,
+                                                      child: ElevatedButton(
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor: Colors.red,
+                                                          side: const BorderSide(color: Colors.red),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                        ),
+                                                        onPressed: () async {
+                                                          final partnerUrl = normalizePartnerUrl(eventTiketOrder[index]['link_streaming'].toString());
+
+                                                          await openDeepLink(partnerUrl);
+                                                          return;
+                                                        },
+                                                        child: Text(
+                                                          bahasa['gabung_event'] ?? "Gabung Event",
+                                                          style: TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.white,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ]
                                           ],
                                         ),
                                       ),
@@ -1546,53 +1624,56 @@ class DetailOrderModal {
                                 ),
                               ),
 
-                              SizedBox(height: 10,),
-                              Padding(
-                                padding: EdgeInsets.zero,
-                                child: Table(
-                                  columnWidths: {
-                                    0: IntrinsicColumnWidth(),
-                                    1: FixedColumnWidth(20),
-                                    2: FlexColumnWidth(),
-                                  },
-                                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                                  children: eventOrderDetail[index]['order_form_answers'].map<TableRow>((answer) {
-                                    bool isFile = answer["type_form"] == "file";
-                                    bool isFileAnswered = false;
-                                    
-                                    if (isFile) {
-                                      final answerValue = answer['answer'] ?? '';
-                                      if (hasFile(answerValue)) {
-                                        isFileAnswered = true;
+                              if (eventOrderDetail[index]['order_form_answers'] != null &&
+                                (eventOrderDetail[index]['order_form_answers'] as List).isNotEmpty) ...[
+                                SizedBox(height: 10,),
+                                Padding(
+                                  padding: EdgeInsets.zero,
+                                  child: Table(
+                                    columnWidths: {
+                                      0: IntrinsicColumnWidth(),
+                                      1: FixedColumnWidth(20),
+                                      2: FlexColumnWidth(),
+                                    },
+                                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                                    children: (eventOrderDetail[index]['order_form_answers'] as List? ?? []).map<TableRow>((answer) {
+                                      bool isFile = answer["type_form"] == "file";
+                                      bool isFileAnswered = false;
+                                      
+                                      if (isFile) {
+                                        final answerValue = answer['answer'] ?? '';
+                                        if (hasFile(answerValue)) {
+                                          isFileAnswered = true;
+                                        }
                                       }
-                                    }
 
-                                    return TableRow(children: [
-                                      Text(answer["question"], style: const TextStyle(color: Colors.grey)),
-                                      const Text(" : "),
-                                      isFile && isFileAnswered
-                                        ? GestureDetector(
-                                            onTap: () {
-                                              final url = answer['answer'];
-                                              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                                            },
-                                            child: Text(
-                                              bahasa['lihat_file'] ?? "", //"Lihat File",
-                                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                      return TableRow(children: [
+                                        Text(answer["question"], style: const TextStyle(color: Colors.grey)),
+                                        const Text(" : "),
+                                        isFile && isFileAnswered
+                                          ? GestureDetector(
+                                              onTap: () {
+                                                final url = answer['answer'];
+                                                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                                              },
+                                              child: Text(
+                                                bahasa['lihat_file'] ?? "", //"Lihat File",
+                                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                              ),
+                                            )
+                                          : Text(
+                                              isFile ? '-' : answer["answer"],
+                                              style: const TextStyle(fontWeight: FontWeight.bold)
                                             ),
-                                          )
-                                        : Text(
-                                            isFile ? '-' : answer["answer"],
-                                            style: const TextStyle(fontWeight: FontWeight.bold)
-                                          ),
-                                    ]);
-                                  }).toList(),
+                                      ]);
+                                    }).toList(),
+                                  ),
                                 ),
-                              ),
 
-                              SizedBox(height: 8,),
-                              Divider(),
-                              SizedBox(height: 8,),
+                                SizedBox(height: 8,),
+                                Divider(),
+                                SizedBox(height: 8,),
+                              ],
                             ],
                           ),
                         );

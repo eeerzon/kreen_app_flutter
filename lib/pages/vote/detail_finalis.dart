@@ -977,6 +977,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                                       flag_verify_email: detailvote['flag_verify_email'],
                                                       rateCurrency: detailvote['rate_currency_vote'],
                                                       rateCurrencyUser: detailvote['rate_currency_user'],
+                                                      color: color,
                                                     ),
                                                   ),
                                                 );
@@ -1417,8 +1418,10 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                       ),
                                     ),
                                     SizedBox(height: 16),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    Wrap(
+                                      alignment: WrapAlignment.center,
+                                      spacing: 20, // jarak horizontal antar ikon, atur sesuai selera
+                                      runSpacing: 12,
                                       children: [
                                         if (detailFinalis['facebook'] != null && detailFinalis['facebook'].toString().trim().isNotEmpty)
                                           _buildSocialButton(
@@ -1452,7 +1455,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                             platform: "instagram",
                                           ),
                                       ],
-                                    ),
+                                    )
                                   ],
                                 ),
                               ),
@@ -1596,6 +1599,7 @@ class _DetailFinalisPageState extends State<DetailFinalisPage> {
                                 flag_verify_email: detailvote['flag_verify_email'],
                                 rateCurrency: detailvote['rate_currency_vote'],
                                 rateCurrencyUser: detailvote['rate_currency_user'],
+                                color: color,
                               ),
                             ),
                           );

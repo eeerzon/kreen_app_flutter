@@ -450,6 +450,11 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
     if (resultFinalis?['rc'] == 200) {
       newData = List.from(resultFinalis?['data'] ?? []);
       hasMore = newData.length >= 6;
+      fetchFailed = false;
+    } else if (resultFinalis?['rc'] == 404) {
+      // anggap ini "data habis", bukan error
+      hasMore = false;
+      fetchFailed = false;
     } else {
       hasMore = false;
       fetchFailed = true;
@@ -743,7 +748,8 @@ class _FinalisPaketPageState extends State<FinalisPaketPage> {
                                 flag_login: vote['flag_login'],
                                 rateCurrency: vote['rate_currency_vote'],
                                 rateCurrencyUser: vote['rate_currency_user'],
-                                ),
+                                color: color,
+                              ),
                             ),
                           );
                         }
